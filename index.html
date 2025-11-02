@@ -1,104 +1,259 @@
 <!doctype html>
 <html lang="vi">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Test Audio Loop (10s)</title>
-  <style>
-    body{font-family:system-ui,Arial;padding:20px;max-width:720px;margin:auto}
-    button{padding:10px 16px;font-size:16px;margin:6px}
-    input{padding:8px;width:100%;box-sizing:border-box;margin:8px 0}
-    .info{margin-top:12px;color:#333}
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Search & Play audio by index (0001..9999)</title>
+<style>
+  body{font-family:system-ui,Arial,Helvetica;padding:18px;max-width:820px;margin:auto}
+  h1{font-size:1.3rem}
+  label{display:block;margin-top:10px;font-weight:600}
+  input[type="text"], input[type="url"], textarea{width:100%;padding:8px;margin-top:6px;box-sizing:border-box}
+  button{padding:10px 14px;margin:8px 6px;font-size:1rem}
+  .row{display:flex;gap:8px;align-items:center}
+  #status{margin-top:10px;color:#333}
+  #log{white-space:pre-wrap;font-family:monospace;margin-top:10px;background:#f6f6f6;padding:8px;border-radius:6px;max-height:200px;overflow:auto}
+  small{color:#666}
+</style>
 </head>
 <body>
-  <h1>Test audio (play every 10s)</h1>
+  <h1>Search file → play audio (0001..9999)</h1>
 
-  <label>Audio file path (relative to site root):</label>
-  <input id="audioPath" type="text" value="/audio/xin_chao.mp3" />
+  <p>
+    Upload file <code>T1.TXT</code> (mỗi dòng 1 từ/cụm) vào root site <small>(hoặc dùng file input bên dưới).</small><br>
+    Đặt audio files trong folder <code>/audio/</code> & tên dạng <code>0001.mp3</code>, <code>0002.mp3</code>, ...
+  </p>
 
-  <div>
-    <button id="startBtn">Start</button>
-    <button id="stopBtn" disabled>Stop</button>
+  <label>1) Load T1.TXT (tự động thử fetch '/T1.TXT' trên site; nếu không có, chọn file local)</label>
+  <div class="row">
+    <input type="file" id="fileInput" accept=".txt">
+    <button id="reloadTxt">Reload remote /T1.TXT</button>
+  </div>
+  <div id="txtInfo" class="info"><small>Đang cố fetch <code>/T1.TXT</code>...</small></div>
+
+  <label>2) Audio base path (relative)</label>
+  <input type="text" id="audioBase" value="/audio/" />
+
+  <label>3) Search & play (gõ từ rồi Enter hoặc nhấn Play)</label>
+  <div class="row">
+    <input type="text" id="searchInput" placeholder="Gõ từ/cụm để tìm (ví dụ: xin chào)" />
+    <button id="playBtn">Play</button>
+    <button id="previewBtn">Preview 0001</button>
   </div>
 
-  <div class="info" id="status">Status: idle</div>
+  <label>Optional: Firebase polling (auto play when /message.json changes)</label>
+  <input type="url" id="firebaseUrl" placeholder="https://your-project.../message.json (leave empty to disable)" />
+  <div class="row">
+    <button id="startPoll">Start Firebase Poll</button>
+    <button id="stopPoll" disabled>Stop Poll</button>
+  </div>
+
+  <div id="status">Status: initializing...</div>
+  <div id="log"></div>
 
 <script>
 (() => {
-  const audioPathInput = document.getElementById('audioPath');
-  const startBtn = document.getElementById('startBtn');
-  const stopBtn = document.getElementById('stopBtn');
+  const fileInput = document.getElementById('fileInput');
+  const reloadTxtBtn = document.getElementById('reloadTxt');
+  const txtInfo = document.getElementById('txtInfo');
+  const audioBaseEl = document.getElementById('audioBase');
+  const searchInput = document.getElementById('searchInput');
+  const playBtn = document.getElementById('playBtn');
+  const previewBtn = document.getElementById('previewBtn');
   const statusEl = document.getElementById('status');
+  const logEl = document.getElementById('log');
+  const firebaseUrlEl = document.getElementById('firebaseUrl');
+  const startPollBtn = document.getElementById('startPoll');
+  const stopPollBtn = document.getElementById('stopPoll');
 
-  let timer = null;
-  let audio = null;
-  const INTERVAL_MS = 10000; // 10 seconds
+  let lines = []; // array of words from T1.TXT (index 0 => line 1)
+  let pollingHandle = null;
+  let lastFirebaseTs = null;
+  let audioPlaying = null;
 
-  // Create Audio element when starting. We append a cache-busting query param
-  // to force reload if file changed: ?ts=<ts>
-  function makeAudio() {
-    const p = audioPathInput.value.trim() || '/audio/xin_chao.mp3';
-    const url = p + '?ts=' + Date.now(); // cache-bust so updates show
-    return new Audio(url);
+  function log(msg) {
+    const t = new Date().toLocaleTimeString();
+    logEl.textContent = `[${t}] ${msg}\n` + logEl.textContent;
   }
 
-  async function playOnce() {
-    if (!audio) audio = makeAudio();
+  function setStatus(s) {
+    statusEl.textContent = 'Status: ' + s;
+    log(s);
+  }
+
+  // utility: zero-pad to 4 digits
+  function pad4(n) {
+    return String(n).padStart(4,'0');
+  }
+
+  // try fetch /T1.TXT from site root
+  async function fetchRemoteTxt() {
+    setStatus('Fetching /T1.TXT ...');
     try {
-      // ensure we start from begin
-      audio.currentTime = 0;
-      // browsers require user gesture to allow play with sound; Start button ensures that
-      await audio.play();
-      statusEl.textContent = 'Status: playing ' + audio.src;
+      const r = await fetch('/T1.TXT', { cache: 'no-store' });
+      if (!r.ok) {
+        setStatus('No /T1.TXT found on site (HTTP ' + r.status + ')');
+        return false;
+      }
+      const txt = await r.text();
+      parseTxtContent(txt);
+      setStatus(`Loaded /T1.TXT (${lines.length} lines)`);
+      return true;
     } catch (err) {
-      console.error('play error', err);
-      statusEl.textContent = 'Status: play failed — check user gesture or file URL';
+      setStatus('Fetch /T1.TXT failed: ' + err.message);
+      return false;
     }
   }
 
-  async function startLoop() {
-    // create a fresh audio instance for initial play
-    audio = makeAudio();
+  // parse content into lines array
+  function parseTxtContent(txt) {
+    const raw = txt.split(/\r?\n/);
+    lines = raw.map(l => l.replace(/\r/g,'').trim());
+    // remove empty lines but keep order indices consistent (we want line numbers including empties? User expects line index for matching words; remove empties to avoid offset)
+    lines = lines.filter(l => l.length > 0);
+    log('Parsed lines: ' + lines.length);
+  }
 
-    // On iOS/Safari sometimes play() returns a rejected promise unless triggered by user event.
+  // handle local file upload
+  fileInput.addEventListener('change', async (ev) => {
+    const f = ev.target.files && ev.target.files[0];
+    if (!f) return;
+    setStatus('Reading local file ' + f.name);
     try {
-      await audio.play();
-      statusEl.textContent = 'Status: started, playing now';
+      const txt = await f.text();
+      parseTxtContent(txt);
+      setStatus(`Loaded local ${f.name} (${lines.length} lines)`);
     } catch (err) {
-      statusEl.textContent = 'Status: play blocked — press Start once more or interact with page';
-      console.warn('Initial play blocked', err);
+      setStatus('Read file failed: ' + err.message);
     }
-
-    // clear any previous timer
-    if (timer) clearInterval(timer);
-    // After initial play, schedule subsequent plays every INTERVAL_MS.
-    timer = setInterval(async () => {
-      // create new audio object each time to avoid stale buffer on some browsers
-      audio = makeAudio();
-      await playOnce();
-    }, INTERVAL_MS);
-
-    startBtn.disabled = true;
-    stopBtn.disabled = false;
-  }
-
-  function stopLoop() {
-    if (timer) { clearInterval(timer); timer = null; }
-    if (audio) { try { audio.pause(); } catch(e){} audio = null; }
-    statusEl.textContent = 'Status: stopped';
-    startBtn.disabled = false;
-    stopBtn.disabled = true;
-  }
-
-  startBtn.addEventListener('click', async () => {
-    // user gesture occurs here -> allows audio autoplay afterwards on many mobile browsers
-    await startLoop();
   });
 
-  stopBtn.addEventListener('click', () => {
-    stopLoop();
+  // reload remote
+  reloadTxtBtn.addEventListener('click', async () => {
+    await fetchRemoteTxt();
   });
+
+  // search function: returns 1-based index or -1
+  function findIndexForKey(key) {
+    if (!key || !key.trim()) return -1;
+    const k = key.trim().toLowerCase();
+    for (let i = 0; i < lines.length; ++i) {
+      if ((lines[i] || '').toLowerCase() === k) return i + 1; // 1-based
+    }
+    return -1;
+  }
+
+  // build audio URL and play
+  async function playIndex(idx) {
+    if (idx <= 0) { setStatus('Invalid index to play'); return; }
+    const filename = pad4(idx) + '.mp3';
+    let base = audioBaseEl.value.trim() || '/audio/';
+    // ensure trailing slash
+    if (!base.endsWith('/')) base += '/';
+    // allow absolute path or full URL if user put it
+    const url = base.startsWith('http') ? base + filename : base + filename;
+    setStatus('Playing ' + filename + ' → ' + url);
+    try {
+      // stop previous
+      if (audioPlaying) {
+        try { audioPlaying.pause(); } catch(e) {}
+        audioPlaying = null;
+      }
+      audioPlaying = new Audio(url);
+      // optional: add event catches
+      audioPlaying.onended = () => { setStatus('Finished ' + filename); audioPlaying = null; };
+      audioPlaying.onerror = (e) => { setStatus('Playback error for ' + filename); console.error(e); audioPlaying = null; };
+      // set currentTime = 0
+      audioPlaying.currentTime = 0;
+      await audioPlaying.play();
+    } catch (err) {
+      setStatus('Play failed: ' + err.message);
+    }
+  }
+
+  // search & play for a phrase
+  async function searchAndPlay(phrase) {
+    if (!phrase || !phrase.trim()) { setStatus('Empty search'); return; }
+    const idx = findIndexForKey(phrase);
+    if (idx < 0) {
+      setStatus(`Not found: "${phrase}"`);
+      return;
+    }
+    setStatus(`Found "${phrase}" at line ${idx} → playing`);
+    await playIndex(idx);
+  }
+
+  // wire UI play button + Enter
+  playBtn.addEventListener('click', () => {
+    const t = searchInput.value;
+    searchAndPlay(t);
+  });
+  searchInput.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Enter') {
+      playBtn.click();
+    }
+  });
+
+  // preview 0001
+  previewBtn.addEventListener('click', () => { playIndex(1); });
+
+  // Firebase polling (optional)
+  startPollBtn.addEventListener('click', () => {
+    const url = firebaseUrlEl.value.trim();
+    if (!url) { alert('Paste your Firebase /message.json URL first'); return; }
+    if (pollingHandle) { alert('Already polling'); return; }
+    lastFirebaseTs = null;
+    setStatus('Starting Firebase poll: ' + url);
+    pollingHandle = setInterval(async () => {
+      try {
+        const r = await fetch(url, { cache: 'no-store' });
+        if (!r.ok) { setStatus('Firebase fetch failed: ' + r.status); return; }
+        const j = await r.json();
+        if (!j) return;
+        const text = (typeof j.text === 'string') ? j.text : (typeof j.message === 'string' ? j.message : null);
+        const ts = j.ts || j.timestamp || null;
+        if (!text) return;
+        // if ts present, use it to detect change; else use text change
+        if (ts !== null) {
+          if (ts !== lastFirebaseTs) {
+            lastFirebaseTs = ts;
+            log('Firebase new msg: ' + text);
+            await searchAndPlay(text);
+          }
+        } else {
+          // no ts: compare to lastText
+          if (text !== window.__lastFirebaseText) {
+            window.__lastFirebaseText = text;
+            log('Firebase new (no-ts): ' + text);
+            await searchAndPlay(text);
+          }
+        }
+      } catch (err) {
+        console.warn('Firebase poll error', err);
+      }
+    }, 1000); // poll every 1s
+    startPollBtn.disabled = true;
+    stopPollBtn.disabled = false;
+  });
+
+  stopPollBtn.addEventListener('click', () => {
+    if (pollingHandle) { clearInterval(pollingHandle); pollingHandle = null; }
+    setStatus('Stopped Firebase poll');
+    startPollBtn.disabled = false;
+    stopPollBtn.disabled = true;
+  });
+
+  // initial attempt to load remote T1.TXT
+  (async function init() {
+    // try fetch /T1.TXT
+    const ok = await fetchRemoteTxt();
+    if (!ok) {
+      txtInfo.innerHTML = '<small>/T1.TXT not found on server — you can upload local file using the file input above.</small>';
+    } else {
+      txtInfo.innerHTML = `<small>Loaded /T1.TXT — ${lines.length} entries.</small>`;
+    }
+    setStatus('Ready. Enter search term and press Play (or enable Firebase poll).');
+  })();
 
 })();
 </script>
