@@ -1,19 +1,106 @@
 <!doctype html>
-<html>
+<html lang="vi">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>TTS → ESP32 (Netlify)</title>
-  <link rel="stylesheet" href="/style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Test Audio Loop (10s)</title>
+  <style>
+    body{font-family:system-ui,Arial;padding:20px;max-width:720px;margin:auto}
+    button{padding:10px 16px;font-size:16px;margin:6px}
+    input{padding:8px;width:100%;box-sizing:border-box;margin:8px 0}
+    .info{margin-top:12px;color:#333}
+  </style>
 </head>
 <body>
-  <main>
-    <h1>TTS → ESP32</h1>
-    <input id="text" type="text" value="Xin chào" />
-    <input id="esp" type="text" value="192.168.1.50" />
-    <button id="btn">Speak on Phone & send to ESP32</button>
-    <p id="info"></p>
-  </main>
-  <script src="/app.js"></script>
+  <h1>Test audio (play every 10s)</h1>
+
+  <label>Audio file path (relative to site root):</label>
+  <input id="audioPath" type="text" value="/audio/xin_chao.mp3" />
+
+  <div>
+    <button id="startBtn">Start</button>
+    <button id="stopBtn" disabled>Stop</button>
+  </div>
+
+  <div class="info" id="status">Status: idle</div>
+
+<script>
+(() => {
+  const audioPathInput = document.getElementById('audioPath');
+  const startBtn = document.getElementById('startBtn');
+  const stopBtn = document.getElementById('stopBtn');
+  const statusEl = document.getElementById('status');
+
+  let timer = null;
+  let audio = null;
+  const INTERVAL_MS = 10000; // 10 seconds
+
+  // Create Audio element when starting. We append a cache-busting query param
+  // to force reload if file changed: ?ts=<ts>
+  function makeAudio() {
+    const p = audioPathInput.value.trim() || '/audio/xin_chao.mp3';
+    const url = p + '?ts=' + Date.now(); // cache-bust so updates show
+    return new Audio(url);
+  }
+
+  async function playOnce() {
+    if (!audio) audio = makeAudio();
+    try {
+      // ensure we start from begin
+      audio.currentTime = 0;
+      // browsers require user gesture to allow play with sound; Start button ensures that
+      await audio.play();
+      statusEl.textContent = 'Status: playing ' + audio.src;
+    } catch (err) {
+      console.error('play error', err);
+      statusEl.textContent = 'Status: play failed — check user gesture or file URL';
+    }
+  }
+
+  async function startLoop() {
+    // create a fresh audio instance for initial play
+    audio = makeAudio();
+
+    // On iOS/Safari sometimes play() returns a rejected promise unless triggered by user event.
+    try {
+      await audio.play();
+      statusEl.textContent = 'Status: started, playing now';
+    } catch (err) {
+      statusEl.textContent = 'Status: play blocked — press Start once more or interact with page';
+      console.warn('Initial play blocked', err);
+    }
+
+    // clear any previous timer
+    if (timer) clearInterval(timer);
+    // After initial play, schedule subsequent plays every INTERVAL_MS.
+    timer = setInterval(async () => {
+      // create new audio object each time to avoid stale buffer on some browsers
+      audio = makeAudio();
+      await playOnce();
+    }, INTERVAL_MS);
+
+    startBtn.disabled = true;
+    stopBtn.disabled = false;
+  }
+
+  function stopLoop() {
+    if (timer) { clearInterval(timer); timer = null; }
+    if (audio) { try { audio.pause(); } catch(e){} audio = null; }
+    statusEl.textContent = 'Status: stopped';
+    startBtn.disabled = false;
+    stopBtn.disabled = true;
+  }
+
+  startBtn.addEventListener('click', async () => {
+    // user gesture occurs here -> allows audio autoplay afterwards on many mobile browsers
+    await startLoop();
+  });
+
+  stopBtn.addEventListener('click', () => {
+    stopLoop();
+  });
+
+})();
+</script>
 </body>
 </html>
