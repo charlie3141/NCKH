@@ -3,344 +3,266 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Search & Play audio (with volume/gain control)</title>
+<title>Gangtay — auto play from Firebase</title>
 <style>
-  body{font-family:system-ui,Arial,Helvetica;padding:18px;max-width:820px;margin:auto}
-  h1{font-size:1.2rem}
+  body{font-family:system-ui,Arial;padding:18px;max-width:900px;margin:auto}
+  h1{font-size:1.3rem;margin-bottom:.2rem}
+  .muted{color:#666;font-size:.9rem}
   label{display:block;margin-top:10px;font-weight:600}
-  input[type="text"], input[type="url"], textarea{width:100%;padding:8px;margin-top:6px;box-sizing:border-box}
+  input[type="text"], input[type="url"]{width:100%;padding:8px;margin-top:6px;box-sizing:border-box}
   button{padding:10px 14px;margin:8px 6px;font-size:1rem}
-  .row{display:flex;gap:8px;align-items:center}
+  .row{display:flex;gap:8px;align-items:center;margin-top:8px}
   #status{margin-top:10px;color:#333}
-  #log{white-space:pre-wrap;font-family:monospace;margin-top:10px;background:#f6f6f6;padding:8px;border-radius:6px;max-height:200px;overflow:auto}
+  #log{white-space:pre-wrap;font-family:monospace;margin-top:10px;background:#f6f6f6;padding:8px;border-radius:6px;max-height:240px;overflow:auto}
   .controls{display:flex;gap:8px;align-items:center;margin-top:8px}
-  .small{font-size:.9rem;color:#666}
 </style>
 </head>
 <body>
-  <h1>Search & Play audio (0001..9999) — Volume control</h1>
+  <h1>Gangtay — Auto Play từ Firebase</h1>
+  <p class="muted">Nhấn <strong>Enable audio & Start</strong> 1 lần để cấp quyền phát âm thanh. Sau đó trang sẽ poll Firebase mỗi 1s và tự phát file tương ứng.</p>
 
-  <p class="small">
-    Change <code>BASE_GAIN</code> constant in the script to increase default loudness for all files.
-    Use the slider to adjust at runtime. If you want very loud output try BASE_GAIN values between <code>1.0</code> and <code>3.0</code>.
-  </p>
-
-  <label>1) Load T1.TXT (site root /T1.TXT or local upload)</label>
+  <label>1) T1.TXT (mỗi dòng 1 từ) — site root /T1.TXT hoặc upload local</label>
   <div class="row">
     <input type="file" id="fileInput" accept=".txt">
-    <button id="reloadTxt">Reload remote /T1.TXT</button>
+    <button id="reloadTxt">Try fetch /T1.TXT</button>
   </div>
-  <div id="txtInfo" class="small"><small>Trying to fetch <code>/T1.TXT</code>…</small></div>
+  <div id="txtInfo" class="muted">Trying to fetch /T1.TXT ...</div>
 
   <label>2) Audio base path (relative or absolute)</label>
-  <input type="text" id="audioBase" value="/audio/" />
+  <input id="audioBase" type="text" value="/audio/" />
 
-  <label>3) Search & play</label>
+  <label>3) Firebase message URL (will poll automatically after Enable)</label>
+  <input id="firebaseUrl" type="url" value="https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/message.json" />
+
   <div class="row">
-    <input type="text" id="searchInput" placeholder="Type phrase (e.g. xin chào)" />
-    <button id="playBtn">Play</button>
+    <button id="enableBtn">Enable audio & Start polling</button>
+    <button id="stopBtn" disabled>Stop polling</button>
     <button id="previewBtn">Preview 0001</button>
   </div>
 
-  <label>Volume & gain</label>
+  <label>Volume (gain)</label>
   <div class="controls">
-    <label class="small">Base gain constant (change in code): <strong id="baseGainLabel"></strong></label>
-  </div>
-  <div class="controls">
-    <input type="range" id="gainSlider" min="0.1" max="4.0" step="0.05" value="1.0" />
-    <div class="small" id="gainVal">Gain x1.00</div>
-    <button id="muteBtn">Mute</button>
+    <input id="gainSlider" type="range" min="0.2" max="4.0" step="0.05" value="1.2">
+    <div id="gainVal">Gain x1.20</div>
   </div>
 
-  <label>Optional: Firebase polling (auto play when /message.json changes)</label>
-  <input type="url" id="firebaseUrl" placeholder="https://.../message.json (leave empty to disable)" />
-  <div class="row">
-    <button id="startPoll">Start Firebase Poll</button>
-    <button id="stopPoll" disabled>Stop Poll</button>
-  </div>
-
-  <div id="status">Status: initializing...</div>
+  <div id="status">Status: idle</div>
   <div id="log"></div>
 
 <script>
 /*
-  Full page with WebAudio gain control.
-
-  Change BASE_GAIN constant below to set a default amplification applied to every file.
-  For louder-than-original audio, set BASE_GAIN > 1.0 (e.g. 1.5 or 2.0).
-  Warning: very large gains can clip/distort the audio.
+  Auto-play page:
+  - Click Enable audio & Start polling once (user gesture)
+  - Polls FIREBASE_URL and expects JSON: either { text: "...", ts: ... } OR { index: N, ts: ... }
+  - If text provided: searches T1.TXT for exact match (case-insensitive) and plays /audio/XXXX.mp3 (XXXX = 0001..9999)
+  - If index provided: directly plays /audio/XXXX.mp3 (no lookup)
 */
 
-const BASE_GAIN = 1.5; // <-- change this constant to set default loudness (1.0 = original volume). Try 1.25,1.5,2.0
-// Optional: default slider multiplier (user can change)
-const DEFAULT_SLIDER = 1.0;
+const FIREBASE_DEFAULT = "https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/message.json";
+const POLL_INTERVAL_MS = 1000; // 1s
 
-(() => {
-  // UI elements
-  const fileInput = document.getElementById('fileInput');
-  const reloadTxtBtn = document.getElementById('reloadTxt');
-  const txtInfo = document.getElementById('txtInfo');
-  const audioBaseEl = document.getElementById('audioBase');
-  const searchInput = document.getElementById('searchInput');
-  const playBtn = document.getElementById('playBtn');
-  const previewBtn = document.getElementById('previewBtn');
-  const statusEl = document.getElementById('status');
-  const logEl = document.getElementById('log');
-  const firebaseUrlEl = document.getElementById('firebaseUrl');
-  const startPollBtn = document.getElementById('startPoll');
-  const stopPollBtn = document.getElementById('stopPoll');
-  const gainSlider = document.getElementById('gainSlider');
-  const gainVal = document.getElementById('gainVal');
-  const baseGainLabel = document.getElementById('baseGainLabel');
-  const muteBtn = document.getElementById('muteBtn');
+// UI
+const fileInput = document.getElementById('fileInput');
+const reloadTxtBtn = document.getElementById('reloadTxt');
+const txtInfo = document.getElementById('txtInfo');
+const audioBaseEl = document.getElementById('audioBase');
+const firebaseUrlEl = document.getElementById('firebaseUrl');
+const enableBtn = document.getElementById('enableBtn');
+const stopBtn = document.getElementById('stopBtn');
+const previewBtn = document.getElementById('previewBtn');
+const gainSlider = document.getElementById('gainSlider');
+const gainVal = document.getElementById('gainVal');
+const statusEl = document.getElementById('status');
+const logEl = document.getElementById('log');
 
-  // runtime state
-  let lines = [];
-  let pollingHandle = null;
-  let lastFirebaseTs = null;
-  let audioPlaying = null;
-  let audioCtx = null;
-  let masterGainNode = null;
-  let currentMediaSource = null;
-  let isMuted = false;
+let lines = []; // from T1.TXT
+let pollHandle = null;
+let lastTs = null;
+let audioCtx = null;
+let masterGain = null;
+let currentAudio = null;
 
-  // show BASE_GAIN
-  baseGainLabel.textContent = BASE_GAIN.toFixed(2);
+function log(msg) {
+  const t = new Date().toLocaleTimeString();
+  logEl.textContent = `[${t}] ${msg}\n` + logEl.textContent;
+}
+function setStatus(s) { statusEl.textContent = 'Status: ' + s; log(s); }
+function pad4(n){ return String(n).padStart(4,'0'); }
 
-  // init slider
-  gainSlider.value = DEFAULT_SLIDER;
-  gainVal.textContent = `Gain x${(BASE_GAIN * gainSlider.value).toFixed(2)}`;
-
-  function log(msg) {
-    const t = new Date().toLocaleTimeString();
-    logEl.textContent = `[${t}] ${msg}\n` + logEl.textContent;
+// load /T1.TXT from site root
+async function fetchRemoteTxt() {
+  setStatus('Fetching /T1.TXT ...');
+  try {
+    const r = await fetch('/T1.TXT', { cache: 'no-store' });
+    if (!r.ok) { setStatus('/T1.TXT not found on site (HTTP ' + r.status + ')'); return false; }
+    const txt = await r.text();
+    parseTxt(txt);
+    setStatus(`Loaded /T1.TXT (${lines.length} entries)`);
+    return true;
+  } catch (err) {
+    setStatus('Fetch /T1.TXT failed: ' + err.message);
+    return false;
   }
+}
+function parseTxt(txt) {
+  const raw = txt.split(/\r?\n/);
+  lines = raw.map(l => l.trim()).filter(l => l.length>0);
+  log('Parsed lines: ' + lines.length);
+}
 
-  function setStatus(s) {
-    statusEl.textContent = 'Status: ' + s;
-    log(s);
+// local file input
+fileInput.addEventListener('change', async (ev) => {
+  const f = ev.target.files && ev.target.files[0];
+  if (!f) return;
+  setStatus('Reading local file ' + f.name);
+  try {
+    const txt = await f.text();
+    parseTxt(txt);
+    setStatus(`Loaded local ${f.name} (${lines.length} lines)`);
+  } catch (err) {
+    setStatus('Read file failed: ' + err.message);
   }
+});
+reloadTxtBtn.addEventListener('click', fetchRemoteTxt);
 
-  function pad4(n){ return String(n).padStart(4,'0'); }
+// audio context and gain
+function ensureAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = parseFloat(gainSlider.value || 1.0);
+  masterGain.connect(audioCtx.destination);
+  log('AudioContext created. base gain=' + masterGain.gain.value.toFixed(2));
+}
+gainSlider.addEventListener('input', () => {
+  const v = parseFloat(gainSlider.value);
+  gainVal.textContent = `Gain x${v.toFixed(2)}`;
+  if (masterGain) masterGain.gain.setValueAtTime(v, audioCtx.currentTime);
+});
 
-  // WebAudio initialization on first user gesture
-  function ensureAudioContext() {
-    if (audioCtx && masterGainNode) return;
-    // Create audio context
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    masterGainNode = audioCtx.createGain();
-    // base gain = BASE_GAIN * sliderValue
-    masterGainNode.gain.value = BASE_GAIN * parseFloat(gainSlider.value || 1.0);
-    masterGainNode.connect(audioCtx.destination);
-    log('AudioContext created, base gain = ' + masterGainNode.gain.value.toFixed(2));
-  }
-
-  // Update gain when slider changes
-  gainSlider.addEventListener('input', () => {
-    const slider = parseFloat(gainSlider.value);
-    const effective = BASE_GAIN * slider;
-    gainVal.textContent = `Gain x${effective.toFixed(2)}`;
-    if (masterGainNode) {
-      masterGainNode.gain.setValueAtTime(effective, audioCtx.currentTime);
+// create and connect <audio> element to WebAudio
+function makeAudioElement(url) {
+  ensureAudio();
+  const a = new Audio(url);
+  a.crossOrigin = "anonymous";
+  try {
+    // disconnect previous if any
+    if (currentAudio && currentAudio.mediaSource) {
+      try { currentAudio.mediaSource.disconnect(); } catch(e) {}
+      currentAudio.mediaSource = null;
     }
-  });
-
-  muteBtn.addEventListener('click', () => {
-    isMuted = !isMuted;
-    muteBtn.textContent = isMuted ? 'Unmute' : 'Mute';
-    if (masterGainNode) {
-      masterGainNode.gain.setValueAtTime(isMuted ? 0.0 : BASE_GAIN * parseFloat(gainSlider.value), audioCtx.currentTime);
-    }
-  });
-
-  // parse T1.TXT
-  function parseTxtContent(txt) {
-    const raw = txt.split(/\r?\n/);
-    lines = raw.map(l => l.replace(/\r/g,'').trim()).filter(l => l.length > 0);
-    log('Parsed lines: ' + lines.length);
+    const src = audioCtx.createMediaElementSource(a);
+    src.connect(masterGain);
+    a._mediaSource = src;
+  } catch (err) {
+    // cross-origin or already connected issues, fall back to element volume
+    console.warn('MediaElementSource failed:', err);
+    a.volume = parseFloat(gainSlider.value);
   }
+  return a;
+}
 
-  // fetch remote /T1.TXT
-  async function fetchRemoteTxt() {
-    setStatus('Fetching /T1.TXT ...');
-    try {
-      const r = await fetch('/T1.TXT', { cache: 'no-store' });
-      if (!r.ok) {
-        setStatus('No /T1.TXT found (HTTP ' + r.status + ')');
-        return false;
-      }
-      const txt = await r.text();
-      parseTxtContent(txt);
-      setStatus(`Loaded /T1.TXT (${lines.length} lines)`);
-      return true;
-    } catch (err) {
-      setStatus('Fetch /T1.TXT failed: ' + err.message);
-      return false;
-    }
+async function playFileByIndex(idx) {
+  if (idx <= 0) { setStatus('Invalid index'); return; }
+  const name = pad4(idx) + '.mp3';
+  let base = audioBaseEl.value.trim() || '/audio/';
+  if (!base.endsWith('/')) base += '/';
+  const url = (base.startsWith('http') ? base : base) + name + '?ts=' + Date.now();
+  setStatus('Playing ' + name + ' → ' + url);
+  try {
+    if (currentAudio) { try { currentAudio.pause(); } catch(e){} currentAudio = null; }
+    const a = makeAudioElement(url);
+    currentAudio = a;
+    // resume audio context if suspended
+    if (audioCtx && audioCtx.state === 'suspended') try { await audioCtx.resume(); } catch(e){}
+    // play
+    await a.play();
+    a.onended = () => setStatus('Finished ' + name);
+    a.onerror = () => setStatus('Playback error ' + name);
+  } catch (err) {
+    setStatus('Play failed: ' + err.message);
+    console.error(err);
   }
+}
 
-  // local file input
-  fileInput.addEventListener('change', async (ev) => {
-    const f = ev.target.files && ev.target.files[0];
-    if (!f) return;
-    setStatus('Reading local file ' + f.name);
-    try {
-      const txt = await f.text();
-      parseTxtContent(txt);
-      setStatus(`Loaded local ${f.name} (${lines.length} lines)`);
-    } catch (err) { setStatus('Read file failed: ' + err.message); }
-  });
-
-  reloadTxtBtn.addEventListener('click', async () => { await fetchRemoteTxt(); });
-
-  // find 1-based index
-  function findIndexForKey(key) {
-    if (!key || !key.trim()) return -1;
-    const k = key.trim().toLowerCase();
-    for (let i = 0; i < lines.length; ++i) {
-      if ((lines[i] || '').toLowerCase() === k) return i + 1;
-    }
-    return -1;
+// search text in lines -> 1-based index
+function findIndexForText(text) {
+  if (!text) return -1;
+  const k = text.trim().toLowerCase();
+  for (let i=0;i<lines.length;i++){
+    if ((lines[i]||'').toLowerCase() === k) return i+1;
   }
+  return -1;
+}
 
-  // create audio element and connect to WebAudio gain node
-  function createAndConnectAudio(url) {
-    ensureAudioContext(); // create AudioContext on first use (must be triggered by user gesture ideally)
-    // create element
-    const el = new Audio(url);
-    el.crossOrigin = "anonymous"; // allow cross-origin if hosted elsewhere
-    // create MediaElementSource
-    try {
-      // if there was a previous media source, disconnect it
-      if (currentMediaSource) {
-        try { currentMediaSource.disconnect(); } catch(e) {}
-        currentMediaSource = null;
-      }
-      currentMediaSource = audioCtx.createMediaElementSource(el);
-      currentMediaSource.connect(masterGainNode);
-    } catch (err) {
-      // Some browsers don't allow multiple createMediaElementSource or require same-origin;
-      console.warn('Could not create MediaElementSource or connect: ', err);
-      // fallback: set element.volume (limited to <=1.0)
-      el.volume = Math.min(1.0, BASE_GAIN * parseFloat(gainSlider.value));
-    }
-    return el;
+// handle incoming firebase payload
+async function handleMessageObject(obj) {
+  if (!obj) return;
+  // if contains index field, use it directly
+  if (typeof obj.index === 'number') {
+    await playFileByIndex(obj.index);
+    return;
   }
-
-  // play by index (0001.mp3 ...)
-  async function playIndex(idx) {
-    if (idx <= 0) { setStatus('Invalid index to play'); return; }
-    const filename = pad4(idx) + '.mp3';
-    let base = audioBaseEl.value.trim() || '/audio/';
-    if (!base.endsWith('/')) base += '/';
-    const url = (base.startsWith('http') ? base : '') + base.replace(/^\/+/,'/') + filename;
-    // fix for relative url: if base is '/audio/', we want '/audio/0001.mp3'
-    const resolvedUrl = base.startsWith('http') ? (base + filename) : (base + filename);
-    setStatus('Playing ' + filename + ' → ' + resolvedUrl);
-    try {
-      // stop previous element
-      if (audioPlaying) {
-        try { audioPlaying.pause(); audioPlaying.src = ""; } catch(e){}
-        audioPlaying = null;
-      }
-      // create audio & connect
-      audioPlaying = createAndConnectAudio(resolvedUrl + '?ts=' + Date.now());
-      audioPlaying.onended = () => { setStatus('Finished ' + filename); audioPlaying = null; };
-      audioPlaying.onerror = (e) => { setStatus('Playback error for ' + filename); console.error(e); audioPlaying = null; };
-      audioPlaying.currentTime = 0;
-      // browsers may block play if AudioContext is suspended; resume it
-      try {
-        if (audioCtx && audioCtx.state === 'suspended') {
-          await audioCtx.resume();
-        }
-      } catch(e) { console.warn('resume failed', e); }
-      await audioPlaying.play();
-    } catch (err) {
-      setStatus('Play failed: ' + err.message);
-      console.error(err);
-    }
+  // otherwise use text lookup
+  const text = (typeof obj.text === 'string') ? obj.text : (typeof obj.message === 'string' ? obj.message : null);
+  if (!text) return;
+  const idx = findIndexForText(text);
+  if (idx > 0) {
+    await playFileByIndex(idx);
+  } else {
+    setStatus(`Text not found in T1.TXT: "${text}"`);
+    log('Received text not found: ' + text);
   }
+}
 
-  async function searchAndPlay(phrase) {
-    if (!phrase || !phrase.trim()) { setStatus('Empty search'); return; }
-    const idx = findIndexForKey(phrase);
-    if (idx < 0) { setStatus(`Not found: "${phrase}"`); return; }
-    setStatus(`Found "${phrase}" at line ${idx} → playing`);
-    await playIndex(idx);
-  }
-
-  // UI wiring
-  playBtn.addEventListener('click', async (ev) => {
-    // user gesture - ensure audio context created/resumed
-    ensureAudioContext();
-    try { if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume(); } catch(e){}
-    const t = searchInput.value;
-    searchAndPlay(t);
-  });
-
-  searchInput.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') playBtn.click(); });
-  previewBtn.addEventListener('click', async () => {
-    ensureAudioContext();
-    try { if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume(); } catch(e){}
-    playIndex(1);
-  });
-
-  // Firebase polling (optional)
-  startPollBtn.addEventListener('click', () => {
-    const url = firebaseUrlEl.value.trim();
-    if (!url) { alert('Paste your Firebase /message.json URL first'); return; }
-    if (pollingHandle) { alert('Already polling'); return; }
-    lastFirebaseTs = null;
-    setStatus('Starting Firebase poll: ' + url);
-    pollingHandle = setInterval(async () => {
-      try {
-        const r = await fetch(url, { cache: 'no-store' });
-        if (!r.ok) { setStatus('Firebase fetch failed: ' + r.status); return; }
-        const j = await r.json();
-        if (!j) return;
-        const text = (typeof j.text === 'string') ? j.text : (typeof j.message === 'string' ? j.message : null);
-        const ts = j.ts || j.timestamp || null;
-        if (!text) return;
-        if (ts !== null) {
-          if (ts !== lastFirebaseTs) {
-            lastFirebaseTs = ts;
-            log('Firebase new msg: ' + text);
-            // ensure audio context resumed by user previously
-            await searchAndPlay(text);
-          }
-        } else {
-          if (text !== window.__lastFirebaseText) {
-            window.__lastFirebaseText = text;
-            log('Firebase new (no-ts): ' + text);
-            await searchAndPlay(text);
-          }
-        }
-      } catch (err) {
-        console.warn('Firebase poll error', err);
-      }
-    }, 1000);
-    startPollBtn.disabled = true;
-    stopPollBtn.disabled = false;
-  });
-
-  stopPollBtn.addEventListener('click', () => {
-    if (pollingHandle) { clearInterval(pollingHandle); pollingHandle = null; }
-    setStatus('Stopped Firebase poll');
-    startPollBtn.disabled = false;
-    stopPollBtn.disabled = true;
-  });
-
-  // initial attempt to load /T1.TXT on page load
-  (async function init() {
-    const ok = await fetchRemoteTxt();
-    if (!ok) {
-      txtInfo.innerHTML = '<small>/T1.TXT not found on server — you can upload a local file above.</small>';
-    } else {
-      txtInfo.innerHTML = `<small>Loaded /T1.TXT — ${lines.length} entries.</small>`;
+// polling loop
+async function pollOnce() {
+  const url = (firebaseUrlEl.value.trim() || FIREBASE_DEFAULT);
+  try {
+    const r = await fetch(url, { cache: 'no-store' });
+    if (!r.ok) { setStatus('Firebase fetch failed: ' + r.status); return; }
+    const j = await r.json();
+    // detect change via ts or whole object string
+    const t = j && (j.ts || j.timestamp || JSON.stringify(j));
+    if (!t) return;
+    if (String(t) !== String(lastTs)) {
+      lastTs = t;
+      log('New firebase message: ' + JSON.stringify(j));
+      await handleMessageObject(j);
     }
-    setStatus('Ready. Enter search term and press Play (or enable Firebase poll).');
-  })();
+  } catch (err) {
+    console.warn('poll error', err);
+    setStatus('Poll error: ' + err.message);
+  }
+}
 
+// start / stop polling
+enableBtn.addEventListener('click', async () => {
+  // user gesture: create/resume audio context
+  ensureAudio();
+  try { if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume(); } catch(e){}
+  // try load remote T1.TXT if empty
+  if (!lines.length) await fetchRemoteTxt();
+  // start poll
+  if (!pollHandle) {
+    pollHandle = setInterval(pollOnce, POLL_INTERVAL_MS);
+    setStatus('Polling started (every ' + (POLL_INTERVAL_MS/1000) + 's)');
+    enableBtn.disabled = true;
+    stopBtn.disabled = false;
+  }
+});
+stopBtn.addEventListener('click', () => {
+  if (pollHandle) { clearInterval(pollHandle); pollHandle = null; setStatus('Polling stopped'); enableBtn.disabled = false; stopBtn.disabled = true; }
+});
+previewBtn.addEventListener('click', () => { ensureAudio(); playFileByIndex(1); });
+
+// init: try load remote T1.TXT
+(async function init(){
+  firebaseUrlEl.value = firebaseUrlEl.value || FIREBASE_DEFAULT;
+  const ok = await fetchRemoteTxt();
+  if (!ok) txtInfo.textContent = '/T1.TXT not found on server — upload local file or add to site.';
+  else txtInfo.textContent = `Loaded /T1.TXT (${lines.length} entries)`;
+  setStatus('Ready. Click "Enable audio & Start polling" to begin (one user gesture required).');
 })();
 </script>
 </body>
