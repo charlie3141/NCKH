@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Gangtay — auto play from Firebase</title>
+<title>Gangtay — Auto Play from Firebase (patched)</title>
 <style>
   body{font-family:system-ui,Arial;padding:18px;max-width:900px;margin:auto}
   h1{font-size:1.3rem;margin-bottom:.2rem}
@@ -15,11 +15,12 @@
   #status{margin-top:10px;color:#333}
   #log{white-space:pre-wrap;font-family:monospace;margin-top:10px;background:#f6f6f6;padding:8px;border-radius:6px;max-height:240px;overflow:auto}
   .controls{display:flex;gap:8px;align-items:center;margin-top:8px}
+  small{color:#666}
 </style>
 </head>
 <body>
-  <h1>Gangtay — Auto Play từ Firebase</h1>
-  <p class="muted">Nhấn <strong>Enable audio & Start</strong> 1 lần để cấp quyền phát âm thanh. Sau đó trang sẽ poll Firebase mỗi 1s và tự phát file tương ứng.</p>
+  <h1>Gangtay — Auto Play từ Firebase (patched)</h1>
+  <p class="muted">Nhấn <strong>Enable audio & Start</strong> 1 lần để cấp quyền phát âm thanh. Nếu trình duyệt chặn, sử dụng nút <strong>Manual Play</strong> để cho phép. Sau đó trang sẽ poll Firebase mỗi 1s và tự phát file tương ứng.</p>
 
   <label>1) T1.TXT (mỗi dòng 1 từ) — site root /T1.TXT hoặc upload local</label>
   <div class="row">
@@ -51,17 +52,18 @@
 
 <script>
 /*
-  Auto-play page:
-  - Click Enable audio & Start polling once (user gesture)
-  - Polls FIREBASE_URL and expects JSON: either { text: "...", ts: ... } OR { index: N, ts: ... }
-  - If text provided: searches T1.TXT for exact match (case-insensitive) and plays /audio/XXXX.mp3 (XXXX = 0001..9999)
-  - If index provided: directly plays /audio/XXXX.mp3 (no lookup)
+ Full patched page:
+  - unlockAudio() attempts to resume/unlock WebAudio using a silent buffer (works for iOS/Chrome).
+  - If unlocking fails, adds a Manual Play button to request permission via a user tap.
+  - Polls Firebase every 1s after unlock and plays audio files /audio/0001.mp3 ... based on either received `index` or `text` (looked up in T1.TXT).
+  - Uses WebAudio GainNode to control loudness (gain slider).
 */
 
+// Configuration
 const FIREBASE_DEFAULT = "https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/message.json";
-const POLL_INTERVAL_MS = 1000; // 1s
+const POLL_INTERVAL_MS = 1000;
 
-// UI
+// UI Elements
 const fileInput = document.getElementById('fileInput');
 const reloadTxtBtn = document.getElementById('reloadTxt');
 const txtInfo = document.getElementById('txtInfo');
@@ -75,13 +77,15 @@ const gainVal = document.getElementById('gainVal');
 const statusEl = document.getElementById('status');
 const logEl = document.getElementById('log');
 
-let lines = []; // from T1.TXT
+let lines = [];            // T1.TXT lines
 let pollHandle = null;
 let lastTs = null;
 let audioCtx = null;
 let masterGain = null;
 let currentAudio = null;
+let manualPlayBtn = null;
 
+// util
 function log(msg) {
   const t = new Date().toLocaleTimeString();
   logEl.textContent = `[${t}] ${msg}\n` + logEl.textContent;
@@ -89,7 +93,7 @@ function log(msg) {
 function setStatus(s) { statusEl.textContent = 'Status: ' + s; log(s); }
 function pad4(n){ return String(n).padStart(4,'0'); }
 
-// load /T1.TXT from site root
+// T1.TXT loading
 async function fetchRemoteTxt() {
   setStatus('Fetching /T1.TXT ...');
   try {
@@ -125,8 +129,8 @@ fileInput.addEventListener('change', async (ev) => {
 });
 reloadTxtBtn.addEventListener('click', fetchRemoteTxt);
 
-// audio context and gain
-function ensureAudio() {
+// WebAudio creation & gain control
+function createAudioContextIfNeeded() {
   if (audioCtx) return;
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   masterGain = audioCtx.createGain();
@@ -137,55 +141,132 @@ function ensureAudio() {
 gainSlider.addEventListener('input', () => {
   const v = parseFloat(gainSlider.value);
   gainVal.textContent = `Gain x${v.toFixed(2)}`;
-  if (masterGain) masterGain.gain.setValueAtTime(v, audioCtx.currentTime);
+  if (masterGain && audioCtx) masterGain.gain.setValueAtTime(v, audioCtx.currentTime);
 });
 
-// create and connect <audio> element to WebAudio
-function makeAudioElement(url) {
-  ensureAudio();
-  const a = new Audio(url);
-  a.crossOrigin = "anonymous";
+// unlock helper — creates a silent buffer and resumes context (user gesture required)
+async function unlockAudio() {
   try {
-    // disconnect previous if any
-    if (currentAudio && currentAudio.mediaSource) {
-      try { currentAudio.mediaSource.disconnect(); } catch(e) {}
-      currentAudio.mediaSource = null;
+    createAudioContextIfNeeded();
+    if (audioCtx.state === 'running') return true;
+    // create 1-sample silent buffer, play it
+    const buf = audioCtx.createBuffer(1, 1, 22050);
+    const src = audioCtx.createBufferSource();
+    src.buffer = buf;
+    src.connect(masterGain);
+    src.start(0);
+    // try resume too
+    await audioCtx.resume();
+    // small delay
+    await new Promise(r => setTimeout(r, 20));
+    log('unlockAudio result: ' + audioCtx.state);
+    return (audioCtx.state === 'running');
+  } catch (e) {
+    console.warn('unlockAudio failed', e);
+    return false;
+  }
+}
+
+// fallback Manual Play flow: create a visible manual button that the user taps once
+function ensureManualPlayButton() {
+  if (manualPlayBtn) return manualPlayBtn;
+  manualPlayBtn = document.createElement('button');
+  manualPlayBtn.id = 'manualPlayBtn';
+  manualPlayBtn.textContent = 'Manual Play (tap once)';
+  manualPlayBtn.style.marginLeft = '8px';
+  enableBtn.parentNode.insertBefore(manualPlayBtn, stopBtn);
+  manualPlayBtn.addEventListener('click', async () => {
+    log('Manual Play button tapped — attempting to unlock audio');
+    // try playing a tiny muted element first (some browsers require HTMLAudio)
+    try {
+      const a = new Audio();
+      // tiny silent data URI (very short). Some browsers may reject; mutate approach by setting muted true
+      a.muted = true;
+      // no src required for some browsers, but set one to be safe (some require a playable element)
+      // If you prefer, set a small valid base64 mp3; but muted play often enough to unlock.
+      try { await a.play(); } catch(e){ /* ignore */ }
+    } catch(e) { /* ignore */ }
+    const ok = await unlockAudio();
+    if (ok) {
+      setStatus('Audio unlocked (manual). Starting polling...');
+      startPollingAfterUnlock();
+      try { manualPlayBtn.remove(); } catch(e){}
+    } else {
+      setStatus('Audio still blocked. Check site permissions for sound.');
+    }
+  });
+  return manualPlayBtn;
+}
+
+// create audio element and connect to WebAudio GainNode (if possible)
+function makeAudioElement(url) {
+  createAudioContextIfNeeded();
+  const a = new Audio(url);
+  a.crossOrigin = "anonymous"; // allow cross-origin if CORS enabled
+  try {
+    // disconnect previous media source if any
+    if (currentAudio && currentAudio._mediaSource) {
+      try { currentAudio._mediaSource.disconnect(); } catch(e) {}
+      currentAudio._mediaSource = null;
     }
     const src = audioCtx.createMediaElementSource(a);
     src.connect(masterGain);
     a._mediaSource = src;
   } catch (err) {
-    // cross-origin or already connected issues, fall back to element volume
-    console.warn('MediaElementSource failed:', err);
-    a.volume = parseFloat(gainSlider.value);
+    // fallback to element volume (may be limited to <=1.0)
+    console.warn('MediaElementSource/connect failed:', err);
+    a.volume = Math.min(1.0, parseFloat(gainSlider.value || 1.0));
   }
   return a;
 }
 
+// play file by numeric index (1-based)
 async function playFileByIndex(idx) {
   if (idx <= 0) { setStatus('Invalid index'); return; }
   const name = pad4(idx) + '.mp3';
   let base = audioBaseEl.value.trim() || '/audio/';
   if (!base.endsWith('/')) base += '/';
+  // support full http(s) base or relative
   const url = (base.startsWith('http') ? base : base) + name + '?ts=' + Date.now();
   setStatus('Playing ' + name + ' → ' + url);
   try {
-    if (currentAudio) { try { currentAudio.pause(); } catch(e){} currentAudio = null; }
+    if (currentAudio) { try { currentAudio.pause(); currentAudio.src = ""; } catch(e){} currentAudio = null; }
     const a = makeAudioElement(url);
     currentAudio = a;
-    // resume audio context if suspended
-    if (audioCtx && audioCtx.state === 'suspended') try { await audioCtx.resume(); } catch(e){}
-    // play
-    await a.play();
-    a.onended = () => setStatus('Finished ' + name);
-    a.onerror = () => setStatus('Playback error ' + name);
+    // resume context if suspended
+    if (audioCtx && audioCtx.state === 'suspended') {
+      try { await audioCtx.resume(); } catch(e){}
+    }
+    const playOk = await tryPlayElement(a);
+    if (!playOk) {
+      setStatus('Play failed: blocked by browser. Show Manual Play button.');
+      ensureManualPlayButton();
+    } else {
+      a.onended = () => { setStatus('Finished ' + name); currentAudio = null; };
+      a.onerror = (e) => { setStatus('Playback error ' + name); console.error(e); currentAudio = null; };
+    }
   } catch (err) {
-    setStatus('Play failed: ' + err.message);
+    setStatus('Play failed: ' + (err && err.message ? err.message : err));
     console.error(err);
   }
 }
 
-// search text in lines -> 1-based index
+// wrapper to try playing and detect rejection
+async function tryPlayElement(el) {
+  try {
+    // ensure audio context resumed
+    if (audioCtx && audioCtx.state === 'suspended') {
+      try { await audioCtx.resume(); } catch(e){}
+    }
+    await el.play();
+    return true;
+  } catch (err) {
+    console.warn('play rejected', err);
+    return false;
+  }
+}
+
+// find index from text (case-insensitive exact match)
 function findIndexForText(text) {
   if (!text) return -1;
   const k = text.trim().toLowerCase();
@@ -195,15 +276,13 @@ function findIndexForText(text) {
   return -1;
 }
 
-// handle incoming firebase payload
+// process firebase payload: supports { index: N, ts: ... } or { text: "...", ts: ... }
 async function handleMessageObject(obj) {
   if (!obj) return;
-  // if contains index field, use it directly
   if (typeof obj.index === 'number') {
     await playFileByIndex(obj.index);
     return;
   }
-  // otherwise use text lookup
   const text = (typeof obj.text === 'string') ? obj.text : (typeof obj.message === 'string' ? obj.message : null);
   if (!text) return;
   const idx = findIndexForText(text);
@@ -212,17 +291,18 @@ async function handleMessageObject(obj) {
   } else {
     setStatus(`Text not found in T1.TXT: "${text}"`);
     log('Received text not found: ' + text);
+    // show manual play fallback
+    ensureManualPlayButton();
   }
 }
 
-// polling loop
+// single poll action
 async function pollOnce() {
   const url = (firebaseUrlEl.value.trim() || FIREBASE_DEFAULT);
   try {
     const r = await fetch(url, { cache: 'no-store' });
     if (!r.ok) { setStatus('Firebase fetch failed: ' + r.status); return; }
     const j = await r.json();
-    // detect change via ts or whole object string
     const t = j && (j.ts || j.timestamp || JSON.stringify(j));
     if (!t) return;
     if (String(t) !== String(lastTs)) {
@@ -236,27 +316,52 @@ async function pollOnce() {
   }
 }
 
-// start / stop polling
-enableBtn.addEventListener('click', async () => {
-  // user gesture: create/resume audio context
-  ensureAudio();
-  try { if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume(); } catch(e){}
-  // try load remote T1.TXT if empty
-  if (!lines.length) await fetchRemoteTxt();
-  // start poll
+// start polling after unlocking
+function startPollingAfterUnlock() {
   if (!pollHandle) {
+    // try load remote T1.TXT if not loaded
+    if (!lines.length) fetchRemoteTxt().catch(e => console.warn(e));
     pollHandle = setInterval(pollOnce, POLL_INTERVAL_MS);
     setStatus('Polling started (every ' + (POLL_INTERVAL_MS/1000) + 's)');
     enableBtn.disabled = true;
     stopBtn.disabled = false;
   }
+}
+
+// Enable button handler (replaces old flow) - attempts unlock; if blocked, shows manual button
+enableBtn.addEventListener('click', async () => {
+  setStatus('Attempting to enable audio (user gesture)...');
+  createAudioContextIfNeeded();
+  const ok = await unlockAudio();
+  if (!ok) {
+    setStatus('Audio locked by browser. Showing Manual Play button.');
+    ensureManualPlayButton();
+    // still start polling so logs are visible, but do not auto-play until manual unlock
+    if (!pollHandle) {
+      pollHandle = setInterval(pollOnce, POLL_INTERVAL_MS);
+      setStatus('Polling started (but playback may be blocked until unlocked).');
+      enableBtn.disabled = true;
+      stopBtn.disabled = false;
+    }
+    return;
+  }
+  // unlocked OK
+  setStatus('Audio unlocked. Starting polling...');
+  startPollingAfterUnlock();
 });
+
+// Stop polling
 stopBtn.addEventListener('click', () => {
   if (pollHandle) { clearInterval(pollHandle); pollHandle = null; setStatus('Polling stopped'); enableBtn.disabled = false; stopBtn.disabled = true; }
 });
-previewBtn.addEventListener('click', () => { ensureAudio(); playFileByIndex(1); });
 
-// init: try load remote T1.TXT
+// Preview 0001
+previewBtn.addEventListener('click', () => {
+  createAudioContextIfNeeded();
+  playFileByIndex(1);
+});
+
+// initial attempt to fetch /T1.TXT
 (async function init(){
   firebaseUrlEl.value = firebaseUrlEl.value || FIREBASE_DEFAULT;
   const ok = await fetchRemoteTxt();
@@ -264,6 +369,7 @@ previewBtn.addEventListener('click', () => { ensureAudio(); playFileByIndex(1); 
   else txtInfo.textContent = `Loaded /T1.TXT (${lines.length} entries)`;
   setStatus('Ready. Click "Enable audio & Start polling" to begin (one user gesture required).');
 })();
+
 </script>
 </body>
 </html>
