@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Gangtay — play duplicates (faster)</title>
+<title>Gangtay — play duplicates (fixed start/stop)</title>
 <style>
   body{font-family:system-ui,Arial;padding:18px;max-width:980px;margin:auto}
   h1{font-size:1.2rem}
@@ -20,8 +20,8 @@
 </style>
 </head>
 <body>
-  <h1>Gangtay — play duplicates (faster)</h1>
-  <p class="muted">This version plays identical Firebase messages repeatedly and polls faster. Press <strong>Enable audio & Start polling</strong> (or tap the page) to unlock mobile audio.</p>
+  <h1>Gangtay — play duplicates (fixed start/stop)</h1>
+  <p class="muted">This version fixes a polling-start bug so the Enable/Stop buttons behave correctly. Press <strong>Enable audio & Start polling</strong> (or tap the page) to unlock mobile audio.</p>
 
   <label>1) T1.TXT (site root /T1.TXT or upload local)</label>
   <div class="row">
@@ -67,21 +67,18 @@
   <div id="log"></div>
 
 <script>
-/* Play duplicates + faster polling
- - POLL_BASE_MS 500ms, faster fetch timeout, higher queue cap
- - allowReplay default ON and cooldown default 0 (play duplicates)
- - removed strict lastFirebaseTs block so identical messages are honored
- - still keeps decodeAudioData compatibility for iOS
+/* Fixed: ensure polling cannot be started twice and stop reliably cancels future polls.
+   Based on the 'play duplicates (faster)' version with start/stop fixes.
 */
 
 // Tunables
-const POLL_BASE_MS = 500;   // faster polling
-const POLL_MAX_MS = 8000;   // backoff cap (keeps recovery fast)
+const POLL_BASE_MS = 500;
+const POLL_MAX_MS = 8000;
 const FETCH_TIMEOUT_MS = 4000;
 const MAX_QUEUE_LENGTH = 50;
 const SUPPRESS_HEARTBEAT_MS = 30000;
 
-// UI elements
+// UI
 const fileInput = document.getElementById('fileInput');
 const reloadTxtBtn = document.getElementById('reloadTxt');
 const txtInfo = document.getElementById('txtInfo');
@@ -110,12 +107,13 @@ let currentAudio = null;
 let pollTimer = null;
 let pollIntervalMs = POLL_BASE_MS;
 let consecutivePollErrors = 0;
+let pollingActive = false;  // <-- key flag preventing multiple starts
 
 // Queue + dedupe
-let pendingQueue = [];    // {key, type, value}
-let pendingSet = new Set(); // keys queued
-let lastPlayTimes = {};   // key -> timestamp(ms)
-let lastSuppressLog = {}; // key -> timestamp(ms)
+let pendingQueue = [];
+let pendingSet = new Set();
+let lastPlayTimes = {};
+let lastSuppressLog = {};
 let isPlaying = false;
 let unlocked = false;
 
@@ -305,7 +303,7 @@ async function playFileByIndex(idx) {
   }
 }
 
-// concurrency-safe wrapper with short cooldown
+// concurrency-safe wrapper
 async function playIndexSafely(idx) {
   if (pendingQueue.length >= MAX_QUEUE_LENGTH) {
     log('Queue full, dropping: i:' + idx);
@@ -326,10 +324,8 @@ async function playIndexSafely(idx) {
   try {
     await playFileByIndex(idx);
   } catch(e){ console.warn(e); }
-  // very short gap (faster)
   await new Promise(r=>setTimeout(r, 120));
   isPlaying = false;
-  // flush next quickly
   if (pendingQueue.length > 0) {
     const next = pendingQueue.shift();
     pendingSet.delete(next.key);
@@ -367,10 +363,10 @@ function makePayloadKey(obj) {
 // shouldPlay: respect UI controls (allowReplay default ON)
 function shouldPlayPayload(key) {
   if (!key) return false;
-  if (allowReplayBox.checked) return true;       // play duplicates immediately
+  if (allowReplayBox.checked) return true;
   const cooldown = Math.max(0, Number(replayCooldownInput.value) || 0);
   if (cooldown === 0) {
-    return !(lastPlayTimes[key]); // play only if never played before
+    return !(lastPlayTimes[key]);
   } else {
     const last = lastPlayTimes[key] || 0;
     return (Date.now() - last) >= cooldown*1000;
@@ -385,7 +381,7 @@ function logSuppressed(key) {
   if (now - prev >= SUPPRESS_HEARTBEAT_MS) { log('Still receiving duplicate payload: ' + key + ' (suppressed)'); lastSuppressLog[key] = now; }
 }
 
-// Handle Firebase message object: **no lastFirebaseTs ignore** so duplicates play
+// Handle Firebase message object: duplicates respectful
 async function handleMessageObject(obj) {
   if (!obj) return;
   const key = makePayloadKey(obj);
@@ -428,8 +424,10 @@ async function fetchWithTimeout(url, opts={}, timeout=FETCH_TIMEOUT_MS){
   }
 }
 
-// Adaptive poll
+// Adaptive poll with safe scheduling checks
 async function pollOnceAdaptive(){
+  // if polling stopped in meantime, do nothing
+  if (!pollingActive) return;
   const url = firebaseUrlEl.value.trim();
   if (!url) { log('Firebase URL empty'); scheduleNextPoll(true); return; }
   try {
@@ -446,7 +444,6 @@ async function pollOnceAdaptive(){
       pollIntervalMs = POLL_BASE_MS;
       log('Firebase fetch OK — reset backoff');
     }
-    // ALWAYS pass the message to handler (duplicates will be played if UI allows)
     await handleMessageObject(j);
     scheduleNextPoll(false);
   } catch(err) {
@@ -457,6 +454,11 @@ async function pollOnceAdaptive(){
 }
 
 function scheduleNextPoll(errorRequested=false){
+  // if polling stopped, avoid scheduling anything
+  if (!pollingActive) {
+    log('scheduleNextPoll: polling inactive, abort scheduling');
+    return;
+  }
   if (errorRequested) {
     pollIntervalMs = Math.min(POLL_MAX_MS, Math.max(pollIntervalMs * 2, POLL_BASE_MS * Math.pow(2, consecutivePollErrors-1)));
   } else {
@@ -464,6 +466,8 @@ function scheduleNextPoll(errorRequested=false){
   }
   if (pollTimer) clearTimeout(pollTimer);
   pollTimer = setTimeout(()=>{
+    // check again (in case stop was pressed during wait)
+    if (!pollingActive) { log('Timer fired but polling inactive'); return; }
     if (isPlaying && pendingQueue.length >= MAX_QUEUE_LENGTH) {
       log('Skipping poll: playing & queue full');
       scheduleNextPoll(true);
@@ -472,21 +476,30 @@ function scheduleNextPoll(errorRequested=false){
     pollOnceAdaptive();
   }, pollIntervalMs);
 }
+
 function startAdaptivePolling(){
+  if (pollingActive) { log('Polling already active — start request ignored'); return; }
+  pollingActive = true;
   if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; }
   pollIntervalMs = POLL_BASE_MS;
   consecutivePollErrors = 0;
   log('Adaptive polling started (fast)');
-  pollTimer = setTimeout(pollOnceAdaptive, 0);
+  // schedule immediate call without creating overlapping timers
+  pollTimer = setTimeout(()=> { if (pollingActive) pollOnceAdaptive(); }, 0);
 }
+
 function stopAdaptivePolling(){
+  if (!pollingActive) { log('Polling already stopped'); return; }
+  pollingActive = false;
   if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; }
   log('Adaptive polling stopped');
 }
 
-// UI wiring
-enableBtn.addEventListener('click', async ()=>{
+// UI wiring with guards
+enableBtn.onclick = async () => {
+  if (pollingActive) { log('Enable pressed but polling already active'); return; }
   setStatus('Enable pressed — attempt unlock');
+  // attach single-time gesture unlock (so user can tap to unlock)
   document.addEventListener('touchstart', ()=>tryUnlockSequence(), {once:true, passive:true});
   document.addEventListener('click', ()=>tryUnlockSequence(), {once:true});
   const ok = await tryUnlockSequence();
@@ -497,17 +510,25 @@ enableBtn.addEventListener('click', async ()=>{
   startAdaptivePolling();
   enableBtn.disabled = true;
   stopBtn.disabled = false;
-});
-stopBtn.addEventListener('click', ()=> { stopAdaptivePolling(); enableBtn.disabled=false; stopBtn.disabled=true; });
-manualBtn.addEventListener('click', async ()=> {
+};
+
+stopBtn.onclick = () => {
+  stopAdaptivePolling();
+  enableBtn.disabled = false;
+  stopBtn.disabled = true;
+};
+
+manualBtn.onclick = async () => {
   setStatus('Manual Play tapped — attempt unlock');
   const ok = await tryUnlockSequence();
   if (ok) { setStatus('Unlocked (manual)'); hideManual(); }
-  else setStatus('Unlock failed — try tapping the page or check browser settings');
-});
-previewBtn.addEventListener('click', ()=> { createAudioCtxIfNeeded(); playIndexSafely(1); });
-clearQueueBtn.addEventListener('click', ()=> { pendingQueue=[]; pendingSet.clear(); log('Cleared queue'); });
-clearLogBtn.addEventListener('click', ()=> { logEl.textContent = ''; });
+  else setStatus('Manual unlock failed — try tapping the page or check settings');
+};
+
+previewBtn.onclick = () => { createAudioCtxIfNeeded(); playIndexSafely(1); };
+
+clearQueueBtn.onclick = () => { pendingQueue=[]; pendingSet.clear(); log('Cleared queue'); };
+clearLogBtn.onclick = () => { logEl.textContent = ''; };
 
 // Debug fetch+decode
 async function debugFetchDecodeOnce(filename) {
@@ -541,8 +562,8 @@ async function debugFetchDecodeOnce(filename) {
     try { src.start(); log('Debug playback started via AudioBufferSourceNode'); } catch(err) { log('Play start failed: ' + err); }
   } catch(err) { log('Debug fetch error: ' + err); }
 }
-debugFetchBtn.addEventListener('click', ()=> debugFetchDecodeOnce('0002.mp3'));
-debugFetchCustomBtn.addEventListener('click', ()=> { const fn = testFilenameInput.value.trim() || '0002.mp3'; debugFetchDecodeOnce(fn); });
+debugFetchBtn.onclick = ()=> debugFetchDecodeOnce('0002.mp3');
+debugFetchCustomBtn.onclick = ()=> { const fn = testFilenameInput.value.trim() || '0002.mp3'; debugFetchDecodeOnce(fn); };
 
 // Init
 (async function init(){
