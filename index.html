@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Gangtay — Replay control + stable auto play</title>
+<title>Gangtay — Replay control + stable auto play (decode compat)</title>
 <style>
   body{font-family:system-ui,Arial;padding:18px;max-width:980px;margin:auto}
   h1{font-size:1.2rem}
@@ -22,8 +22,8 @@
 </style>
 </head>
 <body>
-  <h1>Gangtay — Replay control + stable auto play</h1>
-  <p class="muted">Controls let you decide whether identical messages should replay. Tap <strong>Enable audio & Start polling</strong> once; if blocked, tap <strong>Manual Play</strong>.</p>
+  <h1>Gangtay — Replay control + stable auto play (decode compat)</h1>
+  <p class="muted">Controls let you decide whether identical messages should replay. Tap <strong>Enable audio & Start polling</strong> once; if blocked, tap <strong>Manual Play</strong>. Debug button uses a compatible decodeAudioData.</p>
 
   <label>1) T1.TXT (site root /T1.TXT or upload local)</label>
   <div class="row">
@@ -76,20 +76,17 @@
   <div id="log"></div>
 
 <script>
-/* Stable Auto Play with replay control
- - New settings: Allow replay checkbox and Replay cooldown (seconds)
- - Dedup logic honors those settings:
-    * if allowReplay === true => always process new incoming payloads (regardless of content)
-    * else: compare payload key to lastPlayTimes; if lastPlayTimes[key] is older than cooldown => allow play; otherwise ignore
- - Logging suppressed to avoid spam: first suppressed event logged, then heartbeat logs every 30s if repeats continue
- - Rest: robust unlocking, queue/flush, fetch+decode debug preserved
+/* Stable Auto Play with decodeAudioData compatibility
+   - decodeAudioDataCompat handles both Promise and callback flavors (fixes "Not enough arguments" on iOS)
+   - used in fetch+decode debug and buffer fallback
+   - rest of features (unlock, queue, dedupe, replay control) unchanged
 */
 
 const FIREBASE_DEFAULT = "https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/message.json";
 const POLL_INTERVAL_MS = 1000;
-const SUPPRESS_HEARTBEAT_MS = 30000; // when duplicate suppressed, log heartbeat at most every 30s
+const SUPPRESS_HEARTBEAT_MS = 30000; // used earlier; left for completeness
 
-// UI
+// UI elements
 const fileInput = document.getElementById('fileInput');
 const reloadTxtBtn = document.getElementById('reloadTxt');
 const txtInfo = document.getElementById('txtInfo');
@@ -118,17 +115,17 @@ let masterGain = null;
 let currentAudio = null;
 let pendingQueue = [];
 let pendingSet = new Set();
-let lastPlayTimes = {}; // key -> timestamp(ms) last actually played
-let lastSuppressLog = {}; // key -> timestamp(ms) last suppression log time
+let lastPlayTimes = {};
+let lastSuppressLog = {};
 let unlocked = false;
 
-// utilities
+// util
 function nowLabel(){ return new Date().toLocaleTimeString(); }
 function log(msg){ logEl.textContent = `[${nowLabel()}] ${msg}\n` + logEl.textContent; }
 function setStatus(s){ statusEl.textContent = 'Status: ' + s; log(s); }
 function pad4(n){ return String(n).padStart(4,'0'); }
 
-// T1.TXT
+// T1.TXT loading
 async function fetchRemoteTxt(){
   setStatus('Fetching /T1.TXT ...');
   try {
@@ -203,7 +200,39 @@ async function tryUnlockSequence(){
   return false;
 }
 
-// create element/connect
+/* decodeAudioData compatibility wrapper
+   some browsers (iOS Safari older) require callback form (decodeAudioData(buffer, success, error))
+   while others return a Promise. This function normalizes to Promise.
+*/
+function decodeAudioDataCompat(arrayBuffer) {
+  return new Promise((resolve, reject) => {
+    try {
+      // Try Promise-style first (modern browsers)
+      const p = audioCtx.decodeAudioData(arrayBuffer);
+      if (p && typeof p.then === 'function') {
+        p.then(resolve).catch(err => {
+          // if it fails, try callback-style as fallback
+          try {
+            audioCtx.decodeAudioData(arrayBuffer, resolve, reject);
+          } catch(cbErr) {
+            reject(err || cbErr);
+          }
+        });
+        return;
+      }
+    } catch (e) {
+      // decodeAudioData threw synchronously (some Safari versions), fall through to callback style
+    }
+    // callback-style (older WebAudio implementations)
+    try {
+      audioCtx.decodeAudioData(arrayBuffer, resolve, reject);
+    } catch (e) {
+      reject(e);
+    }
+  });
+}
+
+/* playback helpers */
 function makeAudioElement(url){
   createAudioCtxIfNeeded();
   const a = new Audio(url);
@@ -229,24 +258,30 @@ async function tryPlayElement(el){
     return false;
   }
 }
+
+// fetch+decode+play fallback using decodeAudioDataCompat
 async function fetchAndPlayBuffer(url){
   try {
     createAudioCtxIfNeeded();
     const r = await fetch(url, { cache: 'no-store' });
     if (!r.ok) throw new Error('fetch status ' + r.status);
     const ab = await r.arrayBuffer();
-    const buf = await audioCtx.decodeAudioData(ab);
+    // use compat decoder
+    const audioBuf = await decodeAudioDataCompat(ab);
     const src = audioCtx.createBufferSource();
-    src.buffer = buf;
+    src.buffer = audioBuf;
     src.connect(masterGain);
     if (audioCtx.state === 'suspended') try { await audioCtx.resume(); } catch(e){}
     src.start(0);
-    await new Promise(r => setTimeout(r, Math.max(300, buf.duration*1000 + 100)));
+    await new Promise(r => setTimeout(r, Math.max(300, audioBuf.duration*1000 + 100)));
     return true;
-  } catch(e) { console.warn('fetchAndPlayBuffer failed', e); return false; }
+  } catch(e) {
+    console.warn('fetchAndPlayBuffer failed', e);
+    return false;
+  }
 }
 
-// payload key
+/* queue & dedupe */
 function makePayloadKey(obj) {
   if (!obj) return null;
   if (typeof obj.index === 'number') return 'i:' + obj.index;
@@ -255,28 +290,22 @@ function makePayloadKey(obj) {
   return null;
 }
 
-// decide whether to accept and play a payload now based on settings and lastPlayTimes
 function shouldPlayPayload(key) {
   if (!key) return false;
-  // allowReplay box overrides cooldown entirely
   if (allowReplayBox.checked) return true;
   const cooldownSec = Math.max(0, Number(replayCooldownInput.value) || 0);
   if (cooldownSec === 0) {
-    // cooldown 0 means "do not replay same payload"
     const played = !!lastPlayTimes[key];
     if (played) return false;
-    return true; // not played before
+    return true;
   } else {
     const last = lastPlayTimes[key] || 0;
     const now = Date.now();
     if (now - last >= cooldownSec * 1000) return true;
-    // within cooldown -> suppressed
     return false;
   }
 }
 
-// log suppression: only log first suppression then at most every SUPPRESS_HEARTBEAT_MS
-const SUPPRESS_HEARTBEAT_MS = 30000;
 function logSuppressed(key) {
   const now = Date.now();
   const last = lastSuppressLog[key] || 0;
@@ -291,7 +320,6 @@ function logSuppressed(key) {
   }
 }
 
-// queue with dedupe
 function queuePayload(key, type, value) {
   if (pendingSet.has(key)) {
     log('Payload already queued (skip): ' + key);
@@ -303,7 +331,6 @@ function queuePayload(key, type, value) {
   showManual();
 }
 
-// main play function
 async function playFileByIndex(idx) {
   if (idx <= 0) { setStatus('Invalid index'); return false; }
   const name = pad4(idx) + '.mp3';
@@ -319,13 +346,10 @@ async function playFileByIndex(idx) {
     if (ok) {
       a.onended = ()=> { setStatus('Finished ' + name); };
       a.onerror = ()=> { setStatus('Audio element error ' + name); };
-      // record play time
       lastPlayTimes['i:' + idx] = Date.now();
-      // clear any suppression marker for this key
       lastSuppressLog['i:' + idx] = 0;
       return true;
     }
-    // blocked -> queue with dedupe
     const key = 'i:' + idx;
     queuePayload(key, 'index', idx);
     return false;
@@ -345,7 +369,6 @@ async function playFileByIndex(idx) {
   }
 }
 
-// find index by text
 function findIndexForText(text){
   if (!text) return -1;
   const k = text.trim().toLowerCase();
@@ -355,40 +378,27 @@ function findIndexForText(text){
   return -1;
 }
 
-// high-level handler
 async function handleMessageObject(obj){
   if (!obj) return;
   const key = makePayloadKey(obj);
   if (!key) return;
-  // check whether to play now or suppress based on settings
   const willPlay = shouldPlayPayload(key);
   if (!willPlay) {
-    // suppressed: log but not spam
     logSuppressed(key);
     return;
   }
-  // if it should play now and not already queued/playing, dispatch
   if (key.startsWith('i:')) {
     const idx = parseInt(key.slice(2),10);
-    // attempt direct play; if blocked, queue
     const ok = await playFileByIndex(idx);
-    if (ok) {
-      // record time done in playFileByIndex
-    } else {
-      // playFileByIndex already queued on block
-    }
+    if (ok) { lastPlayTimes[key] = Date.now(); }
     return;
   }
-  // text case: lookup index
   const text = obj.text || obj.message || '';
   const idx = findIndexForText(text);
   if (idx > 0) {
     const ok = await playFileByIndex(idx);
-    if (!ok) {
-      // queued inside playFileByIndex
-    }
+    if (ok) lastPlayTimes[key] = Date.now();
   } else {
-    // not found -> queue for manual handling (dedupe queue)
     const k = 't:' + text.trim().toLowerCase();
     if (!pendingSet.has(k)) {
       pendingQueue.push({key:k, type:'text', value:text});
@@ -401,7 +411,6 @@ async function handleMessageObject(obj){
   }
 }
 
-// flush queue sequentially
 async function flushPending(){
   while (pendingQueue.length > 0) {
     const it = pendingQueue.shift();
@@ -413,17 +422,13 @@ async function flushPending(){
     } else {
       log('Flushing queued text "' + it.value + '"');
       const idx = findIndexForText(it.value);
-      if (idx > 0) {
-        await playFileByIndex(idx);
-        await new Promise(r => setTimeout(r, 250));
-      } else {
-        log('Queued text still not found: ' + it.value);
-      }
+      if (idx > 0) { await playFileByIndex(idx); await new Promise(r => setTimeout(r, 250)); }
+      else log('Queued text still not found: ' + it.value);
     }
   }
 }
 
-// polling
+// Polling
 async function pollOnce(){
   const url = firebaseUrlEl.value.trim() || FIREBASE_DEFAULT;
   try {
@@ -431,10 +436,7 @@ async function pollOnce(){
     if (!r.ok) { setStatus('Firebase fetch failed: ' + r.status); return; }
     const j = await r.json();
     await handleMessageObject(j);
-  } catch(e) {
-    console.warn('poll error', e);
-    setStatus('Poll error: ' + (e.message||e));
-  }
+  } catch(e) { console.warn('poll error', e); setStatus('Poll error: ' + (e.message||e)); }
 }
 
 // UI helpers
@@ -478,7 +480,7 @@ function firstGesture(e){
   });
 }
 
-// debug fetch+decode
+// Debug fetch+decode (uses decodeAudioDataCompat)
 async function debugFetchDecodeOnce(filename) {
   const base = audioBaseEl.value.trim() || '/audio/';
   const name = (filename || testFilenameInput.value || '0002.mp3').trim();
@@ -496,10 +498,10 @@ async function debugFetchDecodeOnce(filename) {
     try { await audioCtx.resume(); } catch(e){ log('audioCtx.resume() failed: '+e); }
     let buf;
     try {
-      buf = await audioCtx.decodeAudioData(ab);
+      buf = await decodeAudioDataCompat(ab);
       log('Decoded audio duration (s): ' + buf.duration.toFixed(3));
     } catch(decodeErr) {
-      log('decodeAudioData failed: ' + (decodeErr && decodeErr.message ? decodeErr.message : decodeErr));
+      log('decodeAudioDataCompat failed: ' + (decodeErr && decodeErr.message ? decodeErr.message : decodeErr));
       console.warn('decode error', decodeErr);
       return;
     }
