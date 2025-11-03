@@ -3,25 +3,27 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Gangtay — Stable Auto Play (dedupe + debug)</title>
+<title>Gangtay — Replay control + stable auto play</title>
 <style>
   body{font-family:system-ui,Arial;padding:18px;max-width:980px;margin:auto}
   h1{font-size:1.2rem}
   .muted{color:#666;font-size:.9rem}
   label{display:block;margin-top:10px;font-weight:600}
-  input[type="text"], input[type="url"]{width:100%;padding:8px;margin-top:6px;box-sizing:border-box}
+  input[type="text"], input[type="url"], input[type="number"]{width:100%;padding:8px;margin-top:6px;box-sizing:border-box}
   button{padding:10px 14px;margin:8px 6px;font-size:1rem}
   .row{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
   #status{margin-top:10px;color:#333}
   #log{white-space:pre-wrap;font-family:monospace;margin-top:10px;background:#f6f6f6;padding:10px;border-radius:6px;max-height:340px;overflow:auto}
   .bigManual{background:#ff4757;color:white;border:none;padding:12px 18px;font-weight:700;border-radius:6px}
   .controls{display:flex;gap:8px;align-items:center;margin-top:8px}
+  .inline {display:inline-flex;gap:8px;align-items:center}
   small{color:#666}
+  .setting {margin-right:12px;}
 </style>
 </head>
 <body>
-  <h1>Gangtay — Stable Auto Play (dedupe + debug)</h1>
-  <p class="muted">Tap <strong>Enable audio & Start polling</strong> once; if blocked, tap <strong>Manual Play</strong>. Use <strong>Debug fetch+decode</strong> to diagnose MP3 access / CORS / decode errors. New: payload duplicates (same index/text) are ignored to stop spam.</p>
+  <h1>Gangtay — Replay control + stable auto play</h1>
+  <p class="muted">Controls let you decide whether identical messages should replay. Tap <strong>Enable audio & Start polling</strong> once; if blocked, tap <strong>Manual Play</strong>.</p>
 
   <label>1) T1.TXT (site root /T1.TXT or upload local)</label>
   <div class="row">
@@ -43,6 +45,15 @@
     <button id="manualPlay" class="bigManual" style="display:none">Manual Play (tap once)</button>
   </div>
 
+  <label>Playback behavior</label>
+  <div class="row">
+    <div class="setting inline"><input id="allowReplay" type="checkbox"><label for="allowReplay">Allow replay of same payload</label></div>
+    <div class="setting inline"><label style="font-weight:600">Replay cooldown (s)</label>
+      <input id="replayCooldown" type="number" min="0" value="10" style="width:120px" />
+    </div>
+    <div class="setting inline"><small>Set cooldown to 0 and uncheck "Allow replay" to prevent replays entirely; set cooldown to desired seconds to allow same payload after that interval.</small></div>
+  </div>
+
   <label>Volume (gain)</label>
   <div class="controls">
     <input id="gainSlider" type="range" min="0.2" max="4.0" step="0.05" value="1.2">
@@ -58,23 +69,27 @@
       <button id="clearLog">Clear log</button>
       <button id="clearQueue">Clear queue</button>
     </div>
-    <small>Debug will fetch <code>/audio/&lt;filename&gt;</code> and try decode+play. Clear queue removes any queued plays.</small>
+    <small>Debug will fetch <code>/audio/&lt;filename&gt;</code> and try decode+play. Clear queue removes queued plays.</small>
   </div>
 
   <div id="status">Status: idle</div>
   <div id="log"></div>
 
 <script>
-/* Stable Auto Play page
- - Deduplicate by payload content (ignore ts) to avoid repeat spam
- - Deduplicate queued items (no duplicates)
- - Unlock strategies: tone + htmlAudio; Manual Play & page-tap supported
- - Debug fetch+decode button logs HTTP/CORS/decode results
+/* Stable Auto Play with replay control
+ - New settings: Allow replay checkbox and Replay cooldown (seconds)
+ - Dedup logic honors those settings:
+    * if allowReplay === true => always process new incoming payloads (regardless of content)
+    * else: compare payload key to lastPlayTimes; if lastPlayTimes[key] is older than cooldown => allow play; otherwise ignore
+ - Logging suppressed to avoid spam: first suppressed event logged, then heartbeat logs every 30s if repeats continue
+ - Rest: robust unlocking, queue/flush, fetch+decode debug preserved
 */
 
 const FIREBASE_DEFAULT = "https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/message.json";
 const POLL_INTERVAL_MS = 1000;
+const SUPPRESS_HEARTBEAT_MS = 30000; // when duplicate suppressed, log heartbeat at most every 30s
 
+// UI
 const fileInput = document.getElementById('fileInput');
 const reloadTxtBtn = document.getElementById('reloadTxt');
 const txtInfo = document.getElementById('txtInfo');
@@ -84,6 +99,8 @@ const enableBtn = document.getElementById('enableBtn');
 const stopBtn = document.getElementById('stopBtn');
 const previewBtn = document.getElementById('previewBtn');
 const manualBtn = document.getElementById('manualPlay');
+const allowReplayBox = document.getElementById('allowReplay');
+const replayCooldownInput = document.getElementById('replayCooldown');
 const gainSlider = document.getElementById('gainSlider');
 const gainVal = document.getElementById('gainVal');
 const statusEl = document.getElementById('status');
@@ -96,20 +113,22 @@ const clearQueueBtn = document.getElementById('clearQueue');
 
 let lines = [];
 let pollHandle = null;
-let lastPayloadKey = null; // dedupe by payload content (ignores ts)
 let audioCtx = null;
 let masterGain = null;
 let currentAudio = null;
-let pendingQueue = []; // [{key:'i:25'|'t:xin chao', type:'index'|'text', value:...}]
-let pendingSet = new Set(); // set of keys currently queued
+let pendingQueue = [];
+let pendingSet = new Set();
+let lastPlayTimes = {}; // key -> timestamp(ms) last actually played
+let lastSuppressLog = {}; // key -> timestamp(ms) last suppression log time
 let unlocked = false;
 
+// utilities
 function nowLabel(){ return new Date().toLocaleTimeString(); }
 function log(msg){ logEl.textContent = `[${nowLabel()}] ${msg}\n` + logEl.textContent; }
 function setStatus(s){ statusEl.textContent = 'Status: ' + s; log(s); }
 function pad4(n){ return String(n).padStart(4,'0'); }
 
-/* ---------------- T1.TXT ---------------- */
+// T1.TXT
 async function fetchRemoteTxt(){
   setStatus('Fetching /T1.TXT ...');
   try {
@@ -132,7 +151,7 @@ function parseTxt(txt){
 fileInput.addEventListener('change', async(ev)=>{ const f=ev.target.files && ev.target.files[0]; if(!f) return; setStatus('Reading local ' + f.name); try{ const t = await f.text(); parseTxt(t); setStatus('Loaded local '+f.name+' ('+lines.length+' lines)'); }catch(e){ setStatus('Read failed: '+e.message); }});
 reloadTxtBtn.addEventListener('click', fetchRemoteTxt);
 
-/* ---------------- WebAudio + gain ---------------- */
+// audio + gain
 function createAudioCtxIfNeeded(){
   if (audioCtx) return;
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -143,7 +162,7 @@ function createAudioCtxIfNeeded(){
 }
 gainSlider.addEventListener('input', ()=>{ const v = parseFloat(gainSlider.value); gainVal.textContent = `Gain x${v.toFixed(2)}`; if(masterGain && audioCtx) masterGain.gain.setValueAtTime(v, audioCtx.currentTime); });
 
-/* ---------------- Unlock helpers ---------------- */
+// unlock helpers
 async function unlockWithTone(){
   try {
     createAudioCtxIfNeeded();
@@ -164,10 +183,7 @@ async function unlockWithTone(){
     if (audioCtx.state === 'running') { unlocked = true; log('Unlocked (tone)'); return true; }
     log('unlockWithTone: state=' + audioCtx.state);
     return false;
-  } catch (e) {
-    console.warn('unlockWithTone err', e);
-    return false;
-  }
+  } catch(e){ console.warn('unlockWithTone err', e); return false; }
 }
 async function unlockWithHtmlAudio(){
   try {
@@ -178,7 +194,7 @@ async function unlockWithHtmlAudio(){
     await new Promise(r => setTimeout(r, 50));
     if (audioCtx && audioCtx.state === 'running') { unlocked = true; log('Unlocked (html audio)'); return true; }
     return false;
-  } catch(e) { console.warn('unlockWithHtmlAudio err', e); return false; }
+  } catch(e){ console.warn('unlockWithHtmlAudio err', e); return false; }
 }
 async function tryUnlockSequence(){
   if (unlocked) return true;
@@ -187,7 +203,7 @@ async function tryUnlockSequence(){
   return false;
 }
 
-/* ---------------- Playback helpers ---------------- */
+// create element/connect
 function makeAudioElement(url){
   createAudioCtxIfNeeded();
   const a = new Audio(url);
@@ -230,7 +246,7 @@ async function fetchAndPlayBuffer(url){
   } catch(e) { console.warn('fetchAndPlayBuffer failed', e); return false; }
 }
 
-/* ---------------- Queue & dedupe ---------------- */
+// payload key
 function makePayloadKey(obj) {
   if (!obj) return null;
   if (typeof obj.index === 'number') return 'i:' + obj.index;
@@ -238,13 +254,62 @@ function makePayloadKey(obj) {
   if (t) return 't:' + t.trim().toLowerCase();
   return null;
 }
-async function playFileByIndex(idx){
+
+// decide whether to accept and play a payload now based on settings and lastPlayTimes
+function shouldPlayPayload(key) {
+  if (!key) return false;
+  // allowReplay box overrides cooldown entirely
+  if (allowReplayBox.checked) return true;
+  const cooldownSec = Math.max(0, Number(replayCooldownInput.value) || 0);
+  if (cooldownSec === 0) {
+    // cooldown 0 means "do not replay same payload"
+    const played = !!lastPlayTimes[key];
+    if (played) return false;
+    return true; // not played before
+  } else {
+    const last = lastPlayTimes[key] || 0;
+    const now = Date.now();
+    if (now - last >= cooldownSec * 1000) return true;
+    // within cooldown -> suppressed
+    return false;
+  }
+}
+
+// log suppression: only log first suppression then at most every SUPPRESS_HEARTBEAT_MS
+const SUPPRESS_HEARTBEAT_MS = 30000;
+function logSuppressed(key) {
+  const now = Date.now();
+  const last = lastSuppressLog[key] || 0;
+  if (!last) {
+    log('Ignored duplicate payload content: ' + key);
+    lastSuppressLog[key] = now;
+    return;
+  }
+  if (now - last >= SUPPRESS_HEARTBEAT_MS) {
+    log('Still receiving duplicate payload: ' + key + ' (suppressed)');
+    lastSuppressLog[key] = now;
+  }
+}
+
+// queue with dedupe
+function queuePayload(key, type, value) {
+  if (pendingSet.has(key)) {
+    log('Payload already queued (skip): ' + key);
+    return;
+  }
+  pendingQueue.push({key, type, value});
+  pendingSet.add(key);
+  log('Queued payload: ' + key);
+  showManual();
+}
+
+// main play function
+async function playFileByIndex(idx) {
   if (idx <= 0) { setStatus('Invalid index'); return false; }
   const name = pad4(idx) + '.mp3';
   let base = audioBaseEl.value.trim() || '/audio/';
   if (!base.endsWith('/')) base += '/';
   const url = (base.startsWith('http') ? base : base) + name + '?ts=' + Date.now();
-  // do not spam logs if same request repeated rapidly; log only when new or queued
   setStatus('Play request: ' + name + ' → ' + url);
   try {
     if (currentAudio) { try { currentAudio.pause(); currentAudio.src=""; } catch(e){} currentAudio=null; }
@@ -252,39 +317,35 @@ async function playFileByIndex(idx){
     currentAudio = a;
     const ok = await tryPlayElement(a);
     if (ok) {
-      a.onended = ()=> setStatus('Finished ' + name);
-      a.onerror = ()=> setStatus('Audio element error ' + name);
+      a.onended = ()=> { setStatus('Finished ' + name); };
+      a.onerror = ()=> { setStatus('Audio element error ' + name); };
+      // record play time
+      lastPlayTimes['i:' + idx] = Date.now();
+      // clear any suppression marker for this key
+      lastSuppressLog['i:' + idx] = 0;
       return true;
     }
-    // blocked -> queue if not already queued
+    // blocked -> queue with dedupe
     const key = 'i:' + idx;
-    if (!pendingSet.has(key)) {
-      pendingQueue.push({key, type:'index', value: idx});
-      pendingSet.add(key);
-      log('Queued (blocked): ' + key);
-    } else {
-      log('Already queued (skipping duplicate): ' + key);
-    }
-    showManual();
+    queuePayload(key, 'index', idx);
     return false;
   } catch(e) {
     console.warn('play exception', e);
     const ok2 = await fetchAndPlayBuffer(url);
     if (!ok2) {
       const key = 'i:' + idx;
-      if (!pendingSet.has(key)) {
-        pendingQueue.push({key, type:'index', value: idx});
-        pendingSet.add(key);
-        log('Queued after fallback fail: ' + key);
-      }
-      showManual();
+      queuePayload(key, 'index', idx);
       return false;
     } else {
+      lastPlayTimes['i:' + idx] = Date.now();
+      lastSuppressLog['i:' + idx] = 0;
       setStatus('Played via buffer ' + name);
       return true;
     }
   }
 }
+
+// find index by text
 function findIndexForText(text){
   if (!text) return -1;
   const k = text.trim().toLowerCase();
@@ -293,42 +354,54 @@ function findIndexForText(text){
   }
   return -1;
 }
+
+// high-level handler
 async function handleMessageObject(obj){
   if (!obj) return;
-  const payloadKey = makePayloadKey(obj);
-  if (!payloadKey) return;
-  // dedupe by payload content (ignore ts)
-  if (payloadKey === lastPayloadKey) {
-    // nothing new content-wise — skip (prevents spam if only ts changed)
-    // we still log a minimal message
-    log('Ignored duplicate payload content: ' + payloadKey);
+  const key = makePayloadKey(obj);
+  if (!key) return;
+  // check whether to play now or suppress based on settings
+  const willPlay = shouldPlayPayload(key);
+  if (!willPlay) {
+    // suppressed: log but not spam
+    logSuppressed(key);
     return;
   }
-  // new payload: update last key and process
-  lastPayloadKey = payloadKey;
-  if (payloadKey.startsWith('i:')) {
-    const idx = parseInt(payloadKey.slice(2), 10);
-    await playFileByIndex(idx);
+  // if it should play now and not already queued/playing, dispatch
+  if (key.startsWith('i:')) {
+    const idx = parseInt(key.slice(2),10);
+    // attempt direct play; if blocked, queue
+    const ok = await playFileByIndex(idx);
+    if (ok) {
+      // record time done in playFileByIndex
+    } else {
+      // playFileByIndex already queued on block
+    }
     return;
   }
-  // text case
+  // text case: lookup index
   const text = obj.text || obj.message || '';
   const idx = findIndexForText(text);
   if (idx > 0) {
-    await playFileByIndex(idx);
-  } else {
-    log('Text not found: "' + text + '" — queued for manual handling');
-    const key = 't:' + text.trim().toLowerCase();
-    if (!pendingSet.has(key)) {
-      pendingQueue.push({key, type:'text', value: text});
-      pendingSet.add(key);
-    } else {
-      log('Text already queued, skipping duplicate');
+    const ok = await playFileByIndex(idx);
+    if (!ok) {
+      // queued inside playFileByIndex
     }
-    showManual();
+  } else {
+    // not found -> queue for manual handling (dedupe queue)
+    const k = 't:' + text.trim().toLowerCase();
+    if (!pendingSet.has(k)) {
+      pendingQueue.push({key:k, type:'text', value:text});
+      pendingSet.add(k);
+      log('Text not found, queued for manual handling: ' + text);
+      showManual();
+    } else {
+      log('Text already queued (skip): ' + text);
+    }
   }
 }
 
+// flush queue sequentially
 async function flushPending(){
   while (pendingQueue.length > 0) {
     const it = pendingQueue.shift();
@@ -336,33 +409,40 @@ async function flushPending(){
     if (it.type === 'index') {
       log('Flushing queued index ' + it.value);
       await playFileByIndex(it.value);
-      await new Promise(r=>setTimeout(r,250));
+      await new Promise(r => setTimeout(r, 250));
     } else {
       log('Flushing queued text "' + it.value + '"');
       const idx = findIndexForText(it.value);
-      if (idx > 0) { await playFileByIndex(idx); await new Promise(r=>setTimeout(r,250)); }
-      else log('Queued text still not found: ' + it.value);
+      if (idx > 0) {
+        await playFileByIndex(idx);
+        await new Promise(r => setTimeout(r, 250));
+      } else {
+        log('Queued text still not found: ' + it.value);
+      }
     }
   }
 }
 
-/* ---------------- Polling ---------------- */
+// polling
 async function pollOnce(){
   const url = firebaseUrlEl.value.trim() || FIREBASE_DEFAULT;
   try {
     const r = await fetch(url, { cache: 'no-store' });
     if (!r.ok) { setStatus('Firebase fetch failed: ' + r.status); return; }
     const j = await r.json();
-    // build payload key and compare to lastPayloadKey inside handleMessageObject, so here we only call handler
     await handleMessageObject(j);
-  } catch(e) { console.warn('poll error', e); setStatus('Poll error: ' + (e.message||e)); }
+  } catch(e) {
+    console.warn('poll error', e);
+    setStatus('Poll error: ' + (e.message||e));
+  }
 }
 
-/* ---------------- UI & events ---------------- */
+// UI helpers
 function showManual(){ manualBtn.style.display = 'inline-block'; manualBtn.focus(); }
 function hideManual(){ manualBtn.style.display = 'none'; }
 clearQueueBtn.addEventListener('click', ()=> { pendingQueue = []; pendingSet.clear(); log('Cleared queued items'); });
 
+// enable/start
 enableBtn.addEventListener('click', async ()=>{
   setStatus('Enable pressed — attempting audible unlock...');
   document.addEventListener('touchstart', firstGesture, {passive:true});
@@ -381,13 +461,13 @@ enableBtn.addEventListener('click', async ()=>{
 stopBtn.addEventListener('click', ()=> { if (pollHandle) { clearInterval(pollHandle); pollHandle=null; setStatus('Polling stopped'); enableBtn.disabled=false; stopBtn.disabled=true; } });
 previewBtn.addEventListener('click', ()=> { createAudioCtxIfNeeded(); playFileByIndex(1); });
 
+// manual unlock
 manualBtn.addEventListener('click', async ()=> {
   setStatus('Manual Play tapped — attempting unlock...');
   const ok = await tryUnlockSequence();
   if (ok) { setStatus('Unlocked (manual). Flushing queue...'); hideManual(); await flushPending(); }
   else setStatus('Unlock failed — try tapping page or check site permissions.');
 });
-
 function firstGesture(e){
   document.removeEventListener('touchstart', firstGesture, {passive:true});
   document.removeEventListener('click', firstGesture);
@@ -398,7 +478,7 @@ function firstGesture(e){
   });
 }
 
-/* ---------------- Debug fetch+decode ---------------- */
+// debug fetch+decode
 async function debugFetchDecodeOnce(filename) {
   const base = audioBaseEl.value.trim() || '/audio/';
   const name = (filename || testFilenameInput.value || '0002.mp3').trim();
@@ -436,7 +516,7 @@ debugFetchBtn.addEventListener('click', ()=> debugFetchDecodeOnce('0002.mp3'));
 debugFetchCustomBtn.addEventListener('click', ()=> { const fn = testFilenameInput.value.trim() || '0002.mp3'; debugFetchDecodeOnce(fn); });
 clearLogBtn.addEventListener('click', ()=> logEl.textContent = '');
 
-/* ---------------- Init ---------------- */
+/* init */
 (async function init(){
   firebaseUrlEl.value = firebaseUrlEl.value || FIREBASE_DEFAULT;
   const ok = await fetchRemoteTxt();
