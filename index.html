@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Gangtay — Firebase→T1.TXT→Play (adaptive)</title>
+<title>Gangtay — play duplicates (faster)</title>
 <style>
   body{font-family:system-ui,Arial;padding:18px;max-width:980px;margin:auto}
   h1{font-size:1.2rem}
@@ -20,8 +20,8 @@
 </style>
 </head>
 <body>
-  <h1>Gangtay — Firebase → T1.TXT → play (adaptive)</h1>
-  <p class="muted">Load <code>T1.TXT</code> (site root) or upload locally, set audio base and Firebase URL. Click <strong>Enable audio & Start polling</strong>. Use Debug to test single MP3 decode/play.</p>
+  <h1>Gangtay — play duplicates (faster)</h1>
+  <p class="muted">This version plays identical Firebase messages repeatedly and polls faster. Press <strong>Enable audio & Start polling</strong> (or tap the page) to unlock mobile audio.</p>
 
   <label>1) T1.TXT (site root /T1.TXT or upload local)</label>
   <div class="row">
@@ -46,9 +46,10 @@
   <div style="margin-top:8px;">
     <label>Playback options</label>
     <div class="controls">
-      <label><input id="allowReplay" type="checkbox"> Allow replay same payload</label>
-      <label style="margin-left:12px">Replay cooldown (s): <input id="replayCooldown" type="number" value="10" min="0" style="width:80px;margin-left:6px"></label>
+      <label><input id="allowReplay" type="checkbox" checked> Allow replay same payload (default: ON)</label>
+      <label style="margin-left:12px">Replay cooldown (s): <input id="replayCooldown" type="number" value="0" min="0" style="width:80px;margin-left:6px"></label>
     </div>
+    <small class="muted">With replay ON and cooldown 0 the page will play repeated identical messages immediately in sequence.</small>
   </div>
 
   <div style="margin-top:8px;">
@@ -60,31 +61,27 @@
       <button id="clearLog">Clear log</button>
       <button id="clearQueue">Clear queue</button>
     </div>
-    <small class="muted">Debug fetch will try fetch → decode → play using compatible decoder for iOS.</small>
   </div>
 
   <div id="status">Status: idle</div>
   <div id="log"></div>
 
 <script>
-/* Full app:
- - Poll Firebase adaptively (backoff, timeout)
- - Load T1.TXT (remote/local)
- - Find exact match text -> line index -> play 4-digit file (0001.mp3)
- - Or accept {index:N} messages
- - Mobile audio unlock (tone + fallback)
- - decodeAudioDataCompat for iOS
- - Queue and concurrency controls to prevent overload
+/* Play duplicates + faster polling
+ - POLL_BASE_MS 500ms, faster fetch timeout, higher queue cap
+ - allowReplay default ON and cooldown default 0 (play duplicates)
+ - removed strict lastFirebaseTs block so identical messages are honored
+ - still keeps decodeAudioData compatibility for iOS
 */
 
-// Constants
-const POLL_BASE_MS = 1000;
-const POLL_MAX_MS = 30000;
-const FETCH_TIMEOUT_MS = 6000;
-const MAX_QUEUE_LENGTH = 12; // cap queue
+// Tunables
+const POLL_BASE_MS = 500;   // faster polling
+const POLL_MAX_MS = 8000;   // backoff cap (keeps recovery fast)
+const FETCH_TIMEOUT_MS = 4000;
+const MAX_QUEUE_LENGTH = 50;
 const SUPPRESS_HEARTBEAT_MS = 30000;
 
-// UI
+// UI elements
 const fileInput = document.getElementById('fileInput');
 const reloadTxtBtn = document.getElementById('reloadTxt');
 const txtInfo = document.getElementById('txtInfo');
@@ -113,7 +110,6 @@ let currentAudio = null;
 let pollTimer = null;
 let pollIntervalMs = POLL_BASE_MS;
 let consecutivePollErrors = 0;
-let lastFirebaseTs = null;
 
 // Queue + dedupe
 let pendingQueue = [];    // {key, type, value}
@@ -123,13 +119,13 @@ let lastSuppressLog = {}; // key -> timestamp(ms)
 let isPlaying = false;
 let unlocked = false;
 
-// Utility
+// Utils
 function nowLabel(){ return new Date().toLocaleTimeString(); }
 function log(s){ logEl.textContent = `[${nowLabel()}] ${s}\n` + logEl.textContent; }
 function setStatus(s){ statusEl.textContent = 'Status: ' + s; log(s); }
 function pad4(n){ return String(n).padStart(4,'0'); }
 
-// T1.TXT handling
+// T1.TXT
 async function fetchRemoteTxt(){
   setStatus('Fetching /T1.TXT ...');
   try {
@@ -164,7 +160,7 @@ fileInput.addEventListener('change', async (ev) => {
 });
 reloadTxtBtn.addEventListener('click', fetchRemoteTxt);
 
-// Audio context + gain
+// Audio context + compat decoder
 function createAudioCtxIfNeeded(){
   if (audioCtx) return;
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -173,8 +169,6 @@ function createAudioCtxIfNeeded(){
   masterGain.connect(audioCtx.destination);
   log('AudioContext created');
 }
-
-// decodeAudioData compat wrapper (Promise + callback fallback)
 function decodeAudioDataCompat(arrayBuffer) {
   return new Promise((resolve, reject) => {
     try {
@@ -186,15 +180,13 @@ function decodeAudioDataCompat(arrayBuffer) {
         });
         return;
       }
-    } catch(e) {
-      // fallthrough to callback
-    }
+    } catch(e) {}
     try { audioCtx.decodeAudioData(arrayBuffer, resolve, reject); }
     catch(e) { reject(e); }
   });
 }
 
-// Unlock helpers (tone + htmlAudio)
+// Unlock helpers
 async function unlockWithTone(){
   try {
     createAudioCtxIfNeeded();
@@ -211,7 +203,7 @@ async function unlockWithTone(){
     g.gain.linearRampToValueAtTime(0.0001, now + 0.18);
     osc.stop(now + 0.19);
     try { await audioCtx.resume(); } catch(e){}
-    await new Promise(r => setTimeout(r, 250));
+    await new Promise(r => setTimeout(r, 180));
     if (audioCtx.state === 'running') { unlocked = true; log('Unlocked (tone)'); return true; }
     log('unlockWithTone ended state=' + audioCtx.state);
     return false;
@@ -223,7 +215,7 @@ async function unlockWithHtmlAudio(){
     const a = new Audio();
     a.muted = true;
     try { await a.play(); } catch(e){}
-    await new Promise(r => setTimeout(r, 50));
+    await new Promise(r => setTimeout(r, 40));
     if (audioCtx && audioCtx.state === 'running') { unlocked = true; log('Unlocked (htmlAudio)'); return true; }
     return false;
   } catch(e) { console.warn('unlock html audio', e); return false; }
@@ -237,7 +229,7 @@ async function tryUnlockSequence(){
 function showManual(){ manualBtn.style.display = 'inline-block'; manualBtn.focus(); }
 function hideManual(){ manualBtn.style.display = 'none'; }
 
-// Playback: element first, fallback to fetch+decode
+// Playback helpers
 function makeAudioElement(url){
   createAudioCtxIfNeeded();
   const a = new Audio(url);
@@ -275,7 +267,7 @@ async function fetchAndPlayBuffer(url){
     s.connect(masterGain);
     if (audioCtx.state === 'suspended') try { await audioCtx.resume(); } catch(e){}
     s.start(0);
-    await new Promise(r=>setTimeout(r, Math.max(300, buf.duration*1000 + 100)));
+    await new Promise(r=>setTimeout(r, Math.max(150, buf.duration*1000 + 50)));
     return true;
   } catch(e) {
     console.warn('fetchAndPlayBuffer failed', e);
@@ -283,9 +275,9 @@ async function fetchAndPlayBuffer(url){
   }
 }
 
-// play file by index (1-based). Returns after attempt (element or fallback)
+// play file by index (1-based)
 async function playFileByIndex(idx) {
-  if (idx <= 0) { log('Invalid index ' + idx); return; }
+  if (idx <= 0) { log('Invalid index ' + idx); return false; }
   const fname = pad4(idx) + '.mp3';
   let base = audioBaseEl.value.trim() || '/audio/';
   if (!base.endsWith('/')) base += '/';
@@ -299,11 +291,9 @@ async function playFileByIndex(idx) {
     if (ok) {
       a.onended = ()=> setStatus('Finished ' + fname);
       a.onerror = ()=> setStatus('Audio element error ' + fname);
-      // record play time
       lastPlayTimes['i:' + idx] = Date.now();
       return true;
     }
-    // blocked -> fallback
     log('Element play blocked — trying fetch+decode fallback');
     const ok2 = await fetchAndPlayBuffer(url);
     if (ok2) { lastPlayTimes['i:' + idx] = Date.now(); setStatus('Played via buffer ' + fname); return true; }
@@ -315,7 +305,7 @@ async function playFileByIndex(idx) {
   }
 }
 
-// Concurrency-safe wrapper: queue or play immediately
+// concurrency-safe wrapper with short cooldown
 async function playIndexSafely(idx) {
   if (pendingQueue.length >= MAX_QUEUE_LENGTH) {
     log('Queue full, dropping: i:' + idx);
@@ -335,11 +325,11 @@ async function playIndexSafely(idx) {
   isPlaying = true;
   try {
     await playFileByIndex(idx);
-  } catch(e) { console.warn(e); }
-  // small cooldown
-  await new Promise(r=>setTimeout(r, 220));
+  } catch(e){ console.warn(e); }
+  // very short gap (faster)
+  await new Promise(r=>setTimeout(r, 120));
   isPlaying = false;
-  // flush next in queue
+  // flush next quickly
   if (pendingQueue.length > 0) {
     const next = pendingQueue.shift();
     pendingSet.delete(next.key);
@@ -355,7 +345,7 @@ async function playIndexSafely(idx) {
   return true;
 }
 
-// find index by exact match in T1.TXT (case-insensitive)
+// find index for exact text
 function findIndexForText(text) {
   if (!text) return -1;
   const k = text.trim().toLowerCase();
@@ -365,7 +355,7 @@ function findIndexForText(text) {
   return -1;
 }
 
-// Payload key generator for dedupe and replay rules
+// payload key
 function makePayloadKey(obj) {
   if (!obj) return null;
   if (typeof obj.index === 'number') return 'i:' + obj.index;
@@ -374,10 +364,10 @@ function makePayloadKey(obj) {
   return null;
 }
 
-// shouldPlay: check allowReplay / cooldown
+// shouldPlay: respect UI controls (allowReplay default ON)
 function shouldPlayPayload(key) {
   if (!key) return false;
-  if (allowReplayBox.checked) return true;
+  if (allowReplayBox.checked) return true;       // play duplicates immediately
   const cooldown = Math.max(0, Number(replayCooldownInput.value) || 0);
   if (cooldown === 0) {
     return !(lastPlayTimes[key]); // play only if never played before
@@ -387,7 +377,7 @@ function shouldPlayPayload(key) {
   }
 }
 
-// suppressed logging helper
+// suppressed logging
 function logSuppressed(key) {
   const now = Date.now();
   const prev = lastSuppressLog[key] || 0;
@@ -395,26 +385,19 @@ function logSuppressed(key) {
   if (now - prev >= SUPPRESS_HEARTBEAT_MS) { log('Still receiving duplicate payload: ' + key + ' (suppressed)'); lastSuppressLog[key] = now; }
 }
 
-// handle messages from Firebase
+// Handle Firebase message object: **no lastFirebaseTs ignore** so duplicates play
 async function handleMessageObject(obj) {
   if (!obj) return;
-  // ignore if same ts as last processed
-  const ts = obj && (obj.ts || obj.timestamp || null);
-  if (ts && ts === lastFirebaseTs) return;
-  lastFirebaseTs = ts;
-
   const key = makePayloadKey(obj);
   if (!key) return;
   if (!shouldPlayPayload(key)) { logSuppressed(key); return; }
 
   if (key.startsWith('i:')) {
     const idx = parseInt(key.slice(2), 10);
-    // use safe wrapper
     await playIndexSafely(idx);
     lastPlayTimes[key] = Date.now();
     return;
   }
-  // text case
   const text = obj.text || obj.message || '';
   const idx = findIndexForText(text);
   if (idx > 0) {
@@ -431,7 +414,7 @@ async function handleMessageObject(obj) {
   }
 }
 
-// Adaptive polling with timeout
+// Fetch with timeout
 async function fetchWithTimeout(url, opts={}, timeout=FETCH_TIMEOUT_MS){
   const controller = new AbortController();
   const id = setTimeout(()=>controller.abort(), timeout);
@@ -445,6 +428,7 @@ async function fetchWithTimeout(url, opts={}, timeout=FETCH_TIMEOUT_MS){
   }
 }
 
+// Adaptive poll
 async function pollOnceAdaptive(){
   const url = firebaseUrlEl.value.trim();
   if (!url) { log('Firebase URL empty'); scheduleNextPoll(true); return; }
@@ -462,7 +446,7 @@ async function pollOnceAdaptive(){
       pollIntervalMs = POLL_BASE_MS;
       log('Firebase fetch OK — reset backoff');
     }
-    // handle message (this uses lastFirebaseTs dedupe inside)
+    // ALWAYS pass the message to handler (duplicates will be played if UI allows)
     await handleMessageObject(j);
     scheduleNextPoll(false);
   } catch(err) {
@@ -480,7 +464,6 @@ function scheduleNextPoll(errorRequested=false){
   }
   if (pollTimer) clearTimeout(pollTimer);
   pollTimer = setTimeout(()=>{
-    // throttle if currently playing and queue full
     if (isPlaying && pendingQueue.length >= MAX_QUEUE_LENGTH) {
       log('Skipping poll: playing & queue full');
       scheduleNextPoll(true);
@@ -489,12 +472,11 @@ function scheduleNextPoll(errorRequested=false){
     pollOnceAdaptive();
   }, pollIntervalMs);
 }
-
 function startAdaptivePolling(){
   if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; }
   pollIntervalMs = POLL_BASE_MS;
   consecutivePollErrors = 0;
-  log('Adaptive polling started');
+  log('Adaptive polling started (fast)');
   pollTimer = setTimeout(pollOnceAdaptive, 0);
 }
 function stopAdaptivePolling(){
@@ -516,26 +498,18 @@ enableBtn.addEventListener('click', async ()=>{
   enableBtn.disabled = true;
   stopBtn.disabled = false;
 });
-
-stopBtn.addEventListener('click', ()=>{
-  stopAdaptivePolling();
-  enableBtn.disabled = false;
-  stopBtn.disabled = true;
-});
-
-manualBtn.addEventListener('click', async ()=>{
+stopBtn.addEventListener('click', ()=> { stopAdaptivePolling(); enableBtn.disabled=false; stopBtn.disabled=true; });
+manualBtn.addEventListener('click', async ()=> {
   setStatus('Manual Play tapped — attempt unlock');
   const ok = await tryUnlockSequence();
   if (ok) { setStatus('Unlocked (manual)'); hideManual(); }
   else setStatus('Unlock failed — try tapping the page or check browser settings');
 });
-
 previewBtn.addEventListener('click', ()=> { createAudioCtxIfNeeded(); playIndexSafely(1); });
-
 clearQueueBtn.addEventListener('click', ()=> { pendingQueue=[]; pendingSet.clear(); log('Cleared queue'); });
 clearLogBtn.addEventListener('click', ()=> { logEl.textContent = ''; });
 
-// Debug fetch+decode test (uses decodeAudioDataCompat)
+// Debug fetch+decode
 async function debugFetchDecodeOnce(filename) {
   const base = audioBaseEl.value.trim() || '/audio/';
   const name = (filename || testFilenameInput.value || '0002.mp3').trim();
@@ -567,13 +541,11 @@ async function debugFetchDecodeOnce(filename) {
     try { src.start(); log('Debug playback started via AudioBufferSourceNode'); } catch(err) { log('Play start failed: ' + err); }
   } catch(err) { log('Debug fetch error: ' + err); }
 }
-
 debugFetchBtn.addEventListener('click', ()=> debugFetchDecodeOnce('0002.mp3'));
 debugFetchCustomBtn.addEventListener('click', ()=> { const fn = testFilenameInput.value.trim() || '0002.mp3'; debugFetchDecodeOnce(fn); });
 
-// Init: try to fetch T1.TXT automatically
+// Init
 (async function init(){
-  firebaseUrlEl.value = firebaseUrlEl.value || firebaseUrlEl.placeholder || firebaseUrlEl.value;
   const ok = await fetchRemoteTxt();
   if (!ok) txtInfo.textContent = 'T1.TXT: not loaded (upload or add to site)';
   setStatus('Ready');
