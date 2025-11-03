@@ -1,0 +1,135 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Debug fetch+decode+play</title>
+  <style>
+    body{font-family:system-ui,Arial;padding:18px;max-width:900px;margin:auto}
+    button{padding:12px 18px;margin:8px;font-size:16px}
+    input{padding:8px;margin:8px;font-size:16px}
+    #log{white-space:pre-wrap;background:#f4f4f4;padding:12px;border-radius:8px;max-height:400px;overflow:auto;font-family:monospace}
+    h1{font-size:18px}
+  </style>
+</head>
+<body>
+  <h1>Debug fetch → decode → play</h1>
+  <p>Enter filename (e.g. <code>0002.mp3</code>) and press the two buttons in order: <strong>Enable audio</strong> then <strong>Debug fetch+play</strong>.</p>
+
+  <div>
+    <label>Audio base path (your site):</label>
+    <input id="base" type="text" value="/audio/" style="width:60%"/>
+  </div>
+
+  <div>
+    <label>Filename:</label>
+    <input id="file" type="text" value="0002.mp3" style="width:40%"/>
+  </div>
+
+  <div>
+    <button id="enable">Enable audio (one tap)</button>
+    <button id="debug">Debug: fetch+decode+play</button>
+    <button id="openmp3">Open direct mp3 URL</button>
+  </div>
+
+  <div id="status">Status: idle</div>
+  <h3>Log</h3>
+  <div id="log"></div>
+
+<script>
+  const logEl = document.getElementById('log');
+  const statusEl = document.getElementById('status');
+  function log(s){ logEl.textContent = '['+new Date().toLocaleTimeString()+'] '+s + '\n' + logEl.textContent; }
+  function setStatus(s){ statusEl.textContent = 'Status: '+s; log(s); }
+
+  let audioCtx = null;
+  function ensureAudio(){
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      log('AudioContext created (state='+audioCtx.state+')');
+    }
+  }
+
+  async function unlockTone(){
+    try {
+      ensureAudio();
+      if (audioCtx.state === 'running') { log('AudioContext already running'); return true; }
+      const osc = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      osc.type = 'sine'; osc.frequency.value = 880;
+      g.gain.value = 0.0001;
+      osc.connect(g); g.connect(audioCtx.destination);
+      const now = audioCtx.currentTime;
+      g.gain.setValueAtTime(0.0001, now);
+      g.gain.linearRampToValueAtTime(0.04, now + 0.01);
+      osc.start(now);
+      g.gain.linearRampToValueAtTime(0.0001, now + 0.12);
+      osc.stop(now + 0.13);
+      try { await audioCtx.resume(); } catch(e){}
+      await new Promise(r=>setTimeout(r,200));
+      log('unlock attempt completed, state='+audioCtx.state);
+      return audioCtx.state === 'running';
+    } catch(e){ log('unlockTone error: '+e); return false; }
+  }
+
+  document.getElementById('enable').addEventListener('click', async ()=>{
+    setStatus('Attempting unlock (tone)...');
+    const ok = await unlockTone();
+    if (ok) setStatus('Unlocked');
+    else setStatus('Unlock attempt done — may still be blocked (try tapping page or browser settings).');
+  });
+
+  document.getElementById('openmp3').addEventListener('click', ()=>{
+    const base = document.getElementById('base').value.trim();
+    const fname = document.getElementById('file').value.trim();
+    let u = base;
+    if (!u.endsWith('/')) u += '/';
+    if (!u.startsWith('http')) {
+      // relative to current host
+      u = location.origin + u + fname;
+    } else {
+      u = u + fname;
+    }
+    window.open(u, '_blank');
+  });
+
+  document.getElementById('debug').addEventListener('click', async ()=>{
+    setStatus('Debug fetch start');
+    const base = document.getElementById('base').value.trim();
+    const fname = document.getElementById('file').value.trim();
+    if (!fname) { log('No filename'); return; }
+    let baseWithSlash = base;
+    if (!baseWithSlash.endsWith('/')) baseWithSlash += '/';
+    let url = baseWithSlash + fname;
+    if (!url.startsWith('http')) url = location.origin + url;
+    url += '?ts=' + Date.now();
+    log('Fetch URL: ' + url);
+    try {
+      const r = await fetch(url, { cache: 'no-store' });
+      log('HTTP status: ' + r.status);
+      if (!r.ok) { log('Fetch failed: HTTP ' + r.status); setStatus('Fetch failed'); return; }
+      const ab = await r.arrayBuffer();
+      log('Fetched bytes: ' + ab.byteLength);
+      ensureAudio();
+      try { await audioCtx.resume(); } catch(e){ log('audioCtx.resume() err: '+e); }
+      try {
+        const buf = await audioCtx.decodeAudioData(ab);
+        log('decodeAudioData success. duration(s): ' + buf.duration.toFixed(3));
+        const src = audioCtx.createBufferSource();
+        src.buffer = buf;
+        src.connect(audioCtx.destination);
+        src.start();
+        log('Playback started (AudioBufferSourceNode)');
+        setStatus('Playing (debug)');
+      } catch(decodeErr) {
+        log('decodeAudioData failed: ' + (decodeErr && decodeErr.message ? decodeErr.message : decodeErr));
+        setStatus('Decode failed');
+      }
+    } catch(err) {
+      log('Fetch/Decode error: ' + err);
+      setStatus('Error: ' + err);
+    }
+  });
+</script>
+</body>
+</html>
