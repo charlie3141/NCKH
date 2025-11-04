@@ -3,64 +3,56 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Gangtay — Firebase -> T1.TXT -> play (mobile friendly)</title>
+<title>Gangtay — Firebase -> T1.TXT -> play (mobile friendly, queued unlock)</title>
 <style>
-  :root{
-    --pad:14px;
-    --gap:10px;
-    --bg:#f6f6f6;
-    --accent:#ff4757;
-    --maxwidth:980px;
-  }
+  :root{ --pad:14px; --gap:10px; --bg:#f6f6f6; --accent:#ff4757; --maxwidth:980px; }
   html,body{height:100%}
-  body{
-    font-family:system-ui,Arial,Helvetica,sans-serif;
-    padding:var(--pad);
-    max-width:var(--maxwidth);
-    margin:0 auto;
-    -webkit-tap-highlight-color: transparent;
-    color:#222;
-  }
+  body{font-family:system-ui,Arial,Helvetica,sans-serif;padding:var(--pad);max-width:var(--maxwidth);margin:0 auto;color:#222}
   h1{font-size:1.1rem;margin:0 0 8px 0}
-  p{margin:0 0 12px 0;color:#444;font-size:0.95rem}
   label{display:block;margin-top:10px;font-weight:600}
-  input[type="text"], input[type="url"]{
-    width:100%;padding:10px;margin-top:6px;box-sizing:border-box;border-radius:8px;border:1px solid #ddd;
-    font-size:1rem;
-  }
-  button{
-    padding:12px 14px;margin:6px 6px;font-size:1rem;border-radius:10px;border:1px solid #ccc;
-    background:white;
-    min-height:48px;
-  }
+  input[type="text"], input[type="url"]{width:100%;padding:10px;margin-top:6px;box-sizing:border-box;border-radius:8px;border:1px solid #ddd;font-size:1rem}
+  button{padding:12px 14px;margin:6px 6px;font-size:1rem;border-radius:10px;border:1px solid #ccc;background:white;min-height:48px}
   button.primary{background:var(--accent);color:white;border:none}
   button:disabled{opacity:0.5}
   .row{display:flex;gap:var(--gap);align-items:center;margin-top:8px;flex-wrap:wrap}
   .row.full-width > *{flex:1 1 100%}
-  .col{flex:1}
   #status{margin-top:10px;color:#333;font-weight:600}
-  #log{
-    white-space:pre-wrap;font-family:monospace;margin-top:10px;background:var(--bg);padding:10px;border-radius:8px;max-height:260px;overflow:auto;
-    font-size:0.86rem;
-  }
+  #log{white-space:pre-wrap;font-family:monospace;margin-top:10px;background:var(--bg);padding:10px;border-radius:8px;max-height:260px;overflow:auto;font-size:0.86rem}
   .bigManual{background:var(--accent);color:white;border:none;padding:12px 18px;font-weight:700;border-radius:10px}
-  .controls{display:flex;gap:8px;flex-wrap:wrap}
-  .small{font-size:0.9rem;padding:8px 10px}
-  .muted{color:#666;font-size:0.9rem}
   .options{display:flex;gap:10px;align-items:center;margin-top:8px;flex-wrap:wrap}
-  .option-inline{display:flex;align-items:center;gap:6px}
+  .muted{color:#666;font-size:0.9rem}
   @media (max-width:700px){
-    body{padding:12px}
     .row{flex-direction:column;align-items:stretch}
     button{width:100%;margin:6px 0}
     input[type="text"], input[type="url"]{font-size:1.05rem}
     #log{max-height:280px}
   }
+
+  /* unlock overlay */
+  #unlockOverlay {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 18px;
+    z-index: 9999;
+    display: none;
+    text-align: center;
+  }
+  #unlockBtn {
+    width: 100%;
+    padding: 16px;
+    border-radius: 14px;
+    font-size: 1.05rem;
+    background: linear-gradient(0deg, #ff6b81, #ff4757);
+    color: white;
+    border: none;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+  }
 </style>
 </head>
 <body>
   <h1>Gangtay — Firebase → T1.TXT → play</h1>
-  <p>Load T1.TXT (site root) or upload local. Set audio base path and Firebase message URL. Then tap <strong>Enable audio & Start</strong>. Firebase messages should be <code>{"index":N,"ts":...}</code> or <code>{"text":"...","ts":...}</code>.</p>
+  <p class="muted">Load T1.TXT (site root) or upload local. Set audio base path and Firebase URL. Tap <strong>Enable</strong>. If a message arrives while audio is locked, an on-screen button will appear to unlock & play queued items.</p>
 
   <label>Load T1.TXT (site root or upload local)</label>
   <div class="row">
@@ -76,7 +68,7 @@
   <input id="firebaseUrl" type="url" value="https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/message.json" />
 
   <div class="row full-width">
-    <div class="controls">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
       <button id="enableBtn" class="primary">Enable audio & Start polling</button>
       <button id="stopBtn" disabled>Stop polling</button>
       <button id="previewBtn">Preview 0001</button>
@@ -85,24 +77,25 @@
   </div>
 
   <div class="options">
-    <label class="option-inline"><input id="allowDuplicates" type="checkbox" checked> Allow duplicates</label>
-    <label class="option-inline muted">Poll ms: <input id="pollMs" type="number" value="1000" min="200" style="width:90px;padding:6px;margin-left:6px"></label>
-    <label class="option-inline muted">Cooldown ms: <input id="cooldownMs" type="number" value="2000" min="0" style="width:90px;padding:6px;margin-left:6px"></label>
+    <label class="muted">Poll ms: <input id="pollMs" type="number" value="1000" min="200" style="width:90px;padding:6px;margin-left:6px"></label>
+    <label class="muted">Cooldown ms: <input id="cooldownMs" type="number" value="2000" min="0" style="width:90px;padding:6px;margin-left:6px"></label>
+    <label class="muted"><input id="allowDuplicates" type="checkbox" checked> Allow duplicates</label>
   </div>
 
   <div id="status">Status: idle</div>
   <div id="log" aria-live="polite"></div>
 
+  <!-- overlay that appears when messages are queued but audio locked -->
+  <div id="unlockOverlay">
+    <button id="unlockBtn">Tap to unlock & play (0)</button>
+  </div>
+
 <script>
-/*
-  Improved Firebase -> T1.TXT -> play
-  - Mobile friendly layout and larger targets
-  - Poll scheduler avoids overlapping requests and supports exponential backoff
-  - Pauses polling when page hidden (visibility API)
-  - Buffered DOM logging to reduce reflows
-  - O(1) text->index lookup via map
-  - Optional duplicate suppression / cooldown
-  - Abortable fetch with timeout
+/* Full drop-in client:
+   - Queues incoming messages if audio locked and shows an on-screen unlock button.
+   - Tapping unlock button performs user-gesture unlock and plays queued items sequentially.
+   - Plays inline audio on mobile, uses decode fallback if element play blocked.
+   - Poll loop uses adaptive scheduling (no overlapping fetches).
 */
 
 const fileInput = document.getElementById('fileInput');
@@ -117,11 +110,14 @@ const manualBtn = document.getElementById('manualPlay');
 const statusEl = document.getElementById('status');
 const logEl = document.getElementById('log');
 const pollMsEl = document.getElementById('pollMs');
-const allowDuplicatesEl = document.getElementById('allowDuplicates');
 const cooldownMsEl = document.getElementById('cooldownMs');
+const allowDuplicatesEl = document.getElementById('allowDuplicates');
+
+const unlockOverlay = document.getElementById('unlockOverlay');
+const unlockBtn = document.getElementById('unlockBtn');
 
 let lines = [];
-let textToIndex = new Map();   // lowercased text -> index
+let textToIndex = new Map();
 let polling = false;
 let pollTimer = null;
 let inFlight = false;
@@ -133,73 +129,60 @@ let unlocked = false;
 let lastFirebaseTs = null;
 let lastPlayed = { index: null, time: 0 };
 
-// Logging buffer (flush periodically to DOM)
+// queued messages when audio locked
+let queuedMessages = []; // each item: {index: N, text: "...", raw: obj}
+
+// log buffering
 const logBuffer = [];
 let logFlushTimer = null;
 function now(){ return new Date().toLocaleTimeString(); }
-function pushLog(s){
-  logBuffer.push('['+now()+'] '+s);
-  // cap buffer to avoid memory explosion
-  if (logBuffer.length > 500) logBuffer.splice(0, logBuffer.length - 500);
-}
-function flushLogs(){
-  if (logBuffer.length === 0) return;
-  const out = logBuffer.splice(0, logBuffer.length).join('\n') + '\n' + logEl.textContent;
-  logEl.textContent = out;
-  // limit text size
-  if (logEl.textContent.length > 20000) logEl.textContent = logEl.textContent.slice(0,20000);
-}
-logFlushTimer = setInterval(flushLogs, 300);
+function pushLog(s){ logBuffer.push('['+now()+'] '+s); if (logBuffer.length>600) logBuffer.splice(0, logBuffer.length-600); }
+function flushLogs(){ if (logBuffer.length===0) return; logEl.textContent = logBuffer.splice(0, logBuffer.length).join('\n') + '\n' + logEl.textContent; if (logEl.textContent.length>25000) logEl.textContent = logEl.textContent.slice(0,25000); }
+logFlushTimer = setInterval(flushLogs, 250);
 
-// UI helpers
 function setStatus(s){ statusEl.textContent = 'Status: ' + s; pushLog(s); }
 function pad4(n){ return String(n).padStart(4,'0'); }
 
-// T1.TXT parsing + map
+// parse T1.TXT into map for O(1) lookups
 function parseTxt(txt){
   const rows = txt.split(/\r?\n/).map(r=>r.trim()).filter(Boolean);
   lines = rows;
   textToIndex.clear();
   for (let i=0;i<rows.length;i++){
     const k = rows[i].toLowerCase();
-    if (!textToIndex.has(k)) textToIndex.set(k, i+1); // 1-based index
+    if (!textToIndex.has(k)) textToIndex.set(k, i+1);
   }
   pushLog('Parsed T1.TXT, lines=' + lines.length);
 }
 
-// load remote /T1.TXT
+// remote T1.TXT fetch
 async function fetchRemoteTxt(){
   setStatus('Fetching /T1.TXT ...');
   try {
     const r = await fetch('/T1.TXT', {cache:'no-store'});
-    if (!r.ok) { setStatus('/T1.TXT not found (HTTP ' + r.status + ')'); txtInfo.textContent = 'T1.TXT: not found'; return false; }
+    if (!r.ok){ setStatus('/T1.TXT not found (HTTP ' + r.status + ')'); txtInfo.textContent='T1.TXT: not found'; return false; }
     const txt = await r.text();
     parseTxt(txt);
     txtInfo.textContent = `T1.TXT loaded (${lines.length} lines)`;
     setStatus('T1.TXT loaded');
     return true;
-  } catch (e) {
+  } catch(e){
     setStatus('Fetch /T1.TXT failed: ' + (e && e.message ? e.message : e));
     txtInfo.textContent = 'T1.TXT: fetch failed';
     return false;
   }
 }
-fileInput.addEventListener('change', async (ev) => {
+
+fileInput.addEventListener('change', async ev=>{
   const f = ev.target.files && ev.target.files[0];
   if (!f) return;
   setStatus('Reading local file ' + f.name);
-  try {
-    const txt = await f.text();
-    parseTxt(txt);
-    txtInfo.textContent = `Loaded local ${f.name} (${lines.length} lines)`;
-    setStatus('Local T1.TXT loaded');
-  } catch (e) {
-    setStatus('Read file failed: ' + (e && e.message ? e.message : e));
-  }
+  try { const txt = await f.text(); parseTxt(txt); txtInfo.textContent = `Loaded ${f.name} (${lines.length} lines)`; setStatus('Local T1.TXT loaded'); }
+  catch(e){ setStatus('Read file failed: ' + (e && e.message ? e.message : e)); }
 });
 reloadTxtBtn.addEventListener('click', fetchRemoteTxt);
 
-// AUDIO: audioCtx + unlock
+// AUDIO context + unlock helpers
 function createAudioCtx(){
   if (audioCtx) return;
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -208,6 +191,7 @@ function createAudioCtx(){
   masterGain.connect(audioCtx.destination);
   pushLog('AudioContext created');
 }
+
 async function unlockWithTone(){
   try {
     createAudioCtx();
@@ -224,129 +208,52 @@ async function unlockWithTone(){
     g.gain.linearRampToValueAtTime(0.0001, nowt + 0.12);
     osc.stop(nowt + 0.13);
     try { await audioCtx.resume(); } catch(e){}
-    await new Promise(r => setTimeout(r, 180));
+    await new Promise(r=>setTimeout(r, 180));
     if (audioCtx.state === 'running'){ unlocked = true; pushLog('Unlocked audio'); return true; }
-    pushLog('Unlock attempt ended, state=' + audioCtx.state);
+    pushLog('unlock attempt ended state=' + audioCtx.state);
     return false;
-  } catch(e){ pushLog('unlock error: ' + (e && e.message ? e.message : e)); return false; }
+  } catch(e){
+    pushLog('unlock error: ' + (e && e.message ? e.message : e));
+    return false;
+  }
 }
+
 async function tryUnlockSequence(){
   if (unlocked) return true;
+  // try tone (this must be called from a user gesture for some browsers)
   if (await unlockWithTone()) return true;
-  // fallback to muted HTMLAudio
+  // fallback: attempt muted HTMLAudio play (some browsers accept this)
   try {
     createAudioCtx();
     const a = new Audio();
     a.muted = true;
     try { await a.play(); } catch(e){}
     await new Promise(r=>setTimeout(r,60));
-    if (audioCtx.state === 'running') { unlocked = true; pushLog('Unlocked by HTMLAudio fallback'); return true; }
+    if (audioCtx.state === 'running'){ unlocked = true; pushLog('Unlocked by HTMLAudio fallback'); return true; }
   } catch(e){}
   return false;
 }
-function showManual(){ manualBtn.style.display = 'inline-block'; manualBtn.focus(); }
-function hideManual(){ manualBtn.style.display = 'none'; }
 
-// decode wrapper
+// show overlay button with queued count
+function updateUnlockOverlay(){
+  if (queuedMessages.length === 0){ unlockOverlay.style.display = 'none'; return; }
+  unlockBtn.textContent = `Tap to unlock & play ${queuedMessages.length} item${queuedMessages.length>1?'s':''}`;
+  unlockOverlay.style.display = 'block';
+}
+
+// decode compatibility wrapper
 function decodeAudioDataCompat(ab){
   return new Promise((resolve,reject)=>{
     try{
       const p = audioCtx.decodeAudioData(ab);
-      if (p && typeof p.then === 'function') { p.then(resolve).catch(err=>{ try{ audioCtx.decodeAudioData(ab, resolve, reject); }catch(e){ reject(err||e); }}); return; }
+      if (p && typeof p.then === 'function'){ p.then(resolve).catch(err=>{ try{ audioCtx.decodeAudioData(ab, resolve, reject); }catch(e){ reject(err||e); }}); return; }
     }catch(e){}
     try{ audioCtx.decodeAudioData(ab, resolve, reject); } catch(e){ reject(e); }
   });
 }
 
-// Play logic: prevents immediate replay of same index unless allowed
-async function playByIndex(idx){
-  if (idx <= 0){ pushLog('Invalid index ' + idx); return; }
-  const fname = pad4(idx) + '.mp3';
-  let base = (audioBaseEl.value || '/audio/').trim();
-  if (!base.endsWith('/')) base += '/';
-  const url = (base.startsWith('http') ? base : base) + fname + '?ts=' + Date.now();
-
-  // cooldown guard
-  const cooldown = Math.max(0, Number(cooldownMsEl.value) || 0);
-  const nowt = Date.now();
-  if (!allowDuplicatesEl.checked && lastPlayed.index === idx && (nowt - lastPlayed.time < cooldown)){
-    pushLog('Ignored rapid duplicate index ' + idx);
-    return;
-  }
-  lastPlayed.index = idx; lastPlayed.time = nowt;
-
-  setStatus('Play request: ' + fname);
-  createAudioCtx();
-  if (currentAudio){ try{ currentAudio.pause(); currentAudio.src=''; }catch(e){} currentAudio = null; }
-
-  const a = new Audio(url);
-  a.crossOrigin = 'anonymous';
-  try {
-    // try attach to audioCtx if possible
-    const src = audioCtx.createMediaElementSource(a);
-    src.connect(masterGain);
-    a._mediaSource = src;
-  } catch(e) {
-    // ignore
-  }
-
-  a.onended = ()=> setStatus('Finished ' + fname);
-  a.onerror = async () => {
-    pushLog('Audio element error for ' + fname + ' — attempting buffer fallback');
-    try {
-      const r = await fetchWithTimeout(url, 4000);
-      if (!r.ok) throw new Error('fetch status ' + r.status);
-      const ab = await r.arrayBuffer();
-      const buf = await decodeAudioDataCompat(ab);
-      const srcBuf = audioCtx.createBufferSource();
-      srcBuf.buffer = buf;
-      srcBuf.connect(masterGain);
-      srcBuf.onended = ()=> setStatus('Finished via buffer ' + fname);
-      srcBuf.start(0);
-      pushLog('Playing via buffer ' + fname);
-      return;
-    } catch(err) {
-      pushLog('Fallback failed for ' + fname + ': ' + (err && err.message ? err.message : err));
-      showManual();
-    }
-  };
-
-  try {
-    await a.play();
-    currentAudio = a;
-    pushLog('Element play started: ' + fname);
-    return;
-  } catch(playErr){
-    pushLog('Element play rejected: ' + (playErr && playErr.message ? playErr.message : playErr) + ' — trying fallback');
-    try {
-      const r = await fetchWithTimeout(url, 4000);
-      if (!r.ok) { pushLog('Fetch failed: ' + r.status); showManual(); return; }
-      const ab = await r.arrayBuffer();
-      const buf = await decodeAudioDataCompat(ab);
-      const srcBuf = audioCtx.createBufferSource();
-      srcBuf.buffer = buf;
-      srcBuf.connect(masterGain);
-      srcBuf.onended = ()=> setStatus('Finished via buffer ' + fname);
-      srcBuf.start(0);
-      pushLog('Played via buffer: ' + fname);
-      return;
-    } catch(e) {
-      pushLog('Fallback decode failed: ' + (e && e.message ? e.message : e));
-      showManual();
-      return;
-    }
-  }
-}
-
-// fast exact-match lookup
-function findIndexForText(t){
-  if (!t) return -1;
-  const k = t.trim().toLowerCase();
-  return textToIndex.get(k) || -1;
-}
-
-// fetch with timeout helper
-async function fetchWithTimeout(url, timeout = 4000){
+// helper: fetch with abort timeout
+async function fetchWithTimeout(url, timeout=4000){
   const ctrl = new AbortController();
   const id = setTimeout(()=>ctrl.abort(), timeout);
   try {
@@ -359,15 +266,151 @@ async function fetchWithTimeout(url, timeout = 4000){
   }
 }
 
-// POLLING: sequential scheduling with backoff; visibility aware
-function scheduleNextPoll(baseMs) {
+// PLAY: ensure playsinline and webkit-playsinline for mobile
+function makeAudioElement(url){
+  const a = new Audio(url);
+  a.crossOrigin = 'anonymous';
+  a.setAttribute('playsinline','');
+  a.setAttribute('webkit-playsinline','');
+  // ensure it doesn't pause other playbacks by accident
+  a.preload = 'auto';
+  return a;
+}
+
+// main play function - tries element then buffer fallback
+async function playByIndex(idx){
+  if (idx <= 0){ pushLog('Invalid index ' + idx); return; }
+  const fname = pad4(idx) + '.mp3';
+  let base = (audioBaseEl.value || '/audio/').trim();
+  if (!base.endsWith('/')) base += '/';
+  // ensure base is absolute-ish
+  const url = (base.startsWith('http') ? base : (location.origin + (base.startsWith('/') ? '' : '/') + base)) + fname + '?ts=' + Date.now();
+
+  // cooldown guard
+  const cooldown = Math.max(0, Number(cooldownMsEl.value) || 0);
+  const nowt = Date.now();
+  if (!allowDuplicatesEl.checked && lastPlayed.index === idx && (nowt - lastPlayed.time < cooldown)){
+    pushLog('Ignored rapid duplicate index ' + idx);
+    return;
+  }
+  lastPlayed.index = idx; lastPlayed.time = nowt;
+
+  setStatus('Play request: ' + fname);
+  createAudioCtx();
+  // try to resume audioCtx (if previously suspended) — best-effort
+  try { if (audioCtx.state === 'suspended') await audioCtx.resume(); } catch(e){}
+
+  if (currentAudio){ try{ currentAudio.pause(); currentAudio.src=''; }catch(e){} currentAudio=null; }
+
+  const a = makeAudioElement(url);
+  // attempt to attach to audioCtx
+  try {
+    const src = audioCtx.createMediaElementSource(a);
+    src.connect(masterGain);
+    a._mediaSource = src;
+  } catch(e) { /* ignore */ }
+
+  // onended handler
+  a.onended = ()=> setStatus('Finished ' + fname);
+  a.onerror = async () => {
+    pushLog('Audio element error: ' + fname + ' -> fallback buffer');
+    try {
+      const r = await fetchWithTimeout(url, 5000);
+      if (!r.ok) throw new Error('fetch status ' + r.status);
+      const ab = await r.arrayBuffer();
+      const buf = await decodeAudioDataCompat(ab);
+      const srcBuf = audioCtx.createBufferSource();
+      srcBuf.buffer = buf;
+      srcBuf.connect(masterGain);
+      srcBuf.onended = ()=> setStatus('Finished via buffer ' + fname);
+      srcBuf.start(0);
+      pushLog('Playing via buffer: ' + fname);
+      return;
+    } catch(err) {
+      pushLog('Fallback failed for ' + fname + ': ' + (err && err.message ? err.message : err));
+      showManualUnlockButton();
+      return;
+    }
+  };
+
+  try {
+    await a.play();
+    currentAudio = a;
+    pushLog('Element play started: ' + fname);
+    return;
+  } catch(playErr){
+    pushLog('Element play rejected: ' + (playErr && playErr.message ? playErr.message : playErr));
+    // fallback: fetch+decode
+    try {
+      const r = await fetchWithTimeout(url, 5000);
+      if (!r.ok){ pushLog('Fetch failed: ' + r.status); showManualUnlockButton(); return; }
+      const ab = await r.arrayBuffer();
+      const buf = await decodeAudioDataCompat(ab);
+      const srcBuf = audioCtx.createBufferSource();
+      srcBuf.buffer = buf;
+      srcBuf.connect(masterGain);
+      srcBuf.onended = ()=> setStatus('Finished via buffer ' + fname);
+      srcBuf.start(0);
+      pushLog('Played via buffer: ' + fname);
+      return;
+    } catch(e) {
+      pushLog('Fallback decode failed: ' + (e && e.message ? e.message : e));
+      showManualUnlockButton();
+      return;
+    }
+  }
+}
+
+// find index by exact-case-insensitive text
+function findIndexForText(t){
+  if (!t) return -1;
+  const k = t.trim().toLowerCase();
+  return textToIndex.get(k) || -1;
+}
+
+// QUEUE helpers
+function enqueueMessage(msg){
+  // msg is the JSON object from firebase: prefer index then text
+  let idx = null;
+  if (typeof msg.index === 'number') idx = msg.index;
+  else {
+    const t = (typeof msg.text === 'string') ? msg.text : (typeof msg.message === 'string' ? msg.message : null);
+    if (t) idx = findIndexForText(t);
+  }
+  if (idx === null || idx <= 0){ pushLog('Incoming message not mapped to index: ' + JSON.stringify(msg)); return; }
+  queuedMessages.push({ index: idx, raw: msg });
+  pushLog('Queued index ' + idx + ' (queued len ' + queuedMessages.length + ')');
+  updateUnlockOverlay();
+}
+
+// show manual unlock button (existing manual button)
+function showManualUnlockButton(){ manualBtn.style.display='inline-block'; manualBtn.focus(); updateUnlockOverlay(); }
+
+// play queued messages sequentially (called after unlock)
+async function playQueuedSequentially(){
+  // hide overlay while playing
+  unlockOverlay.style.display = 'none';
+  // drain queue
+  while (queuedMessages.length > 0){
+    const itm = queuedMessages.shift();
+    try {
+      await playByIndex(itm.index);
+      // small gap between items to avoid clipping issues
+      await new Promise(r=>setTimeout(r, 150));
+    } catch(e){ pushLog('Error playing queued item: ' + (e && e.message ? e.message : e)); }
+  }
+  updateUnlockOverlay();
+}
+
+// POLLING: schedule without overlapping, backoff on error
+function scheduleNextPoll(baseMs){
   if (!polling) return;
-  // backoff factor based on consecutiveErrors
   const maxBackoffFactor = 8;
   const factor = Math.min(consecutiveErrors, maxBackoffFactor);
   const delay = Math.max(200, Math.round(baseMs * Math.pow(2, factor)));
   pollTimer = setTimeout(pollOnce, delay);
 }
+
 async function pollOnce(){
   if (!polling) return;
   if (inFlight) { scheduleNextPoll(Number(pollMsEl.value) || 1000); return; }
@@ -377,23 +420,33 @@ async function pollOnce(){
   inFlight = true;
   try {
     const r = await fetchWithTimeout(url, 5000);
-    if (!r.ok) { pushLog('Firebase fetch failed: ' + r.status); consecutiveErrors++; return; }
+    if (!r.ok){ pushLog('Firebase fetch failed: ' + r.status); consecutiveErrors++; return; }
     const j = await r.json();
     consecutiveErrors = 0;
-    // check ts to prevent replay
     const ts = j && (j.ts || j.timestamp || null);
-    if (ts && ts === lastFirebaseTs) { /* no-op */ }
-    else {
+    if (ts && ts === lastFirebaseTs) {
+      // nothing new
+    } else {
       lastFirebaseTs = ts;
       pushLog('Firebase message: ' + JSON.stringify(j));
-      if (typeof j.index === 'number') {
-        await playByIndex(j.index);
+      // if audio unlocked, attempt to play immediately; else queue + show overlay
+      if (typeof j.index === 'number'){
+        if (unlocked) await playByIndex(j.index);
+        else enqueueMessage(j);
       } else {
+        // maybe text
         const t = (typeof j.text === 'string') ? j.text : (typeof j.message === 'string' ? j.message : null);
         if (t) {
           const idx = findIndexForText(t);
-          if (idx > 0) await playByIndex(idx);
-          else { pushLog('Text not found: "' + t + '"'); showManual(); }
+          if (idx > 0) {
+            if (unlocked) await playByIndex(idx);
+            else enqueueMessage({index:idx, text:t});
+          } else {
+            pushLog('Text not found: "' + t + '"');
+            showManualUnlockButton();
+          }
+        } else {
+          pushLog('Unrecognized payload');
         }
       }
     }
@@ -402,7 +455,6 @@ async function pollOnce(){
     consecutiveErrors++;
   } finally {
     inFlight = false;
-    // schedule next poll (adapted by pollMs and backoff)
     scheduleNextPoll(Number(pollMsEl.value) || 1000);
   }
 }
@@ -413,58 +465,68 @@ function startPolling(){
   polling = true;
   consecutiveErrors = 0;
   setStatus('Polling started');
-  // run immediately then schedule next
+  // immediate poll
   pollOnce();
 }
+
 function stopPolling(){
   if (!polling) return;
   polling = false;
-  if (pollTimer) { clearTimeout(pollTimer); pollTimer = null; }
+  if (pollTimer){ clearTimeout(pollTimer); pollTimer = null; }
   setStatus('Polling stopped');
 }
 
-// Hook UI
+// UI wiring
 let enabling = false;
-enableBtn.addEventListener('click', async () => {
+enableBtn.addEventListener('click', async ()=>{
   if (enabling) return;
   enabling = true;
   enableBtn.disabled = true;
   setStatus('Attempting unlock and starting poll');
-  // register quick user-gesture unlock attempts
+  // attach quick user-gesture unlock attempts
   document.addEventListener('touchstart', ()=>tryUnlockSequence(), {once:true, passive:true});
   document.addEventListener('click', ()=>tryUnlockSequence(), {once:true});
   const ok = await tryUnlockSequence();
-  if (!ok){ setStatus('Audio locked — tap Manual Play once'); showManual(); }
+  if (!ok){ setStatus('Audio locked — tap Manual Play or overlay to unlock'); showManualUnlockButton(); }
   startPolling();
   stopBtn.disabled = false;
   enabling = false;
 });
-stopBtn.addEventListener('click', () => { stopPolling(); enableBtn.disabled = false; stopBtn.disabled = true; });
+
+stopBtn.addEventListener('click', ()=>{ stopPolling(); enableBtn.disabled = false; stopBtn.disabled = true; });
+
 manualBtn.addEventListener('click', async ()=>{
   setStatus('Manual Play tapped — attempting unlock');
   const ok = await tryUnlockSequence();
-  if (ok) { hideManual(); setStatus('Unlocked (manual)'); } else setStatus('Manual unlock failed');
+  if (ok){ manualBtn.style.display='none'; setStatus('Unlocked (manual)'); unlocked = true; if (queuedMessages.length>0) await playQueuedSequentially(); }
+  else setStatus('Manual unlock failed — try tapping the overlay or the page');
 });
+
 previewBtn.addEventListener('click', async ()=>{ createAudioCtx(); await playByIndex(1); });
 
-// visibility: pause polling while hidden to save battery/data
-document.addEventListener('visibilitychange', ()=>{
-  if (document.hidden){
-    pushLog('Page hidden, polling will continue but reduced via schedule');
-  } else {
-    pushLog('Page visible');
-  }
+// overlay unlock button handler
+unlockBtn.addEventListener('click', async ()=>{
+  setStatus('Overlay tap — unlocking and playing queued items');
+  // this is a user gesture so unlockWithTone should succeed on mobile browsers
+  const ok = await tryUnlockSequence();
+  if (!ok){ setStatus('Unlock attempt failed'); showManualUnlockButton(); return; }
+  // mark unlocked
+  unlocked = true;
+  // hide manual and overlay while we play
+  manualBtn.style.display='none';
+  unlockOverlay.style.display = 'none';
+  // now play queued sequentially
+  await playQueuedSequentially();
 });
 
+// visibility changes: keep polling but log
+document.addEventListener('visibilitychange', ()=>{ pushLog(document.hidden ? 'Page hidden' : 'Page visible'); });
+
 // cleanup on unload
-window.addEventListener('beforeunload', ()=>{
-  if (pollTimer) clearTimeout(pollTimer);
-  if (logFlushTimer) clearInterval(logFlushTimer);
-});
+window.addEventListener('beforeunload', ()=>{ if (pollTimer) clearTimeout(pollTimer); if (logFlushTimer) clearInterval(logFlushTimer); });
 
 // initial load
 (async function init(){
-  // load server T1.TXT if present
   try {
     const ok = await fetchRemoteTxt();
     if (!ok) txtInfo.textContent = 'T1.TXT not found on server — upload or use file input';
