@@ -1,729 +1,325 @@
 <!doctype html>
-<html lang="en">
+<html lang="en"> 
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Gangtay — Firebase → T1.TXT → play</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    :root {
-      --primary: #1a1a2e;
-      --secondary: #16213e;
-      --accent: #0f3460;
-      --highlight: #00d4ff;
-      --success: #00ff88;
-      --danger: #ff4757;
-      --neutral-50: #f8f9fa;
-      --neutral-100: #e9ecef;
-      --neutral-200: #dee2e6;
-      --neutral-600: #495057;
-      --neutral-900: #212529;
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-      color: var(--neutral-900);
-      min-height: 100vh;
-      padding: 20px;
-      font-size: 16px;
-      line-height: 1.6;
-    }
-
-    .container {
-      max-width: 900px;
-      margin: 0 auto;
-    }
-
-    /* Header Section */
-    header {
-      text-align: center;
-      margin-bottom: 40px;
-      animation: slideDown 0.6s ease-out;
-    }
-
-    h1 {
-      font-size: 2.5rem;
-      font-weight: 700;
-      color: var(--highlight);
-      margin-bottom: 8px;
-      text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
-      letter-spacing: -1px;
-    }
-
-    header p {
-      color: var(--neutral-600);
-      font-size: 1rem;
-      max-width: 600px;
-      margin: 0 auto;
-      line-height: 1.8;
-    }
-
-    code {
-      background: rgba(0, 212, 255, 0.1);
-      color: var(--highlight);
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-family: 'Courier New', monospace;
-      font-size: 0.9em;
-    }
-
-    /* Card/Section Styling */
-    .section {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      border-radius: 16px;
-      padding: 28px;
-      margin-bottom: 24px;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-      animation: fadeIn 0.6s ease-out backwards;
-    }
-
-    .section:nth-child(1) { animation-delay: 0.1s; }
-    .section:nth-child(2) { animation-delay: 0.2s; }
-    .section:nth-child(3) { animation-delay: 0.3s; }
-    .section:nth-child(4) { animation-delay: 0.4s; }
-
-    /* Labels */
-    label {
-      display: block;
-      margin-top: 24px;
-      margin-bottom: 12px;
-      font-weight: 600;
-      color: var(--primary);
-      font-size: 0.95rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    label:first-child {
-      margin-top: 0;
-    }
-
-    .label-description {
-      font-size: 0.85rem;
-      color: var(--neutral-600);
-      text-transform: none;
-      font-weight: 400;
-      letter-spacing: normal;
-      margin-top: 0;
-      margin-bottom: 8px;
-    }
-
-    /* Input Styling */
-    input[type="text"],
-    input[type="url"],
-    input[type="file"] {
-      width: 100%;
-      padding: 12px 16px;
-      margin-top: 6px;
-      border: 2px solid var(--neutral-100);
-      border-radius: 10px;
-      font-size: 0.95rem;
-      transition: all 0.3s ease;
-      background: var(--neutral-50);
-      color: var(--neutral-900);
-    }
-
-    input[type="text"]:focus,
-    input[type="url"]:focus,
-    input[type="file"]:focus {
-      outline: none;
-      border-color: var(--highlight);
-      background: white;
-      box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
-    }
-
-    input[type="file"] {
-      cursor: pointer;
-      padding: 10px 16px;
-    }
-
-    /* Button Styling */
-    button {
-      padding: 12px 20px;
-      margin: 8px 8px 8px 0;
-      font-size: 0.95rem;
-      font-weight: 600;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      position: relative;
-      overflow: hidden;
-      background: linear-gradient(135deg, var(--accent), #1a4d6f);
-      color: white;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    }
-
-    button:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 25px rgba(0, 212, 255, 0.3);
-    }
-
-    button:active:not(:disabled) {
-      transform: translateY(0);
-    }
-
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    .btn-primary {
-      background: linear-gradient(135deg, var(--highlight), #00b8d4);
-      color: var(--primary);
-    }
-
-    .btn-primary:hover:not(:disabled) {
-      box-shadow: 0 6px 25px rgba(0, 212, 255, 0.4);
-    }
-
-    .btn-success {
-      background: linear-gradient(135deg, var(--success), #00d960);
-    }
-
-    .btn-success:hover:not(:disabled) {
-      box-shadow: 0 6px 25px rgba(0, 255, 136, 0.3);
-    }
-
-    .btn-danger {
-      background: linear-gradient(135deg, var(--danger), #ff6b7a);
-    }
-
-    .btn-danger:hover:not(:disabled) {
-      box-shadow: 0 6px 25px rgba(255, 71, 87, 0.3);
-    }
-
-    .btn-large {
-      padding: 16px 32px;
-      font-size: 1.1rem;
-      display: inline-block;
-      width: 100%;
-      text-align: center;
-    }
-
-    /* Row/Grid Layout */
-    .row {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      margin-top: 12px;
-      flex-wrap: wrap;
-    }
-
-    .row > * {
-      flex: 1;
-      min-width: 150px;
-    }
-
-    /* Status and Info */
-    .info-box {
-      background: linear-gradient(135deg, rgba(0, 212, 255, 0.05), rgba(0, 212, 255, 0.02));
-      border: 2px solid rgba(0, 212, 255, 0.2);
-      border-radius: 10px;
-      padding: 12px 16px;
-      margin-top: 8px;
-      font-size: 0.9rem;
-      color: var(--accent);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .info-box.success {
-      background: linear-gradient(135deg, rgba(0, 255, 136, 0.05), rgba(0, 255, 136, 0.02));
-      border-color: rgba(0, 255, 136, 0.2);
-      color: #00b860;
-    }
-
-    .info-box.error {
-      background: linear-gradient(135deg, rgba(255, 71, 87, 0.05), rgba(255, 71, 87, 0.02));
-      border-color: rgba(255, 71, 87, 0.2);
-      color: #ff3745;
-    }
-
-    .status-icon {
-      display: inline-block;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: currentColor;
-      animation: pulse 2s infinite;
-    }
-
-    /* Status Section */
-    #status {
-      margin-top: 16px;
-      font-weight: 600;
-      color: var(--accent);
-      font-size: 0.95rem;
-    }
-
-    /* Log Section */
-    #log {
-      white-space: pre-wrap;
-      font-family: 'Courier New', monospace;
-      margin-top: 16px;
-      background: linear-gradient(135deg, rgba(26, 26, 46, 0.8), rgba(22, 33, 62, 0.8));
-      color: var(--highlight);
-      padding: 16px;
-      border-radius: 10px;
-      max-height: 300px;
-      overflow-y: auto;
-      overflow-x: hidden;
-      font-size: 0.85rem;
-      line-height: 1.5;
-      border: 1px solid rgba(0, 212, 255, 0.2);
-      word-break: break-word;
-    }
-
-    #log::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    #log::-webkit-scrollbar-track {
-      background: rgba(0, 212, 255, 0.05);
-      border-radius: 4px;
-    }
-
-    #log::-webkit-scrollbar-thumb {
-      background: rgba(0, 212, 255, 0.3);
-      border-radius: 4px;
-    }
-
-    #log::-webkit-scrollbar-thumb:hover {
-      background: rgba(0, 212, 255, 0.5);
-    }
-
-    /* Manual Play Button */
-    #manualPlay {
-      display: none;
-      background: linear-gradient(135deg, var(--danger), #ff6b7a);
-      padding: 18px 36px;
-      font-size: 1.15rem;
-      width: 100%;
-      animation: pulse 1.5s ease-in-out infinite;
-    }
-
-    #manualPlay:focus {
-      animation: none;
-    }
-
-    /* Animations */
-    @keyframes slideDown {
-      from {
-        opacity: 0;
-        transform: translateY(-20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes pulse {
-      0%, 100% {
-        transform: scale(1);
-        opacity: 1;
-      }
-      50% {
-        transform: scale(1.05);
-        opacity: 0.8;
-      }
-    }
-
-    /* Section Title */
-    .section-title {
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: var(--primary);
-      margin-bottom: 12px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .section-title::before {
-      content: '';
-      width: 4px;
-      height: 24px;
-      background: linear-gradient(135deg, var(--highlight), var(--accent));
-      border-radius: 2px;
-    }
-
-    /* Responsive Design */
-    @media (max-width: 768px) {
-      h1 {
-        font-size: 2rem;
-      }
-
-      .section {
-        padding: 20px;
-      }
-
-      .row {
-        flex-direction: column;
-      }
-
-      .row > * {
-        min-width: auto;
-        flex: 1 1 100%;
-      }
-
-      button {
-        padding: 11px 16px;
-        font-size: 0.9rem;
-      }
-
-      .btn-large {
-        padding: 14px 24px;
-      }
-    }
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Gangtay — Firebase -> T1.TXT -> play</title>
+<style>
+  body{font-family:system-ui,Arial;padding:18px;max-width:980px;margin:auto}
+  h1{font-size:1.2rem}
+  label{display:block;margin-top:10px;font-weight:600}
+  input[type="text"], input[type="url"]{width:100%;padding:8px;margin-top:6px;box-sizing:border-box}
+  button{padding:10px 14px;margin:8px 6px;font-size:1rem}
+  .row{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
+  #status{margin-top:10px;color:#333}
+  #log{white-space:pre-wrap;font-family:monospace;margin-top:10px;background:#f6f6f6;padding:10px;border-radius:6px;max-height:340px;overflow:auto}
+  .bigManual{background:#ff4757;color:white;border:none;padding:12px 18px;font-weight:700;border-radius:6px}
+</style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>🎵 Gangtay</h1>
-      <p>Firebase → T1.TXT → Play</p>
-    </header>
+  <h1>Gangtay — Firebase → T1.TXT → play</h1>
+  <p>Load T1.TXT (site root) or upload your T1.TXT locally, set audio base path, click <strong>Enable audio & Start polling</strong>. Send Firebase messages with <code>{"text":"xin chao","ts":...}</code> or <code>{"index":5,"ts":...}</code>.</p>
 
-    <!-- T1.TXT Section -->
-    <div class="section">
-      <div class="section-title">Upload Audio Index</div>
-      <p style="color: var(--neutral-600); margin-bottom: 16px;">Load T1.TXT (site root) or upload your own, set audio base path, then click <strong>Enable Audio & Start Polling</strong></p>
-      
-      <label class="label-description">Load T1.TXT (site root /T1.TXT or upload local)</label>
-      <div class="row">
-        <input id="fileInput" type="file" accept=".txt" />
-        <button id="reloadTxt" class="btn-primary">Fetch /T1.TXT</button>
-      </div>
-      <div id="txtInfo" class="info-box">
-        <span class="status-icon"></span>
-        Status: not loaded
-      </div>
-    </div>
+  <label>Load T1.TXT (site root /T1.TXT or upload local)</label>
+  <div class="row">
+    <input id="fileInput" type="file" accept=".txt">
+    <button id="reloadTxt">Fetch /T1.TXT</button>
+  </div>
+  <div id="txtInfo" style="color:#666;margin-top:6px">Status: not loaded</div>
 
-    <!-- Audio Configuration Section -->
-    <div class="section">
-      <div class="section-title">Audio Configuration</div>
-      
-      <label>Audio Base Path</label>
-      <input id="audioBase" type="text" value="/audio/" placeholder="/audio/" />
-      
-      <label style="margin-top: 16px;">Firebase Message URL</label>
-      <input id="firebaseUrl" type="url" value="https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/message.json" placeholder="https://..." />
-    </div>
+  <label>Audio base path</label>
+  <input id="audioBase" type="text" value="/audio/" />
 
-    <!-- Control Section -->
-    <div class="section">
-      <div class="section-title">Controls</div>
-      
-      <div class="row">
-        <button id="enableBtn" class="btn-success">Enable Audio & Start Polling</button>
-        <button id="stopBtn" class="btn-danger" disabled>Stop Polling</button>
-      </div>
-      
-      <div class="row">
-        <button id="previewBtn" class="btn-primary" style="flex: 0 1 auto;">Preview 0001</button>
-      </div>
+  <label>Firebase message URL</label>
+  <input id="firebaseUrl" type="url" value="https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/message.json" />
 
-      <button id="manualPlay" class="btn-large">🔊 Manual Play (tap once)</button>
-    </div>
-
-    <!-- Status & Log Section -->
-    <div class="section">
-      <div class="section-title">Status & Activity Log</div>
-      <div id="status">Status: idle</div>
-      <div id="log"></div>
-    </div>
+  <div class="row">
+    <button id="enableBtn">Enable audio & Start polling</button>
+    <button id="stopBtn" disabled>Stop polling</button>
+    <button id="previewBtn">Preview 0001</button>
+    <button id="manualPlay" class="bigManual" style="display:none">Manual Play (tap once)</button>
   </div>
 
-  <script>
-    const POLL_INTERVAL_MS = 1000;
+  <div id="status">Status: idle</div>
+  <div id="log"></div>
 
-    const fileInput = document.getElementById('fileInput');
-    const reloadTxtBtn = document.getElementById('reloadTxt');
-    const txtInfo = document.getElementById('txtInfo');
-    const audioBaseEl = document.getElementById('audioBase');
-    const firebaseUrlEl = document.getElementById('firebaseUrl');
-    const enableBtn = document.getElementById('enableBtn');
-    const stopBtn = document.getElementById('stopBtn');
-    const previewBtn = document.getElementById('previewBtn');
-    const manualBtn = document.getElementById('manualPlay');
-    const statusEl = document.getElementById('status');
-    const logEl = document.getElementById('log');
+<script>
+/* Firebase -> T1.TXT -> play
+   - Poll interval: 1s (POLL_INTERVAL_MS)
+   - T1.TXT lines: exact match (case-insensitive)
+   - Filename format: 4-digit zero-padded (0001.mp3)
+   - Includes mobile audio unlock + decodeAudioDataCompat
+*/
 
-    let lines = [];
-    let pollHandle = null;
-    let lastFirebaseTs = null;
-    let audioCtx = null;
-    let masterGain = null;
-    let currentAudio = null;
-    let unlocked = false;
+const POLL_INTERVAL_MS = 1000;
 
-    function now(){ return new Date().toLocaleTimeString(); }
-    function lg(m){ logEl.textContent = `[${now()}] ${m}\n` + logEl.textContent; }
-    function setStatus(s){ statusEl.textContent = 'Status: ' + s; lg(s); }
-    function pad4(n){ return String(n).padStart(4,'0'); }
+const fileInput = document.getElementById('fileInput');
+const reloadTxtBtn = document.getElementById('reloadTxt');
+const txtInfo = document.getElementById('txtInfo');
+const audioBaseEl = document.getElementById('audioBase');
+const firebaseUrlEl = document.getElementById('firebaseUrl');
+const enableBtn = document.getElementById('enableBtn');
+const stopBtn = document.getElementById('stopBtn');
+const previewBtn = document.getElementById('previewBtn');
+const manualBtn = document.getElementById('manualPlay');
+const statusEl = document.getElementById('status');
+const logEl = document.getElementById('log');
 
-    async function fetchRemoteTxt(){
-      setStatus('Fetching /T1.TXT ...');
-      try {
-        const r = await fetch('/T1.TXT', { cache: 'no-store' });
-        if (!r.ok) { setStatus('/T1.TXT not found (HTTP ' + r.status + ')'); updateTxtInfo(false); return false; }
-        const t = await r.text();
-        parseTxt(t);
-        updateTxtInfo(true);
-        setStatus('T1.TXT loaded');
-        return true;
-      } catch (e) {
-        setStatus('Fetch /T1.TXT failed: ' + e.message);
-        updateTxtInfo(false);
-        return false;
+let lines = [];                    // T1.TXT lines array
+let pollHandle = null;
+let lastFirebaseTs = null;         // avoid replaying same ts
+let audioCtx = null;
+let masterGain = null;
+let currentAudio = null;
+let unlocked = false;
+
+function now(){ return new Date().toLocaleTimeString(); }
+function lg(m){ logEl.textContent = `[${now()}] ${m}\n` + logEl.textContent; }
+function setStatus(s){ statusEl.textContent = 'Status: ' + s; lg(s); }
+function pad4(n){ return String(n).padStart(4,'0'); }
+
+// load remote /T1.TXT
+async function fetchRemoteTxt(){
+  setStatus('Fetching /T1.TXT ...');
+  try {
+    const r = await fetch('/T1.TXT', { cache: 'no-store' });
+    if (!r.ok) { setStatus('/T1.TXT not found (HTTP ' + r.status + ')'); txtInfo.textContent = 'T1.TXT: not found'; return false; }
+    const t = await r.text();
+    parseTxt(t);
+    txtInfo.textContent = `T1.TXT loaded (${lines.length} lines)`;
+    setStatus('T1.TXT loaded');
+    return true;
+  } catch (e) {
+    setStatus('Fetch /T1.TXT failed: ' + e.message);
+    txtInfo.textContent = 'T1.TXT: fetch failed';
+    return false;
+  }
+}
+function parseTxt(txt){
+  const raw = txt.split(/\r?\n/);
+  lines = raw.map(l => l.trim()).filter(l => l.length > 0);
+  lg('Parsed T1.TXT lines: ' + lines.length);
+}
+fileInput.addEventListener('change', async (ev)=>{
+  const f = ev.target.files && ev.target.files[0];
+  if (!f) return;
+  setStatus('Reading local file ' + f.name);
+  try {
+    const txt = await f.text();
+    parseTxt(txt);
+    txtInfo.textContent = `Loaded local ${f.name} (${lines.length} lines)`;
+    setStatus('Local T1.TXT loaded');
+  } catch (e) {
+    setStatus('Read file failed: ' + e.message);
+  }
+});
+reloadTxtBtn.addEventListener('click', fetchRemoteTxt);
+
+// audio context and gain
+function createAudioCtx(){
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = 1.0;
+  masterGain.connect(audioCtx.destination);
+  lg('AudioContext created');
+}
+
+// mobile unlock (tone)
+async function unlockWithTone(){
+  try {
+    createAudioCtx();
+    if (audioCtx.state === 'running') { unlocked = true; return true; }
+    const nowt = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = 'sine'; osc.frequency.value = 880;
+    g.gain.value = 0.0001;
+    osc.connect(g); g.connect(masterGain);
+    g.gain.setValueAtTime(0.0001, nowt);
+    g.gain.linearRampToValueAtTime(0.05, nowt + 0.01);
+    osc.start(nowt);
+    g.gain.linearRampToValueAtTime(0.0001, nowt + 0.12);
+    osc.stop(nowt + 0.13);
+    try { await audioCtx.resume(); } catch(e){}
+    await new Promise(r => setTimeout(r, 180));
+    if (audioCtx.state === 'running') { unlocked = true; lg('Unlocked audio'); return true; }
+    lg('unlock attempt ended, state=' + audioCtx.state);
+    return false;
+  } catch (e) {
+    console.warn('unlock error', e);
+    return false;
+  }
+}
+async function tryUnlockSequence(){
+  if (unlocked) return true;
+  if (await unlockWithTone()) return true;
+  // try simple HTMLAudio as fallback
+  try {
+    createAudioCtx();
+    const a = new Audio();
+    a.muted = true;
+    try { await a.play(); } catch(e){}
+    await new Promise(r=>setTimeout(r,50));
+    if (audioCtx.state === 'running') { unlocked = true; lg('Unlocked by HTMLAudio fallback'); return true; }
+  } catch(e) {}
+  return false;
+}
+function showManual(){ manualBtn.style.display = 'inline-block'; manualBtn.focus(); }
+function hideManual(){ manualBtn.style.display = 'none'; }
+
+// decodeAudioData compatibility wrapper
+function decodeAudioDataCompat(ab) {
+  return new Promise((resolve, reject) => {
+    try {
+      const p = audioCtx.decodeAudioData(ab);
+      if (p && typeof p.then === 'function') {
+        p.then(resolve).catch(err => {
+          try {
+            audioCtx.decodeAudioData(ab, resolve, reject);
+          } catch(cbErr) { reject(err || cbErr); }
+        });
+        return;
       }
-    }
+    } catch (e) {}
+    // callback form
+    try {
+      audioCtx.decodeAudioData(ab, resolve, reject);
+    } catch(e) { reject(e); }
+  });
+}
 
-    function updateTxtInfo(loaded){
-      if (loaded) {
-        txtInfo.className = 'info-box success';
-        txtInfo.innerHTML = `<span class="status-icon"></span>T1.TXT loaded (${lines.length} lines)`;
+// play file by 1-based index
+async function playByIndex(idx) {
+  if (idx <= 0) { lg('Invalid index ' + idx); return; }
+  const fname = pad4(idx) + '.mp3';
+  let base = audioBaseEl.value.trim() || '/audio/';
+  if (!base.endsWith('/')) base += '/';
+  const url = (base.startsWith('http') ? base : base) + fname + '?ts=' + Date.now();
+  setStatus('Playing ' + fname);
+  try {
+    // prefer HTMLAudio element (simpler), connect to WebAudio if possible
+    createAudioCtx();
+    if (currentAudio) { try { currentAudio.pause(); currentAudio.src = ""; } catch(e){} currentAudio = null; }
+    const a = new Audio(url);
+    a.crossOrigin = 'anonymous';
+    try {
+      const src = audioCtx.createMediaElementSource(a);
+      src.connect(masterGain);
+      a._mediaSource = src;
+    } catch(e) {
+      // ignore if cannot connect
+      a.volume = 1.0;
+    }
+    currentAudio = a;
+    // resume audioCtx if suspended (older iOS)
+    if (audioCtx.state === 'suspended') try { await audioCtx.resume(); } catch(e){}
+    const ok = await a.play().then(()=>true).catch(()=>false);
+    if (ok) { lg('Element play started: ' + fname); a.onended = ()=> setStatus('Finished ' + fname); return; }
+    // if blocked or element failed, try fetch+decode fallback
+    lg('Element play blocked or failed, trying fetch+decode fallback');
+    const r = await fetch(url, { cache: 'no-store' });
+    if (!r.ok) { lg('Fetch failed: ' + r.status); return; }
+    const ab = await r.arrayBuffer();
+    const buffer = await decodeAudioDataCompat(ab);
+    const srcBuf = audioCtx.createBufferSource();
+    srcBuf.buffer = buffer;
+    srcBuf.connect(masterGain);
+    if (audioCtx.state === 'suspended') try { await audioCtx.resume(); } catch(e){}
+    srcBuf.start(0);
+    lg('Played via buffer: ' + fname);
+  } catch (e) {
+    lg('Play error: ' + (e && e.message ? e.message : e));
+    showManual();
+  }
+}
+
+// find index of exact text in T1.TXT (case-insensitive)
+function findIndexForText(text) {
+  if (!text) return -1;
+  const k = text.trim().toLowerCase();
+  for (let i = 0; i < lines.length; i++) {
+    if ((lines[i] || '').toLowerCase() === k) return i + 1; // 1-based
+  }
+  return -1;
+}
+
+// poll firebase and handle message
+async function pollOnce() {
+  const url = firebaseUrlEl.value.trim();
+  if (!url) { lg('Firebase URL empty'); return; }
+  try {
+    const r = await fetch(url, { cache: 'no-store' });
+    if (!r.ok) { lg('Firebase fetch failed: ' + r.status); return; }
+    const j = await r.json();
+    // ignore if same ts repeated
+    const ts = j && (j.ts || j.timestamp || null);
+    if (ts && ts === lastFirebaseTs) {
+      // nothing new
+      return;
+    }
+    lastFirebaseTs = ts;
+    lg('Firebase message: ' + JSON.stringify(j));
+    // if index present -> play
+    if (typeof j.index === 'number') {
+      await playByIndex(j.index);
+      return;
+    }
+    // try text
+    const t = (typeof j.text === 'string') ? j.text : (typeof j.message === 'string' ? j.message : null);
+    if (t) {
+      const idx = findIndexForText(t);
+      if (idx > 0) {
+        await playByIndex(idx);
       } else {
-        txtInfo.className = 'info-box error';
-        txtInfo.textContent = 'T1.TXT: not found or upload local file';
-      }
-    }
-
-    function parseTxt(txt){
-      const raw = txt.split(/\r?\n/);
-      lines = raw.map(l => l.trim()).filter(l => l.length > 0);
-      lg('Parsed T1.TXT lines: ' + lines.length);
-    }
-
-    fileInput.addEventListener('change', async (ev)=>{
-      const f = ev.target.files && ev.target.files[0];
-      if (!f) return;
-      setStatus('Reading local file ' + f.name);
-      try {
-        const txt = await f.text();
-        parseTxt(txt);
-        updateTxtInfo(true);
-        setStatus('Local T1.TXT loaded');
-      } catch (e) {
-        setStatus('Read file failed: ' + e.message);
-        updateTxtInfo(false);
-      }
-    });
-    reloadTxtBtn.addEventListener('click', fetchRemoteTxt);
-
-    function createAudioCtx(){
-      if (audioCtx) return;
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      masterGain = audioCtx.createGain();
-      masterGain.gain.value = 1.0;
-      masterGain.connect(audioCtx.destination);
-      lg('AudioContext created');
-    }
-
-    async function unlockWithTone(){
-      try {
-        createAudioCtx();
-        if (audioCtx.state === 'running') { unlocked = true; return true; }
-        const nowt = audioCtx.currentTime;
-        const osc = audioCtx.createOscillator();
-        const g = audioCtx.createGain();
-        osc.type = 'sine'; osc.frequency.value = 880;
-        g.gain.value = 0.0001;
-        osc.connect(g); g.connect(masterGain);
-        g.gain.setValueAtTime(0.0001, nowt);
-        g.gain.linearRampToValueAtTime(0.05, nowt + 0.01);
-        osc.start(nowt);
-        g.gain.linearRampToValueAtTime(0.0001, nowt + 0.12);
-        osc.stop(nowt + 0.13);
-        try { await audioCtx.resume(); } catch(e){}
-        await new Promise(r => setTimeout(r, 180));
-        if (audioCtx.state === 'running') { unlocked = true; lg('Unlocked audio'); return true; }
-        lg('unlock attempt ended, state=' + audioCtx.state);
-        return false;
-      } catch (e) {
-        console.warn('unlock error', e);
-        return false;
-      }
-    }
-
-    async function tryUnlockSequence(){
-      if (unlocked) return true;
-      if (await unlockWithTone()) return true;
-      try {
-        createAudioCtx();
-        const a = new Audio();
-        a.muted = true;
-        try { await a.play(); } catch(e){}
-        await new Promise(r=>setTimeout(r,50));
-        if (audioCtx.state === 'running') { unlocked = true; lg('Unlocked by HTMLAudio fallback'); return true; }
-      } catch(e) {}
-      return false;
-    }
-
-    function showManual(){ manualBtn.style.display = 'inline-block'; manualBtn.focus(); }
-    function hideManual(){ manualBtn.style.display = 'none'; }
-
-    function decodeAudioDataCompat(ab) {
-      return new Promise((resolve, reject) => {
-        try {
-          const p = audioCtx.decodeAudioData(ab);
-          if (p && typeof p.then === 'function') {
-            p.then(resolve).catch(err => {
-              try {
-                audioCtx.decodeAudioData(ab, resolve, reject);
-              } catch(cbErr) { reject(err || cbErr); }
-            });
-            return;
-          }
-        } catch (e) {}
-        try {
-          audioCtx.decodeAudioData(ab, resolve, reject);
-        } catch(e) { reject(e); }
-      });
-    }
-
-    async function playByIndex(idx) {
-      if (idx <= 0) { lg('Invalid index ' + idx); return; }
-      const fname = pad4(idx) + '.mp3';
-      let base = audioBaseEl.value.trim() || '/audio/';
-      if (!base.endsWith('/')) base += '/';
-      const url = (base.startsWith('http') ? base : base) + fname + '?ts=' + Date.now();
-      setStatus('Playing ' + fname);
-      try {
-        createAudioCtx();
-        if (currentAudio) { try { currentAudio.pause(); currentAudio.src = ""; } catch(e){} currentAudio = null; }
-        const a = new Audio(url);
-        a.crossOrigin = 'anonymous';
-        try {
-          const src = audioCtx.createMediaElementSource(a);
-          src.connect(masterGain);
-          a._mediaSource = src;
-        } catch(e) {
-          a.volume = 1.0;
-        }
-        currentAudio = a;
-        if (audioCtx.state === 'suspended') try { await audioCtx.resume(); } catch(e){}
-        const ok = await a.play().then(()=>true).catch(()=>false);
-        if (ok) { lg('Element play started: ' + fname); a.onended = ()=> setStatus('Finished ' + fname); return; }
-        lg('Element play blocked or failed, trying fetch+decode fallback');
-        const r = await fetch(url, { cache: 'no-store' });
-        if (!r.ok) { lg('Fetch failed: ' + r.status); return; }
-        const ab = await r.arrayBuffer();
-        const buffer = await decodeAudioDataCompat(ab);
-        const srcBuf = audioCtx.createBufferSource();
-        srcBuf.buffer = buffer;
-        srcBuf.connect(masterGain);
-        if (audioCtx.state === 'suspended') try { await audioCtx.resume(); } catch(e){}
-        srcBuf.start(0);
-        lg('Played via buffer: ' + fname);
-      } catch (e) {
-        lg('Play error: ' + (e && e.message ? e.message : e));
+        lg('Text not found in T1.TXT: "' + t + '"');
         showManual();
       }
     }
+  } catch (e) {
+    lg('Poll error: ' + (e && e.message ? e.message : e));
+  }
+}
 
-    function findIndexForText(text) {
-      if (!text) return -1;
-      const k = text.trim().toLowerCase();
-      for (let i = 0; i < lines.length; i++) {
-        if ((lines[i] || '').toLowerCase() === k) return i + 1;
-      }
-      return -1;
-    }
+// UI & event wiring
+enableBtn.addEventListener('click', async () => {
+  setStatus('Attempting unlock and starting poll');
+  document.addEventListener('touchstart', () => tryUnlockSequence(), {once:true, passive:true});
+  document.addEventListener('click', () => tryUnlockSequence(), {once:true});
+  const ok = await tryUnlockSequence();
+  if (!ok) { setStatus('Audio locked — tap Manual Play'); showManual(); }
+  if (!pollHandle) {
+    pollHandle = setInterval(pollOnce, POLL_INTERVAL_MS);
+    setStatus('Polling started');
+    enableBtn.disabled = true;
+    stopBtn.disabled = false;
+  }
+});
 
-    async function pollOnce() {
-      const url = firebaseUrlEl.value.trim();
-      if (!url) { lg('Firebase URL empty'); return; }
-      try {
-        const r = await fetch(url, { cache: 'no-store' });
-        if (!r.ok) { lg('Firebase fetch failed: ' + r.status); return; }
-        const j = await r.json();
-        const ts = j && (j.ts || j.timestamp || null);
-        if (ts && ts === lastFirebaseTs) {
-          return;
-        }
-        lastFirebaseTs = ts;
-        lg('Firebase message: ' + JSON.stringify(j));
-        if (typeof j.index === 'number') {
-          await playByIndex(j.index);
-          return;
-        }
-        const t = (typeof j.text === 'string') ? j.text : (typeof j.message === 'string' ? j.message : null);
-        if (t) {
-          const idx = findIndexForText(t);
-          if (idx > 0) {
-            await playByIndex(idx);
-          } else {
-            lg('Text not found in T1.TXT: "' + t + '"');
-            showManual();
-          }
-        }
-      } catch (e) {
-        lg('Poll error: ' + (e && e.message ? e.message : e));
-      }
-    }
+stopBtn.addEventListener('click', () => {
+  if (pollHandle) { clearInterval(pollHandle); pollHandle = null; setStatus('Polling stopped'); enableBtn.disabled = false; stopBtn.disabled = true; }
+});
 
-    enableBtn.addEventListener('click', async () => {
-      setStatus('Attempting unlock and starting poll');
-      document.addEventListener('touchstart', () => tryUnlockSequence(), {once:true, passive:true});
-      document.addEventListener('click', () => tryUnlockSequence(), {once:true});
-      const ok = await tryUnlockSequence();
-      if (!ok) { setStatus('Audio locked — tap Manual Play'); showManual(); }
-      if (!pollHandle) {
-        pollHandle = setInterval(pollOnce, POLL_INTERVAL_MS);
-        setStatus('Polling started');
-        enableBtn.disabled = true;
-        stopBtn.disabled = false;
-      }
-    });
+manualBtn.addEventListener('click', async () => {
+  setStatus('Manual Play tapped: trying unlock');
+  const ok = await tryUnlockSequence();
+  if (ok) { setStatus('Unlocked (manual)'); hideManual(); }
+  else setStatus('Manual unlock failed — try tapping the page or check settings');
+});
 
-    stopBtn.addEventListener('click', () => {
-      if (pollHandle) { clearInterval(pollHandle); pollHandle = null; setStatus('Polling stopped'); enableBtn.disabled = false; stopBtn.disabled = true; }
-    });
+previewBtn.addEventListener('click', async () => {
+  createAudioCtx();
+  await playByIndex(1);
+});
 
-    manualBtn.addEventListener('click', async () => {
-      setStatus('Manual Play tapped: trying unlock');
-      const ok = await tryUnlockSequence();
-      if (ok) { setStatus('Unlocked (manual)'); hideManual(); }
-      else setStatus('Manual unlock failed — try tapping the page or check settings');
-    });
+// initial attempt to load T1.TXT from site root
+(async function init(){
+  firebaseUrlEl.value = firebaseUrlEl.value || '';
+  const ok = await fetchRemoteTxt();
+  if (!ok) txtInfo.textContent = 'T1.TXT not found on server — upload or use file input';
+  setStatus('Ready');
+})();
 
-    previewBtn.addEventListener('click', async () => {
-      createAudioCtx();
-      await playByIndex(1);
-    });
-
-    (async function init(){
-      firebaseUrlEl.value = firebaseUrlEl.value || '';
-      const ok = await fetchRemoteTxt();
-      if (!ok) txtInfo.innerHTML = '<span class="status-icon"></span>T1.TXT not found on server — upload or use file input';
-      setStatus('Ready');
-    })();
-  </script>
+</script>
 </body>
 </html>
