@@ -1,135 +1,121 @@
 <!doctype html>
-<html lang="en"> 
+<html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Gangtay — Firebase -> T1.TXT -> play</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Gangtay — Multi-method Mobile Audio Tester</title>
 <style>
-  body{font-family:system-ui,Arial;padding:18px;max-width:980px;margin:auto}
-  h1{font-size:1.2rem}
+  body{font-family:system-ui,Arial,sans-serif;padding:14px;max-width:980px;margin:auto}
+  h1{font-size:1.1rem;margin-bottom:.2rem}
+  p.muted{color:#666;margin-top:0;margin-bottom:8px}
   label{display:block;margin-top:10px;font-weight:600}
-  input[type="text"], input[type="url"]{width:100%;padding:8px;margin-top:6px;box-sizing:border-box}
-  button{padding:10px 14px;margin:8px 6px;font-size:1rem}
-  .row{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
-  #status{margin-top:10px;color:#333}
-  #log{white-space:pre-wrap;font-family:monospace;margin-top:10px;background:#f6f6f6;padding:10px;border-radius:6px;max-height:340px;overflow:auto}
-  .bigManual{background:#ff4757;color:white;border:none;padding:12px 18px;font-weight:700;border-radius:6px}
+  input, button, select {padding:10px;margin:6px 0;width:100%;box-sizing:border-box}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .half{flex:1 1 48%}
+  #log{font-family:monospace;background:#f6f6f6;padding:10px;border-radius:6px;max-height:320px;overflow:auto;white-space:pre-wrap}
+  button.small{padding:8px}
+  .ok{color:green}
+  .err{color:crimson}
+  .methods{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
 </style>
 </head>
 <body>
-  <h1>Gangtay — Firebase → T1.TXT → play</h1>
-  <p>Load T1.TXT (site root) or upload your T1.TXT locally, set audio base path, click <strong>Enable audio & Start polling</strong>. Send Firebase messages with <code>{"text":"xin chao","ts":...}</code> or <code>{"index":5,"ts":...}</code>.</p>
+  <h1>Gangtay — Multi-method Mobile Audio Tester</h1>
+  <p class="muted">Fetch the latest index from Firebase or enter an index, unlock audio once, then test different playback methods.</p>
 
-  <label>Load T1.TXT (site root /T1.TXT or upload local)</label>
+  <label>Index to play (1-based)</label>
+  <input id="indexInput" type="number" value="2" min="1" />
+
   <div class="row">
-    <input id="fileInput" type="file" accept=".txt">
-    <button id="reloadTxt">Fetch /T1.TXT</button>
+    <button id="fetchIndexBtn" class="half">Fetch latest index (one-shot)</button>
+    <button id="useLastBtn" class="half" style="display:none">Use last payload</button>
   </div>
-  <div id="txtInfo" style="color:#666;margin-top:6px">Status: not loaded</div>
 
-  <label>Audio base path</label>
+  <label>Audio base URL (folder or absolute URL, must end with slash if folder)</label>
   <input id="audioBase" type="text" value="/audio/" />
 
-  <label>Firebase message URL</label>
-  <input id="firebaseUrl" type="url" value="https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/message.json" />
+  <label>Firebase message.json URL (read only when you press Fetch)</label>
+  <input id="firebaseUrl" type="text" value="https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/message.json" />
 
-  <div class="row">
-    <button id="enableBtn">Enable audio & Start polling</button>
-    <button id="stopBtn" disabled>Stop polling</button>
-    <button id="previewBtn">Preview 0001</button>
-    <button id="manualPlay" class="bigManual" style="display:none">Manual Play (tap once)</button>
+  <div class="row" style="margin-top:8px;">
+    <button id="unlockBtn" class="half">Unlock audio (tap once)</button>
+    <button id="runAllBtn" class="half">Run all methods (sequence)</button>
   </div>
 
-  <div id="status">Status: idle</div>
-  <div id="log"></div>
+  <label style="margin-top:12px">Individual methods (tap to try one)</label>
+  <div class="methods">
+    <button id="m1">1. HTMLAudio element</button>
+    <button id="m2">2. Fetch → Blob → Audio</button>
+    <button id="m3">3. Fetch → decodeAudioData → WebAudio</button>
+    <button id="m4">4. Fetch → Blob → objectURL Audio (alt)</button>
+    <button id="m5">5. MediaSource API append (try)</button>
+    <button id="m6">6. Create controls audio (manual play)</button>
+  </div>
+
+  <div style="margin-top:12px" class="row">
+    <button id="clearLog" class="half">Clear log</button>
+    <button id="copyLog" class="half">Copy log</button>
+  </div>
+
+  <div id="status" style="margin-top:10px">Status: ready</div>
+  <pre id="log"></pre>
 
 <script>
-/* Firebase -> T1.TXT -> play
-   - Poll interval: 1s (POLL_INTERVAL_MS)
-   - T1.TXT lines: exact match (case-insensitive)
-   - Filename format: 4-digit zero-padded (0001.mp3)
-   - Includes mobile audio unlock + decodeAudioDataCompat
+/* Multi-method audio test page
+   - Put on your site; set audioBase and index then press buttons.
+   - Run All executes each method sequentially with small delays.
+   - Mobile note: you must call Unlock audio (one tap) at least once if autoplay blocked.
 */
 
-const POLL_INTERVAL_MS = 1000;
-
-const fileInput = document.getElementById('fileInput');
-const reloadTxtBtn = document.getElementById('reloadTxt');
-const txtInfo = document.getElementById('txtInfo');
+const idxEl = document.getElementById('indexInput');
 const audioBaseEl = document.getElementById('audioBase');
+const fetchIndexBtn = document.getElementById('fetchIndexBtn');
 const firebaseUrlEl = document.getElementById('firebaseUrl');
-const enableBtn = document.getElementById('enableBtn');
-const stopBtn = document.getElementById('stopBtn');
-const previewBtn = document.getElementById('previewBtn');
-const manualBtn = document.getElementById('manualPlay');
+const unlockBtn = document.getElementById('unlockBtn');
+const runAllBtn = document.getElementById('runAllBtn');
 const statusEl = document.getElementById('status');
 const logEl = document.getElementById('log');
+const clearLogBtn = document.getElementById('clearLog');
+const copyLogBtn = document.getElementById('copyLog');
+const useLastBtn = document.getElementById('useLastBtn');
 
-let lines = [];                    // T1.TXT lines array
-let pollHandle = null;
-let lastFirebaseTs = null;         // avoid replaying same ts
 let audioCtx = null;
 let masterGain = null;
-let currentAudio = null;
 let unlocked = false;
+let lastPayload = null; // store last fetched payload
 
 function now(){ return new Date().toLocaleTimeString(); }
-function lg(m){ logEl.textContent = `[${now()}] ${m}\n` + logEl.textContent; }
-function setStatus(s){ statusEl.textContent = 'Status: ' + s; lg(s); }
-function pad4(n){ return String(n).padStart(4,'0'); }
+function log(s, cls){ const line = `[${now()}] ${s}`; logEl.textContent = line + '\n' + logEl.textContent; if(cls) statusEl.className = cls; }
+function setStatus(s){ statusEl.textContent = 'Status: ' + s; log(s); }
 
-// load remote /T1.TXT
-async function fetchRemoteTxt(){
-  setStatus('Fetching /T1.TXT ...');
-  try {
-    const r = await fetch('/T1.TXT', { cache: 'no-store' });
-    if (!r.ok) { setStatus('/T1.TXT not found (HTTP ' + r.status + ')'); txtInfo.textContent = 'T1.TXT: not found'; return false; }
-    const t = await r.text();
-    parseTxt(t);
-    txtInfo.textContent = `T1.TXT loaded (${lines.length} lines)`;
-    setStatus('T1.TXT loaded');
-    return true;
-  } catch (e) {
-    setStatus('Fetch /T1.TXT failed: ' + e.message);
-    txtInfo.textContent = 'T1.TXT: fetch failed';
-    return false;
-  }
+function pad4(n){ return String(n).padStart(4, '0'); }
+function fileUrlForIndex(i) {
+  const base = (audioBaseEl.value || '/audio/').trim();
+  const fname = pad4(i) + '.mp3';
+  if (/^https?:\/\//i.test(base)) return base.endsWith('/') ? base + fname : base + '/' + fname;
+  if (base.startsWith('/')) return location.origin + (base.endsWith('/') ? base + fname : base + '/' + fname);
+  return location.origin + '/' + (base.endsWith('/') ? base + fname : base + '/' + fname);
 }
-function parseTxt(txt){
-  const raw = txt.split(/\r?\n/);
-  lines = raw.map(l => l.trim()).filter(l => l.length > 0);
-  lg('Parsed T1.TXT lines: ' + lines.length);
-}
-fileInput.addEventListener('change', async (ev)=>{
-  const f = ev.target.files && ev.target.files[0];
-  if (!f) return;
-  setStatus('Reading local file ' + f.name);
-  try {
-    const txt = await f.text();
-    parseTxt(txt);
-    txtInfo.textContent = `Loaded local ${f.name} (${lines.length} lines)`;
-    setStatus('Local T1.TXT loaded');
-  } catch (e) {
-    setStatus('Read file failed: ' + e.message);
-  }
-});
-reloadTxtBtn.addEventListener('click', fetchRemoteTxt);
 
-// audio context and gain
-function createAudioCtx(){
+/* --- Unlock helpers --- */
+function ensureAudioCtx() {
   if (audioCtx) return;
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   masterGain = audioCtx.createGain();
   masterGain.gain.value = 1.0;
   masterGain.connect(audioCtx.destination);
-  lg('AudioContext created');
+  log('AudioContext created');
 }
-
-// mobile unlock (tone)
-async function unlockWithTone(){
+async function tryUnlock() {
+  if (unlocked) return true;
+  ensureAudioCtx();
   try {
-    createAudioCtx();
-    if (audioCtx.state === 'running') { unlocked = true; return true; }
+    // try muted audio element first
+    const a = new Audio();
+    a.muted = true;
+    try { await a.play(); } catch(e){}
+    if (audioCtx.state === 'running') { unlocked = true; log('Unlocked via muted element'); return true; }
+    // else play small tone via WebAudio
     const nowt = audioCtx.currentTime;
     const osc = audioCtx.createOscillator();
     const g = audioCtx.createGain();
@@ -137,189 +123,191 @@ async function unlockWithTone(){
     g.gain.value = 0.0001;
     osc.connect(g); g.connect(masterGain);
     g.gain.setValueAtTime(0.0001, nowt);
-    g.gain.linearRampToValueAtTime(0.05, nowt + 0.01);
+    g.gain.linearRampToValueAtTime(0.06, nowt + 0.01);
     osc.start(nowt);
     g.gain.linearRampToValueAtTime(0.0001, nowt + 0.12);
     osc.stop(nowt + 0.13);
     try { await audioCtx.resume(); } catch(e){}
-    await new Promise(r => setTimeout(r, 180));
-    if (audioCtx.state === 'running') { unlocked = true; lg('Unlocked audio'); return true; }
-    lg('unlock attempt ended, state=' + audioCtx.state);
-    return false;
-  } catch (e) {
-    console.warn('unlock error', e);
+    await new Promise(r=>setTimeout(r,160));
+    unlocked = (audioCtx.state === 'running');
+    log('Tried WebAudio tone unlock — unlocked=' + unlocked);
+    return unlocked;
+  } catch(e) {
+    log('Unlock exception: ' + e, 'err');
     return false;
   }
 }
-async function tryUnlockSequence(){
-  if (unlocked) return true;
-  if (await unlockWithTone()) return true;
-  // try simple HTMLAudio as fallback
-  try {
-    createAudioCtx();
-    const a = new Audio();
-    a.muted = true;
-    try { await a.play(); } catch(e){}
-    await new Promise(r=>setTimeout(r,50));
-    if (audioCtx.state === 'running') { unlocked = true; lg('Unlocked by HTMLAudio fallback'); return true; }
-  } catch(e) {}
-  return false;
-}
-function showManual(){ manualBtn.style.display = 'inline-block'; manualBtn.focus(); }
-function hideManual(){ manualBtn.style.display = 'none'; }
 
-// decodeAudioData compatibility wrapper
-function decodeAudioDataCompat(ab) {
-  return new Promise((resolve, reject) => {
-    try {
-      const p = audioCtx.decodeAudioData(ab);
-      if (p && typeof p.then === 'function') {
-        p.then(resolve).catch(err => {
-          try {
-            audioCtx.decodeAudioData(ab, resolve, reject);
-          } catch(cbErr) { reject(err || cbErr); }
-        });
-        return;
-      }
-    } catch (e) {}
-    // callback form
-    try {
-      audioCtx.decodeAudioData(ab, resolve, reject);
-    } catch(e) { reject(e); }
-  });
+/* --- Playback methods --- */
+
+/* Method 1: simple HTMLAudio element */
+async function method1_play(i){
+  const url = fileUrlForIndex(i);
+  log('M1: HTMLAudio.play() -> ' + url);
+  const a = new Audio(url);
+  a.playsInline = true;
+  a.crossOrigin = 'anonymous';
+  a.preload = 'auto';
+  a.onended = ()=> log('M1: ended', 'ok');
+  a.onerror = (ev)=> log('M1: element error: ' + ev?.message || 'error', 'err');
+  try {
+    await a.play();
+    log('M1: play started', 'ok');
+  } catch(e) {
+    log('M1: play rejected: ' + e, 'err');
+  }
 }
 
-// play file by 1-based index
-async function playByIndex(idx) {
-  if (idx <= 0) { lg('Invalid index ' + idx); return; }
-  const fname = pad4(idx) + '.mp3';
-  let base = audioBaseEl.value.trim() || '/audio/';
-  if (!base.endsWith('/')) base += '/';
-  const url = (base.startsWith('http') ? base : base) + fname + '?ts=' + Date.now();
-  setStatus('Playing ' + fname);
+/* Method 2: fetch -> blob -> audio element */
+async function method2_play(i){
+  const url = fileUrlForIndex(i);
+  log('M2: fetch->blob->Audio -> ' + url);
   try {
-    // prefer HTMLAudio element (simpler), connect to WebAudio if possible
-    createAudioCtx();
-    if (currentAudio) { try { currentAudio.pause(); currentAudio.src = ""; } catch(e){} currentAudio = null; }
-    const a = new Audio(url);
+    const r = await fetch(url, {cache:'no-store'});
+    log('M2: fetch status ' + r.status);
+    if (!r.ok) { log('M2: fetch failed', 'err'); return; }
+    const blob = await r.blob();
+    const obj = URL.createObjectURL(blob);
+    const a = new Audio(obj);
+    a.playsInline = true;
     a.crossOrigin = 'anonymous';
-    try {
-      const src = audioCtx.createMediaElementSource(a);
-      src.connect(masterGain);
-      a._mediaSource = src;
-    } catch(e) {
-      // ignore if cannot connect
-      a.volume = 1.0;
-    }
-    currentAudio = a;
-    // resume audioCtx if suspended (older iOS)
-    if (audioCtx.state === 'suspended') try { await audioCtx.resume(); } catch(e){}
-    const ok = await a.play().then(()=>true).catch(()=>false);
-    if (ok) { lg('Element play started: ' + fname); a.onended = ()=> setStatus('Finished ' + fname); return; }
-    // if blocked or element failed, try fetch+decode fallback
-    lg('Element play blocked or failed, trying fetch+decode fallback');
-    const r = await fetch(url, { cache: 'no-store' });
-    if (!r.ok) { lg('Fetch failed: ' + r.status); return; }
-    const ab = await r.arrayBuffer();
-    const buffer = await decodeAudioDataCompat(ab);
-    const srcBuf = audioCtx.createBufferSource();
-    srcBuf.buffer = buffer;
-    srcBuf.connect(masterGain);
-    if (audioCtx.state === 'suspended') try { await audioCtx.resume(); } catch(e){}
-    srcBuf.start(0);
-    lg('Played via buffer: ' + fname);
-  } catch (e) {
-    lg('Play error: ' + (e && e.message ? e.message : e));
-    showManual();
+    a.onended = ()=> { log('M2: ended', 'ok'); URL.revokeObjectURL(obj); };
+    a.onerror = (ev)=> { log('M2: element error', 'err'); URL.revokeObjectURL(obj); };
+    try { await a.play(); log('M2: play started', 'ok'); }
+    catch(e){ log('M2: play rejected: ' + e, 'err'); URL.revokeObjectURL(obj); }
+  } catch(e) {
+    log('M2: exception: ' + e, 'err');
   }
 }
 
-// find index of exact text in T1.TXT (case-insensitive)
-function findIndexForText(text) {
-  if (!text) return -1;
-  const k = text.trim().toLowerCase();
-  for (let i = 0; i < lines.length; i++) {
-    if ((lines[i] || '').toLowerCase() === k) return i + 1; // 1-based
-  }
-  return -1;
-}
-
-// poll firebase and handle message
-async function pollOnce() {
-  const url = firebaseUrlEl.value.trim();
-  if (!url) { lg('Firebase URL empty'); return; }
+/* Method 3: fetch -> arrayBuffer -> decodeAudioData -> AudioBufferSourceNode (WebAudio) */
+async function method3_play(i){
+  const url = fileUrlForIndex(i);
+  log('M3: fetch->decodeAudioData(WebAudio) -> ' + url);
+  ensureAudioCtx();
   try {
-    const r = await fetch(url, { cache: 'no-store' });
-    if (!r.ok) { lg('Firebase fetch failed: ' + r.status); return; }
-    const j = await r.json();
-    // ignore if same ts repeated
-    const ts = j && (j.ts || j.timestamp || null);
-    if (ts && ts === lastFirebaseTs) {
-      // nothing new
-      return;
-    }
-    lastFirebaseTs = ts;
-    lg('Firebase message: ' + JSON.stringify(j));
-    // if index present -> play
-    if (typeof j.index === 'number') {
-      await playByIndex(j.index);
-      return;
-    }
-    // try text
-    const t = (typeof j.text === 'string') ? j.text : (typeof j.message === 'string' ? j.message : null);
-    if (t) {
-      const idx = findIndexForText(t);
-      if (idx > 0) {
-        await playByIndex(idx);
-      } else {
-        lg('Text not found in T1.TXT: "' + t + '"');
-        showManual();
-      }
-    }
-  } catch (e) {
-    lg('Poll error: ' + (e && e.message ? e.message : e));
+    const r = await fetch(url, {cache:'no-store'});
+    log('M3: fetch status ' + r.status);
+    if (!r.ok) { log('M3: fetch failed', 'err'); return; }
+    const ab = await r.arrayBuffer();
+    // decode compat
+    const buf = await new Promise((resolve,reject) => {
+      try {
+        const p = audioCtx.decodeAudioData(ab);
+        if (p && typeof p.then === 'function') { p.then(resolve).catch(err=>{ try{ audioCtx.decodeAudioData(ab, resolve, reject); } catch(e){ reject(err||e); } }); return; }
+      } catch(e){}
+      try { audioCtx.decodeAudioData(ab, resolve, reject); } catch(e){ reject(e); }
+    });
+    const src = audioCtx.createBufferSource();
+    src.buffer = buf;
+    src.connect(masterGain);
+    src.onended = ()=> log('M3: ended (duration ' + (buf.duration||0).toFixed(2) + 's)', 'ok');
+    src.start(0);
+    log('M3: started', 'ok');
+  } catch(e) {
+    log('M3: exception: ' + e, 'err');
   }
 }
 
-// UI & event wiring
-enableBtn.addEventListener('click', async () => {
-  setStatus('Attempting unlock and starting poll');
-  document.addEventListener('touchstart', () => tryUnlockSequence(), {once:true, passive:true});
-  document.addEventListener('click', () => tryUnlockSequence(), {once:true});
-  const ok = await tryUnlockSequence();
-  if (!ok) { setStatus('Audio locked — tap Manual Play'); showManual(); }
-  if (!pollHandle) {
-    pollHandle = setInterval(pollOnce, POLL_INTERVAL_MS);
-    setStatus('Polling started');
-    enableBtn.disabled = true;
-    stopBtn.disabled = false;
+/* Method 4: fetch->blob->objectURL Audio (alternative path) */
+async function method4_play(i){
+  // same as M2 but keep slight differences (shows an alternate code path)
+  const url = fileUrlForIndex(i);
+  log('M4: fetch->blob->objectURL Audio -> ' + url);
+  try {
+    const r = await fetch(url, {cache:'no-store'});
+    if (!r.ok) { log('M4: fetch failed ' + r.status, 'err'); return; }
+    const data = await r.arrayBuffer();
+    const blob = new Blob([data], {type: 'audio/mpeg'});
+    const obj = URL.createObjectURL(blob);
+    const a = new Audio(obj);
+    a.playsInline = true;
+    a.crossOrigin = 'anonymous';
+    a.onended = ()=> { log('M4: ended', 'ok'); URL.revokeObjectURL(obj); };
+    a.onerror = ()=> { log('M4: element error', 'err'); URL.revokeObjectURL(obj); };
+    try { await a.play(); log('M4: play started', 'ok'); }
+    catch(e) { log('M4: play rejected: ' + e, 'err'); URL.revokeObjectURL(obj); }
+  } catch(e) { log('M4: exception: ' + e, 'err'); }
+}
+
+/* Method 5: MediaSource API (append buffer) — may not be supported on some mobiles */
+async function method5_play(i){
+  const url = fileUrlForIndex(i);
+  log('M5: MediaSource append -> ' + url);
+  try {
+    if (!('MediaSource' in window)) { log('M5: MediaSource not supported', 'err'); return; }
+    const r = await fetch(url, {cache:'no-store'});
+    if (!r.ok) { log('M5: fetch failed ' + r.status, 'err'); return; }
+    const ab = await r.arrayBuffer();
+    const ms = new MediaSource();
+    const audio = new Audio();
+    audio.playsInline = true;
+    audio.crossOrigin = 'anonymous';
+    audio.src = URL.createObjectURL(ms);
+    ms.addEventListener('sourceopen', () => {
+      try {
+        const mime = 'audio/mpeg';
+        const sb = ms.addSourceBuffer(mime);
+        sb.addEventListener('updateend', () => {
+          try { ms.endOfStream(); audio.play().then(()=>log('M5: play started', 'ok')).catch(e=>log('M5: play rejected: '+e,'err')); }
+          catch(e){ log('M5: play start failed: '+e,'err'); }
+        });
+        sb.appendBuffer(new Uint8Array(ab));
+      } catch(e) { log('M5: sourceopen error: '+e,'err'); }
+    });
+    audio.onerror = ()=> log('M5: audio element error', 'err');
+  } catch(e) { log('M5: exception: ' + e, 'err'); }
+}
+
+/* Method 6: Create <audio controls> element so user can manually press play (guaranteed if file reachable) */
+async function method6_play(i){
+  const url = fileUrlForIndex(i);
+  log('M6: create <audio controls> -> ' + url);
+  // remove previous test control if any
+  const old = document.getElementById('manual-control');
+  if (old) old.remove();
+  const a = document.createElement('audio');
+  a.id = 'manual-control';
+  a.controls = true;
+  a.playsInline = true;
+  a.crossOrigin = 'anonymous';
+  a.src = url + '?ts=' + Date.now();
+  a.style.width = '100%';
+  document.body.appendChild(a);
+  log('M6: control inserted — press Play manually', 'ok');
+  a.onplay = ()=> log('M6: user pressed Play', 'ok');
+  a.onended = ()=> log('M6: ended', 'ok');
+  a.onerror = ()=> log('M6: element error', 'err');
+}
+
+/* --- Helpers to run & orchestration --- */
+async function runMethodById(id, i) {
+  try {
+    switch(id){
+      case 1: await method1_play(i); break;
+      case 2: await method2_play(i); break;
+      case 3: await method3_play(i); break;
+      case 4: await method4_play(i); break;
+      case 5: await method5_play(i); break;
+      case 6: await method6_play(i); break;
+    }
+  } catch(e) {
+    log('Run method ' + id + ' exception: ' + e, 'err');
   }
+}
+
+document.getElementById('m1').addEventListener('click', ()=> runMethodById(1, Number(idxEl.value || 1)));
+document.getElementById('m2').addEventListener('click', ()=> runMethodById(2, Number(idxEl.value || 1)));
+document.getElementById('m3').addEventListener('click', ()=> runMethodById(3, Number(idxEl.value || 1)));
+document.getElementById('m4').addEventListener('click', ()=> runMethodById(4, Number(idxEl.value || 1)));
+document.getElementById('m5').addEventListener('click', ()=> runMethodById(5, Number(idxEl.value || 1)));
+document.getElementById('m6').addEventListener('click', ()=> runMethodById(6, Number(idxEl.value || 1)));
+
+unlockBtn.addEventListener('click', async ()=> {
+  setStatus('Attempting unlock...');
+  const ok = await tryUnlock();
+  if (ok) { unlocked = true; setStatus('Unlocked — you can now try play methods'); log('Unlocked by user gesture', 'ok'); }
+  else { setStatus('Unlock attempt finished (may be blocked)'); log('Unlock attempt finished'); }
 });
 
-stopBtn.addEventListener('click', () => {
-  if (pollHandle) { clearInterval(pollHandle); pollHandle = null; setStatus('Polling stopped'); enableBtn.disabled = false; stopBtn.disabled = true; }
-});
-
-manualBtn.addEventListener('click', async () => {
-  setStatus('Manual Play tapped: trying unlock');
-  const ok = await tryUnlockSequence();
-  if (ok) { setStatus('Unlocked (manual)'); hideManual(); }
-  else setStatus('Manual unlock failed — try tapping the page or check settings');
-});
-
-previewBtn.addEventListener('click', async () => {
-  createAudioCtx();
-  await playByIndex(1);
-});
-
-// initial attempt to load T1.TXT from site root
-(async function init(){
-  firebaseUrlEl.value = firebaseUrlEl.value || '';
-  const ok = await fetchRemoteTxt();
-  if (!ok) txtInfo.textContent = 'T1.TXT not found on server — upload or use file input';
-  setStatus('Ready');
-})();
-
-</script>
-</body>
-</html>
+runAllBtn.addEventListener('click', async
