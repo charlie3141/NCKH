@@ -1,0 +1,1 @@
+HTTPSConnectionPool(host='api.soundoftext.com', port=443): Max retries exceeded with url: /sounds (Caused by ConnectTimeoutError(<urllib3.connection.HTTPSConnection object at 0x00000198E0C284A0>, 'Connection to api.soundoftext.com timed out. (connect timeout=None)'))

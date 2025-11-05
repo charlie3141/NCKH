@@ -1,0 +1,1 @@
+HTTPSConnectionPool(host='api.soundoftext.com', port=443): Max retries exceeded with url: /sounds (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x00000198E0C60500>: Failed to resolve 'api.soundoftext.com' ([Errno 11002] getaddrinfo failed)"))
