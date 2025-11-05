@@ -1,488 +1,117 @@
 <!doctype html>
-<html lang="en">
+<html>
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Gangtay — Realtime play (overlay unlock + T1 mapping)</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gangtay — Simple Poll & Play (revert)</title>
 <style>
-  body{font-family:system-ui,Arial;padding:14px;max-width:980px;margin:auto}
-  h1{margin:0 0 8px 0}
-  label{display:block;margin-top:8px;font-weight:600}
-  input, button {padding:10px;margin:6px 0;width:100%;box-sizing:border-box}
-  .row{display:flex;gap:8px;flex-wrap:wrap}
-  .half{flex:1 1 48%}
-  #log{font-family:monospace;background:#111;color:#e6e6e6;padding:12px;border-radius:8px;min-height:220px;white-space:pre-wrap;overflow:auto}
-  #manualHolder{margin-top:8px}
-  .ok{color:limegreen}
-  .err{color:crimson}
-  small{color:#888}
-  /* overlay big tap-to-play */
-  #overlay {
-    position: fixed;
-    left: 0; right: 0; bottom: 16px;
-    display:none;
-    z-index: 9999;
-    padding: 12px;
-    text-align:center;
-  }
-  #overlay button {
-    background: linear-gradient(180deg,#007bff,#0056d6);
-    color: white;
-    border: none;
-    padding: 16px 20px;
-    font-size: 18px;
-    border-radius: 10px;
-    width: calc(100% - 32px);
-    max-width:520px;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.25);
-  }
-  #status { margin-top:8px; color:#333; }
+  body{font-family:system-ui,Arial;padding:16px;max-width:900px;margin:auto}
+  input,button{padding:8px;margin:6px 0;width:100%;box-sizing:border-box}
+  .row{display:flex;gap:8px}
+  .half{flex:1}
+  #log{white-space:pre-wrap;background:#f6f6f6;padding:10px;border-radius:6px;min-height:200px}
 </style>
 </head>
 <body>
-  <h1>Gangtay — Realtime play (overlay unlock + T1 mapping)</h1>
-  <p style="color:#666;margin:0 0 12px 0">
-    Automatically maps `index`, numeric `text`, or text found in <code>/T1.TXT</code> to the audio files (0001.mp3). If autoplay blocked, tap the big blue button that appears to unlock & play the latest audio.
-  </p>
-
-  <label>Audio base (folder or absolute URL)</label>
-  <input id="audioBase" value="/audio/" />
-
+  <h2>Gangtay — Simple Poll & Play (simple revert)</h2>
   <label>Firebase message.json URL</label>
-  <input id="firebaseUrl" value="https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/message.json" />
-
-  <div class="row">
-    <button id="startSse" class="half">Start SSE (Realtime)</button>
-    <button id="stopSse" class="half">Stop SSE</button>
+  <input id="firebaseUrl" value="https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/message.json">
+  <label>Audio base URL (folder)</label>
+  <input id="audioBase" value="/audio/">
+  <div class="row" style="margin-top:8px">
+    <button id="unlock">Unlock audio (tap once)</button>
+    <input id="pollMs" type="number" value="800" min="100" style="width:120px">
+    <button id="start">Start</button>
+    <button id="stop">Stop</button>
   </div>
-
-  <div class="row">
-    <button id="fetchOne" class="half">Fetch Firebase & Play (one-shot)</button>
-    <button id="startPoll" class="half">Start Polling (fallback)</button>
-  </div>
-
-  <div class="row">
-    <button id="stopPoll" class="half">Stop Polling</button>
-    <input id="pollMs" class="half" type="number" value="800" min="100" />
-  </div>
-
-  <div class="row">
-    <button id="unlockBtn" class="half">Unlock audio (tap once)</button>
-    <button id="clearLog" class="half">Clear log</button>
-  </div>
-
-  <div id="manualHolder"></div>
-
   <div id="status">Status: idle</div>
-  <pre id="log">Loading…</pre>
-
-  <div id="overlay"><button id="overlayBtn">Tap to play latest audio</button></div>
+  <pre id="log">log...</pre>
 
 <script>
-/* Realtime playback page with:
-   - /T1.TXT mapping
-   - SSE (EventSource) realtime, fallback polling
-   - big overlay button shown when autoplay blocked with pending payload
-   - robust play attempts and verbose logs
-*/
-
-const audioBaseEl = document.getElementById('audioBase');
 const firebaseUrlEl = document.getElementById('firebaseUrl');
-const startSseBtn = document.getElementById('startSse');
-const stopSseBtn = document.getElementById('stopSse');
-const fetchOneBtn = document.getElementById('fetchOne');
-const startPollBtn = document.getElementById('startPoll');
-const stopPollBtn = document.getElementById('stopPoll');
+const audioBaseEl = document.getElementById('audioBase');
 const pollMsEl = document.getElementById('pollMs');
-const unlockBtn = document.getElementById('unlockBtn');
-const clearLogBtn = document.getElementById('clearLog');
-const manualHolder = document.getElementById('manualHolder');
-const statusEl = document.getElementById('status');
 const logEl = document.getElementById('log');
-const overlay = document.getElementById('overlay');
-const overlayBtn = document.getElementById('overlayBtn');
-
-let audioCtx = null;
-let masterGain = null;
-let unlocked = false;
-let sse = null;
-let sseActive = false;
+const statusEl = document.getElementById('status');
 let pollId = null;
-let lastPayloadStr = null;
-let pendingPayload = null; // single-slot pending when locked
-let t1Lines = []; // T1.TXT mapping array
-let playing = false;
-let queue = [];
-const MAX_QUEUE = 40;
+let lastPayload = null;
+let audioUnlocked = false;
 
-// helpers
-function now(){ return new Date().toLocaleTimeString(); }
-function log(msg, cls){
-  const line = `[${now()}] ${msg}`;
-  logEl.textContent = line + '\n' + logEl.textContent;
-  if (cls === 'err') statusEl.style.color = 'crimson';
-  else if (cls === 'ok') statusEl.style.color = 'limegreen';
-  else statusEl.style.color = '';
-  console.log(line);
-}
-function setStatus(s){ statusEl.textContent = 'Status: ' + s; log(s); }
-
+function log(msg){ logEl.textContent = '['+new Date().toLocaleTimeString()+'] '+msg + '\n' + logEl.textContent; console.log(msg); }
 function pad4(n){ return String(n).padStart(4,'0'); }
 function fileUrlForIndex(i){
-  const base = (audioBaseEl.value || '/audio/').trim();
-  const fname = pad4(i) + '.mp3';
-  if (/^https?:\/\//i.test(base)) return (base.endsWith('/') ? base + fname : base + '/' + fname) + '?ts=' + Date.now();
-  if (base.startsWith('/')) return location.origin + (base.endsWith('/') ? base + fname : base + '/' + fname) + '?ts=' + Date.now();
-  return location.origin + '/' + (base.endsWith('/') ? base + fname : base + '/' + fname) + '?ts=' + Date.now();
+  let base = (audioBaseEl.value || '/audio/').trim();
+  if (!base.endsWith('/')) base += '/';
+  if (/^https?:\/\//i.test(base)) return base + pad4(i) + '.mp3';
+  if (base.startsWith('/')) return location.origin + base + pad4(i) + '.mp3';
+  return location.origin + '/' + base + pad4(i) + '.mp3';
 }
 
-/* load T1.TXT mapping at init */
-async function loadT1() {
+async function tryUnlock(){
+  if (audioUnlocked) return true;
   try {
-    const r = await fetch('/T1.TXT', {cache:'no-store'});
-    if (!r.ok) { log('T1.TXT not found on site', 'err'); return; }
-    const txt = await r.text();
-    t1Lines = txt.split(/\r?\n/).map(l=>l.trim()).filter(Boolean);
-    log('Loaded T1.TXT with ' + t1Lines.length + ' lines', 'ok');
-  } catch(e) {
-    log('T1.TXT load error: ' + e, 'err');
-  }
-}
-
-/* AudioContext helpers and unlock sequence */
-function ensureAudioCtx(){
-  if (audioCtx) return;
-  try {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    masterGain = audioCtx.createGain();
-    masterGain.gain.value = 1.0;
-    masterGain.connect(audioCtx.destination);
-    log('AudioContext created', 'ok');
-  } catch(e) {
-    log('AudioContext create failed: ' + e, 'err');
-  }
-}
-async function tryUnlockSequence(){
-  if (unlocked) return true;
-  ensureAudioCtx();
-  try {
-    if (audioCtx.state === 'running') { unlocked = true; return true; }
-    // try muted element
-    const a = new Audio(); a.muted = true;
-    try { await a.play(); } catch(e){}
-    if (audioCtx.state === 'running') { unlocked = true; return true; }
-    // fallback tone
-    const nowt = audioCtx.currentTime;
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    o.type = 'sine'; o.frequency.value = 880;
-    g.gain.value = 0.0001;
-    o.connect(g); g.connect(masterGain);
-    g.gain.setValueAtTime(0.0001, nowt);
-    g.gain.linearRampToValueAtTime(0.06, nowt + 0.01);
-    o.start(nowt);
-    g.gain.linearRampToValueAtTime(0.0001, nowt + 0.12);
-    o.stop(nowt + 0.13);
-    try { await audioCtx.resume(); } catch(e){}
-    unlocked = (audioCtx.state === 'running');
-    log('Unlock attempt finished — unlocked=' + unlocked);
-    return unlocked;
-  } catch(e) {
-    log('Unlock error: ' + e, 'err'); return false;
-  }
-}
-
-/* Play chain and queue logic */
-async function playSequenceForIndex(i) {
-  // if playing, queue (but limit)
-  if (playing) {
-    if (queue.length >= MAX_QUEUE) {
-      log('Queue full, dropping index ' + i, 'err');
-      return false;
-    }
-    queue.push(i);
-    log('Queued index ' + i + ' (queue len ' + queue.length + ')');
+    const a = new Audio();
+    a.muted = true;
+    await a.play().catch(()=>{});
+    audioUnlocked = true;
+    log('Attempted unlock (user gesture).');
     return true;
-  }
-
-  playing = true;
-  const url = fileUrlForIndex(i);
-  log('playSequence: index=' + i + ' url=' + url);
-
-  // 1) try direct element
-  try {
-    const el = new Audio(url);
-    el.playsInline = true;
-    el.crossOrigin = 'anonymous';
-    el.preload = 'auto';
-    el.onended = onPlayEnded;
-    el.onerror = (e)=> log('element error: ' + (e && e.message ? e.message : 'unknown'), 'err');
-    await el.play().then(()=> log('element play started','ok')).catch(e=>{ throw e; });
-    currentPlayingElement = el;
-    return true;
-  } catch(e1) {
-    log('element play failed: ' + e1, 'err');
-  }
-
-  // 2) fetch -> blob -> objectURL -> element
-  try {
-    const r = await fetch(url, { cache: 'no-store' });
-    log('blob fetch status ' + r.status);
-    if (r.ok) {
-      const blob = await r.blob();
-      log('blob size ' + blob.size);
-      const obj = URL.createObjectURL(blob);
-      const el2 = new Audio(obj);
-      el2.playsInline = true;
-      el2.crossOrigin = 'anonymous';
-      el2.onended = ()=> { URL.revokeObjectURL(obj); onPlayEnded(); };
-      el2.onerror = ()=> { URL.revokeObjectURL(obj); log('blob-element error', 'err'); onPlayEnded(); };
-      try {
-        await el2.play();
-        currentPlayingElement = el2;
-        log('blob-element play started', 'ok');
-        return true;
-      } catch(e2) {
-        URL.revokeObjectURL(obj);
-        log('blob-element play rejected: ' + e2, 'err');
-      }
-    } else log('blob fetch returned ' + r.status, 'err');
-  } catch(e){ log('blob fetch/play error: ' + e, 'err'); }
-
-  // 3) fetch -> arrayBuffer -> decode -> WebAudio
-  try {
-    ensureAudioCtx();
-    const r3 = await fetch(url, { cache: 'no-store' });
-    if (!r3.ok) { log('decode fetch failed ' + r3.status, 'err'); }
-    else {
-      const ab = await r3.arrayBuffer();
-      const buf = await new Promise((resolve,reject)=>{
-        try {
-          const p = audioCtx.decodeAudioData(ab);
-          if (p && typeof p.then === 'function') { p.then(resolve).catch(err=>{ try{ audioCtx.decodeAudioData(ab, resolve, reject); }catch(e){ reject(err||e); } }); return; }
-        } catch(e){}
-        try { audioCtx.decodeAudioData(ab, resolve, reject); } catch(e){ reject(e); }
-      });
-      const src = audioCtx.createBufferSource();
-      src.buffer = buf;
-      src.connect(masterGain);
-      src.onended = onPlayEnded;
-      src.start(0);
-      log('webAudio started (duration ' + (buf.duration||0).toFixed(2) + 's)', 'ok');
-      return true;
-    }
-  } catch(e) { log('webAudio decode/play error: ' + e, 'err'); }
-
-  // all failed -> show manual control
-  showManualControlForIndex(i);
-  playing = false;
-  return false;
+  } catch(e) { log('Unlock failed: ' + e); return false; }
 }
 
-let currentPlayingElement = null;
-function onPlayEnded(){
-  playing = false;
-  log('Playback ended', 'ok');
-  // if queue items present, play next
-  if (queue.length > 0) {
-    const next = queue.shift();
-    log('Playing next from queue: ' + next);
-    playSequenceForIndex(next);
-  }
-}
-
-/* manual control fallback */
-function showManualControlForIndex(i) {
-  manualHolder.innerHTML = '';
-  const url = fileUrlForIndex(i);
-  const container = document.createElement('div');
-  const label = document.createElement('label');
-  label.textContent = 'Manual control (tap Play if autoplay blocked)';
-  container.appendChild(label);
-  const a = document.createElement('audio');
-  a.controls = true;
+async function playIndex(i){
+  const url = fileUrlForIndex(i) + '?ts=' + Date.now();
+  log('Attempt play: ' + url);
+  const a = new Audio(url);
   a.playsInline = true;
   a.crossOrigin = 'anonymous';
-  a.src = url;
-  a.style.width = '100%';
-  container.appendChild(a);
-  manualHolder.appendChild(container);
-  log('Manual control created for index ' + i + ' — tap Play', 'ok');
-  a.addEventListener('play', async ()=> {
-    await tryUnlockSequence();
-    unlocked = true;
-    log('User played manual control — unlocked', 'ok');
-  }, {once:true});
-}
-
-/* Determine index from payload:
-   - prefer payload.index (number)
-   - if payload.text is numeric => parse
-   - else try exact match in T1.TXT (case-insensitive)
-*/
-function indexFromPayload(payload){
-  if (!payload) return null;
-  if (typeof payload.index === 'number') return payload.index;
-  if (typeof payload.text === 'string') {
-    const t = payload.text.trim();
-    if (/^\d+$/.test(t)) return parseInt(t,10);
-    // try mapping via T1.TXT
-    const lower = t.toLowerCase();
-    for (let i=0;i<t1Lines.length;i++){
-      if ((t1Lines[i]||'').toLowerCase() === lower) return i+1;
-    }
-  }
-  return null;
-}
-
-/* handle arrival of new payload */
-async function handlePayload(payload) {
-  if (!payload) return;
-  log('handlePayload: ' + JSON.stringify(payload));
-  const idx = indexFromPayload(payload);
-  if (!idx) {
-    log('Payload does not map to an index (no numeric text/index found)', 'err');
-    return;
-  }
-  // try unlock and play; if locked, store pending and show overlay for tap-to-play
-  const okUnlock = await tryUnlockSequence();
-  if (okUnlock) {
-    unlocked = true;
-    log('Unlocked -> playing index ' + idx);
-    await playSequenceForIndex(idx);
-    return;
-  }
-  // locked: store pending and show overlay + manual control
-  pendingPayload = {payload, idx};
-  showOverlayPending(idx);
-  showManualControlForIndex(idx);
-  log('Autoplay blocked — overlay & manual control shown for index ' + idx, 'err');
-}
-
-/* overlay handling: visible when pendingPayload exists */
-function showOverlayPending(idx) {
-  overlay.style.display = 'block';
-  overlayBtn.textContent = 'Tap to play latest audio (000' + String(idx).padStart(3,'0') + ')';
-  // attach handler
-  overlayBtn.onclick = async ()=>{
-    overlay.style.display = 'none';
-    await tryUnlockSequence();
-    if (pendingPayload && pendingPayload.idx) {
-      const toPlay = pendingPayload.idx;
-      pendingPayload = null;
-      unlocked = true;
-      log('Overlay tapped — attempting to play index ' + toPlay);
-      await playSequenceForIndex(toPlay);
-    } else {
-      log('Overlay tapped but no pending payload');
-    }
-  };
-}
-
-/* ---------- SSE (EventSource) ---------- */
-function startSse() {
-  if (sseActive) { log('SSE already active'); return; }
-  const url = (firebaseUrlEl.value || '').trim();
-  if (!url) { log('SSE start failed: Firebase URL empty', 'err'); return; }
+  a.onended = ()=> log('Play ended');
+  a.onerror = (e)=> log('Play error: ' + (e && e.message ? e.message : e));
   try {
-    // append ?ns if needed? Using provided URL directly; EventSource requires correct host CORS
-    sse = new EventSource(url);
+    await a.play();
+    log('Play started');
   } catch(e) {
-    log('SSE create failed: ' + e, 'err');
-    fallbackToPoll();
-    return;
+    log('Play rejected: ' + e);
+    // fallback: create manual controls
+    const ctrl = document.createElement('audio');
+    ctrl.controls = true;
+    ctrl.src = url;
+    ctrl.style.width = '100%';
+    document.body.appendChild(ctrl);
+    log('Manual control created; tap Play.');
   }
-  sseActive = true;
-  log('SSE connecting to ' + url);
-  setStatus('SSE connecting');
-  sse.onopen = () => { log('SSE open', 'ok'); setStatus('SSE open'); stopPolling(); };
-  sse.onerror = (err) => { log('SSE error: ' + err, 'err'); stopSse(); fallbackToPoll(); };
-  sse.addEventListener('put', (e)=> { try{ const d = JSON.parse(e.data); const payload = (d && d.data!==undefined)?d.data:d; log('SSE put event: ' + JSON.stringify(payload)); handlePayload(payload);}catch(ex){log('SSE put parse err:'+ex,'err')}});
-  sse.addEventListener('patch', (e)=> { try{ const d = JSON.parse(e.data); const payload = (d && d.data!==undefined)?d.data:d; log('SSE patch event: '+JSON.stringify(payload)); handlePayload(payload);}catch(ex){log('SSE patch parse err:'+ex,'err')}});
-  sse.onmessage = (e)=> { try{ const d = JSON.parse(e.data); const payload = (d && d.data!==undefined)?d.data:d; log('SSE message event: '+JSON.stringify(payload)); handlePayload(payload);}catch(ex){} };
 }
 
-function stopSse() {
-  if (!sseActive) return;
-  try { sse.close(); } catch(e){}
-  sse = null; sseActive = false;
-  log('SSE stopped');
-  setStatus('SSE stopped');
-}
-
-/* ---------- Polling fallback ---------- */
-async function fetchWithTimeout(url, timeout = 4000){
-  const ctrl = new AbortController();
-  const id = setTimeout(()=>ctrl.abort(), timeout);
+async function pollOnce(){
+  const url = (firebaseUrlEl.value || '').trim();
+  if (!url) { log('No Firebase URL'); return; }
   try {
-    const r = await fetch(url, { signal: ctrl.signal, cache: 'no-store' });
-    clearTimeout(id);
-    return r;
-  } catch(e) { clearTimeout(id); throw e; }
-}
-
-async function fetchFirebaseOnce() {
-  const fb = (firebaseUrlEl.value || '').trim();
-  if (!fb) { log('Firebase URL not set', 'err'); return; }
-  setStatus('Fetching Firebase...');
-  try {
-    const r = await fetchWithTimeout(fb, 4000);
-    if (!r.ok) { log('Fetch failed ' + r.status, 'err'); setStatus('Fetch failed'); return; }
+    const r = await fetch(url, {cache:'no-store'});
+    if (!r.ok) { log('Fetch failed ' + r.status); return; }
     const j = await r.json();
-    setStatus('Fetched');
     const s = JSON.stringify(j);
-    if (s === lastPayloadStr) { log('No change (deduped)'); return; }
-    lastPayloadStr = s;
-    handlePayload(j);
-  } catch(e) { log('Fetch exception: ' + e, 'err'); }
+    if (s === lastPayload) return;
+    lastPayload = s;
+    log('New payload: ' + s);
+    // interpret index or numeric text
+    if (typeof j.index === 'number') { await playIndex(j.index); }
+    else if (typeof j.text === 'string' && /^\d+$/.test(j.text.trim())) { await playIndex(parseInt(j.text.trim(),10)); }
+    else log('Payload not numeric/index; ignoring');
+  } catch(e) {
+    log('Poll error: ' + e);
+  }
 }
 
-function startPolling() {
-  if (pollId) { log('Polling already active'); return; }
+document.getElementById('start').addEventListener('click', ()=>{
+  if (pollId) { log('Already polling'); return; }
   const ms = Math.max(100, Number(pollMsEl.value) || 800);
-  pollId = setInterval(fetchFirebaseOnce, ms);
-  setStatus('Polling every ' + ms + ' ms');
-  log('Polling started', 'ok');
-  fetchFirebaseOnce();
-}
-
-function stopPolling() {
-  if (!pollId) { log('Poller not running'); return; }
-  clearInterval(pollId); pollId = null;
-  setStatus('Polling stopped');
-  log('Polling stopped');
-}
-
-function fallbackToPoll(){
-  log('Falling back to polling');
-  startPolling();
-}
-
-/* UI wiring */
-startSseBtn.addEventListener('click', ()=> startSse());
-stopSseBtn.addEventListener('click', ()=> stopSse());
-fetchOneBtn.addEventListener('click', ()=> fetchFirebaseOnce());
-startPollBtn.addEventListener('click', ()=> startPolling());
-stopPollBtn.addEventListener('click', ()=> stopPolling());
-unlockBtn.addEventListener('click', async ()=> { const ok = await tryUnlockSequence(); if (ok){ unlocked=true; log('Unlocked by gesture', 'ok'); } else log('Unlock attempt finished (blocked)', 'err'); });
-clearLogBtn.addEventListener('click', ()=> logEl.textContent = '');
-
-/* Init: load mapping, start SSE then fallback */
-(async function init(){
-  log('Script loaded — loading T1.TXT and trying SSE');
-  await loadT1();
-  try {
-    startSse();
-    setTimeout(()=> {
-      if (!sseActive && !pollId) {
-        log('SSE did not open quickly – falling back to polling');
-        fallbackToPoll();
-      }
-    }, 4200);
-  } catch(e) { log('Init SSE exception: ' + e, 'err'); fallbackToPoll(); }
-  setStatus('Initialized');
-})();
-
+  pollId = setInterval(pollOnce, ms);
+  log('Polling started every ' + ms + ' ms'); statusEl.textContent = 'Status: polling';
+  // immediate fetch
+  pollOnce();
+});
+document.getElementById('stop').addEventListener('click', ()=>{ if (pollId) clearInterval(pollId); pollId=null; log('Polling stopped'); statusEl.textContent='Status: idle';});
+document.getElementById('unlock').addEventListener('click', ()=>{ tryUnlock(); });
 </script>
 </body>
 </html>
