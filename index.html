@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Gangtay — Firebase play (numeric-text fix + mobile fallback)</title>
+<title>Gangtay — Firebase realtime + robust mobile play</title>
 <style>
   body{font-family:system-ui,Arial;padding:14px;max-width:980px;margin:auto}
   h1{margin:0 0 8px 0}
@@ -15,11 +15,14 @@
   #manualHolder{margin-top:8px}
   .ok{color:limegreen}
   .err{color:crimson}
+  small{color:#888}
 </style>
 </head>
 <body>
-  <h1>Gangtay — Firebase play (mobile-friendly)</h1>
-  <p style="color:#666;margin:0 0 12px 0">This page treats numeric `text` payloads as indexes (e.g. "1" → 0001.mp3). If autoplay is blocked it will show a manual audio control to tap play.</p>
+  <h1>Gangtay — Firebase realtime + robust mobile play</h1>
+  <p style="color:#666;margin:0 0 12px 0">
+    Tries real-time streaming (EventSource) → falls back to polling. Numeric text payloads are treated as indexes (e.g. "2" → 0002.mp3). If autoplay blocked, a manual <code>&lt;audio controls&gt;</code> will appear.
+  </p>
 
   <label>Audio base (folder or absolute URL)</label>
   <input id="audioBase" value="/audio/" />
@@ -28,11 +31,17 @@
   <input id="firebaseUrl" value="https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/message.json" />
 
   <div class="row">
-    <button id="fetchOne" class="half">Fetch Firebase & Play (one-shot)</button>
-    <button id="startPoll" class="half">Start polling</button>
+    <button id="startSse" class="half">Start SSE (Realtime)</button>
+    <button id="stopSse" class="half">Stop SSE</button>
   </div>
+
   <div class="row">
-    <button id="stopPoll" class="half">Stop polling</button>
+    <button id="fetchOne" class="half">Fetch Firebase (one-shot)</button>
+    <button id="startPoll" class="half">Start Polling (fallback)</button>
+  </div>
+
+  <div class="row">
+    <button id="stopPoll" class="half">Stop Polling</button>
     <input id="pollMs" class="half" type="number" value="800" min="100" />
   </div>
 
@@ -43,39 +52,48 @@
 
   <div id="manualHolder"></div>
 
-  <div id="status" style="margin-top:10px">Status: ready</div>
+  <div id="status" style="margin-top:10px">Status: idle</div>
   <pre id="log">Script not yet started...</pre>
 
 <script>
-/* Updated page:
- - treat numeric payload.text as index (e.g. "1" => 0001.mp3)
- - attempt to unlock before play; if locked, store pendingPayload and show manual <audio controls>
- - play sequence: element -> blob->element -> decode->WebAudio
- - robust logs for debugging
+/*
+  Realtime + fallback player:
+  - SSE target: firebaseUrl (should be the .json path like ".../message.json")
+  - on SSE 'put'/'patch'/'message' parse and handle payload
+  - fallback polling if SSE fails
+  - mobile-friendly: will not force play when locked; will show manual control if autoplay blocked
 */
 
 const audioBaseEl = document.getElementById('audioBase');
 const firebaseUrlEl = document.getElementById('firebaseUrl');
+const startSseBtn = document.getElementById('startSse');
+const stopSseBtn = document.getElementById('stopSse');
 const fetchOneBtn = document.getElementById('fetchOne');
 const startPollBtn = document.getElementById('startPoll');
 const stopPollBtn = document.getElementById('stopPoll');
 const pollMsEl = document.getElementById('pollMs');
 const unlockBtn = document.getElementById('unlockBtn');
 const clearLogBtn = document.getElementById('clearLog');
-const logEl = document.getElementById('log');
-const statusEl = document.getElementById('status');
 const manualHolder = document.getElementById('manualHolder');
+const statusEl = document.getElementById('status');
+const logEl = document.getElementById('log');
 
 let audioCtx = null;
 let masterGain = null;
 let unlocked = false;
+
+let sse = null;
+let sseActive = false;
+
 let pollId = null;
 let inFlight = false;
-let pendingPayload = null; // single slot when locked
-let lastPayloadStr = null; // dedupe from poll
+let lastPayloadStr = null;
+
+// single-slot pending while locked
+let pendingPayload = null;
 
 function now(){ return new Date().toLocaleTimeString(); }
-function log(msg, cls) {
+function log(msg, cls){
   const line = `[${now()}] ${msg}`;
   logEl.textContent = line + '\n' + logEl.textContent;
   if (cls === 'err') statusEl.style.color = 'crimson';
@@ -83,10 +101,10 @@ function log(msg, cls) {
   else statusEl.style.color = '';
   console.log(line);
 }
-function setStatus(s) { statusEl.textContent = 'Status: ' + s; log(s); }
+function setStatus(s){ statusEl.textContent = 'Status: ' + s; log(s); }
 
 function pad4(n){ return String(n).padStart(4,'0'); }
-function fileUrlForIndex(i) {
+function fileUrlForIndex(i){
   const base = (audioBaseEl.value || '/audio/').trim();
   const fname = pad4(i) + '.mp3';
   if (/^https?:\/\//i.test(base)) return (base.endsWith('/') ? base + fname : base + '/' + fname) + '?ts=' + Date.now();
@@ -94,8 +112,8 @@ function fileUrlForIndex(i) {
   return location.origin + '/' + (base.endsWith('/') ? base + fname : base + '/' + fname) + '?ts=' + Date.now();
 }
 
-/* --- Audio helpers --- */
-function ensureAudioCtx() {
+/* --- Audio utilities --- */
+function ensureAudioCtx(){
   if (audioCtx) return;
   try {
     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -107,18 +125,15 @@ function ensureAudioCtx() {
     log('AudioContext creation failed: ' + e, 'err');
   }
 }
-
-async function tryUnlockSequence() {
+async function tryUnlockSequence(){
   if (unlocked) return true;
   ensureAudioCtx();
   try {
     if (audioCtx.state === 'running') { unlocked = true; return true; }
-    // Try tiny muted audio element
-    const a = new Audio();
-    a.muted = true;
+    const a = new Audio(); a.muted = true;
     try { await a.play(); } catch(e){}
     if (audioCtx.state === 'running') { unlocked = true; return true; }
-    // fallback: short tone
+    // tone fallback
     const nowt = audioCtx.currentTime;
     const o = audioCtx.createOscillator();
     const g = audioCtx.createGain();
@@ -132,229 +147,304 @@ async function tryUnlockSequence() {
     o.stop(nowt + 0.13);
     try { await audioCtx.resume(); } catch(e){}
     unlocked = (audioCtx.state === 'running');
-    log('Unlock attempt finished, unlocked=' + unlocked);
+    log('Unlock attempt finished — unlocked=' + unlocked);
     return unlocked;
-  } catch(e) {
-    log('Unlock sequence error: ' + e, 'err');
-    return false;
-  }
+  } catch(e) { log('Unlock error: ' + e, 'err'); return false; }
 }
 
-/* --- Play attempt chain --- 
-   returns true on success, false on failure.
-*/
+/* --- Play sequence (tries element -> blob element -> WebAudio decode) --- */
 async function playSequenceForIndex(i) {
   const url = fileUrlForIndex(i);
-  log('playSequence: starting for index ' + i + ' -> ' + url);
+  log('playSequence: index=' + i + ' url=' + url);
 
-  // 1) try direct element
+  // 1) direct element
   try {
-    const a = new Audio(url);
-    a.playsInline = true;
-    a.crossOrigin = 'anonymous';
-    a.preload = 'auto';
-    a.onended = ()=> log('element: ended', 'ok');
-    a.onerror = ()=> log('element: error', 'err');
-    try {
-      await a.play();
-      log('element: play started', 'ok');
-      return true;
-    } catch(e) {
-      log('element: play rejected: ' + e, 'err');
-    }
-  } catch(e) {
-    log('element: creation error: ' + e, 'err');
+    const el = new Audio(url);
+    el.playsInline = true;
+    el.crossOrigin = 'anonymous';
+    el.preload = 'auto';
+    el.onended = ()=> log('element ended', 'ok');
+    el.onerror = ()=> log('element error', 'err');
+    await el.play().then(()=> log('element play started','ok')).catch(e=>{ throw e; });
+    return true;
+  } catch(e1) {
+    log('element play failed: ' + e1, 'err');
   }
 
-  // 2) try fetch->blob->objectURL -> element
+  // 2) fetch -> blob -> element
   try {
     const r = await fetch(url, { cache: 'no-store' });
-    log('fetch status ' + r.status);
-    if (!r.ok) { log('fetch failed ' + r.status, 'err'); }
-    else {
+    log('blob fetch status ' + r.status);
+    if (r.ok) {
       const blob = await r.blob();
       log('blob size ' + blob.size);
       const obj = URL.createObjectURL(blob);
-      const a2 = new Audio(obj);
-      a2.playsInline = true;
-      a2.crossOrigin = 'anonymous';
-      a2.onended = ()=> { log('blob-element: ended', 'ok'); URL.revokeObjectURL(obj); };
-      a2.onerror = ()=> { log('blob-element: error', 'err'); URL.revokeObjectURL(obj); };
+      const el2 = new Audio(obj);
+      el2.playsInline = true;
+      el2.crossOrigin = 'anonymous';
+      el2.onended = ()=> { log('blob-element ended', 'ok'); URL.revokeObjectURL(obj); };
+      el2.onerror = ()=> { log('blob-element error', 'err'); URL.revokeObjectURL(obj); };
       try {
-        await a2.play();
-        log('blob-element: play started', 'ok');
+        await el2.play();
+        log('blob-element play started', 'ok');
         return true;
-      } catch(e) {
-        log('blob-element: play rejected: ' + e, 'err');
+      } catch(e2) {
+        log('blob-element play rejected: ' + e2, 'err');
         URL.revokeObjectURL(obj);
       }
+    } else {
+      log('blob fetch returned ' + r.status, 'err');
     }
   } catch(e) {
-    log('blob fetch/play error: ' + e, 'err');
+    log('blob fetch/play exception: ' + e, 'err');
   }
 
-  // 3) try fetch->arrayBuffer->decodeAudioData -> WebAudio
+  // 3) fetch -> arrayBuffer -> decode -> WebAudio
   try {
     ensureAudioCtx();
-    const r2 = await fetch(url, { cache: 'no-store' });
-    if (!r2.ok) { log('fetch (decode) failed ' + r2.status, 'err'); }
+    const r3 = await fetch(url, { cache: 'no-store' });
+    if (!r3.ok) { log('decode fetch failed ' + r3.status, 'err'); }
     else {
-      const ab = await r2.arrayBuffer();
-      const buf = await new Promise((resolve, reject) => {
+      const ab = await r3.arrayBuffer();
+      const buf = await new Promise((resolve,reject)=>{
         try {
           const p = audioCtx.decodeAudioData(ab);
-          if (p && typeof p.then === 'function') { p.then(resolve).catch(err => { try { audioCtx.decodeAudioData(ab, resolve, reject); } catch(e){ reject(err||e); } }); return; }
+          if (p && typeof p.then === 'function') { p.then(resolve).catch(err=>{ try{ audioCtx.decodeAudioData(ab, resolve, reject); }catch(e){ reject(err||e); } }); return; }
         } catch(e){}
         try { audioCtx.decodeAudioData(ab, resolve, reject); } catch(e){ reject(e); }
       });
-      const s = audioCtx.createBufferSource();
-      s.buffer = buf;
-      s.connect(masterGain);
-      s.onended = ()=> log('webAudio: ended', 'ok');
-      s.start(0);
-      log('webAudio: started (duration ' + (buf.duration||0).toFixed(2) + 's)', 'ok');
+      const src = audioCtx.createBufferSource();
+      src.buffer = buf;
+      src.connect(masterGain);
+      src.onended = ()=> log('webAudio ended', 'ok');
+      src.start(0);
+      log('webAudio started (duration ' + (buf.duration||0).toFixed(2) + 's)', 'ok');
       return true;
     }
   } catch(e) {
     log('webAudio decode/play error: ' + e, 'err');
   }
 
-  // failed all methods
+  // all failed
   log('All play attempts failed for index ' + i, 'err');
   return false;
 }
 
-/* --- manual control helper (visible fallback) --- */
+/* --- manual control fallback --- */
 function showManualControlForIndex(i) {
-  manualHolder.innerHTML = ''; // remove previous
+  manualHolder.innerHTML = '';
   const url = fileUrlForIndex(i);
-  const p = document.createElement('div');
-  p.innerHTML = `<label>Manual control (tap Play if autoplay blocked)</label>`;
+  const container = document.createElement('div');
+  const label = document.createElement('label');
+  label.textContent = 'Manual control (tap Play if autoplay blocked)';
+  container.appendChild(label);
   const a = document.createElement('audio');
   a.controls = true;
   a.playsInline = true;
   a.crossOrigin = 'anonymous';
   a.src = url;
   a.style.width = '100%';
-  p.appendChild(a);
-  manualHolder.appendChild(p);
-  log('Manual control created for index ' + i + ' — tap Play on device', 'ok');
+  container.appendChild(a);
+  manualHolder.appendChild(container);
+  log('Manual control created for index ' + i + ' — tap Play', 'ok');
+  // clicking the control is considered a user gesture: attempt unlock
+  a.addEventListener('play', async ()=> {
+    await tryUnlockSequence();
+    unlocked = true;
+    log('User played manual control — treated as unlocked', 'ok');
+  }, {once:true});
   return a;
 }
 
-/* --- payload handling:
-   If payload.text looks numeric -> treat as index.
-   If unlocked -> try to play immediately.
-   If not unlocked -> store pendingPayload and show manual control.
-*/
+/* --- payload handling (numeric text treated as index) --- */
 async function handlePayload(payload) {
   if (!payload) return;
-  log('Received payload: ' + JSON.stringify(payload));
+  log('handlePayload: ' + JSON.stringify(payload));
   // determine index
   let idx = null;
   if (typeof payload.index === 'number') idx = payload.index;
   else if (typeof payload.text === 'string') {
-    const trimmed = payload.text.trim();
-    // numeric string? treat as index
-    if (/^\d+$/.test(trimmed)) idx = parseInt(trimmed, 10);
-    // else: if T1.TXT mapping desired, that code could be placed here (not implemented)
+    const t = payload.text.trim();
+    if (/^\d+$/.test(t)) idx = parseInt(t, 10); // numeric text -> index
+    // else mapping via T1.TXT could be added here if you upload T1.TXT
   }
   if (!idx) {
-    log('Payload does not contain index and text not numeric; cannot map to file', 'err');
+    log('Payload does not map to an index (no numeric text/index found)', 'err');
     return;
   }
 
-  // try to unlock first (best-effort)
+  // try unlock first; if unlocked, play; if locked, show manual control and store pending
   const okUnlock = await tryUnlockSequence();
   if (okUnlock) {
-    log('Unlocked — attempting play for index ' + idx);
+    unlocked = true;
     const ok = await playSequenceForIndex(idx);
     if (!ok) {
-      // if play fails but unlocked, provide manual control
       showManualControlForIndex(idx);
     }
     return;
   }
 
-  // not unlocked: store pending and show manual control so user can tap
+  // not unlocked -> store pending and show manual control to force user play
   pendingPayload = payload;
   showManualControlForIndex(idx);
-  log('Playback blocked by autoplay — created manual control for index ' + idx, 'err');
+  log('Autoplay blocked — manual control shown for index ' + idx, 'err');
 }
 
-/* --- Firebase fetch & poll --- */
+/* ---------- SSE (EventSource) streaming ---------- */
+function startSse() {
+  if (sseActive) { log('SSE already active'); return; }
+  const url = (firebaseUrlEl.value || '').trim();
+  if (!url) { log('SSE start failed: Firebase URL empty', 'err'); return; }
+  try {
+    // EventSource will send Accept: text/event-stream
+    sse = new EventSource(url);
+  } catch(e) {
+    log('SSE creation failed: ' + e, 'err');
+    fallbackToPoll();
+    return;
+  }
+  sseActive = true;
+  log('SSE connecting to ' + url);
+  setStatus('SSE connecting');
+  sse.onopen = () => {
+    log('SSE open', 'ok');
+    setStatus('SSE open');
+    // stop polling if running
+    stopPolling();
+  };
+  sse.onerror = (err) => {
+    log('SSE error or closed — falling back to polling', 'err');
+    stopSse();
+    fallbackToPoll();
+  };
+  // Firebase streams send events "put" and "patch"; also fallback to onmessage
+  sse.addEventListener('put', (e) => {
+    try {
+      const d = JSON.parse(e.data);
+      // d: { path: "...", data: ... }
+      const payload = (d && d.data !== undefined) ? d.data : d;
+      log('SSE put event: ' + JSON.stringify(payload));
+      handlePayload(payload);
+    } catch(ex) { log('SSE put parse error: ' + ex, 'err'); }
+  });
+  sse.addEventListener('patch', (e) => {
+    try {
+      const d = JSON.parse(e.data);
+      const payload = (d && d.data !== undefined) ? d.data : d;
+      log('SSE patch event: ' + JSON.stringify(payload));
+      handlePayload(payload);
+    } catch(ex) { log('SSE patch parse error: ' + ex, 'err'); }
+  });
+  sse.onmessage = (e) => {
+    // generic messages — attempt parse
+    try {
+      const d = JSON.parse(e.data);
+      const payload = (d && d.data !== undefined) ? d.data : d;
+      log('SSE message event: ' + JSON.stringify(payload));
+      handlePayload(payload);
+    } catch(ex) { /* ignore non-json */ }
+  };
+}
+
+function stopSse() {
+  if (!sseActive) return;
+  try { sse.close(); } catch(e){}
+  sse = null;
+  sseActive = false;
+  log('SSE stopped');
+  setStatus('SSE stopped');
+}
+
+/* ---------- Poll fallback ---------- */
+async function fetchWithTimeout(url, timeout = 4000) {
+  const ctrl = new AbortController();
+  const id = setTimeout(()=>ctrl.abort(), timeout);
+  try {
+    const r = await fetch(url, { signal: ctrl.signal, cache: 'no-store' });
+    clearTimeout(id);
+    return r;
+  } catch(e) { clearTimeout(id); throw e; }
+}
+
 async function fetchFirebaseOnce() {
   const fb = (firebaseUrlEl.value || '').trim();
   if (!fb) { log('Firebase URL not set', 'err'); return; }
   setStatus('Fetching Firebase...');
   try {
-    const r = await fetch(fb, { cache: 'no-store' });
-    if (!r.ok) { log('Firebase fetch failed: ' + r.status, 'err'); setStatus('Firebase fetch failed'); return; }
+    const r = await fetchWithTimeout(fb, 4000);
+    if (!r.ok) { log('Fetch failed ' + r.status, 'err'); setStatus('Fetch failed'); return; }
     const j = await r.json();
     setStatus('Fetched');
-    // dedupe on exact JSON string
     const s = JSON.stringify(j);
-    if (s === lastPayloadStr) { log('No change in payload (deduped)'); return; }
+    if (s === lastPayloadStr) { log('No change (deduped)'); return; }
     lastPayloadStr = s;
-    // handle text or index
-    if (typeof j.text === 'string' || typeof j.index === 'number') {
-      // prefer index field if present, else treat numeric text as index
-      if (typeof j.index === 'number' || /^\d+$/.test(String(j.text || ''))) {
-        log('Firebase has index/text numeric; handling...');
-        await handlePayload(j);
-      } else {
-        log('Firebase has text but not numeric; text mapping not implemented here', 'err');
-      }
-    } else {
-      log('Firebase payload shape unknown: ' + s, 'err');
-    }
+    handlePayload(j);
   } catch(e) {
-    log('Firebase fetch exception: ' + e, 'err');
-    setStatus('Firebase fetch error');
+    log('Fetch exception: ' + e, 'err');
   }
 }
 
-fetchOneBtn.addEventListener('click', fetchFirebaseOnce);
-
-startPollBtn.addEventListener('click', ()=>{
-  if (pollId) { log('Poller already running'); return; }
+function startPolling() {
+  if (pollId) { log('Polling already active'); return; }
   const ms = Math.max(100, Number(pollMsEl.value) || 800);
   pollId = setInterval(fetchFirebaseOnce, ms);
   setStatus('Polling every ' + ms + ' ms');
-  log('Poller started', 'ok');
-});
+  log('Polling started', 'ok');
+  // do one immediate fetch
+  fetchFirebaseOnce();
+}
 
-stopPollBtn.addEventListener('click', ()=>{
+function stopPolling() {
   if (!pollId) { log('Poller not running'); return; }
-  clearInterval(pollId); pollId = null;
+  clearInterval(pollId);
+  pollId = null;
   setStatus('Polling stopped');
-  log('Poller stopped');
-});
+  log('Polling stopped');
+}
 
-// Unlock button
-unlockBtn.addEventListener('click', async ()=>{
+function fallbackToPoll() {
+  log('Falling back to polling');
+  startPolling();
+}
+
+/* --- UI wiring --- */
+startSseBtn.addEventListener('click', ()=> startSse());
+stopSseBtn.addEventListener('click', ()=> stopSse());
+fetchOneBtn.addEventListener('click', ()=> fetchFirebaseOnce());
+startPollBtn.addEventListener('click', ()=> startPolling());
+stopPollBtn.addEventListener('click', ()=> stopPolling());
+unlockBtn.addEventListener('click', async ()=> {
   setStatus('Attempting unlock...');
   const ok = await tryUnlockSequence();
   if (ok) { unlocked = true; setStatus('Unlocked'); log('Unlocked by gesture', 'ok'); }
-  else { setStatus('Unlock attempt finished'); log('Unlock failed or blocked'); }
+  else { setStatus('Unlock attempt finished (blocked)'); log('Unlock attempt finished', 'err'); }
 });
-
-// If the user presses a visible manual control and it plays, we should clear pendingPayload
-manualHolder.addEventListener('click', (ev) => {
-  // If user tapped the manual audio control and it played, consider that an unlock gesture
-  // We can't detect play reliably here, but treat click as user intent: call tryUnlockSequence
-  tryUnlockSequence().then(ok => {
-    if (ok) { unlocked = true; log('Assumed unlocked after manual control interaction', 'ok'); }
-  });
-});
-
-// clear log
 clearLogBtn.addEventListener('click', ()=> logEl.textContent = '');
 
-// initial status
-log('Script loaded. Poller is idle. Use "Fetch Firebase & Play" or "Start polling".');
-setStatus('Ready');
+// If user interacts with manual control, consider that an unlock
+manualHolder.addEventListener('click', ()=>{
+  tryUnlockSequence().then(ok => { if (ok) { unlocked = true; log('Unlocked by manual control interaction', 'ok'); }});
+});
 
+/* --- init: try SSE then fallback to poll if SSE doesn't work --- */
+(function init(){
+  log('Script loaded — attempting SSE (EventSource) to Firebase message.json');
+  // start SSE immediately
+  try {
+    startSse();
+    // also attach a short watchdog: if SSE doesn't open within 4s, fallback to poll
+    setTimeout(()=> {
+      if (!sseActive && !pollId) {
+        log('SSE did not become active quickly; falling back to polling');
+        fallbackToPoll();
+      }
+    }, 4200);
+  } catch(e) {
+    log('SSE start exception: ' + e, 'err');
+    fallbackToPoll();
+  }
+  setStatus('Initialized');
+})();
 </script>
 </body>
 </html>
