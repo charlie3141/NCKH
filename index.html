@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html>
 <head>
@@ -29,90 +28,63 @@
   <pre id="log">log...</pre>
 
 <script>
-const firebaseUrlEl = document.getElementById('firebaseUrl');
-const audioBaseEl = document.getElementById('audioBase');
-const pollMsEl = document.getElementById('pollMs');
-const logEl = document.getElementById('log');
-const statusEl = document.getElementById('status');
-let pollId = null;
-let lastPayload = null;
-let audioUnlocked = false;
-
-function log(msg){ logEl.textContent = '['+new Date().toLocaleTimeString()+'] '+msg + '\n' + logEl.textContent; console.log(msg); }
-function pad4(n){ return String(n).padStart(4,'0'); }
-function fileUrlForIndex(i){
-  let base = (audioBaseEl.value || '/audio/').trim();
-  if (!base.endsWith('/')) base += '/';
-  if (/^https?:\/\//i.test(base)) return base + pad4(i) + '.mp3';
-  if (base.startsWith('/')) return location.origin + base + pad4(i) + '.mp3';
-  return location.origin + '/' + base + pad4(i) + '.mp3';
+async function fetchJson(url) {
+  const r = await fetch(url, {cache:'no-store'});
+  if (!r.ok) throw new Error('Fetch failed ' + r.status);
+  return await r.json();
 }
 
-async function tryUnlock(){
-  if (audioUnlocked) return true;
-  try {
-    const a = new Audio();
-    a.muted = true;
-    await a.play().catch(()=>{});
-    audioUnlocked = true;
-    log('Attempted unlock (user gesture).');
-    return true;
-  } catch(e) { log('Unlock failed: ' + e); return false; }
-}
-
-async function playIndex(i){
-  const url = fileUrlForIndex(i) + '?ts=' + Date.now();
-  log('Attempt play: ' + url);
-  const a = new Audio(url);
-  a.playsInline = true;
-  a.crossOrigin = 'anonymous';
-  a.onended = ()=> log('Play ended');
-  a.onerror = (e)=> log('Play error: ' + (e && e.message ? e.message : e));
-  try {
-    await a.play();
-    log('Play started');
-  } catch(e) {
-    log('Play rejected: ' + e);
-    // fallback: create manual controls
-    const ctrl = document.createElement('audio');
-    ctrl.controls = true;
-    ctrl.src = url;
-    ctrl.style.width = '100%';
-    document.body.appendChild(ctrl);
-    log('Manual control created; tap Play.');
-  }
+function findLatestLogIndex(logsObj) {
+  // logsObj is an object where keys are push-ids; we pick last key by iterating
+  let lastKey = null;
+  for (const k in logsObj) lastKey = k; // order is insertion order in most RB trees; last wins
+  if (!lastKey) return null;
+  const entry = logsObj[lastKey];
+  if (!entry) return null;
+  // try several fields: entry.log, entry.message, entry.logText
+  const text = (entry.log || entry.message || entry.logText || JSON.stringify(entry));
+  const m = text.match(/\d+/); // first number
+  return m ? parseInt(m[0], 10) : null;
 }
 
 async function pollOnce(){
-  const url = (firebaseUrlEl.value || '').trim();
-  if (!url) { log('No Firebase URL'); return; }
+  const baseUrl = (firebaseUrlEl.value || '').trim();
+  if (!baseUrl) { log('No Firebase URL'); return; }
+
   try {
-    const r = await fetch(url, {cache:'no-store'});
-    if (!r.ok) { log('Fetch failed ' + r.status); return; }
-    const j = await r.json();
+    // 1) try message.json
+    const j = await fetchJson(baseUrl);
     const s = JSON.stringify(j);
-    if (s === lastPayload) return;
-    lastPayload = s;
-    log('New payload: ' + s);
-    // interpret index or numeric text
-    if (typeof j.index === 'number') { await playIndex(j.index); }
-    else if (typeof j.text === 'string' && /^\d+$/.test(j.text.trim())) { await playIndex(parseInt(j.text.trim(),10)); }
-    else log('Payload not numeric/index; ignoring');
+    if (s !== lastPayload) {
+      lastPayload = s;
+      log('New payload (message.json): ' + s);
+      if (typeof j.index === 'number') { await playIndex(j.index); return; }
+      if (typeof j.text === 'string' && /^\d+$/.test(j.text.trim())) { await playIndex(parseInt(j.text.trim(),10)); return; }
+    }
+
+    // 2) fallback to logs.json (same host path but /logs.json)
+    // build logs url based on firebaseUrlEl: replace '/message.json' with '/logs.json'
+    const logsUrl = baseUrl.replace(/message\.json$/,'logs.json');
+    if (!logsUrl || logsUrl === baseUrl) return; // nothing to do
+    const logsObj = await fetchJson(logsUrl);
+    const idx = findLatestLogIndex(logsObj);
+    if (idx !== null) {
+      // avoid replaying same index (compare lastPayload+index)
+      const combined = 'logs:' + String(idx);
+      if (combined !== lastPayload) {
+        lastPayload = combined;
+        log('Found index in logs.json -> ' + idx);
+        await playIndex(idx);
+      }
+    } else {
+      // nothing numeric found
+      //log('No numeric index in logs fallback');
+    }
   } catch(e) {
     log('Poll error: ' + e);
   }
 }
-
-document.getElementById('start').addEventListener('click', ()=>{
-  if (pollId) { log('Already polling'); return; }
-  const ms = Math.max(100, Number(pollMsEl.value) || 800);
-  pollId = setInterval(pollOnce, ms);
-  log('Polling started every ' + ms + ' ms'); statusEl.textContent = 'Status: polling';
-  // immediate fetch
-  pollOnce();
-});
-document.getElementById('stop').addEventListener('click', ()=>{ if (pollId) clearInterval(pollId); pollId=null; log('Polling stopped'); statusEl.textContent='Status: idle';});
-document.getElementById('unlock').addEventListener('click', ()=>{ tryUnlock(); });
 </script>
+
 </body>
 </html>
