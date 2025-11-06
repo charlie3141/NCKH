@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Gangtay — Simple Poll & Play (revert)</title>
+<title>Gangtay — RealTime Poll & Play</title>
 <style>
   body{font-family:system-ui,Arial;padding:16px;max-width:900px;margin:auto}
   input,button{padding:8px;margin:6px 0;width:100%;box-sizing:border-box}
@@ -13,78 +13,245 @@
 </style>
 </head>
 <body>
-  <h2>Gangtay — Simple Poll & Play (simple revert)</h2>
+  <h2>Gangtay — RealTime Poll & Play</h2>
+
   <label>Firebase message.json URL</label>
   <input id="firebaseUrl" value="https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/message.json">
   <label>Audio base URL (folder)</label>
   <input id="audioBase" value="/audio/">
   <div class="row" style="margin-top:8px">
     <button id="unlock">Unlock audio (tap once)</button>
-    <input id="pollMs" type="number" value="800" min="100" style="width:120px">
-    <button id="start">Start</button>
+    <div style="width:12px"></div>
+    <button id="start">Start RealTime</button>
     <button id="stop">Stop</button>
   </div>
   <div id="status">Status: idle</div>
   <pre id="log">log...</pre>
 
 <script>
-async function fetchJson(url) {
-  const r = await fetch(url, {cache:'no-store'});
-  if (!r.ok) throw new Error('Fetch failed ' + r.status);
-  return await r.json();
+const firebaseUrlEl = document.getElementById('firebaseUrl');
+const audioBaseEl = document.getElementById('audioBase');
+const logEl = document.getElementById('log');
+const statusEl = document.getElementById('status');
+const unlockBtn = document.getElementById('unlock');
+const startBtn = document.getElementById('start');
+const stopBtn = document.getElementById('stop');
+
+let audioUnlocked = false;
+let esMessage = null;
+let esLogs = null;
+let fallbackPollId = null;
+let lastSeenMessage = null;
+let lastPlayed = null; // to avoid duplicates
+
+function log(msg){ logEl.textContent = '['+new Date().toLocaleTimeString()+'] '+msg + '\n' + logEl.textContent; console.log(msg); }
+function pad4(n){ return String(n).padStart(4,'0'); }
+function fileUrlForIndex(i){
+  let base = (audioBaseEl.value || '/audio/').trim();
+  if (!base.endsWith('/')) base += '/';
+  if (/^https?:\/\//i.test(base)) return base + pad4(i) + '.mp3';
+  if (base.startsWith('/')) return location.origin + base + pad4(i) + '.mp3';
+  return location.origin + '/' + base + pad4(i) + '.mp3';
 }
-
-function findLatestLogIndex(logsObj) {
-  // logsObj is an object where keys are push-ids; we pick last key by iterating
-  let lastKey = null;
-  for (const k in logsObj) lastKey = k; // order is insertion order in most RB trees; last wins
-  if (!lastKey) return null;
-  const entry = logsObj[lastKey];
-  if (!entry) return null;
-  // try several fields: entry.log, entry.message, entry.logText
-  const text = (entry.log || entry.message || entry.logText || JSON.stringify(entry));
-  const m = text.match(/\d+/); // first number
-  return m ? parseInt(m[0], 10) : null;
-}
-
-async function pollOnce(){
-  const baseUrl = (firebaseUrlEl.value || '').trim();
-  if (!baseUrl) { log('No Firebase URL'); return; }
-
+async function tryUnlock(){
+  if (audioUnlocked) return true;
   try {
-    // 1) try message.json
-    const j = await fetchJson(baseUrl);
-    const s = JSON.stringify(j);
-    if (s !== lastPayload) {
-      lastPayload = s;
-      log('New payload (message.json): ' + s);
-      if (typeof j.index === 'number') { await playIndex(j.index); return; }
-      if (typeof j.text === 'string' && /^\d+$/.test(j.text.trim())) { await playIndex(parseInt(j.text.trim(),10)); return; }
-    }
+    const a = new Audio();
+    a.muted = true;
+    await a.play().catch(()=>{});
+    audioUnlocked = true;
+    log('Attempted unlock (user gesture).');
+    return true;
+  } catch(e) { log('Unlock failed: ' + e); return false; }
+}
 
-    // 2) fallback to logs.json (same host path but /logs.json)
-    // build logs url based on firebaseUrlEl: replace '/message.json' with '/logs.json'
-    const logsUrl = baseUrl.replace(/message\.json$/,'logs.json');
-    if (!logsUrl || logsUrl === baseUrl) return; // nothing to do
-    const logsObj = await fetchJson(logsUrl);
-    const idx = findLatestLogIndex(logsObj);
-    if (idx !== null) {
-      // avoid replaying same index (compare lastPayload+index)
-      const combined = 'logs:' + String(idx);
-      if (combined !== lastPayload) {
-        lastPayload = combined;
-        log('Found index in logs.json -> ' + idx);
-        await playIndex(idx);
-      }
-    } else {
-      // nothing numeric found
-      //log('No numeric index in logs fallback');
+async function playIndex(i){
+  if (!i || i === lastPlayed) { log('Index already played or invalid: ' + i); return; }
+  lastPlayed = i;
+  const url = fileUrlForIndex(i) + '?ts=' + Date.now();
+  log('Attempt play: ' + url);
+  const a = new Audio(url);
+  a.playsInline = true;
+  a.crossOrigin = 'anonymous';
+  a.onended = ()=> log('Play ended: ' + i);
+  a.onerror = async (e)=> {
+    log('Play error: ' + (e && e.message ? e.message : 'unknown') + ' — trying blob fallback');
+    try {
+      const r = await fetch(url, {cache:'no-store'});
+      if (!r.ok) throw new Error('fetch failed ' + r.status);
+      const b = await r.blob();
+      const blobUrl = URL.createObjectURL(b);
+      const a2 = new Audio(blobUrl);
+      a2.onended = ()=> { URL.revokeObjectURL(blobUrl); log('Play ended (blob) ' + i); }
+      await a2.play();
+      log('Play started (blob fallback) ' + i);
+    } catch(err) {
+      log('Fallback failed: ' + err);
     }
+  };
+  try {
+    await a.play();
+    log('Play started: ' + i);
   } catch(e) {
-    log('Poll error: ' + e);
+    log('Play rejected: ' + e + ' — creating manual control');
+    const ctrl = document.createElement('audio');
+    ctrl.controls = true;
+    ctrl.src = url;
+    ctrl.style.width = '100%';
+    document.body.appendChild(ctrl);
+    log('Manual control created; tap Play.');
   }
 }
-</script>
 
+/* ---------------- Real-time via EventSource (preferred) ----------------
+  Uses Firebase REST streaming endpoint:
+  https://<host>/message.json (returns updates as server-sent events)
+  If your DB is public readable this works without auth.
+  If DB needs auth, append ?auth=<TOKEN>  OR include ns param if required.
+*/
+function startRealtime(){
+  stopRealtime(); // clean first
+
+  const messageUrl = firebaseUrlEl.value.trim();
+  if (!messageUrl) { log('No firebase url'); return; }
+
+  statusEl.textContent = 'Status: connecting (EventSource)';
+  log('Starting EventSource for message.json: ' + messageUrl);
+
+  // EventSource needs an endpoint that returns text/event-stream; Firebase REST streaming does
+  try {
+    esMessage = new EventSource(messageUrl + (messageUrl.indexOf('?')>=0 ? '&' : '?') + 'print=eventstream');
+    esMessage.onopen = ()=> { log('EventSource (message) OPEN'); statusEl.textContent = 'Status: realtime (message)'; };
+    esMessage.onmessage = async (e)=> {
+      // e.data is JSON or "null" for deletions
+      try {
+        if (!e.data || e.data === 'null') {
+          log('Event message: null (deleted)');
+          lastSeenMessage = null;
+          return;
+        }
+        const payload = JSON.parse(e.data);
+        const s = JSON.stringify(payload);
+        log('Realtime message update: ' + s);
+        lastSeenMessage = payload;
+        // If payload.index (number) use it; else if payload.text numeric use that
+        if (typeof payload.index === 'number') await playIndex(payload.index);
+        else if (typeof payload.text === 'string' && /^\d+$/.test(payload.text.trim())) await playIndex(parseInt(payload.text.trim(),10));
+      } catch(err){
+        log('Event message parse error: ' + err);
+      }
+    };
+    esMessage.onerror = (err)=> {
+      log('EventSource (message) ERROR — will fallback to polling if streaming unavailable: ' + (err && err.message ? err.message : JSON.stringify(err)));
+      statusEl.textContent = 'Status: eventsource error — fallback';
+      // close ES and start polling fallback
+      try { esMessage.close(); } catch(e){}
+      esMessage = null;
+      startFallbackPolling();
+    };
+  } catch(e){
+    log('EventSource init failed: ' + e);
+    startFallbackPolling();
+  }
+
+  // Also listen to logs.json (optional) to catch pushes there
+  try {
+    const logsUrl = messageUrl.replace(/message\.json$/,'logs.json');
+    esLogs = new EventSource(logsUrl + (logsUrl.indexOf('?')>=0 ? '&' : '?') + 'print=eventstream');
+    esLogs.onmessage = async (e) => {
+      if (!e.data || e.data === 'null') return;
+      try {
+        const payload = JSON.parse(e.data);
+        // logs stream returns an object of children; find numeric in latest child
+        // heavy duty parsing not needed if ESP writes message.json properly
+        log('Realtime logs update: ' + JSON.stringify(payload).slice(0,200));
+        // attempt to extract number from last log entry if it's there
+        if (payload && typeof payload === 'object') {
+          // find last key
+          let lastKey = null;
+          for (const k in payload) lastKey = k;
+          if (lastKey) {
+            const entry = payload[lastKey];
+            const text = entry && (entry.log || entry.message || entry.log) ? (entry.log || entry.message || JSON.stringify(entry)) : JSON.stringify(entry);
+            const m = (''+text).match(/(\d{1,6})/);
+            if (m) await playIndex(parseInt(m[1],10));
+          }
+        }
+      } catch(err) { log('Logs parse error: ' + err); }
+    };
+    esLogs.onerror = (err)=> {
+      log('EventSource (logs) ERROR, ignoring: ' + (err && err.message ? err.message : JSON.stringify(err)));
+      try { esLogs.close(); } catch(e){}
+      esLogs = null;
+    };
+  } catch(e) { log('EventSource logs init failed: ' + e); }
+
+  statusEl.textContent = 'Status: realtime listening';
+}
+
+function stopRealtime(){
+  if (esMessage) { try { esMessage.close(); } catch(e){} esMessage = null; }
+  if (esLogs) { try { esLogs.close(); } catch(e){} esLogs = null; }
+  stopFallbackPolling();
+  statusEl.textContent = 'Status: stopped';
+  log('Realtime stopped');
+}
+
+/* ---------------- Fallback polling (if EventSource blocked) ---------------- */
+function startFallbackPolling(){
+  stopFallbackPolling();
+  const url = firebaseUrlEl.value.trim();
+  if (!url) { log('No firebase url'); return; }
+  log('Starting fallback polling every 800ms');
+  statusEl.textContent = 'Status: polling';
+  fallbackPollId = setInterval(async () => {
+    try {
+      // fetch message.json
+      const r = await fetch(url, {cache:'no-store'});
+      if (!r.ok) { log('Fallback fetch failed ' + r.status); return; }
+      const j = await r.json();
+      const s = JSON.stringify(j);
+      if (s !== lastSeenMessage) {
+        lastSeenMessage = s;
+        log('Fallback new payload: ' + s);
+        if (typeof j.index === 'number') await playIndex(j.index);
+        else if (typeof j.text === 'string' && /^\d+$/.test(j.text.trim())) await playIndex(parseInt(j.text.trim(),10));
+        else {
+          // try fallback into logs.json
+          const logsUrl = url.replace(/message\.json$/,'logs.json');
+          const rl = await fetch(logsUrl, {cache:'no-store'});
+          if (rl.ok) {
+            const obj = await rl.json();
+            // find last numeric in latest pushed log
+            let lastKey = null;
+            for (const k in obj) lastKey = k;
+            if (lastKey) {
+              const entry = obj[lastKey];
+              const text = entry && (entry.log || entry.message) ? (entry.log || entry.message) : JSON.stringify(entry);
+              const m = (''+text).match(/(\d{1,6})/);
+              if (m) await playIndex(parseInt(m[1],10));
+            }
+          }
+        }
+      }
+    } catch(e) {
+      log('Polling error: ' + e);
+    }
+  }, 800);
+}
+
+function stopFallbackPolling(){
+  if (fallbackPollId) { clearInterval(fallbackPollId); fallbackPollId = null; log('Stopped fallback polling'); }
+}
+
+/* ---------------- Controls ---------------- */
+unlockBtn.addEventListener('click', ()=>{ tryUnlock(); });
+startBtn.addEventListener('click', ()=>{ startRealtime(); });
+stopBtn.addEventListener('click', ()=>{ stopRealtime(); });
+
+/* ---------------- Auto-start detection (optional) ---------------- */
+// Uncomment to auto-start realtime on page load:
+// startRealtime();
+</script>
 </body>
 </html>
