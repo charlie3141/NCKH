@@ -47,7 +47,7 @@ const statusEl = document.getElementById('status');
 const useSseEl = document.getElementById('useSse');
 
 let pollId = null;
-let lastPayload = null;
+let lastPayload = null; // now stores fingerprint (stable parts only)
 let audioUnlocked = false;
 let lastEtag = null;
 
@@ -146,6 +146,36 @@ async function playIndex(i){
 
 
 /* ----------------------------------------------------------
+   Small helper: fingerprint stable parts of payload
+   Removes common volatile fields (ts, timestamp, etc.)
+---------------------------------------------------------- */
+function fingerprint(obj){
+  if (obj === null || obj === undefined) return String(obj);
+  if (typeof obj !== 'object') return String(obj);
+  // deep clone (simple)
+  let clone;
+  try{
+    clone = JSON.parse(JSON.stringify(obj));
+  }catch(e){
+    // fallback
+    clone = obj;
+  }
+  if (clone && typeof clone === 'object'){
+    delete clone.ts;
+    delete clone.time;
+    delete clone.timestamp;
+    delete clone._ts;
+    delete clone.etag;
+  }
+  try{
+    return JSON.stringify(clone);
+  }catch(e){
+    return String(clone);
+  }
+}
+
+
+/* ----------------------------------------------------------
    Polling system (ETag optimized)
 ---------------------------------------------------------- */
 async function pollOnce(){
@@ -169,11 +199,11 @@ async function pollOnce(){
     if (et) lastEtag = et;
 
     const j = await r.json();
-    const raw = JSON.stringify(j);
-    if (raw === lastPayload) return;
+    const fp = fingerprint(j);
+    if (fp === lastPayload) return;
 
-    lastPayload = raw;
-    log("New payload: "+raw);
+    lastPayload = fp;
+    log("New payload: "+JSON.stringify(j));
 
     if (typeof j.index === "number") return playIndex(j.index);
     if (typeof j.text === "string" && /^\d+$/.test(j.text.trim()))
@@ -205,28 +235,35 @@ function stopPolling(){
 
 
 /* ----------------------------------------------------------
-   SSE — FULLY FIXED for Firebase RTDB
-   Firebase sends events:
-   - event: put
-   - event: patch
-   - data: {"path":"/","data":{...}}
+   SSE — FULLY FIXED for Firebase RTDB (more tolerant parser)
 ---------------------------------------------------------- */
 function handleStreamData(raw){
+  // ignore empty or keep-alive ':' messages
+  if (!raw || !String(raw).trim() || String(raw).trim() === ":") return;
+
   try{
+    // raw is typically a JSON string like {"path":"/","data":{...}}
     const pkt = JSON.parse(raw);
-    const j = pkt.data;
+    // pkt.data is where Firebase puts the payload; sometimes the stream may directly send the object
+    const j = pkt && pkt.data !== undefined ? pkt.data : pkt;
+
     if (!j) return;
 
-    const s = JSON.stringify(j);
-    if (s === lastPayload) return;
-    lastPayload = s;
+    const fp = fingerprint(j);
+    if (fp === lastPayload) return;
+    lastPayload = fp;
 
-    log("SSE payload: "+s);
+    // log a concise representation (avoid super long logs)
+    let short = String(JSON.stringify(j));
+    if (short.length > 200) short = short.slice(0,200) + "...";
+    log("SSE payload: "+short);
 
     if (typeof j.index === "number") return playIndex(j.index);
     if (typeof j.text === "string" && /^\d+$/.test(j.text.trim()))
       return playIndex(parseInt(j.text.trim(),10));
+    // otherwise ignore
   }catch(e){
+    // sometimes raw isn't JSON - ignore silently or log once
     log("SSE parse error: "+e);
   }
 }
@@ -285,6 +322,10 @@ document.getElementById("unlock").addEventListener("click", tryUnlock);
 document.getElementById("start").addEventListener("click", ()=>{
   const url = firebaseUrlEl.value.trim();
   if (!url){ log("No Firebase URL"); return; }
+
+  // reset stable payload so starting fresh
+  lastPayload = null;
+  lastEtag = null;
 
   if (useSseEl.checked){
     log("Attempting SSE (will fallback automatically)");
