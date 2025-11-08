@@ -1,0 +1,104 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Firebase SSE + Put test</title>
+<style>body{font-family:system-ui,Arial;padding:12px} input,button{padding:6px;margin:6px 0} pre{background:#f6f6f6;padding:8px;border-radius:6px;white-space:pre-wrap}</style>
+</head>
+<body>
+  <h3>Firebase SSE + PUT test</h3>
+  <label>Firebase message.json URL</label><br>
+  <input id="url" style="width:100%" value="https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/message.json">
+  <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+    <button id="open">Open SSE</button>
+    <button id="close">Close SSE</button>
+    <button id="put">Write test payload (PUT)</button>
+    <input id="text" value="ax:  ay:" style="width:260px">
+  </div>
+  <div style="margin-top:8px">Status: <span id="status">idle</span></div>
+  <h4>Log</h4>
+  <pre id="log">logs will appear here…</pre>
+
+<script>
+const urlEl = document.getElementById('url');
+const logEl = document.getElementById('log');
+const statusEl = document.getElementById('status');
+let sse = null;
+
+function ll(...args){
+  const t = new Date().toLocaleTimeString();
+  logEl.textContent = `[${t}] ` + args.join(' ') + '\n' + logEl.textContent;
+  console.log(...args);
+}
+
+function buildEventStreamUrl(url){
+  try {
+    const u = new URL(url);
+    u.searchParams.set('print','event-stream');
+    return u.toString();
+  } catch(e){
+    return (url.indexOf('?')===-1) ? url+'?print=event-stream' : url + '&print=event-stream';
+  }
+}
+
+document.getElementById('open').addEventListener('click', ()=>{
+  const raw = urlEl.value.trim();
+  if (!raw) { ll('No URL'); return; }
+  const stream = buildEventStreamUrl(raw);
+  if (sse) { ll('SSE already open'); return; }
+  try {
+    sse = new EventSource(stream);
+    statusEl.textContent = 'connecting...';
+    ll('Opening SSE →', stream);
+
+    sse.onopen = () => { statusEl.textContent = 'open'; ll('SSE open (readyState='+sse.readyState+')'); };
+    sse.onmessage = (ev) => {
+      ll('onmessage data:', ev.data);
+      try{
+        const pkt = JSON.parse(ev.data);
+        ll('parsed event packet:', JSON.stringify(pkt));
+        // If Firebase-style packet, show pkt.data
+        if (pkt && pkt.data !== undefined) ll('pkt.data:', JSON.stringify(pkt.data));
+      }catch(e){
+        ll('non-json onmessage:', ev.data);
+      }
+    };
+    sse.addEventListener('put', ev => { ll('event: put ->', ev.data); try{ const pkt=JSON.parse(ev.data); ll('put.data:',JSON.stringify(pkt.data)); }catch(e){} });
+    sse.addEventListener('patch', ev => { ll('event: patch ->', ev.data); try{ const pkt=JSON.parse(ev.data); ll('patch.data:',JSON.stringify(pkt.data)); }catch(e){} });
+    sse.onerror = (ev) => { ll('SSE error; readyState='+ (sse? sse.readyState : 'n/a'), ev); statusEl.textContent = 'error'; };
+  } catch(e){
+    ll('Failed to open EventSource', e);
+  }
+});
+
+document.getElementById('close').addEventListener('click', ()=>{
+  if (!sse) { ll('SSE not open'); return; }
+  try { sse.close(); } catch(_) {}
+  sse = null;
+  statusEl.textContent = 'closed';
+  ll('SSE closed');
+});
+
+// simple PUT test: writes { text, ts } to the URL
+document.getElementById('put').addEventListener('click', async ()=>{
+  const raw = urlEl.value.trim();
+  if (!raw) { ll('No URL'); return; }
+  const text = document.getElementById('text').value || 'test';
+  const payload = { text: text, ts: Date.now() };
+  try {
+    ll('PUT ->', raw, JSON.stringify(payload));
+    const r = await fetch(raw, { method:'PUT', body: JSON.stringify(payload), headers:{ 'Content-Type':'application/json' }});
+    ll('PUT response', r.status, await r.text());
+  } catch(e){
+    ll('PUT failed', e);
+  }
+});
+
+// helper: quick curl examples shown in console for manual use
+ll('Ready. Use "Open SSE" then "Write test payload" to verify event stream receives updates.');
+ll('Example curl to write test payload:');
+ll("curl -X PUT -d '{\"text\":\"hello\",\"ts\":123}' '<your-url>/message.json'");
+</script>
+</body>
+</html>
