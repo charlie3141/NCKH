@@ -1,31 +1,37 @@
-
 <!doctype html>
 <html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Gangtay — Simple Poll & Play (revert)</title>
+<title>Gangtay — Simple Poll & Play (faster)</title>
 <style>
   body{font-family:system-ui,Arial;padding:16px;max-width:900px;margin:auto}
-  input,button{padding:8px;margin:6px 0;width:100%;box-sizing:border-box}
+  input,button{padding:8px;margin:6px 0;box-sizing:border-box}
   .row{display:flex;gap:8px}
   .half{flex:1}
   #log{white-space:pre-wrap;background:#f6f6f6;padding:10px;border-radius:6px;min-height:200px}
+  #controls > * {flex:1}
 </style>
 </head>
 <body>
-  <h2>Gangtay — Simple Poll & Play (simple revert)</h2>
+  <h2>Gangtay — Simple Poll & Play (faster)</h2>
+
   <label>Firebase message.json URL</label>
   <input id="firebaseUrl" value="https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/message.json">
   <label>Audio base URL (folder)</label>
   <input id="audioBase" value="/audio/">
-  <div class="row" style="margin-top:8px">
+  <div class="row" id="controls" style="margin-top:8px">
     <button id="unlock">Unlock audio (tap once)</button>
     <input id="pollMs" type="number" value="800" min="100" style="width:120px">
     <button id="start">Start</button>
     <button id="stop">Stop</button>
   </div>
-  <div id="status">Status: idle</div>
+
+  <div style="display:flex;gap:8px;align-items:center">
+    <div id="status">Status: idle</div>
+    <label style="margin-left:auto"><input id="useSse" type="checkbox"> Try SSE (EventSource) first</label>
+  </div>
+
   <pre id="log">log...</pre>
 
 <script>
@@ -34,12 +40,24 @@ const audioBaseEl = document.getElementById('audioBase');
 const pollMsEl = document.getElementById('pollMs');
 const logEl = document.getElementById('log');
 const statusEl = document.getElementById('status');
+const useSseEl = document.getElementById('useSse');
+
 let pollId = null;
 let lastPayload = null;
 let audioUnlocked = false;
+let lastEtag = null;
+let audioMap = new Map(); // index -> HTMLAudioElement
+let playingIndex = null;
+let sse = null;
 
-function log(msg){ logEl.textContent = '['+new Date().toLocaleTimeString()+'] '+msg + '\n' + logEl.textContent; console.log(msg); }
+function log(msg){ 
+  const time = new Date().toLocaleTimeString();
+  logEl.textContent = `[${time}] ${msg}\n` + logEl.textContent;
+  console.log(msg);
+}
+
 function pad4(n){ return String(n).padStart(4,'0'); }
+
 function fileUrlForIndex(i){
   let base = (audioBaseEl.value || '/audio/').trim();
   if (!base.endsWith('/')) base += '/';
@@ -60,41 +78,80 @@ async function tryUnlock(){
   } catch(e) { log('Unlock failed: ' + e); return false; }
 }
 
-async function playIndex(i){
-  const url = fileUrlForIndex(i) + '?ts=' + Date.now();
-  log('Attempt play: ' + url);
-  const a = new Audio(url);
+// get or create cached audio element for index
+function getAudioForIndex(i){
+  if (audioMap.has(i)) return audioMap.get(i);
+  const url = fileUrlForIndex(i);
+  const a = document.createElement('audio');
+  a.preload = 'auto';
   a.playsInline = true;
   a.crossOrigin = 'anonymous';
-  a.onended = ()=> log('Play ended');
-  a.onerror = (e)=> log('Play error: ' + (e && e.message ? e.message : e));
+  a.src = url;
+  a.onended = () => {
+    log('Play ended: ' + pad4(i));
+    if (playingIndex === i) playingIndex = null;
+  };
+  a.onerror = (e) => {
+    log('Play error for ' + pad4(i) + ' — ' + (e && e.message ? e.message : 'error'));
+  };
+  audioMap.set(i, a);
+  return a;
+}
+
+// play by reusing audio element, avoid creating many nodes
+async function playIndex(i){
+  if (!await tryUnlock()) {
+    log('Audio not unlocked; please tap Unlock audio first.');
+    return;
+  }
+  if (playingIndex === i) {
+    log('Already playing index ' + i + '; skipping.');
+    return;
+  }
+  const a = getAudioForIndex(i);
+
+  // update src with cache-busting timestamp to force reload when needed
+  const srcWithTs = a.src.split('?')[0] + '?ts=' + Date.now();
+  a.src = srcWithTs;
+
   try {
     await a.play();
-    log('Play started');
+    playingIndex = i;
+    log('Play started: ' + pad4(i));
   } catch(e) {
     log('Play rejected: ' + e);
-    // fallback: create manual controls
+    // fallback: append basic control for manual play
     const ctrl = document.createElement('audio');
     ctrl.controls = true;
-    ctrl.src = url;
+    ctrl.src = srcWithTs;
     ctrl.style.width = '100%';
     document.body.appendChild(ctrl);
     log('Manual control created; tap Play.');
   }
 }
 
+// ---- Polling with conditional GET (ETag) ----
 async function pollOnce(){
   const url = (firebaseUrlEl.value || '').trim();
   if (!url) { log('No Firebase URL'); return; }
   try {
-    const r = await fetch(url, {cache:'no-store'});
+    const headers = {};
+    if (lastEtag) headers['If-None-Match'] = lastEtag;
+    const r = await fetch(url, { method: 'GET', headers, mode: 'cors', cache: 'no-store' });
+    if (r.status === 304) {
+      // not changed
+      // no-op
+      return;
+    }
     if (!r.ok) { log('Fetch failed ' + r.status); return; }
+    // try update ETag if present
+    const etag = r.headers.get('ETag') || r.headers.get('etag');
+    if (etag) lastEtag = etag;
     const j = await r.json();
     const s = JSON.stringify(j);
     if (s === lastPayload) return;
     lastPayload = s;
     log('New payload: ' + s);
-    // interpret index or numeric text
     if (typeof j.index === 'number') { await playIndex(j.index); }
     else if (typeof j.text === 'string' && /^\d+$/.test(j.text.trim())) { await playIndex(parseInt(j.text.trim(),10)); }
     else log('Payload not numeric/index; ignoring');
@@ -103,16 +160,110 @@ async function pollOnce(){
   }
 }
 
-document.getElementById('start').addEventListener('click', ()=>{
-  if (pollId) { log('Already polling'); return; }
+// ---- SSE (EventSource) streaming attempt ----
+function startSse(url){
+  stopSse();
+  // If URL ends with .json use it directly; EventSource will try to connect and receive text/event-stream
+  const esUrl = url;
+  try {
+    sse = new EventSource(esUrl);
+    sse.onopen = () => {
+      log('SSE opened to ' + esUrl);
+      statusEl.textContent = 'Status: SSE connected';
+    };
+    sse.onerror = (ev) => {
+      log('SSE error or closed; falling back to polling.'); 
+      stopSse();
+      startPolling();
+    };
+    // Firebase streaming event name is typically "put" or "patch" — listen to message and data
+    sse.onmessage = async (ev) => {
+      try {
+        // event.data may be a string with JSON payload (Firebase uses a wrapper)
+        const data = ev.data;
+        if (!data) return;
+        // Firebase streaming wraps data with a small JSON object e.g. {"path":"/","data":{...}}
+        let parsed;
+        try { parsed = JSON.parse(data); } catch(e){ parsed = null; }
+        if (parsed && parsed.data) {
+          const j = parsed.data;
+          const s = JSON.stringify(j);
+          if (s === lastPayload) return;
+          lastPayload = s;
+          log('SSE payload: ' + s);
+          if (typeof j.index === 'number') { await playIndex(j.index); }
+          else if (typeof j.text === 'string' && /^\d+$/.test(j.text.trim())) { await playIndex(parseInt(j.text.trim(),10)); }
+          else log('SSE payload not numeric/index; ignoring');
+        } else {
+          // fallback: try parse data as direct payload
+          const j = parsed || JSON.parse(data);
+          const s = JSON.stringify(j);
+          if (s === lastPayload) return;
+          lastPayload = s;
+          log('SSE raw payload: ' + s);
+          if (typeof j.index === 'number') { await playIndex(j.index); }
+          else if (typeof j.text === 'string' && /^\d+$/.test(j.text.trim())) { await playIndex(parseInt(j.text.trim(),10)); }
+          else log('SSE payload not numeric/index; ignoring');
+        }
+      } catch(e){
+        log('SSE process error: ' + e);
+      }
+    };
+  } catch(e){
+    log('SSE open failed: ' + e + ' — fallback to polling.');
+    stopSse();
+    startPolling();
+  }
+}
+
+function stopSse(){
+  if (sse) {
+    try { sse.close(); } catch(e){}
+    sse = null;
+  }
+}
+
+// ---- Start/stop polling ----
+function startPolling(){
+  if (pollId) return;
   const ms = Math.max(100, Number(pollMsEl.value) || 800);
   pollId = setInterval(pollOnce, ms);
-  log('Polling started every ' + ms + ' ms'); statusEl.textContent = 'Status: polling';
+  log('Polling started every ' + ms + ' ms');
+  statusEl.textContent = 'Status: polling';
   // immediate fetch
   pollOnce();
+}
+
+function stopPolling(){
+  if (pollId) { clearInterval(pollId); pollId = null; }
+  statusEl.textContent = 'Status: idle';
+  log('Polling stopped');
+}
+
+// UI events
+document.getElementById('start').addEventListener('click', ()=>{
+  if (useSseEl.checked) {
+    log('Attempting SSE connection (will fall back to polling if unavailable).');
+    startSse(firebaseUrlEl.value.trim());
+  } else {
+    startPolling();
+  }
 });
-document.getElementById('stop').addEventListener('click', ()=>{ if (pollId) clearInterval(pollId); pollId=null; log('Polling stopped'); statusEl.textContent='Status: idle';});
+
+document.getElementById('stop').addEventListener('click', ()=>{
+  stopSse();
+  stopPolling();
+  lastPayload = null;
+  lastEtag = null;
+  log('Stopped all.');
+});
+
 document.getElementById('unlock').addEventListener('click', ()=>{ tryUnlock(); });
+
+// cleanup when leaving page
+window.addEventListener('beforeunload', ()=>{
+  stopSse(); stopPolling();
+});
 </script>
 </body>
 </html>
