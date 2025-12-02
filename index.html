@@ -63,6 +63,13 @@
   <!-- Real-time data display section -->
   <div class="section">
     <h3>Live Data from Firebase</h3>
+    
+    <!-- Add current word display -->
+    <div style="margin-bottom:16px;padding:12px;background:#e8f5e9;border-radius:6px;border-left:4px solid #4caf50">
+      <strong>📝 Current Word (>2s):</strong>
+      <div style="font-size:28px;font-weight:bold;color:#2e7d32;margin-top:8px" id="currentWord">-</div>
+    </div>
+
     <div id="dataDisplay">
       <div class="data-card">
         <label>Flex 0</label>
@@ -138,6 +145,7 @@ const displayEls = {
   flex3: document.getElementById('flex3'),
   mpuState: document.getElementById('mpuState'),
   lastWord: document.getElementById('lastWord'),
+  currentWord: document.getElementById('currentWord'),
   rawPayload: document.getElementById('rawPayload'),
   playingStatus: document.getElementById('playingStatus'),
   audioButtons: document.getElementById('audioButtons')
@@ -303,25 +311,43 @@ function displayData(payload){
   } catch (e) {
     displayEls.rawPayload.textContent = String(payload);
   }
-  
-  if (typeof payload === 'string' && /^\d+,\d+,\d+,\d+,\d/.test(payload)) {
-    const parts = payload.split(',');
-    if (parts.length >= 5) {
-      displayEls.flex0.textContent = parts[0];
-      displayEls.flex1.textContent = parts[1];
-      displayEls.flex2.textContent = parts[2];
-      displayEls.flex3.textContent = parts[3];
-      displayEls.mpuState.textContent = parts[4];
+
+  if (typeof payload === 'string') {
+    let dataText = payload;
+    
+    // If framed format, extract data
+    if (isValidPacket(payload)) {
+      dataText = parseFramedPacket(payload) || payload;
+    }
+
+    // Numeric data: flex0,flex1,flex2,flex3,mpu
+    if (/^\d+,\d+,\d+,\d+,\d/.test(dataText)) {
+      const parts = dataText.split(',');
+      if (parts.length >= 5) {
+        displayEls.flex0.textContent = parts[0];
+        displayEls.flex1.textContent = parts[1];
+        displayEls.flex2.textContent = parts[2];
+        displayEls.flex3.textContent = parts[3];
+        displayEls.mpuState.textContent = parts[4];
+      }
+    }
+    // Word data: just text without numbers/commas
+    else if (!/[0-9,]/.test(dataText) && dataText.length > 0) {
+      displayEls.currentWord.textContent = dataText.toUpperCase();
+      displayEls.lastWord.textContent = dataText;
     }
   }
-  
+
   if (typeof payload === 'object' && payload !== null) {
     if (payload.flex0 !== undefined) displayEls.flex0.textContent = payload.flex0;
     if (payload.flex1 !== undefined) displayEls.flex1.textContent = payload.flex1;
     if (payload.flex2 !== undefined) displayEls.flex2.textContent = payload.flex2;
     if (payload.flex3 !== undefined) displayEls.flex3.textContent = payload.flex3;
     if (payload.mpu !== undefined) displayEls.mpuState.textContent = payload.mpu;
-    if (payload.word !== undefined) displayEls.lastWord.textContent = payload.word;
+    if (payload.word !== undefined) {
+      displayEls.currentWord.textContent = payload.word.toUpperCase();
+      displayEls.lastWord.textContent = payload.word;
+    }
   }
 }
 
@@ -356,31 +382,68 @@ function fingerprint(obj){
 ============================================================ */
 function processPayload(j){
   if (!j) return;
-  
+
+  // Filter out malformed packets
+  if (typeof j.text === 'string') {
+    if (!isValidPacket(j.text)) {
+      log("⚠ Corrupted packet ignored (no frame): " + j.text.slice(0, 30));
+      return;
+    }
+  }
+
   // Display the data
   displayData(j);
-  log("New payload: "+JSON.stringify(j).slice(0,100));
-  
+  log("✓ Payload: " + JSON.stringify(j).slice(0, 100));
+
   // Try numeric index
   if (typeof j.index === "number") {
     return playIndex(j.index);
   }
-  
-  // Try text-only index
+
+  // Try text-based word matching
   if (typeof j.text === "string") {
-    const textTrim = j.text.trim().toLowerCase();
+    let textData = j.text;
     
-    // If it's already a number
-    if (/^\d+$/.test(textTrim)) {
-      return playIndex(parseInt(textTrim, 10));
+    // Extract from framed format if needed
+    if (isValidPacket(textData)) {
+      textData = parseFramedPacket(textData) || textData;
     }
-    
-    if (textToIndexMap.has(textTrim)) {
-      const idx = textToIndexMap.get(textTrim);
-      log(`📖 T1.TXT: "${textTrim}" → index ${pad4(idx)}`);
+
+    textData = textData.trim().toLowerCase();
+
+    // Numeric index
+    if (/^\d+$/.test(textData)) {
+      return playIndex(parseInt(textData, 10));
+    }
+
+    // Word lookup in T1.TXT
+    if (textToIndexMap.has(textData)) {
+      const idx = textToIndexMap.get(textData);
+      log(`📖 T1.TXT: "${textData}" → index ${pad4(idx)}`);
       return playIndex(idx);
     }
   }
+}
+
+/* ============================================================
+   Validate framed packet format
+============================================================ */
+function isValidPacket(text) {
+  const trim = String(text || '').trim();
+  // Must start with $ and contain *HEX
+  return /^\$.*\*[0-9A-Fa-f]+$/.test(trim);
+}
+
+function parseFramedPacket(text) {
+  const trim = String(text || '').trim();
+  if (!isValidPacket(trim)) return null;
+  
+  // Remove $ prefix and *CHECKSUM suffix
+  const start = trim.indexOf('$') + 1;
+  const end = trim.lastIndexOf('*');
+  if (start < 1 || end < 0 || end <= start) return null;
+  
+  return trim.substring(start, end);
 }
 
 /* ============================================================
