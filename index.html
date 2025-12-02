@@ -40,7 +40,7 @@
       </div>
       <div>
         <label>T1.TXT URL (text→index mapping)</label>
-        <input id="t1Url" value="/T1.TXT" style="width:100%;max-width:300px">
+        <input id="t1Url" value="https://raw.githubusercontent.com/charlie3141/NCKH/main/T1.TXT" style="width:100%;max-width:300px">
       </div>
       <div>
         <label>Audio base URL</label>
@@ -217,9 +217,23 @@ async function loadT1Mapping(){
       return;
     }
     
-    const resp = await fetch(url, { cache: "no-store" });
-    if (!resp.ok) {
-      log("⚠ T1.TXT load failed: " + resp.status);
+    let attempts = [url];
+    if (url.includes('github.com')) {
+      attempts = [url, 'https://cors-anywhere.herokuapp.com/' + url];
+    }
+    
+    let resp = null;
+    for (const tryUrl of attempts) {
+      try {
+        resp = await fetch(tryUrl, { cache: "no-store" });
+        if (resp.ok) break;
+      } catch (e) {
+        continue;
+      }
+    }
+    
+    if (!resp || !resp.ok) {
+      log("⚠ T1.TXT load failed (checked " + attempts.length + " URLs)");
       return;
     }
     
@@ -233,7 +247,7 @@ async function loadT1Mapping(){
       if (!trim || trim.startsWith('#')) continue;
       
       // Support: "0001,AN" or "0001 AN" or "AN,0001"
-      const parts = trim.split(/[,\s]+/);
+      const parts = trim.split(/[,\s]+/).filter(p => p);
       if (parts.length >= 2) {
         let idx = -1, word = '';
         
@@ -251,7 +265,7 @@ async function loadT1Mapping(){
       }
     }
     
-    log(`✓ T1.TXT loaded: ${textToIndexMap.size} entries`);
+    log(`✓ T1.TXT loaded: ${textToIndexMap.size} entries from ${url}`);
   } catch (e) {
     log(`✗ T1.TXT error: ${e}`);
   }
@@ -401,8 +415,8 @@ function processPayload(j){
 
   // Filter out malformed packets
   if (typeof j.text === 'string') {
-    if (!isValidPacket(j.text)) {
-      log("⚠ Corrupted packet ignored (no frame): " + j.text.slice(0, 30));
+    if (!isValidPacket(j.text) && /^\d+,\d+,\d+,\d+,\d/.test(j.text) === false && j.text.length > 20) {
+      log("⚠ Corrupted packet: " + j.text.slice(0, 30));
       return;
     }
   }
@@ -414,6 +428,15 @@ function processPayload(j){
   // Try numeric index
   if (typeof j.index === "number") {
     return playIndex(j.index);
+  }
+
+  if (typeof j.word === "string") {
+    let word = j.word.trim().toLowerCase();
+    if (word && textToIndexMap.has(word)) {
+      const idx = textToIndexMap.get(word);
+      log(`📖 Word: "${word}" → index ${pad4(idx)}`);
+      return playIndex(idx);
+    }
   }
 
   // Try text-based word matching
@@ -430,6 +453,11 @@ function processPayload(j){
     // Numeric index
     if (/^\d+$/.test(textData)) {
       return playIndex(parseInt(textData, 10));
+    }
+
+    if (/^\d+,\d+,\d+,\d+,\d/.test(textData)) {
+      // This is sensor data, skip
+      return;
     }
 
     // Word lookup in T1.TXT
