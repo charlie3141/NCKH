@@ -104,6 +104,18 @@
   <!-- Audio playback section -->
   <div class="section">
     <h3>Audio Playback</h3>
+    
+    <!-- Add manual word input for testing -->
+    <div style="margin-bottom:12px;padding:12px;background:#ffe0e0;border-radius:6px;border-left:4px solid #dc3545">
+      <strong>🧪 Manual Word Test:</strong>
+      <div class="row" style="margin-top:8px">
+        <input id="manualWordInput" placeholder="Type word (e.g., 'an', 'em', 'at')" style="flex:1;min-width:200px">
+        <button id="testWordBtn" style="background:#dc3545">Test Word</button>
+        <button id="testIndexBtn" style="background:#6f42c1">Test Index</button>
+        <input id="testIndexInput" type="number" placeholder="Index" min="0" max="10000" style="width:100px">
+      </div>
+    </div>
+
     <div id="audioButtons"></div>
     <div style="margin-top:12px;padding:8px;background:#f8f9fa;border-radius:4px">
       <strong>Playing:</strong> <span id="playingStatus">None</span>
@@ -148,7 +160,11 @@ const displayEls = {
   currentWord: document.getElementById('currentWord'),
   rawPayload: document.getElementById('rawPayload'),
   playingStatus: document.getElementById('playingStatus'),
-  audioButtons: document.getElementById('audioButtons')
+  audioButtons: document.getElementById('audioButtons'),
+  manualWordInput: document.getElementById('manualWordInput'),
+  testWordBtn: document.getElementById('testWordBtn'),
+  testIndexBtn: document.getElementById('testIndexBtn'),
+  testIndexInput: document.getElementById('testIndexInput')
 };
 
 /* ============================================================
@@ -594,6 +610,28 @@ document.getElementById("stop").addEventListener("click", ()=>{
   lastPayload = null;
   lastEtag = null;
   log("⏹ All stopped");
+});
+
+document.getElementById("testWordBtn").addEventListener("click", () => {
+  const word = displayEls.manualWordInput.value.trim().toLowerCase();
+  if (!word) {
+    log("⚠ Enter a word first");
+    return;
+  }
+  
+  if (textToIndexMap.has(word)) {
+    const idx = textToIndexMap.get(word);
+    log(`🧪 Testing word: "${word}" → index ${pad4(idx)}`);
+    playIndex(idx);
+  } else {
+    log(`✗ Word not in T1.TXT: "${word}"`);
+  }
+});
+
+document.getElementById("testIndexBtn").addEventListener("click", () => {
+  const idx = parseInt(displayEls.testIndexInput.value || "0", 10);
+  log(`🧪 Testing index: ${pad4(idx)}`);
+  playIndex(idx);
 });
 
 // Initial log
