@@ -5,126 +5,382 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Gangtay — Firebase Display + Audio Play</title>
 <style>
-  body{font-family:system-ui,Arial;padding:16px;max-width:1200px;margin:auto;background:#f9f9f9}
-  input,button{padding:8px;margin:6px 0;box-sizing:border-box;border-radius:4px;border:1px solid #ccc}
-  button{background:#007bff;color:white;cursor:pointer;border:none}
-  button:hover{background:#0056b3}
-  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-  .section{background:white;padding:16px;margin:12px 0;border-radius:8px;border:1px solid #e0e0e0}
+  * { margin: 0; padding: 0; box-sizing: border-box; }
   
-  #dataDisplay{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin:12px 0}
-  .data-card{background:#f0f7ff;padding:12px;border-radius:6px;border-left:4px solid #007bff;text-align:center}
-  .data-card label{display:block;font-size:12px;color:#666;margin-bottom:4px}
-  .data-card .value{font-size:20px;font-weight:bold;color:#007bff}
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 20px;
+    min-height: 100vh;
+  }
   
-  #log{white-space:pre-wrap;background:#f6f6f6;padding:10px;border-radius:6px;min-height:200px;max-height:300px;overflow-y:auto;font-size:12px}
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
   
-  .status-ok{color:#28a745}
-  .status-err{color:#dc3545}
+  h1 {
+    color: white;
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 2.5em;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  }
   
-  #audioButtons{display:flex;gap:8px;flex-wrap:wrap}
-  .audio-btn{padding:10px 16px;background:#17a2b8;color:white;border:none;border-radius:4px;cursor:pointer}
-  .audio-btn:hover{background:#138496}
-  .audio-btn.playing{background:#ffc107;color:black}
+  .section {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+  }
+  
+  .section h2 {
+    color: #333;
+    margin-bottom: 16px;
+    font-size: 1.5em;
+    border-bottom: 3px solid #667eea;
+    padding-bottom: 12px;
+  }
+  
+  /* Controls */
+  input, button, select {
+    padding: 10px 14px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+  
+  input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+  
+  button {
+    background: #667eea;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+  
+  button:hover {
+    background: #5568d3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
+  
+  button:active {
+    transform: translateY(0);
+  }
+  
+  .row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    margin-bottom: 12px;
+  }
+  
+  .row > div {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  
+  label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  /* Data Display Cards */
+  #dataDisplay {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  
+  .data-card {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    padding: 18px;
+    border-radius: 10px;
+    text-align: center;
+    border: 2px solid #e0e0e0;
+    transition: all 0.3s ease;
+  }
+  
+  .data-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    border-color: #667eea;
+  }
+  
+  .data-card label {
+    display: block;
+    font-size: 11px;
+    color: #666;
+    margin-bottom: 8px;
+  }
+  
+  .data-card .value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #667eea;
+    font-family: 'Courier New', monospace;
+  }
+  
+  /* Current Word Display */
+  .word-display {
+    background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+    padding: 24px;
+    border-radius: 12px;
+    text-align: center;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 24px rgba(132, 250, 176, 0.3);
+  }
+  
+  .word-display .label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #2d5c4e;
+    margin-bottom: 12px;
+  }
+  
+  .word-display .word {
+    font-size: 48px;
+    font-weight: 700;
+    color: #1a3a31;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 2px;
+  }
+  
+  /* Audio Section */
+  .audio-section {
+    background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+  }
+  
+  #audioButtons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 16px 0;
+  }
+  
+  .audio-btn {
+    padding: 12px 18px;
+    background: #ff7675;
+    color: white;
+    border: 2px solid white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    font-family: 'Courier New', monospace;
+  }
+  
+  .audio-btn:hover {
+    background: #d63031;
+    transform: scale(1.05);
+  }
+  
+  .audio-btn.playing {
+    background: #ffd700;
+    color: #333;
+    animation: pulse 0.6s infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+  
+  /* Log */
+  #log {
+    background: #1e1e1e;
+    color: #0dff08;
+    padding: 16px;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    min-height: 200px;
+    max-height: 300px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    border: 2px solid #0dff08;
+  }
+  
+  /* Status indicator */
+  #status {
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-weight: 600;
+    background: #ffe0e0;
+    color: #d32f2f;
+    margin-left: auto;
+  }
+  
+  #status.status-ok {
+    background: #c8e6c9;
+    color: #2e7d32;
+  }
+  
+  /* Raw payload */
+  .raw-payload {
+    background: #f5f5f5;
+    padding: 12px;
+    border-radius: 6px;
+    border-left: 4px solid #667eea;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    overflow-x: auto;
+    word-break: break-all;
+    margin-top: 12px;
+  }
+  
+  /* Test section */
+  .test-section {
+    background: linear-gradient(135deg, #ffe0e0 0%, #ffd6d6 100%);
+    padding: 16px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    border: 2px dashed #dc3545;
+  }
+  
+  .test-section h3 {
+    color: #d32f2f;
+    margin-bottom: 12px;
+    font-size: 1.1em;
+  }
+  
+  .controls-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+  }
+  
+  .control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
 </style>
 </head>
 <body>
-  <h1>Gangtay — Firebase Display + Audio Play</h1>
+  <div class="container">
+    <h1>🎤 Gangtay Audio Demo</h1>
 
-  <div class="section">
-    <h3>Configuration</h3>
-    <div class="row">
-      <div>
-        <label>Firebase message.json URL</label>
-        <input id="firebaseUrl" value="https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/message.json" style="width:100%;max-width:400px">
+    <!-- Configuration Section -->
+    <div class="section">
+      <h2>Configuration</h2>
+      <div class="row">
+        <div style="flex: 1; min-width: 300px;">
+          <label>Firebase URL</label>
+          <input id="firebaseUrl" value="https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/message.json" style="width: 100%;">
+        </div>
+        <div style="flex: 0.6; min-width: 200px;">
+          <label>Poll Interval (ms)</label>
+          <input id="pollMs" type="number" value="800" min="100">
+        </div>
       </div>
-      <div>
-        <label>T1.TXT URL (text→index mapping)</label>
-        <input id="t1Url" value="https://raw.githubusercontent.com/charlie3141/NCKH/main/T1.TXT" style="width:100%;max-width:300px">
+      <div class="row">
+        <div style="flex: 1; min-width: 300px;">
+          <label>T1.TXT URL</label>
+          <input id="t1Url" value="https://raw.githubusercontent.com/charlie3141/NCKH/main/T1.TXT" style="width: 100%;">
+        </div>
+        <div style="flex: 0.6; min-width: 200px;">
+          <label>Audio Base URL</label>
+          <input id="audioBase" value="/audio/" style="width: 100%;">
+        </div>
       </div>
-      <div>
-        <label>Audio base URL</label>
-        <input id="audioBase" value="/audio/" style="width:100%;max-width:200px">
-      </div>
-      <div>
-        <label>Poll interval (ms)</label>
-        <input id="pollMs" type="number" value="800" min="100" style="width:100px">
-      </div>
-    </div>
-    <div class="row" style="margin-top:12px">
-      <button id="unlock">🔓 Unlock Audio</button>
-      <button id="start">▶️ Start</button>
-      <button id="stop">⏹️ Stop</button>
-      <div id="status">Status: idle</div>
-      <label style="margin-left:auto"><input id="useSse" type="checkbox"> Try SSE first</label>
-    </div>
-  </div>
-
-  <!-- Real-time data display section -->
-  <div class="section">
-    <h3>Live Data from Firebase</h3>
-    
-    <!-- Add current word display -->
-    <div style="margin-bottom:16px;padding:12px;background:#e8f5e9;border-radius:6px;border-left:4px solid #4caf50">
-      <strong>📝 Current Word (>2s):</strong>
-      <div style="font-size:28px;font-weight:bold;color:#2e7d32;margin-top:8px" id="currentWord">-</div>
-    </div>
-
-    <div id="dataDisplay">
-      <div class="data-card">
-        <label>Flex 0</label>
-        <div class="value" id="flex0">-</div>
-      </div>
-      <div class="data-card">
-        <label>Flex 1</label>
-        <div class="value" id="flex1">-</div>
-      </div>
-      <div class="data-card">
-        <label>Flex 2</label>
-        <div class="value" id="flex2">-</div>
-      </div>
-      <div class="data-card">
-        <label>Flex 3</label>
-        <div class="value" id="flex3">-</div>
-      </div>
-      <div class="data-card">
-        <label>MPU State</label>
-        <div class="value" id="mpuState">-</div>
-      </div>
-      <div class="data-card">
-        <label>Last Word</label>
-        <div class="value" id="lastWord">-</div>
-      </div>
-    </div>
-    <div style="margin-top:12px;padding:8px;background:#fff3cd;border-radius:4px">
-      <strong>Raw payload:</strong> <code id="rawPayload" style="word-break:break-all">-</code>
-    </div>
-  </div>
-
-  <!-- Audio playback section -->
-  <div class="section">
-    <h3>Audio Playback</h3>
-    
-    <!-- Add manual word input for testing -->
-    <div style="margin-bottom:12px;padding:12px;background:#ffe0e0;border-radius:6px;border-left:4px solid #dc3545">
-      <strong>🧪 Manual Word Test:</strong>
-      <div class="row" style="margin-top:8px">
-        <input id="manualWordInput" placeholder="Type word (e.g., 'an', 'em', 'at')" style="flex:1;min-width:200px">
-        <button id="testWordBtn" style="background:#dc3545">Test Word</button>
-        <button id="testIndexBtn" style="background:#6f42c1">Test Index</button>
-        <input id="testIndexInput" type="number" placeholder="Index" min="0" max="10000" style="width:100px">
+      <div class="row" style="margin-top: 16px;">
+        <button id="unlock" style="background: #ff9800;">🔓 Unlock Audio</button>
+        <button id="start" style="background: #4caf50;">▶️ Start</button>
+        <button id="stop" style="background: #f44336;">⏹️ Stop</button>
+        <div id="status">Status: idle</div>
       </div>
     </div>
 
-    <div id="audioButtons"></div>
-    <div style="margin-top:12px;padding:8px;background:#f8f9fa;border-radius:4px">
-      <strong>Playing:</strong> <span id="playingStatus">None</span>
-    </div>
-  </div>
+    <!-- Data Display -->
+    <div class="section">
+      <h2>Live Sensor Data</h2>
+      
+      <div class="word-display">
+        <div class="label">📝 Current Word</div>
+        <div class="word" id="currentWord">-</div>
+      </div>
 
-  <div class="section">
-    <h3>Log</h3>
-    <pre id="log">Waiting to start...</pre>
+      <div id="dataDisplay">
+        <div class="data-card">
+          <label>Flex 0</label>
+          <div class="value" id="flex0">-</div>
+        </div>
+        <div class="data-card">
+          <label>Flex 1</label>
+          <div class="value" id="flex1">-</div>
+        </div>
+        <div class="data-card">
+          <label>Flex 2</label>
+          <div class="value" id="flex2">-</div>
+        </div>
+        <div class="data-card">
+          <label>Flex 3</label>
+          <div class="value" id="flex3">-</div>
+        </div>
+        <div class="data-card">
+          <label>MPU State</label>
+          <div class="value" id="mpuState">-</div>
+        </div>
+        <div class="data-card">
+          <label>Last Word</label>
+          <div class="value" id="lastWord">-</div>
+        </div>
+      </div>
+
+      <div class="raw-payload">
+        <strong>Raw Payload:</strong> <code id="rawPayload">-</code>
+      </div>
+    </div>
+
+    <!-- Audio Playback -->
+    <div class="section">
+      <h2>Audio Playback</h2>
+      
+      <div class="audio-section">
+        <strong style="color: #d32f2f;">🧪 Manual Word Test</strong>
+        <div class="row" style="margin-top: 12px;">
+          <div style="flex: 1; min-width: 200px;">
+            <input id="manualWordInput" placeholder="Type word (e.g., 'an', 'em')" style="width: 100%;">
+          </div>
+          <button id="testWordBtn" style="background: #dc3545;">🔊 Test Word</button>
+          <button id="testIndexBtn" style="background: #6f42c1;">Test Index</button>
+          <input id="testIndexInput" type="number" placeholder="Index" min="0" max="10000" style="width: 100px;">
+        </div>
+      </div>
+
+      <strong>Recent Audio Buttons:</strong>
+      <div id="audioButtons"></div>
+      
+      <div style="margin-top: 16px; padding: 12px; background: #f0f0f0; border-radius: 6px;">
+        <strong>Now Playing:</strong> <span id="playingStatus" style="font-family: 'Courier New'; font-weight: 700; color: #667eea;">None</span>
+      </div>
+    </div>
+
+    <!-- Log -->
+    <div class="section">
+      <h2>System Log</h2>
+      <pre id="log">Waiting to start...</pre>
+    </div>
   </div>
 
 <script>
