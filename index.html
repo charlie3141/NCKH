@@ -3,43 +3,117 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Gangtay — Simple Poll & Play (faster)</title>
+<title>Gangtay — Firebase Display + Audio Play</title>
 <style>
-  body{font-family:system-ui,Arial;padding:16px;max-width:900px;margin:auto}
-  input,button{padding:8px;margin:6px 0;box-sizing:border-box}
-  .row{display:flex;gap:8px}
-  #log{white-space:pre-wrap;background:#f6f6f6;padding:10px;border-radius:6px;min-height:200px}
+  body{font-family:system-ui,Arial;padding:16px;max-width:1200px;margin:auto;background:#f9f9f9}
+  input,button{padding:8px;margin:6px 0;box-sizing:border-box;border-radius:4px;border:1px solid #ccc}
+  button{background:#007bff;color:white;cursor:pointer;border:none}
+  button:hover{background:#0056b3}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .section{background:white;padding:16px;margin:12px 0;border-radius:8px;border:1px solid #e0e0e0}
+  
+  #dataDisplay{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin:12px 0}
+  .data-card{background:#f0f7ff;padding:12px;border-radius:6px;border-left:4px solid #007bff;text-align:center}
+  .data-card label{display:block;font-size:12px;color:#666;margin-bottom:4px}
+  .data-card .value{font-size:20px;font-weight:bold;color:#007bff}
+  
+  #log{white-space:pre-wrap;background:#f6f6f6;padding:10px;border-radius:6px;min-height:200px;max-height:300px;overflow-y:auto;font-size:12px}
+  
+  .status-ok{color:#28a745}
+  .status-err{color:#dc3545}
+  
+  #audioButtons{display:flex;gap:8px;flex-wrap:wrap}
+  .audio-btn{padding:10px 16px;background:#17a2b8;color:white;border:none;border-radius:4px;cursor:pointer}
+  .audio-btn:hover{background:#138496}
+  .audio-btn.playing{background:#ffc107;color:black}
 </style>
 </head>
 <body>
-  <h2>Gangtay — Simple Poll & Play (faster)</h2>
+  <h1>Gangtay — Firebase Display + Audio Play</h1>
 
-  <label>Firebase message.json URL</label>
-  <input id="firebaseUrl" value="https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/message.json">
-
-  <label>Audio base URL (folder)</label>
-  <input id="audioBase" value="/audio/">
-
-  <div class="row" style="margin-top:8px">
-    <button id="unlock">Unlock audio (tap once)</button>
-    <input id="pollMs" type="number" value="800" min="100" style="width:120px">
-    <button id="start">Start</button>
-    <button id="stop">Stop</button>
+  <div class="section">
+    <h3>Configuration</h3>
+    <div class="row">
+      <div>
+        <label>Firebase message.json URL</label>
+        <input id="firebaseUrl" value="https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/message.json" style="width:100%;max-width:400px">
+      </div>
+      <div>
+        <label>T1.TXT URL (text→index mapping)</label>
+        <input id="t1Url" value="/T1.TXT" style="width:100%;max-width:300px">
+      </div>
+      <div>
+        <label>Audio base URL</label>
+        <input id="audioBase" value="/audio/" style="width:100%;max-width:200px">
+      </div>
+      <div>
+        <label>Poll interval (ms)</label>
+        <input id="pollMs" type="number" value="800" min="100" style="width:100px">
+      </div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button id="unlock">🔓 Unlock Audio</button>
+      <button id="start">▶️ Start</button>
+      <button id="stop">⏹️ Stop</button>
+      <div id="status">Status: idle</div>
+      <label style="margin-left:auto"><input id="useSse" type="checkbox"> Try SSE first</label>
+    </div>
   </div>
 
-  <div style="display:flex;gap:8px;align-items:center">
-    <div id="status">Status: idle</div>
-    <label style="margin-left:auto"><input id="useSse" type="checkbox"> Try SSE first</label>
+  <!-- Real-time data display section -->
+  <div class="section">
+    <h3>Live Data from Firebase</h3>
+    <div id="dataDisplay">
+      <div class="data-card">
+        <label>Flex 0</label>
+        <div class="value" id="flex0">-</div>
+      </div>
+      <div class="data-card">
+        <label>Flex 1</label>
+        <div class="value" id="flex1">-</div>
+      </div>
+      <div class="data-card">
+        <label>Flex 2</label>
+        <div class="value" id="flex2">-</div>
+      </div>
+      <div class="data-card">
+        <label>Flex 3</label>
+        <div class="value" id="flex3">-</div>
+      </div>
+      <div class="data-card">
+        <label>MPU State</label>
+        <div class="value" id="mpuState">-</div>
+      </div>
+      <div class="data-card">
+        <label>Last Word</label>
+        <div class="value" id="lastWord">-</div>
+      </div>
+    </div>
+    <div style="margin-top:12px;padding:8px;background:#fff3cd;border-radius:4px">
+      <strong>Raw payload:</strong> <code id="rawPayload" style="word-break:break-all">-</code>
+    </div>
   </div>
 
-  <pre id="log">log...</pre>
+  <!-- Audio playback section -->
+  <div class="section">
+    <h3>Audio Playback</h3>
+    <div id="audioButtons"></div>
+    <div style="margin-top:12px;padding:8px;background:#f8f9fa;border-radius:4px">
+      <strong>Playing:</strong> <span id="playingStatus">None</span>
+    </div>
+  </div>
 
+  <div class="section">
+    <h3>Log</h3>
+    <pre id="log">Waiting to start...</pre>
+  </div>
 
 <script>
-/* ----------------------------------------------------------
-   Global vars
----------------------------------------------------------- */
+/* ============================================================
+   Global State
+============================================================ */
 const firebaseUrlEl = document.getElementById('firebaseUrl');
+const t1UrlEl = document.getElementById('t1Url');
 const audioBaseEl = document.getElementById('audioBase');
 const pollMsEl = document.getElementById('pollMs');
 const logEl = document.getElementById('log');
@@ -47,22 +121,37 @@ const statusEl = document.getElementById('status');
 const useSseEl = document.getElementById('useSse');
 
 let pollId = null;
-let lastPayload = null; // now stores fingerprint (stable parts only)
+let lastPayload = null;
 let audioUnlocked = false;
 let lastEtag = null;
-
-let audioMap = new Map();   // index => reused audio element
-let playingIndex = null;
-
 let sse = null;
 
+let audioMap = new Map();
+let playingIndex = null;
 
-/* ----------------------------------------------------------
+let textToIndexMap = new Map();
+
+const displayEls = {
+  flex0: document.getElementById('flex0'),
+  flex1: document.getElementById('flex1'),
+  flex2: document.getElementById('flex2'),
+  flex3: document.getElementById('flex3'),
+  mpuState: document.getElementById('mpuState'),
+  lastWord: document.getElementById('lastWord'),
+  rawPayload: document.getElementById('rawPayload'),
+  playingStatus: document.getElementById('playingStatus'),
+  audioButtons: document.getElementById('audioButtons')
+};
+
+/* ============================================================
    Utilities
----------------------------------------------------------- */
+============================================================ */
 function log(msg){
   const t = new Date().toLocaleTimeString();
   logEl.textContent = `[${t}] ${msg}\n` + logEl.textContent;
+  if (logEl.textContent.split('\n').length > 50) {
+    logEl.textContent = logEl.textContent.split('\n').slice(0, 50).join('\n');
+  }
   console.log(msg);
 }
 
@@ -85,18 +174,68 @@ async function tryUnlock(){
     a.muted = true;
     await a.play().catch(()=>{});
     audioUnlocked = true;
-    log("Audio unlocked");
+    log("✓ Audio unlocked");
     return true;
   }catch(e){
-    log("Unlock failed: "+e);
+    log("✗ Unlock failed: "+e);
     return false;
   }
 }
 
+/* ============================================================
+   Load T1.TXT and build text→index mapping
+============================================================ */
+async function loadT1Mapping(){
+  try {
+    const url = t1UrlEl.value.trim();
+    if (!url) {
+      log("⚠ No T1.TXT URL provided");
+      return;
+    }
+    
+    const resp = await fetch(url, { cache: "no-store" });
+    if (!resp.ok) {
+      log("⚠ T1.TXT load failed: " + resp.status);
+      return;
+    }
+    
+    const text = await resp.text();
+    textToIndexMap.clear();
+    
+    // Parse T1.TXT: each line should be "index,text" or similar
+    const lines = text.split('\n');
+    for (const line of lines) {
+      const trim = line.trim();
+      if (!trim || trim.startsWith('#')) continue;
+      
+      // Support: "0001,AN" or "0001 AN" or "AN,0001"
+      const parts = trim.split(/[,\s]+/);
+      if (parts.length >= 2) {
+        let idx = -1, word = '';
+        
+        if (/^\d+$/.test(parts[0])) {
+          idx = parseInt(parts[0], 10);
+          word = parts[1].toLowerCase();
+        } else if (/^\d+$/.test(parts[1])) {
+          word = parts[0].toLowerCase();
+          idx = parseInt(parts[1], 10);
+        }
+        
+        if (idx >= 0 && word) {
+          textToIndexMap.set(word, idx);
+        }
+      }
+    }
+    
+    log(`✓ T1.TXT loaded: ${textToIndexMap.size} entries`);
+  } catch (e) {
+    log(`✗ T1.TXT error: ${e}`);
+  }
+}
 
-/* ----------------------------------------------------------
-   Audio system (cached players)
----------------------------------------------------------- */
+/* ============================================================
+   Audio System
+============================================================ */
 function getAudio(i){
   if (audioMap.has(i)) return audioMap.get(i);
   
@@ -104,19 +243,18 @@ function getAudio(i){
   a.preload = "auto";
   a.playsInline = true;
   a.crossOrigin = "anonymous";
-
   audioMap.set(i, a);
   return a;
 }
 
 async function playIndex(i){
   if (!await tryUnlock()){
-    log("Tap Unlock audio first.");
+    log("✗ Tap Unlock audio first.");
     return;
   }
 
   if (playingIndex === i){
-    log("Already playing index "+i);
+    log("ℹ Already playing index "+pad4(i));
     return;
   }
 
@@ -126,38 +264,77 @@ async function playIndex(i){
 
   a.onended = () => {
     playingIndex = null;
-    log("Play ended: "+pad4(i));
+    displayEls.playingStatus.textContent = 'None';
+    log("✓ Play ended: "+pad4(i));
   };
 
   try{
     await a.play();
     playingIndex = i;
-    log("Play started: "+pad4(i));
+    displayEls.playingStatus.textContent = pad4(i);
+    log("▶ Play started: "+pad4(i));
   }catch(e){
-    log("Play rejected: "+e);
-    const ctrl = document.createElement("audio");
-    ctrl.controls = true;
-    ctrl.src = url;
-    ctrl.style.width = "100%";
-    document.body.appendChild(ctrl);
-    log("Manual control created.");
+    log("✗ Play rejected: "+e);
   }
 }
 
+function showAudioButtons(){
+  const recent = Array.from(audioMap.keys()).slice(-10);
+  displayEls.audioButtons.innerHTML = '';
+  
+  for (const idx of recent) {
+    const btn = document.createElement('button');
+    btn.className = 'audio-btn' + (playingIndex === idx ? ' playing' : '');
+    btn.textContent = pad4(idx);
+    btn.onclick = () => playIndex(idx);
+    displayEls.audioButtons.appendChild(btn);
+  }
+}
 
-/* ----------------------------------------------------------
-   Small helper: fingerprint stable parts of payload
-   Removes common volatile fields (ts, timestamp, etc.)
----------------------------------------------------------- */
+/* ============================================================
+   Display live data from Firebase
+============================================================ */
+function displayData(payload){
+  if (!payload) return;
+  
+  // Display raw payload
+  try {
+    displayEls.rawPayload.textContent = JSON.stringify(payload);
+  } catch (e) {
+    displayEls.rawPayload.textContent = String(payload);
+  }
+  
+  if (typeof payload === 'string' && /^\d+,\d+,\d+,\d+,\d/.test(payload)) {
+    const parts = payload.split(',');
+    if (parts.length >= 5) {
+      displayEls.flex0.textContent = parts[0];
+      displayEls.flex1.textContent = parts[1];
+      displayEls.flex2.textContent = parts[2];
+      displayEls.flex3.textContent = parts[3];
+      displayEls.mpuState.textContent = parts[4];
+    }
+  }
+  
+  if (typeof payload === 'object' && payload !== null) {
+    if (payload.flex0 !== undefined) displayEls.flex0.textContent = payload.flex0;
+    if (payload.flex1 !== undefined) displayEls.flex1.textContent = payload.flex1;
+    if (payload.flex2 !== undefined) displayEls.flex2.textContent = payload.flex2;
+    if (payload.flex3 !== undefined) displayEls.flex3.textContent = payload.flex3;
+    if (payload.mpu !== undefined) displayEls.mpuState.textContent = payload.mpu;
+    if (payload.word !== undefined) displayEls.lastWord.textContent = payload.word;
+  }
+}
+
+/* ============================================================
+   Fingerprinting & Detection
+============================================================ */
 function fingerprint(obj){
   if (obj === null || obj === undefined) return String(obj);
   if (typeof obj !== 'object') return String(obj);
-  // deep clone (simple)
   let clone;
   try{
     clone = JSON.parse(JSON.stringify(obj));
   }catch(e){
-    // fallback
     clone = obj;
   }
   if (clone && typeof clone === 'object'){
@@ -174,10 +351,41 @@ function fingerprint(obj){
   }
 }
 
+/* ============================================================
+   Process payload: detect audio or word
+============================================================ */
+function processPayload(j){
+  if (!j) return;
+  
+  // Display the data
+  displayData(j);
+  log("New payload: "+JSON.stringify(j).slice(0,100));
+  
+  // Try numeric index
+  if (typeof j.index === "number") {
+    return playIndex(j.index);
+  }
+  
+  // Try text-only index
+  if (typeof j.text === "string") {
+    const textTrim = j.text.trim().toLowerCase();
+    
+    // If it's already a number
+    if (/^\d+$/.test(textTrim)) {
+      return playIndex(parseInt(textTrim, 10));
+    }
+    
+    if (textToIndexMap.has(textTrim)) {
+      const idx = textToIndexMap.get(textTrim);
+      log(`📖 T1.TXT: "${textTrim}" → index ${pad4(idx)}`);
+      return playIndex(idx);
+    }
+  }
+}
 
-/* ----------------------------------------------------------
-   Polling system (ETag optimized)
----------------------------------------------------------- */
+/* ============================================================
+   Polling
+============================================================ */
 async function pollOnce(){
   const url = firebaseUrlEl.value.trim();
   if (!url) return;
@@ -188,10 +396,9 @@ async function pollOnce(){
 
     const r = await fetch(url, { method:"GET", headers:hdr, cache:"no-store" });
 
-    if (r.status === 304) return; // unchanged
-
+    if (r.status === 304) return;
     if (!r.ok){
-      log("Fetch failed: "+r.status);
+      log("✗ Fetch failed: "+r.status);
       return;
     }
 
@@ -203,15 +410,10 @@ async function pollOnce(){
     if (fp === lastPayload) return;
 
     lastPayload = fp;
-    log("New payload: "+JSON.stringify(j));
-
-    if (typeof j.index === "number") return playIndex(j.index);
-    if (typeof j.text === "string" && /^\d+$/.test(j.text.trim()))
-      return playIndex(parseInt(j.text.trim(),10));
-
-    log("Payload ignored");
+    processPayload(j);
+    showAudioButtons();
   }catch(e){
-    log("Poll error: "+e);
+    log("✗ Poll error: "+e);
   }
 }
 
@@ -219,8 +421,9 @@ function startPolling(){
   if (pollId) return;
   const ms = Math.max(100, Number(pollMsEl.value)||800);
   pollId = setInterval(pollOnce, ms);
-  statusEl.textContent = "Status: polling";
-  log("Polling started at "+ms+" ms");
+  statusEl.textContent = "Status: polling ✓";
+  statusEl.className = "status-ok";
+  log("▶ Polling started at "+ms+" ms");
   pollOnce();
 }
 
@@ -230,21 +433,18 @@ function stopPolling(){
     pollId = null;
   }
   statusEl.textContent = "Status: idle";
-  log("Polling stopped");
+  statusEl.className = "";
+  log("⏹ Polling stopped");
 }
 
-
-/* ----------------------------------------------------------
-   SSE — FULLY FIXED for Firebase RTDB (more tolerant parser)
----------------------------------------------------------- */
+/* ============================================================
+   SSE
+============================================================ */
 function handleStreamData(raw){
-  // ignore empty or keep-alive ':' messages
   if (!raw || !String(raw).trim() || String(raw).trim() === ":") return;
 
   try{
-    // raw is typically a JSON string like {"path":"/","data":{...}}
     const pkt = JSON.parse(raw);
-    // pkt.data is where Firebase puts the payload; sometimes the stream may directly send the object
     const j = pkt && pkt.data !== undefined ? pkt.data : pkt;
 
     if (!j) return;
@@ -253,18 +453,10 @@ function handleStreamData(raw){
     if (fp === lastPayload) return;
     lastPayload = fp;
 
-    // log a concise representation (avoid super long logs)
-    let short = String(JSON.stringify(j));
-    if (short.length > 200) short = short.slice(0,200) + "...";
-    log("SSE payload: "+short);
-
-    if (typeof j.index === "number") return playIndex(j.index);
-    if (typeof j.text === "string" && /^\d+$/.test(j.text.trim()))
-      return playIndex(parseInt(j.text.trim(),10));
-    // otherwise ignore
+    processPayload(j);
+    showAudioButtons();
   }catch(e){
-    // sometimes raw isn't JSON - ignore silently or log once
-    log("SSE parse error: "+e);
+    log("⚠ SSE parse: "+e);
   }
 }
 
@@ -274,33 +466,31 @@ function startSse(url){
     sse = new EventSource(url);
 
     sse.onopen = () => {
-      log("SSE opened to "+url);
-      statusEl.textContent = "Status: SSE connected";
+      log("🔌 SSE connected");
+      statusEl.textContent = "Status: SSE ✓";
+      statusEl.className = "status-ok";
     };
 
-    // Firebase: event: put
     sse.addEventListener("put", ev => {
       if (ev.data) handleStreamData(ev.data);
     });
 
-    // Firebase: event: patch
     sse.addEventListener("patch", ev => {
       if (ev.data) handleStreamData(ev.data);
     });
 
-    // fallback events
     sse.onmessage = (ev) => {
       if (ev.data) handleStreamData(ev.data);
     };
 
     sse.onerror = () => {
-      log("SSE error; falling back to polling");
+      log("⚠ SSE error → fallback to polling");
       stopSse();
       startPolling();
     };
 
   }catch(e){
-    log("SSE failed: "+e+" → fallback to polling");
+    log("✗ SSE failed: "+e+" → polling");
     stopSse();
     startPolling();
   }
@@ -313,22 +503,22 @@ function stopSse(){
   }
 }
 
-
-/* ----------------------------------------------------------
-   UI
----------------------------------------------------------- */
+/* ============================================================
+   UI Events
+============================================================ */
 document.getElementById("unlock").addEventListener("click", tryUnlock);
 
-document.getElementById("start").addEventListener("click", ()=>{
+document.getElementById("start").addEventListener("click", async ()=>{
   const url = firebaseUrlEl.value.trim();
-  if (!url){ log("No Firebase URL"); return; }
+  if (!url){ log("✗ No Firebase URL"); return; }
+  
+  await loadT1Mapping();
 
-  // reset stable payload so starting fresh
   lastPayload = null;
   lastEtag = null;
 
   if (useSseEl.checked){
-    log("Attempting SSE (will fallback automatically)");
+    log("ℹ Attempting SSE (will fallback)");
     startSse(url);
   } else {
     startPolling();
@@ -340,8 +530,11 @@ document.getElementById("stop").addEventListener("click", ()=>{
   stopPolling();
   lastPayload = null;
   lastEtag = null;
-  log("Stopped all");
+  log("⏹ All stopped");
 });
+
+// Initial log
+log("Ready! Set Firebase URL and click Start.");
 </script>
 
 </body>
