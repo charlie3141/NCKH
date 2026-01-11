@@ -465,86 +465,75 @@
             transition: height 0.1s ease;
         }
 
-        /* Voice selection */
-        .voice-selection {
+        /* Auto-suggestions styles */
+        .auto-suggestions {
+            margin-top: 10px;
+        }
+
+        .auto-suggestions-container {
+            background: white;
+            border: 1px solid #eaeaea;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            z-index: 1000;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .auto-suggestion-item {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .auto-suggestion-item:hover {
+            background: #f0f0f0;
+        }
+
+        .auto-suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .voice-controls {
             display: flex;
             gap: 10px;
             margin-top: 10px;
             justify-content: center;
-            align-items: center;
         }
 
         .voice-btn {
-            padding: 8px 15px;
-            border: 2px solid #ccc;
+            padding: 8px 16px;
+            background: linear-gradient(to right, #FF9800, #F57C00);
+            color: white;
+            border: none;
             border-radius: 20px;
-            background: white;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             cursor: pointer;
             transition: all 0.2s;
         }
 
         .voice-btn.active {
-            background: linear-gradient(to right, #4CAF50, #45a049);
-            color: white;
-            border-color: #4CAF50;
+            background: linear-gradient(to right, #4CAF50, #2E7D32);
+            transform: scale(1.05);
         }
 
-        .voice-btn.male.active {
-            background: linear-gradient(to right, #2196F3, #1976D2);
-            border-color: #2196F3;
+        .voice-btn.female {
+            background: linear-gradient(to right, #E91E63, #C2185B);
         }
 
         .voice-btn.female.active {
-            background: linear-gradient(to right, #E91E63, #C2185B);
-            border-color: #E91E63;
+            background: linear-gradient(to right, #E91E63, #AD1457);
+            transform: scale(1.05);
         }
 
-        /* Real-time suggestions */
-        .realtime-suggestions {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            margin-top: 5px;
-            z-index: 1000;
-            max-height: 200px;
-            overflow-y: auto;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-
-        .suggestion-item {
-            padding: 10px 15px;
-            cursor: pointer;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .suggestion-item:hover {
-            background: #f5f5f5;
-        }
-
-        .suggestion-item:last-child {
-            border-bottom: none;
-        }
-
-        .relative-container {
-            position: relative;
-        }
-
-        /* AI Voice Status */
-        .voice-status {
-            font-size: 0.8rem;
+        /* TTS Status */
+        .tts-status {
+            font-size: 0.85rem;
             color: #666;
-            margin-top: 5px;
             text-align: center;
-        }
-
-        .connecting {
-            color: #FF9800;
-            animation: pulse 1s infinite;
+            margin-top: 5px;
+            min-height: 20px;
         }
     </style>
 </head>
@@ -579,13 +568,29 @@
                     <div class="conversion-display" id="convertedSentenceDisplay">---</div>
                     
                     <!-- Voice Selection -->
-                    <div class="voice-selection">
-                        <button class="voice-btn male" onclick="setVoiceGender('male')" id="maleVoiceBtn">
-                            👨 Male Voice
+                    <div class="voice-controls">
+                        <button class="voice-btn active" onclick="selectVoice('male')" id="maleVoiceBtn">
+                            🔊 Male Voice
                         </button>
-                        <button class="voice-btn female active" onclick="setVoiceGender('female')" id="femaleVoiceBtn">
-                            👩 Female Voice
+                        <button class="voice-btn female" onclick="selectVoice('female')" id="femaleVoiceBtn">
+                            🔊 Female Voice
                         </button>
+                    </div>
+                    
+                    <!-- Auto-suggestions -->
+                    <div class="auto-suggestions" id="autoSuggestionsContainer" style="display: none;">
+                        <div class="sensor-label">SUGGESTED PHRASES</div>
+                        <div class="auto-suggestions-container" id="autoSuggestions">
+                            <!-- Auto-suggestions will appear here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Phrase Suggestions -->
+                    <div class="phrase-suggestions">
+                        <h4>📝 COMMON PHRASE SUGGESTIONS</h4>
+                        <div class="phrase-pills" id="phrasePills">
+                            <!-- Phrase pills will be added here by JavaScript -->
+                        </div>
                     </div>
                     
                     <!-- Speech Controls -->
@@ -601,28 +606,8 @@
                         </button>
                     </div>
                     
-                    <div class="voice-status" id="voiceStatus">
-                        Ready
-                    </div>
-                    
                     <div class="audio-visualizer" id="audioVisualizer">
                         <!-- Audio bars will be added here -->
-                    </div>
-                    
-                    <!-- Real-time Phrase Suggestions -->
-                    <div class="phrase-suggestions" id="realtimePhraseSuggestions" style="display: none;">
-                        <h4>💡 PHRASE SUGGESTIONS (Based on your sentence)</h4>
-                        <div class="phrase-pills" id="realtimePhrasePills">
-                            <!-- Real-time phrase pills will be added here -->
-                        </div>
-                    </div>
-                    
-                    <!-- Common Phrase Suggestions -->
-                    <div class="phrase-suggestions">
-                        <h4>📝 COMMON PHRASE SUGGESTIONS</h4>
-                        <div class="phrase-pills" id="phrasePills">
-                            <!-- Phrase pills will be added here by JavaScript -->
-                        </div>
                     </div>
                     
                     <div class="word-list" id="wordList">No words yet</div>
@@ -652,13 +637,9 @@
             <!-- Translation Card -->
             <div class="card">
                 <h3>Translation</h3>
-                <div style="margin-bottom: 20px;" class="relative-container">
+                <div style="margin-bottom: 20px;">
                     <div class="sensor-label">FULL SENTENCE (Vietnamese - For Translation)</div>
-                    <textarea id="translationInput" placeholder="Enter Vietnamese text here..." 
-                              oninput="handleTranslationInput()"></textarea>
-                    
-                    <!-- Real-time suggestions dropdown -->
-                    <div class="realtime-suggestions" id="translationSuggestions" style="display: none;"></div>
+                    <textarea id="translationInput" placeholder="Enter Vietnamese text here..."></textarea>
                     
                     <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 10px;">
                         <div><strong>Translation Options:</strong></div>
@@ -982,7 +963,7 @@
             "Backward": 5
         };
 
-        // Phrase Suggestions
+        // Common phrases for suggestions (from your image)
         const commonPhrases = [
             "Xin chào, rất vui được gặp bạn",
             "Bạn khỏe không?",
@@ -996,27 +977,25 @@
             "Tôi không hiểu"
         ];
 
-        // Voice gender selection
-        let voiceGender = 'female'; // 'male' or 'female'
-        
-        // AI TTS API Configuration
-        const AI_TTS_API_KEY = ""; // You need to add your API key here
-        const AI_TTS_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent";
-        
-        // Voice names mapping
-        const voiceMap = {
-            "vi-VN": { male: "Kore", female: "Aoede" },
-            "en-GB": { male: "Kore", female: "Aoede" },
-            "ja-JP": { male: "Kore", female: "Aoede" },
-            "ko-KR": { male: "Kore", female: "Aoede" },
-            "zh-CN": { male: "Zubenelgenubi", female: "Aoede" }
-        };
-
         // Speech synthesis variables
         let isSpeaking = false;
         let currentSpeech = null;
         let audioVisualizerInterval = null;
         const audioCache = {};
+        let selectedVoice = 'male'; // 'male' or 'female'
+        let voices = [];
+        let maleVoices = [];
+        let femaleVoices = [];
+
+        // TTS API Configuration
+        const TTS_API_KEY = ""; // Add your Gemini API key here
+        const voiceMap = {
+            "vi-VN": { male: "Aoede", female: "Kore" },
+            "en-GB": { male: "Kore", female: "Aoede" },
+            "ja-JP": { male: "Aoede", female: "Kore" },
+            "ko-KR": { male: "Kore", female: "Zubenelgenubi" },
+            "zh-CN": { male: "Zubenelgenubi", female: "Aoede" }
+        };
 
         // Helper Functions
         function log(source, message) {
@@ -1159,6 +1138,9 @@
             } else {
                 convertedFullSentence = "";
             }
+            
+            // Update auto-suggestions when word changes
+            updateAutoSuggestions();
         }
 
         // Firebase Data Functions
@@ -1413,10 +1395,6 @@
             } else {
                 speakVnBtn.classList.remove('speaking');
             }
-            
-            // Update voice gender buttons
-            document.getElementById('maleVoiceBtn').classList.toggle('active', voiceGender === 'male');
-            document.getElementById('femaleVoiceBtn').classList.toggle('active', voiceGender === 'female');
         }
 
         // Sentence Functions
@@ -1428,9 +1406,6 @@
                 updateFullSentence();
                 log('SENTENCE', `Added word: '${displayBuffer}'`);
                 
-                // Show real-time phrase suggestions
-                showRealtimePhraseSuggestions();
-                
                 // Clear current word
                 slot1 = '';
                 slot2 = '';
@@ -1438,6 +1413,9 @@
                 convertedCurrentWord = '';
                 
                 updateUI();
+                
+                // Show auto-suggestions after adding word
+                showAutoSuggestions();
             } else {
                 log('SENTENCE', 'Sentence full! Max 10 words reached.');
             }
@@ -1480,11 +1458,11 @@
             displayBuffer = '';
             convertedCurrentWord = '';
             
-            // Hide real-time suggestions
-            document.getElementById('realtimePhraseSuggestions').style.display = 'none';
-            
             log('SENTENCE', 'Sentence reset - ready for new input');
             updateUI();
+            
+            // Hide auto-suggestions
+            hideAutoSuggestions();
         }
 
         function clearCurrentWord() {
@@ -1494,6 +1472,9 @@
             convertedCurrentWord = '';
             updateUI();
             log('WORD', 'Current word cleared');
+            
+            // Hide auto-suggestions
+            hideAutoSuggestions();
         }
 
         function backspaceBuffer() {
@@ -1501,12 +1482,82 @@
                 displayBuffer = displayBuffer.slice(0, -1);
                 updateConversions();
                 log('WORD', `Backspace - Buffer: ${displayBuffer}`);
+                
+                // Update auto-suggestions after backspace
+                updateAutoSuggestions();
             }
         }
 
         function backspace() {
             backspaceBuffer();
             updateUI();
+        }
+
+        // Auto-suggestions Functions
+        function updateAutoSuggestions() {
+            const currentSentence = convertedFullSentence.toLowerCase().trim();
+            const container = document.getElementById('autoSuggestionsContainer');
+            const suggestionsDiv = document.getElementById('autoSuggestions');
+            
+            if (!currentSentence || currentSentence.length < 1) {
+                hideAutoSuggestions();
+                return;
+            }
+            
+            // Find phrases that start with the current sentence
+            const filteredPhrases = commonPhrases.filter(phrase => 
+                phrase.toLowerCase().startsWith(currentSentence)
+            );
+            
+            // If no phrases start with the sentence, find phrases that contain the sentence
+            const containingPhrases = commonPhrases.filter(phrase => 
+                phrase.toLowerCase().includes(currentSentence) && 
+                phrase.toLowerCase() !== currentSentence
+            );
+            
+            // Combine and limit to 5 suggestions
+            const allSuggestions = [...filteredPhrases, ...containingPhrases].slice(0, 5);
+            
+            if (allSuggestions.length === 0) {
+                hideAutoSuggestions();
+                return;
+            }
+            
+            // Show suggestions
+            container.style.display = 'block';
+            suggestionsDiv.innerHTML = '';
+            
+            allSuggestions.forEach(phrase => {
+                const suggestionItem = document.createElement('div');
+                suggestionItem.className = 'auto-suggestion-item';
+                suggestionItem.textContent = phrase;
+                suggestionItem.onclick = () => {
+                    useSuggestedPhrase(phrase);
+                };
+                suggestionsDiv.appendChild(suggestionItem);
+            });
+        }
+
+        function showAutoSuggestions() {
+            // Always show suggestions after adding a word
+            updateAutoSuggestions();
+        }
+
+        function hideAutoSuggestions() {
+            const container = document.getElementById('autoSuggestionsContainer');
+            container.style.display = 'none';
+        }
+
+        function useSuggestedPhrase(phrase) {
+            // Set the phrase in translation input
+            document.getElementById('translationInput').value = phrase;
+            // Auto-translate
+            translateSentence();
+            
+            // Hide suggestions
+            hideAutoSuggestions();
+            
+            log('PHRASE', `Selected phrase: "${phrase}"`);
         }
 
         // Phrase Suggestion Functions
@@ -1519,90 +1570,82 @@
                 pill.className = 'phrase-pill';
                 pill.textContent = phrase;
                 pill.onclick = () => {
-                    // Set the phrase in translation input
-                    document.getElementById('translationInput').value = phrase;
-                    // Auto-translate
-                    translateSentence();
-                    log('PHRASE', `Selected phrase: "${phrase}"`);
+                    useSuggestedPhrase(phrase);
                 };
                 phrasePills.appendChild(pill);
             });
         }
 
-        function showRealtimePhraseSuggestions() {
-            if (convertedFullSentence.length === 0) return;
+        // Voice Selection Functions
+        function selectVoice(voiceType) {
+            selectedVoice = voiceType;
             
-            const suggestionsDiv = document.getElementById('realtimePhraseSuggestions');
-            const pillsDiv = document.getElementById('realtimePhrasePills');
+            const maleBtn = document.getElementById('maleVoiceBtn');
+            const femaleBtn = document.getElementById('femaleVoiceBtn');
             
-            // Filter phrases that contain the current sentence
-            const matchingPhrases = commonPhrases.filter(phrase => 
-                phrase.toLowerCase().includes(convertedFullSentence.toLowerCase())
-            );
-            
-            if (matchingPhrases.length > 0) {
-                pillsDiv.innerHTML = '';
-                matchingPhrases.forEach(phrase => {
-                    const pill = document.createElement('button');
-                    pill.className = 'phrase-pill blue';
-                    pill.textContent = phrase;
-                    pill.onclick = () => {
-                        document.getElementById('translationInput').value = phrase;
-                        translateSentence();
-                        log('PHRASE', `Selected real-time phrase: "${phrase}"`);
-                    };
-                    pillsDiv.appendChild(pill);
-                });
-                suggestionsDiv.style.display = 'block';
+            if (voiceType === 'male') {
+                maleBtn.classList.add('active');
+                femaleBtn.classList.remove('active');
             } else {
-                suggestionsDiv.style.display = 'none';
+                femaleBtn.classList.add('active');
+                maleBtn.classList.remove('active');
+            }
+            
+            log('SPEECH', `Voice changed to: ${voiceType}`);
+        }
+
+        // Advanced TTS using Gemini API (FIXED - Proper male/female voices)
+        async function speakWithGeminiTTS(text, langCode) {
+            if (!TTS_API_KEY) {
+                log('SPEECH', 'TTS API key not configured');
+                throw new Error('API key missing');
+            }
+            
+            const voiceName = voiceMap[langCode]?.[selectedVoice] || 
+                             (selectedVoice === 'male' ? 'Kore' : 'Aoede');
+            
+            try {
+                const response = await fetch(
+                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${TTS_API_KEY}`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: text }] }],
+                            generationConfig: {
+                                responseModalities: ["AUDIO"],
+                                speechConfig: {
+                                    voiceConfig: {
+                                        prebuiltVoiceConfig: { voiceName }
+                                    }
+                                }
+                            }
+                        })
+                    }
+                );
+                
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                const inlineData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+                
+                if (!inlineData || !inlineData.data) {
+                    throw new Error('No audio data in response');
+                }
+                
+                return inlineData.data; // Base64 audio data
+            } catch (error) {
+                console.error('Gemini TTS Error:', error);
+                throw error;
             }
         }
 
-        // Translation input handling
-        function handleTranslationInput() {
-            const input = document.getElementById('translationInput');
-            const suggestionsDiv = document.getElementById('translationSuggestions');
-            const value = input.value;
-            
-            if (value.length === 0) {
-                suggestionsDiv.style.display = 'none';
-                return;
-            }
-            
-            // Filter common phrases
-            const filteredPhrases = commonPhrases.filter(phrase => 
-                phrase.toLowerCase().includes(value.toLowerCase())
-            ).slice(0, 5); // Limit to 5 suggestions
-            
-            if (filteredPhrases.length > 0) {
-                suggestionsDiv.innerHTML = '';
-                filteredPhrases.forEach(phrase => {
-                    const div = document.createElement('div');
-                    div.className = 'suggestion-item';
-                    div.textContent = phrase;
-                    div.onclick = () => {
-                        input.value = phrase;
-                        suggestionsDiv.style.display = 'none';
-                        translateSentence();
-                    };
-                    suggestionsDiv.appendChild(div);
-                });
-                suggestionsDiv.style.display = 'block';
-            } else {
-                suggestionsDiv.style.display = 'none';
-            }
-        }
-
-        // Voice Gender Selection
-        function setVoiceGender(gender) {
-            voiceGender = gender;
-            updateUI();
-            log('VOICE', `Voice set to: ${gender}`);
-        }
-
-        // AI TTS Functions
-        const pcmToWav = (base64PCM, sampleRate = 24000) => {
+        // Convert PCM16 to WAV (from your provided code)
+        function pcmToWav(base64PCM, sampleRate = 24000) {
             const binaryString = atob(base64PCM);
             const len = binaryString.length;
             const bytes = new Uint8Array(len);
@@ -1634,59 +1677,6 @@
             view.setUint32(40, len, true);
 
             return new Blob([view, bytes], { type: "audio/wav" });
-        };
-
-        async function speakWithRetry(text, langCode, retries = 3) {
-            if (!AI_TTS_API_KEY) {
-                throw new Error("API key not configured");
-            }
-
-            const voiceName = voiceMap[langCode]?.[voiceGender] || "Aoede";
-            
-            for (let i = 0; i < retries; i++) {
-                try {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-                    const response = await fetch(
-                        `${AI_TTS_ENDPOINT}?key=${AI_TTS_API_KEY}`,
-                        {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            signal: controller.signal,
-                            body: JSON.stringify({
-                                contents: [{ parts: [{ text: text }] }],
-                                generationConfig: {
-                                    responseModalities: ["AUDIO"],
-                                    speechConfig: {
-                                        voiceConfig: { prebuiltVoiceConfig: { voiceName } },
-                                    },
-                                },
-                            }),
-                        }
-                    );
-
-                    clearTimeout(timeoutId);
-                    
-                    if (!response.ok) {
-                        const errorData = await response.json().catch(() => ({}));
-                        throw new Error(`API_ERROR_${response.status}: ${errorData?.error?.message || response.statusText}`);
-                    }
-
-                    const data = await response.json();
-                    const inlineData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData;
-                    
-                    if (!inlineData || !inlineData.data) {
-                        throw new Error("NO_DATA");
-                    }
-
-                    return inlineData.data;
-                } catch (err) {
-                    if (i === retries - 1) throw err;
-                    const delay = Math.pow(2, i) * 1000;
-                    await new Promise(r => setTimeout(r, delay));
-                }
-            }
         }
 
         // Speech Synthesis Functions
@@ -1697,7 +1687,7 @@
                 return;
             }
             
-            await speakTextWithAI(text, 'vi-VN');
+            await speakText(text, 'vi-VN');
         }
 
         async function speakTranslation() {
@@ -1708,175 +1698,126 @@
             }
             
             const lang = document.getElementById('voiceLanguage').value;
-            await speakTextWithAI(text, lang);
+            await speakText(text, lang);
         }
 
-        async function speakTextWithAI(text, langCode) {
+        async function speakText(text, langCode) {
             if (isSpeaking) {
                 stopAllSpeech();
                 return;
             }
-
-            if (!AI_TTS_API_KEY) {
-                // Fallback to Web Speech API if no AI API key
-                speakTextWithWebSpeech(text, langCode);
-                return;
-            }
-
-            // Stop any ongoing speech
-            if (currentAudioRef) {
-                currentAudioRef.pause();
-                currentAudioRef = null;
-            }
-
-            const cacheKey = `${langCode}:${voiceGender}:${text}`;
-            if (audioCache[cacheKey]) {
-                const audio = new Audio(audioCache[cacheKey]);
-                currentAudioRef = audio;
-                setIsSpeaking(true);
-                audio.onended = () => setIsSpeaking(false);
-                audio.play().catch(() => setIsSpeaking(false));
-                return;
-            }
-
-            setIsSpeaking(true);
-            updateVoiceStatus('Đang tải giọng AI...', true);
-
+            
+            isSpeaking = true;
+            updateUI();
+            startAudioVisualizer();
+            
+            log('SPEECH', `Starting ${selectedVoice} voice speech for: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
+            
             try {
-                const audioDataBase64 = await speakWithRetry(text, langCode);
-                const wavBlob = pcmToWav(audioDataBase64, 24000);
-                const audioUrl = URL.createObjectURL(wavBlob);
+                const cacheKey = `${langCode}:${selectedVoice}:${text}`;
                 
-                // Cache the audio
-                audioCache[cacheKey] = audioUrl;
+                let audioUrl = audioCache[cacheKey];
                 
-                updateVoiceStatus('Đang phát...');
+                if (!audioUrl) {
+                    // Use Gemini TTS API
+                    const audioDataBase64 = await speakWithGeminiTTS(text, langCode);
+                    const wavBlob = pcmToWav(audioDataBase64, 24000);
+                    audioUrl = URL.createObjectURL(wavBlob);
+                    audioCache[cacheKey] = audioUrl;
+                }
+                
                 const audio = new Audio(audioUrl);
-                currentAudioRef = audio;
+                currentSpeech = audio;
                 
                 audio.onended = () => {
-                    setIsSpeaking(false);
-                    updateVoiceStatus('Ready');
+                    isSpeaking = false;
+                    currentSpeech = null;
                     stopAudioVisualizer();
+                    updateUI();
+                    log('SPEECH', 'Finished speaking');
                 };
                 
-                audio.onerror = () => {
-                    setIsSpeaking(false);
-                    updateVoiceStatus('Lỗi phát âm thanh');
+                audio.onerror = (error) => {
+                    isSpeaking = false;
+                    currentSpeech = null;
                     stopAudioVisualizer();
+                    updateUI();
+                    log('SPEECH', `Audio error: ${error}`);
                 };
                 
-                startAudioVisualizer();
                 await audio.play();
                 
-                log('SPEECH', `AI TTS playing: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
-            } catch (err) {
-                console.error('AI TTS failed:', err);
-                setIsSpeaking(false);
-                updateVoiceStatus('AI TTS không khả dụng, sử dụng Web Speech API');
+            } catch (error) {
+                console.error('Speech error:', error);
+                isSpeaking = false;
+                currentSpeech = null;
+                stopAudioVisualizer();
+                updateUI();
                 
-                // Fallback to Web Speech API
-                speakTextWithWebSpeech(text, langCode);
+                // Fallback to Web Speech API if Gemini fails
+                if ('speechSynthesis' in window) {
+                    log('SPEECH', 'Falling back to Web Speech API');
+                    fallbackWebSpeech(text, langCode);
+                } else {
+                    log('SPEECH', `Speech error: ${error.message}`);
+                }
             }
         }
 
-        function speakTextWithWebSpeech(text, langCode) {
-            if (isSpeaking) {
-                stopAllSpeech();
-                return;
-            }
-            
-            // Check browser support
-            if (!('speechSynthesis' in window)) {
-                log('SPEECH', 'Speech synthesis not supported in this browser');
-                updateVoiceStatus('Trình duyệt không hỗ trợ speech synthesis');
-                return;
-            }
-            
-            // Stop any ongoing speech
-            window.speechSynthesis.cancel();
-            
-            // Create speech synthesis utterance
+        function fallbackWebSpeech(text, langCode) {
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = langCode;
             utterance.rate = 0.9;
-            utterance.pitch = voiceGender === 'male' ? 0.8 : 1.2;
+            utterance.pitch = selectedVoice === 'male' ? 0.8 : 1.2;
             utterance.volume = 1;
             
-            // Try to find a voice matching the gender preference
             const voices = speechSynthesis.getVoices();
-            const targetVoices = voices.filter(voice => {
-                if (!voice.lang.startsWith(langCode.split('-')[0])) return false;
-                
-                const voiceName = voice.name.toLowerCase();
-                if (voiceGender === 'male') {
-                    return voiceName.includes('male') || voiceName.includes('man') || voiceName.includes('nam');
-                } else {
-                    return voiceName.includes('female') || voiceName.includes('woman') || voiceName.includes('nữ') || 
-                           voiceName.includes('female') || !voiceName.includes('male');
-                }
-            });
+            const voice = voices.find(v => v.lang === langCode || v.lang.startsWith(langCode.split('-')[0]));
             
-            if (targetVoices.length > 0) {
-                utterance.voice = targetVoices[0];
+            if (voice) {
+                utterance.voice = voice;
             }
             
-            // Event listeners
             utterance.onstart = function() {
-                setIsSpeaking(true);
+                isSpeaking = true;
                 updateUI();
                 startAudioVisualizer();
-                updateVoiceStatus('Đang phát...');
-                log('SPEECH', `Web Speech playing: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
             };
             
             utterance.onend = function() {
-                setIsSpeaking(false);
+                isSpeaking = false;
                 currentSpeech = null;
                 stopAudioVisualizer();
                 updateUI();
-                updateVoiceStatus('Ready');
-                log('SPEECH', 'Finished speaking');
             };
             
             utterance.onerror = function(event) {
-                setIsSpeaking(false);
+                isSpeaking = false;
                 currentSpeech = null;
                 stopAudioVisualizer();
                 updateUI();
-                updateVoiceStatus('Lỗi phát âm thanh');
-                log('SPEECH', `Speech error: ${event.error}`);
+                log('SPEECH', `Fallback speech error: ${event.error}`);
             };
             
             currentSpeech = utterance;
-            window.speechSynthesis.speak(utterance);
+            speechSynthesis.speak(utterance);
         }
 
         function stopAllSpeech() {
-            if (currentAudioRef) {
-                currentAudioRef.pause();
-                currentAudioRef = null;
+            if (currentSpeech && currentSpeech.pause) {
+                currentSpeech.pause();
+                currentSpeech.currentTime = 0;
             }
             
-            if (window.speechSynthesis) {
-                window.speechSynthesis.cancel();
+            if (speechSynthesis && speechSynthesis.speaking) {
+                speechSynthesis.cancel();
             }
             
-            setIsSpeaking(false);
+            isSpeaking = false;
             currentSpeech = null;
             stopAudioVisualizer();
             updateUI();
-            updateVoiceStatus('Ready');
             log('SPEECH', 'Speech stopped');
-        }
-
-        function updateVoiceStatus(message, connecting = false) {
-            const statusDiv = document.getElementById('voiceStatus');
-            statusDiv.textContent = message;
-            statusDiv.className = 'voice-status';
-            if (connecting) {
-                statusDiv.classList.add('connecting');
-            }
         }
 
         function startAudioVisualizer() {
@@ -2021,31 +1962,25 @@
             // Initialize phrase suggestions
             loadPhraseSuggestions();
             
-            // Load voices for speech synthesis
+            // Load voices for fallback Web Speech API
             if ('speechSynthesis' in window) {
                 speechSynthesis.getVoices(); // Trigger voice loading
                 speechSynthesis.onvoiceschanged = function() {
-                    log('SPEECH', 'Speech synthesis voices loaded');
+                    log('SPEECH', 'Web Speech API voices loaded');
                 };
             }
-            
-            // Close suggestions when clicking outside
-            document.addEventListener('click', function(e) {
-                const suggestionsDiv = document.getElementById('translationSuggestions');
-                const translationInput = document.getElementById('translationInput');
-                
-                if (!translationInput.contains(e.target) && !suggestionsDiv.contains(e.target)) {
-                    suggestionsDiv.style.display = 'none';
-                }
-            });
             
             // Start with auto-refresh
             fetchFirebaseData();
             toggleAutoRefresh();
             
-            // Global variables for speech
-            window.currentAudioRef = null;
-            window.setIsSpeaking = (value) => { isSpeaking = value; updateUI(); };
+            // Click outside to hide suggestions
+            document.addEventListener('click', function(event) {
+                const suggestionsContainer = document.getElementById('autoSuggestionsContainer');
+                if (suggestionsContainer && !suggestionsContainer.contains(event.target)) {
+                    hideAutoSuggestions();
+                }
+            });
         });
     </script>
 </body>
