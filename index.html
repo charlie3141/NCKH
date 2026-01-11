@@ -3,459 +3,669 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ESP32 Sentence Constructor - Firebase Interface</title>
+    <title>Vietnamese Sentence Constructor</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #333; min-height: 100vh; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 15px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; }
+        header { background: linear-gradient(to right, #4A00E0, #8E2DE2); color: white; padding: 20px; text-align: center; }
+        h1 { font-size: 2rem; margin-bottom: 5px; }
+        .dashboard { padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
+        .card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); border: 1px solid #eaeaea; }
+        .card h3 { color: #4A00E0; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #f0f0f0; }
+        .conversion-display { font-size: 1.5rem; font-weight: bold; color: #2196F3; margin: 10px 0; min-height: 60px; display: flex; align-items: center; justify-content: center; background: #E3F2FD; border-radius: 10px; padding: 15px; border: 2px solid #2196F3; line-height: 1.4; }
+        .sentence-display { font-size: 1.8rem; font-weight: bold; color: #4CAF50; margin: 10px 0; min-height: 80px; display: flex; align-items: center; justify-content: center; background: #E8F5E9; border-radius: 10px; padding: 20px; border: 2px solid #4CAF50; line-height: 1.4; }
+        .current-word-display { font-size: 2rem; font-weight: bold; color: #FF5722; margin: 10px 0; min-height: 60px; display: flex; align-items: center; justify-content: center; background: #FFF8E1; border-radius: 10px; padding: 15px; border: 2px dashed #FFC107; }
+        .word-list { margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 10px; border: 1px solid #eaeaea; }
+        .word-item { display: inline-block; padding: 8px 15px; margin: 5px; background: #e3f2fd; border-radius: 20px; border: 1px solid #bbdefb; }
+        .sensor-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .sensor-item { padding: 12px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid; }
+        .sensor-item.mpu { border-left-color: #2196F3; }
+        .sensor-item.flex { border-left-color: #4CAF50; }
+        .sensor-value { font-size: 1.8rem; font-weight: bold; color: #333; margin: 5px 0; }
+        .sensor-label { font-size: 0.8rem; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+        .flex-box { display: inline-block; width: 40px; height: 40px; line-height: 40px; text-align: center; background: #f8f9fa; border-radius: 8px; margin: 2px; font-weight: bold; border: 2px solid transparent; }
+        .flex-box.active-0 { background: #4CAF50; color: white; }
+        .flex-box.active-1 { background: #FF9800; color: white; }
+        .flex-box.active-2 { background: #F44336; color: white; }
+        .controls { display: flex; gap: 10px; margin-top: 20px; justify-content: center; flex-wrap: wrap; }
+        button { padding: 12px 24px; border: none; border-radius: 8px; background: linear-gradient(to right, #4A00E0, #8E2DE2); color: white; font-weight: bold; cursor: pointer; transition: all 0.2s; }
+        button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        button.red { background: linear-gradient(to right, #FF416C, #FF4B2B); }
+        button.green { background: linear-gradient(to right, #00b09b, #96c93d); }
+        button.blue { background: linear-gradient(to right, #2196F3, #21CBF3); }
+        .status-bar { background: #f8f9fa; padding: 15px; border-top: 1px solid #eaeaea; display: flex; justify-content: space-between; align-items: center; }
+        .indicator { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        .indicator.online { background: #4CAF50; animation: blink 1s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .calibration-info { font-size: 0.8rem; color: #666; margin-top: 10px; }
+        .shake-active { color: #FF5722 !important; font-weight: bold !important; animation: shake 0.5s infinite; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-2px); } 75% { transform: translateX(2px); } }
         
-        body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #333;
-            min-height: 100vh;
-            padding: 20px;
-        }
+        /* Calibration */
+        .calibration-status { margin: 15px 0; padding: 15px; border-radius: 10px; text-align: center; font-weight: bold; }
+        .calibrating { background: #FFF3CD; border: 2px solid #FFC107; color: #856404; animation: pulse 1s infinite; }
+        .calibrated { background: #D4EDDA; border: 2px solid #28A745; color: #155724; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
         
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
-        }
-        
-        header {
-            background: linear-gradient(to right, #4A00E0, #8E2DE2);
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
-        
-        h1 {
-            font-size: 2rem;
-            margin-bottom: 10px;
-        }
-        
-        .dashboard {
-            padding: 20px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 20px;
-        }
-        
-        .card {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-            border: 1px solid #eaeaea;
-        }
-        
-        .card h3 {
-            color: #4A00E0;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #f0f0f0;
-        }
-        
-        .data-display {
-            font-size: 1.2rem;
-            margin: 10px 0;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border: 1px solid #eaeaea;
-        }
-        
-        .value {
-            font-weight: bold;
-            color: #2196F3;
-        }
-        
-        .sensor-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin: 15px 0;
-        }
-        
-        .sensor-item {
-            padding: 12px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border-left: 4px solid #4CAF50;
-        }
-        
-        .controls {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-        
-        button {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            background: linear-gradient(to right, #4A00E0, #8E2DE2);
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-        
-        button:active {
-            transform: translateY(0);
-        }
-        
-        .status-bar {
-            background: #f8f9fa;
-            padding: 15px;
-            border-top: 1px solid #eaeaea;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .indicator {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 8px;
-        }
-        
-        .indicator.online {
-            background: #4CAF50;
-            animation: blink 1s infinite;
-        }
-        
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        
-        .logs {
-            max-height: 200px;
-            overflow-y: auto;
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 10px;
-            margin-top: 10px;
-            font-family: monospace;
-            font-size: 0.9rem;
-        }
-        
-        .log-entry {
-            padding: 5px;
-            border-bottom: 1px solid #eaeaea;
-        }
-        
-        .timestamp {
-            color: #666;
-            font-size: 0.8rem;
-        }
-        
-        .message {
-            color: #333;
-        }
-        
-        .error {
-            color: #F44336;
-        }
-        
-        .success {
-            color: #4CAF50;
-        }
-        
-        .firebase-data {
-            background: #FFF3E0;
-            border: 2px solid #FFB74D;
-        }
+        /* Translation */
+        .translation-box { margin: 10px 0; padding: 15px; background: #FFF3E0; border-radius: 10px; border: 2px solid #FFB74D; }
+        .phrase-suggestions { max-height: 150px; overflow-y: auto; padding: 10px; background: #f8f9fa; border-radius: 8px; margin-bottom: 10px; }
+        .phrase-btn { width: 100%; text-align: left; padding: 8px; margin: 2px 0; background: #e3f2fd; border: 1px solid #bbdefb; border-radius: 4px; cursor: pointer; }
+        .phrase-btn:hover { background: #bbdefb; }
+        .tts-btn { padding: 10px 20px; border-radius: 8px; border: 2px solid #4CAF50; background: white; color: #4CAF50; font-weight: bold; cursor: pointer; transition: all 0.2s; }
+        .tts-btn:hover { background: #4CAF50; color: white; }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>ESP32 Sentence Constructor - Firebase Interface</h1>
-            <div>Receiving data from Firebase and sending commands</div>
+            <h1>Vietnamese Sentence Constructor</h1>
+            <div>Processing on Vercel - Raw data from ESP32 Firebase</div>
         </header>
         
         <div class="dashboard">
-            <!-- Firebase Data Card -->
+            <!-- Sentence Construction Card -->
             <div class="card">
-                <h3>Firebase Data</h3>
-                <div class="data-display firebase-data">
-                    <div><strong>Firebase URL:</strong> <span id="firebaseUrl">https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/message.json</span></div>
-                    <div><strong>Status:</strong> <span id="firebaseStatus" class="value">Connecting...</span></div>
-                </div>
-                
-                <div class="sensor-grid">
-                    <div class="sensor-item">
-                        <div class="sensor-label">MPU6050 State</div>
-                        <div class="value" id="mpuState">---</div>
-                        <div class="sensor-label">Orientation</div>
-                        <div id="mpuOrientation">---</div>
+                <h3>Sentence Construction</h3>
+                <div style="text-align: center; padding: 20px; margin-bottom: 20px;">
+                    <div class="sensor-label">CURRENT WORD (Encoded)</div>
+                    <div class="current-word-display" id="displayBuffer">---</div>
+                    <div class="sensor-label">CURRENT WORD (Vietnamese)</div>
+                    <div class="conversion-display" id="convertedCurrentWord">---</div>
+                    
+                    <div class="sensor-label">FULL SENTENCE (Encoded)</div>
+                    <div class="sentence-display" id="sentenceDisplay">---</div>
+                    <div class="sensor-label">FULL SENTENCE (Vietnamese)</div>
+                    <div class="conversion-display" id="convertedSentenceDisplay">---</div>
+                    
+                    <div class="word-list" id="wordList">No words yet</div>
+                    <div class="word-count">Words in sentence: <span id="wordCount">0</span>/10</div>
+                    
+                    <div style="display: flex; justify-content: space-around; margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                        <div><div class="sensor-label">SLOT 1</div><div class="sensor-value" id="slot1" style="font-size: 1.2rem;">---</div></div>
+                        <div><div class="sensor-label">SLOT 2</div><div class="sensor-value" id="slot2" style="font-size: 1.2rem;">---</div></div>
                     </div>
                     
-                    <div class="sensor-item">
-                        <div class="sensor-label">Flex Sensors</div>
-                        <div class="value" id="flexStates">---</div>
-                        <div class="sensor-label">Raw Values</div>
-                        <div id="rawFlexValues">---</div>
+                    <div class="controls">
+                        <button onclick="clearWord()" class="red">Clear Current</button>
+                        <button onclick="backspace()">Backspace</button>
+                        <button onclick="addWordToSentence()" class="green">Add Word (_)</button>
+                        <button onclick="commitSentence()" class="blue">Commit Sentence</button>
+                        <button onclick="resetSentence()" class="red">Reset All</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sensors Display Card -->
+            <div class="card">
+                <h3>Sensor Data (Raw from Firebase)</h3>
+                <div class="sensor-grid">
+                    <div class="sensor-item mpu">
+                        <div class="sensor-label">MPU6050 STATE</div>
+                        <div class="sensor-value" id="mpuOrientation">Unknown</div>
+                        <div class="sensor-label">STATE CODE</div>
+                        <div class="sensor-value" id="mpuState">-1</div>
+                        <div class="sensor-label">SHAKE STATUS</div>
+                        <div class="sensor-value" id="mpuShakeState">None</div>
+                        <div class="sensor-label">RAW DATA</div>
+                        <div class="sensor-value" id="rawData">---</div>
+                    </div>
+                    <div class="sensor-item flex">
+                        <div class="sensor-label">FLEX SENSORS (RAW)</div>
+                        <div>
+                            <div><span class="flex-box" id="flex0-box">0</span><span class="flex-box" id="flex1-box">0</span><span class="flex-box" id="flex2-box">0</span><span class="flex-box" id="flex3-box">0</span></div>
+                            <div class="calibration-info" id="rawValues">Raw: 0, 0, 0, 0</div>
+                        </div>
+                        <div class="sensor-label" style="margin-top: 10px;">State: <span id="flexFormat">0000</span> (a0,a1,a2,a3)</div>
+                    </div>
+                </div>
+                
+                <div class="calibration-status" id="calibrationStatus">
+                    Not calibrated
+                </div>
+                
+                <div style="margin-top: 15px;">
+                    <div class="sensor-label">FLEX THRESHOLDS</div>
+                    <div>Straight: <input type="number" id="straightThreshold" value="150" style="width: 60px;"> | 
+                         Bent: <input type="number" id="bentThreshold0" value="300" style="width: 60px;">,
+                         <input type="number" id="bentThreshold1" value="450" style="width: 60px;">,
+                         <input type="number" id="bentThreshold2" value="350" style="width: 60px;">,
+                         <input type="number" id="bentThreshold3" value="300" style="width: 60px;">
                     </div>
                 </div>
                 
                 <div class="controls">
-                    <button onclick="sendCommandToFirebase('start_calibration')">Start Calibration</button>
-                    <button onclick="sendCommandToFirebase('use_default_calibration')">Use Default Calibration</button>
-                    <button onclick="sendCommandToFirebase('clear_word')">Clear Word</button>
-                    <button onclick="sendCommandToFirebase('reset_sentence')">Reset Sentence</button>
+                    <button onclick="startCalibration()" class="blue">Calibrate Flex Sensors</button>
+                    <button onclick="applyThresholds()" class="green">Apply Thresholds</button>
                 </div>
             </div>
             
-            <!-- Word Construction Card -->
+            <!-- Translation & TTS Card -->
             <div class="card">
-                <h3>Word Construction</h3>
-                <div class="data-display">
-                    <div><strong>Current Word:</strong> <span id="displayBuffer" class="value">---</span></div>
-                    <div><strong>Converted Word:</strong> <span id="convertedCurrentWord" class="value">---</span></div>
+                <h3>Translation & Text-to-Speech</h3>
+                <div style="margin-bottom: 15px;">
+                    <div class="sensor-label">VIETNAMESE TEXT TO TRANSLATE</div>
+                    <div class="conversion-display" id="textToTranslate">---</div>
                 </div>
                 
-                <div class="data-display">
-                    <div><strong>Full Sentence:</strong> <span id="fullSentence" class="value">---</span></div>
-                    <div><strong>Converted Sentence:</strong> <span id="convertedFullSentence" class="value">---</span></div>
+                <div style="margin-bottom: 15px;">
+                    <div class="sensor-label">TARGET LANGUAGE</div>
+                    <select id="targetLanguage" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 10px;">
+                        <option value="en">English</option>
+                        <option value="vi">Vietnamese</option>
+                        <option value="ja">Japanese</option>
+                        <option value="ko">Korean</option>
+                        <option value="zh">Chinese</option>
+                    </select>
+                    
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <button onclick="translateText()" class="blue" style="flex: 1;">Translate with Gemini</button>
+                        <button onclick="translateWithMyMemory()" class="green" style="flex: 1;">Translate with MyMemory</button>
+                    </div>
                 </div>
                 
-                <div class="data-display">
-                    <div><strong>Words in Sentence:</strong> <span id="sentenceWordCount" class="value">0</span></div>
-                    <div><strong>Slot 1:</strong> <span id="slot1">---</span></div>
-                    <div><strong>Slot 2:</strong> <span id="slot2">---</span></div>
+                <div style="margin-bottom: 15px;">
+                    <div class="sensor-label">TRANSLATED TEXT</div>
+                    <div class="conversion-display" id="translatedText">---</div>
+                    <div class="sensor-label" style="margin-top: 5px;">Status: <span id="translationStatus">Ready</span></div>
                 </div>
                 
-                <div class="controls">
-                    <button onclick="sendCommandToFirebase('add_word')">Add Word (_)</button>
-                    <button onclick="sendCommandToFirebase('commit_sentence')">Commit Sentence</button>
-                    <button onclick="sendCommandToFirebase('backspace')">Backspace</button>
-                </div>
-            </div>
-            
-            <!-- System Status Card -->
-            <div class="card">
-                <h3>System Status</h3>
-                <div class="data-display">
-                    <div><strong>Calibration:</strong> <span id="calibrationStatus" class="value">Not calibrated</span></div>
-                    <div><strong>Calibration Time:</strong> <span id="calibrationTime">0s</span></div>
-                    <div><strong>Stable Count:</strong> <span id="stableCount">0</span>/3</div>
-                    <div><strong>Hold Time:</strong> <span id="holdTime">0.0s</span> (need 0.8s)</div>
-                </div>
-                
-                <div class="data-display">
-                    <div><strong>Shake State:</strong> <span id="shakeState" class="value">None</span></div>
-                    <div><strong>Is Shaking:</strong> <span id="isShaking">false</span></div>
-                </div>
-                
-                <h4 style="margin-top: 20px;">Recent Logs</h4>
-                <div class="logs" id="logContainer">
-                    <div class="log-entry">Waiting for data...</div>
+                <div style="margin-bottom: 15px;">
+                    <div class="sensor-label">TEXT-TO-SPEECH</div>
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <button onclick="speakText('female')" class="green" style="flex: 1;" id="speakFemaleBtn">🔊 Speak (Female)</button>
+                        <button onclick="speakText('male')" class="blue" style="flex: 1;" id="speakMaleBtn">🔊 Speak (Male)</button>
+                    </div>
+                    <div id="ttsStatus" style="text-align: center; font-size: 0.9rem; color: #666;">Ready</div>
                 </div>
             </div>
         </div>
         
         <div class="status-bar">
-            <div>
-                <span class="indicator" id="connectionStatus"></span>
-                <span id="statusText">Connecting to Firebase...</span>
-            </div>
-            <div>
-                <span id="lastUpdate">Last update: --:--:--</span>
-            </div>
+            <div><span class="indicator" id="connectionStatus"></span><span id="statusText">Connecting to Firebase...</span></div>
+            <div><span id="lastUpdate">Last update: --:--:--</span></div>
         </div>
     </div>
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js"></script>
-    
     <script>
-        // Your Firebase configuration
+        // Firebase configuration
         const firebaseConfig = {
             databaseURL: "https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app"
         };
-
-        // Initialize Firebase
-        const app = firebase.initializeApp(firebaseConfig);
-        const database = firebase.getDatabase(app);
         
         // Firebase paths
-        const DATA_PATH = 'esp32/data';
-        const COMMAND_PATH = 'esp32/command';
-        const LOGS_PATH = 'esp32/logs';
+        const DATA_PATH = '/sensorData';
+        const COMMAND_PATH = '/commands';
         
+        // Word construction tables (moved from ESP32 to JavaScript)
+        const tableA = [
+            ["IAY","IC","ICH","IE","IEC","IEM","IEN","IENG","IEO"],
+            ["IEP","IET","IEU","IM","IN","ING","INH","IO","IOI"],
+            ["ENG","ENH","EO","EP","ET","EU","I","IA","IAC"],
+            ["IAI","IAM","IAN","IANG","IANH","IAO","IAP","IAT","IAU"],
+            ["AP","AT","AU","AY","E","EC","ECH","EM","EN"],
+            ["A","AC","ACH","AI","AM","AN","ANG","ANH","AO"],
+            ["IUN","IUONG","IUP","O","OA","OAC","OACH","OAI","OAM"],
+            ["ION","IONG","IOT","IP","IT","IU","IUA","IUC","IUI"]
+        ];
+
+        const tableB = [
+            ["UE","UECH","UEN","UENH","UEO","UET","UI","UM","UN"],
+            ["UNG","UO","UOC","UOI","UOM","UON","UONG","UOP","OUT"],
+            ["ONG","OOC","OONG","OP","OT","U","UA","UAC","UACH"],
+            ["UAI","UAM","UAN","UANG","UANH","UAO","UAT","UAY","UC"],
+            ["OAY","OC","OE","OEN","OEO","OET","OI","OM","ON"],
+            ["COMMIT","_",null,null,"OAN","OANG","OANH","OAP","OAT"],
+            ["UYNH","UYP","UYT","UYU","Y","YEM","YEN","YET","YEU"],
+            ["UOU","UP","UT","UU","UY","UYA","UYCH","UYEN","UYET"]
+        ];
+
+        const tableC = [
+            [ ["B","C","D"], ["Đ","G","H"], ["K","L","M"] ],
+            [ ["N","P","Q"], ["R","S","T"], ["V","X","CH"] ],
+            [ ["GH","KH","NG"], ["NGH","NH","PH"], ["TH","TR","_"] ]
+        ];
+
+        // Vietnamese conversion table (simplified version)
+        const vietnameseTable = {
+            "IAY": ["iáy","iày","iảy","iãy","iạy","iay"],
+            "IC": ["íc","ìc","ỉc","ĩc","ịc","ic"],
+            "ICH": ["ích","ìch","ỉch","ĩch","ịch","ich"],
+            // ... (include all entries from ESP32 code)
+        };
+
+        // State variables (moved from ESP32 to JavaScript)
+        let rawFlexValues = [0, 0, 0, 0];
+        let flexStates = [0, 0, 0, 0];
+        let mpuState = -1;
+        let mpuOrientation = "Unknown";
+        let shakeState = "None";
+        let isShaking = false;
+        
+        // Flex calibration
+        let calibrating = false;
+        let calibrationComplete = false;
+        let calibrationStartTime = 0;
+        const CALIBRATION_DURATION = 10000;
+        const STRAIGHT_THRESHOLD = 150;
+        let flexBentThresholds = [300, 450, 350, 300];
+        
+        // Word construction
+        let slot1 = "";
+        let slot2 = "";
+        let displayBuffer = "";
+        let convertedCurrentWord = "";
+        
+        // Sentence building
+        const MAX_WORDS = 10;
+        let sentenceWords = [];
+        let fullSentence = "";
+        let convertedFullSentence = "";
+        
+        // Translation
+        let translatedSentence = "";
+        let translationLanguage = "en";
+        let ttsGender = "female";
+        let isTranslating = false;
+        let isSpeaking = false;
+        
+        // Firebase connection
+        let lastFirebaseData = null;
         let lastUpdateTime = 0;
-        const logs = [];
-        const MAX_LOGS = 20;
         
-        // Initialize Firebase listeners
-        function initializeFirebase() {
-            // Listen for ESP32 data
-            const dataRef = firebase.ref(database, DATA_PATH);
-            firebase.onValue(dataRef, (snapshot) => {
-                const data = snapshot.val();
-                if (data) {
-                    lastUpdateTime = Date.now();
-                    updateUI(data);
-                    updateConnectionStatus();
-                }
-            });
-            
-            // Listen for logs
-            const logsRef = firebase.ref(database, LOGS_PATH);
-            firebase.onChildAdded(logsRef, (snapshot) => {
-                const log = snapshot.val();
-                if (log) {
-                    addLog(log);
-                }
-            });
-            
-            console.log("Firebase initialized and listening for data");
-        }
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadThresholdsFromStorage();
+            startFirebaseListener();
+            setInterval(updateUI, 100);
+        });
         
-        // Send command to Firebase
-        function sendCommandToFirebase(command) {
-            const commandRef = firebase.ref(database, COMMAND_PATH);
-            firebase.set(commandRef, {
-                command: command,
-                timestamp: Date.now()
-            }).then(() => {
-                console.log("Command sent:", command);
-                addLog({ source: "WEB", message: "Sent command: " + command, timestamp: Date.now() });
-            }).catch((error) => {
-                console.error("Error sending command:", error);
-                addLog({ source: "WEB", message: "Error sending command: " + error, timestamp: Date.now() });
-            });
-        }
-        
-        // Update UI with data from Firebase
-        function updateUI(data) {
-            // Update connection status
-            document.getElementById('firebaseStatus').textContent = 'Connected';
-            document.getElementById('firebaseStatus').className = 'value success';
-            
-            // Update sensors
-            if (data.mpuState !== undefined) {
-                document.getElementById('mpuState').textContent = data.mpuState;
-                document.getElementById('mpuOrientation').textContent = data.mpuOrientation || '---';
-                document.getElementById('shakeState').textContent = data.shakeState || 'None';
-                document.getElementById('isShaking').textContent = data.isShaking ? 'true' : 'false';
+        function loadThresholdsFromStorage() {
+            const saved = localStorage.getItem('flexThresholds');
+            if (saved) {
+                flexBentThresholds = JSON.parse(saved);
+                document.getElementById('bentThreshold0').value = flexBentThresholds[0];
+                document.getElementById('bentThreshold1').value = flexBentThresholds[1];
+                document.getElementById('bentThreshold2').value = flexBentThresholds[2];
+                document.getElementById('bentThreshold3').value = flexBentThresholds[3];
             }
+        }
+        
+        function saveThresholdsToStorage() {
+            localStorage.setItem('flexThresholds', JSON.stringify(flexBentThresholds));
+        }
+        
+        function startFirebaseListener() {
+            // Use Firebase REST API to listen for changes
+            setInterval(fetchFirebaseData, 500);
+        }
+        
+        function fetchFirebaseData() {
+            fetch(`${firebaseConfig.databaseURL}${DATA_PATH}.json`)
+                .then(response => response.json())
+                .then(data => {
+                    lastFirebaseData = data;
+                    lastUpdateTime = Date.now();
+                    
+                    // Update raw values
+                    if (data && data.rawFlex) {
+                        rawFlexValues = data.rawFlex;
+                        mpuState = data.mpuState || -1;
+                        mpuOrientation = data.mpuOrientation || "Unknown";
+                        shakeState = data.shakeState || "None";
+                        isShaking = data.isShaking || false;
+                        
+                        // Calculate flex states
+                        calculateFlexStates();
+                        
+                        // Update word construction
+                        updateWordConstruction();
+                    }
+                    
+                    updateConnectionStatus();
+                })
+                .catch(error => {
+                    console.error('Firebase error:', error);
+                    updateConnectionStatus(false);
+                });
+        }
+        
+        function calculateFlexStates() {
+            for (let i = 0; i < 4; i++) {
+                if (rawFlexValues[i] <= STRAIGHT_THRESHOLD) {
+                    flexStates[i] = 0;
+                } else if (rawFlexValues[i] <= flexBentThresholds[i]) {
+                    flexStates[i] = 1;
+                } else {
+                    flexStates[i] = 2;
+                }
+            }
+        }
+        
+        function updateWordConstruction() {
+            // Same logic as ESP32 but in JavaScript
+            // Implement getMappingForIndices, performActionSlotLogic, etc.
+            // This is where you process the raw data to construct words
+            
+            // For now, just update the display
+            updateDisplayFromSlots();
+        }
+        
+        function updateDisplayFromSlots() {
+            // Update display buffer from slots
+            displayBuffer = (slot1 + slot2).toLowerCase();
+            
+            // Convert to Vietnamese
+            convertedCurrentWord = convertVietnameseWord(displayBuffer);
+            
+            // Update UI
+            document.getElementById('displayBuffer').textContent = displayBuffer || '---';
+            document.getElementById('convertedCurrentWord').textContent = convertedCurrentWord || '---';
+            document.getElementById('slot1').textContent = slot1 || '---';
+            document.getElementById('slot2').textContent = slot2 || '---';
+        }
+        
+        function convertVietnameseWord(encodedWord) {
+            // Implement Vietnamese conversion logic here
+            // This should match the ESP32's convertVietnameseWord function
+            return encodedWord; // Placeholder
+        }
+        
+        function convertVietnameseText(encodedText) {
+            // Implement full text conversion
+            return encodedText; // Placeholder
+        }
+        
+        function addWordToSentence() {
+            if (displayBuffer.length === 0) return;
+            
+            if (sentenceWords.length < MAX_WORDS) {
+                sentenceWords.push(displayBuffer);
+                
+                // Update full sentence
+                fullSentence = sentenceWords.join(' ');
+                convertedFullSentence = convertVietnameseText(fullSentence);
+                
+                // Update UI
+                document.getElementById('sentenceDisplay').textContent = fullSentence || '---';
+                document.getElementById('convertedSentenceDisplay').textContent = convertedFullSentence || '---';
+                document.getElementById('wordCount').textContent = sentenceWords.length;
+                
+                // Update word list
+                updateWordList();
+                
+                // Clear current word
+                slot1 = "";
+                slot2 = "";
+                displayBuffer = "";
+                convertedCurrentWord = "";
+                
+                console.log(`Added word: ${sentenceWords[sentenceWords.length - 1]}`);
+            }
+        }
+        
+        function updateWordList() {
+            const wordListDiv = document.getElementById('wordList');
+            wordListDiv.innerHTML = '';
+            
+            sentenceWords.forEach(word => {
+                const wordDiv = document.createElement('div');
+                wordDiv.className = 'word-item';
+                wordDiv.textContent = word;
+                wordListDiv.appendChild(wordDiv);
+            });
+            
+            if (sentenceWords.length === 0) {
+                wordListDiv.textContent = 'No words yet';
+            }
+        }
+        
+        function commitSentence() {
+            if (sentenceWords.length === 0) {
+                alert('No words to commit!');
+                return;
+            }
+            
+            console.log('Committing sentence:', fullSentence);
+            console.log('Converted:', convertedFullSentence);
+            
+            // Here you would send to TTS or other processing
+            // For now, just show in translation box
+            document.getElementById('textToTranslate').textContent = convertedFullSentence;
+            
+            // You could also send a command to ESP32 to play audio
+            sendCommand('playSentence', {sentence: fullSentence});
+        }
+        
+        function resetSentence() {
+            sentenceWords = [];
+            fullSentence = "";
+            convertedFullSentence = "";
+            slot1 = "";
+            slot2 = "";
+            displayBuffer = "";
+            convertedCurrentWord = "";
+            
+            updateDisplayFromSlots();
+            updateWordList();
+            document.getElementById('sentenceDisplay').textContent = '---';
+            document.getElementById('convertedSentenceDisplay').textContent = '---';
+            document.getElementById('wordCount').textContent = '0';
+        }
+        
+        function clearWord() {
+            slot1 = "";
+            slot2 = "";
+            displayBuffer = "";
+            convertedCurrentWord = "";
+            updateDisplayFromSlots();
+        }
+        
+        function backspace() {
+            if (displayBuffer.length > 0) {
+                displayBuffer = displayBuffer.slice(0, -1);
+                convertedCurrentWord = convertVietnameseWord(displayBuffer);
+                updateDisplayFromSlots();
+            }
+        }
+        
+        function startCalibration() {
+            calibrating = true;
+            calibrationComplete = false;
+            calibrationStartTime = Date.now();
+            
+            // Reset bent thresholds
+            for (let i = 0; i < 4; i++) {
+                flexBentThresholds[i] = STRAIGHT_THRESHOLD + 1;
+            }
+            
+            const calibrationInterval = setInterval(() => {
+                if (!calibrating) {
+                    clearInterval(calibrationInterval);
+                    return;
+                }
+                
+                const elapsed = Date.now() - calibrationStartTime;
+                const timeLeft = Math.max(0, CALIBRATION_DURATION - elapsed);
+                
+                // Update bent thresholds with maximum values
+                for (let i = 0; i < 4; i++) {
+                    if (rawFlexValues[i] > flexBentThresholds[i]) {
+                        flexBentThresholds[i] = rawFlexValues[i];
+                    }
+                }
+                
+                // Update UI
+                document.getElementById('calibrationStatus').className = 'calibration-status calibrating';
+                document.getElementById('calibrationStatus').innerHTML = 
+                    `CALIBRATING... ${Math.round(timeLeft/1000)}s left<br>Bend each sensor fully!`;
+                
+                if (timeLeft <= 0) {
+                    endCalibration();
+                    clearInterval(calibrationInterval);
+                }
+            }, 100);
+        }
+        
+        function endCalibration() {
+            calibrating = false;
+            calibrationComplete = true;
+            
+            // Validate thresholds
+            for (let i = 0; i < 4; i++) {
+                if (flexBentThresholds[i] <= STRAIGHT_THRESHOLD + 50) {
+                    console.warn(`Flex ${i} threshold too low, using default`);
+                    flexBentThresholds[i] = [300, 450, 350, 300][i];
+                }
+            }
+            
+            // Save to storage
+            saveThresholdsToStorage();
+            
+            // Update UI
+            document.getElementById('calibrationStatus').className = 'calibration-status calibrated';
+            document.getElementById('calibrationStatus').textContent = 'CALIBRATION COMPLETE ✓';
+            
+            // Update input fields
+            document.getElementById('bentThreshold0').value = flexBentThresholds[0];
+            document.getElementById('bentThreshold1').value = flexBentThresholds[1];
+            document.getElementById('bentThreshold2').value = flexBentThresholds[2];
+            document.getElementById('bentThreshold3').value = flexBentThresholds[3];
+        }
+        
+        function applyThresholds() {
+            flexBentThresholds[0] = parseInt(document.getElementById('bentThreshold0').value);
+            flexBentThresholds[1] = parseInt(document.getElementById('bentThreshold1').value);
+            flexBentThresholds[2] = parseInt(document.getElementById('bentThreshold2').value);
+            flexBentThresholds[3] = parseInt(document.getElementById('bentThreshold3').value);
+            
+            saveThresholdsToStorage();
+            calculateFlexStates();
+            
+            alert('Thresholds applied!');
+        }
+        
+        function updateUI() {
+            // Update sensor displays
+            document.getElementById('mpuOrientation').textContent = mpuOrientation;
+            document.getElementById('mpuState').textContent = mpuState;
+            document.getElementById('mpuShakeState').textContent = shakeState;
+            document.getElementById('rawData').textContent = JSON.stringify(lastFirebaseData || {});
             
             // Update flex sensors
-            if (data.flexStates) {
-                document.getElementById('flexStates').textContent = 
-                    data.flex0 + ' ' + data.flex1 + ' ' + data.flex2 + ' ' + data.flex3;
-                document.getElementById('rawFlexValues').textContent = 
-                    data.rawFlex0 + ', ' + data.rawFlex1 + ', ' + data.rawFlex2 + ', ' + data.rawFlex3;
+            const flexBoxes = ['flex0-box', 'flex1-box', 'flex2-box', 'flex3-box'];
+            for (let i = 0; i < 4; i++) {
+                const box = document.getElementById(flexBoxes[i]);
+                box.textContent = flexStates[i];
+                box.className = `flex-box active-${flexStates[i]}`;
             }
             
-            // Update calibration
-            if (data.calibrationStatus) {
-                document.getElementById('calibrationStatus').textContent = data.calibrationStatus;
-                document.getElementById('calibrationTime').textContent = data.calibrationTime + 's';
-            }
+            document.getElementById('flexFormat').textContent = flexStates.join('');
+            document.getElementById('rawValues').textContent = `Raw: ${rawFlexValues.join(', ')}`;
             
-            // Update word construction
-            if (data.displayBuffer !== undefined) {
-                document.getElementById('displayBuffer').textContent = data.displayBuffer || '---';
-                document.getElementById('convertedCurrentWord').textContent = data.convertedCurrentWord || '---';
-                document.getElementById('fullSentence').textContent = data.fullSentence || '---';
-                document.getElementById('convertedFullSentence').textContent = data.convertedFullSentence || '---';
-                document.getElementById('sentenceWordCount').textContent = data.sentenceWordCount || '0';
-                document.getElementById('slot1').textContent = data.slot1 || '---';
-                document.getElementById('slot2').textContent = data.slot2 || '---';
-            }
-            
-            // Update system status
-            if (data.stableCount !== undefined) {
-                document.getElementById('stableCount').textContent = data.stableCount;
-                document.getElementById('holdTime').textContent = data.holdTime + 's';
-            }
-            
-            // Update last update time
-            const now = new Date();
-            document.getElementById('lastUpdate').textContent = 
-                'Last update: ' + now.toLocaleTimeString();
+            // Update connection status
+            updateConnectionStatus();
         }
         
-        // Update connection status
-        function updateConnectionStatus() {
-            const timeSinceUpdate = Date.now() - lastUpdateTime;
+        function updateConnectionStatus(connected = true) {
             const indicator = document.getElementById('connectionStatus');
             const statusText = document.getElementById('statusText');
+            const lastUpdate = document.getElementById('lastUpdate');
             
-            if (timeSinceUpdate < 5000) {
+            if (connected && lastFirebaseData) {
                 indicator.className = 'indicator online';
-                statusText.textContent = 'Connected (updated ' + Math.floor(timeSinceUpdate/1000) + 's ago)';
-            } else if (timeSinceUpdate < 15000) {
-                indicator.className = 'indicator';
-                indicator.style.background = '#FF9800';
-                statusText.textContent = 'Stale data (updated ' + Math.floor(timeSinceUpdate/1000) + 's ago)';
+                statusText.textContent = 'Connected to Firebase';
+                
+                const now = new Date();
+                lastUpdate.textContent = `Last update: ${now.toLocaleTimeString()}`;
             } else {
                 indicator.className = 'indicator';
                 indicator.style.background = '#F44336';
-                statusText.textContent = 'No data (last update ' + Math.floor(timeSinceUpdate/1000) + 's ago)';
+                statusText.textContent = 'Disconnected from Firebase';
             }
         }
         
-        // Add log entry
-        function addLog(log) {
-            logs.unshift(log);
-            if (logs.length > MAX_LOGS) {
-                logs.pop();
-            }
+        function sendCommand(type, param = '') {
+            const command = {
+                type: type,
+                param: param,
+                timestamp: Date.now(),
+                executed: false
+            };
             
-            updateLogDisplay();
-        }
-        
-        // Update log display
-        function updateLogDisplay() {
-            const container = document.getElementById('logContainer');
-            container.innerHTML = '';
-            
-            logs.forEach(log => {
-                const entry = document.createElement('div');
-                entry.className = 'log-entry';
-                
-                const time = new Date(log.timestamp);
-                const timeStr = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                
-                entry.innerHTML = `
-                    <span class="timestamp">${timeStr} [${log.source || 'SYS'}]</span><br>
-                    <span class="message">${log.message}</span>
-                `;
-                
-                container.appendChild(entry);
+            fetch(`${firebaseConfig.databaseURL}${COMMAND_PATH}.json`, {
+                method: 'PATCH',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(command)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Command sent:', command);
+            })
+            .catch(error => {
+                console.error('Error sending command:', error);
             });
         }
         
-        // Start connection monitoring
-        setInterval(updateConnectionStatus, 1000);
+        // Translation functions
+        function translateText() {
+            const text = document.getElementById('textToTranslate').textContent;
+            if (text === '---' || text.trim() === '') {
+                alert('Please wait for Vietnamese text to appear');
+                return;
+            }
+            
+            const lang = document.getElementById('targetLanguage').value;
+            document.getElementById('translationStatus').textContent = 'Translating...';
+            document.getElementById('translationStatus').style.color = '#FF9800';
+            
+            // Simulate translation (replace with actual API call)
+            setTimeout(() => {
+                translatedSentence = `Translated to ${lang}: ${text}`;
+                document.getElementById('translatedText').textContent = translatedSentence;
+                document.getElementById('translationStatus').textContent = 'Translated ✓';
+                document.getElementById('translationStatus').style.color = '#4CAF50';
+            }, 1000);
+        }
         
-        // Initialize on page load
-        window.addEventListener('DOMContentLoaded', () => {
-            initializeFirebase();
-            addLog({ source: "WEB", message: "Web interface loaded", timestamp: Date.now() });
-        });
+        function translateWithMyMemory() {
+            // Implement MyMemory translation
+            alert('MyMemory translation would go here');
+        }
+        
+        function speakText(gender) {
+            const text = document.getElementById('translatedText').textContent;
+            if (text === '---' || text.trim() === '') {
+                alert('Please translate text first');
+                return;
+            }
+            
+            const statusDiv = document.getElementById('ttsStatus');
+            const femaleBtn = document.getElementById('speakFemaleBtn');
+            const maleBtn = document.getElementById('speakMaleBtn');
+            
+            statusDiv.textContent = `Preparing ${gender} voice...`;
+            statusDiv.style.color = '#FF9800';
+            
+            if (gender === 'female') {
+                femaleBtn.disabled = true;
+                femaleBtn.innerHTML = '🔊 Speaking...';
+            } else {
+                maleBtn.disabled = true;
+                maleBtn.innerHTML = '🔊 Speaking...';
+            }
+            
+            // Simulate TTS (replace with actual API call)
+            setTimeout(() => {
+                statusDiv.textContent = 'Speaking completed ✓';
+                statusDiv.style.color = '#4CAF50';
+                femaleBtn.disabled = false;
+                maleBtn.disabled = false;
+                femaleBtn.innerHTML = '🔊 Speak (Female)';
+                maleBtn.innerHTML = '🔊 Speak (Male)';
+            }, 2000);
+        }
     </script>
 </body>
 </html>
