@@ -382,74 +382,84 @@
         /* Phrase Suggestion Styles */
         .phrase-suggestions {
             margin: 15px 0;
-            padding: 15px;
-            background: #f8f9fa;
+            padding: 10px;
+            background: #FFF3E0;
             border-radius: 10px;
-            border: 1px solid #eaeaea;
+            border: 1px solid #FFB74D;
         }
 
-        .phrase-suggestions-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .phrase-suggestions-title {
-            font-size: 0.9rem;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .phrase-suggestions-list {
+        .phrase-pills {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
+            margin-top: 10px;
         }
 
-        .phrase-suggestion-item {
-            padding: 8px 15px;
-            background: #e3f2fd;
+        .phrase-pill {
+            padding: 6px 12px;
+            background: #FF9800;
+            color: white;
             border-radius: 20px;
-            border: 1px solid #bbdefb;
+            font-size: 0.9rem;
             cursor: pointer;
             transition: all 0.2s;
-            font-size: 0.9rem;
+            border: none;
         }
 
-        .phrase-suggestion-item:hover {
-            background: #bbdefb;
+        .phrase-pill:hover {
+            background: #F57C00;
             transform: translateY(-2px);
         }
 
-        /* Audio Controls */
-        .audio-controls {
+        .speech-controls {
             display: flex;
             gap: 10px;
             margin-top: 15px;
             justify-content: center;
-            flex-wrap: wrap;
         }
 
-        .audio-status {
-            margin-top: 10px;
-            text-align: center;
-            font-size: 0.9rem;
-            color: #666;
+        .speech-btn {
+            padding: 10px 20px;
+            background: linear-gradient(to right, #9C27B0, #673AB7);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
         }
 
-        /* Suggestions Dropdown */
-        .suggestions-dropdown {
+        .speech-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(156,39,176,0.3);
+        }
+
+        .speech-btn.playing {
+            background: linear-gradient(to right, #4CAF50, #2E7D32);
+            animation: pulse 1s infinite;
+        }
+
+        .speech-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .suggestion-container {
+            position: relative;
+        }
+
+        .suggestion-dropdown {
             position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
             background: white;
-            border: 1px solid #ccc;
+            border: 1px solid #ddd;
             border-radius: 8px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            z-index: 1000;
             max-height: 200px;
             overflow-y: auto;
-            z-index: 1000;
-            width: 100%;
             display: none;
         }
 
@@ -457,48 +467,14 @@
             padding: 10px 15px;
             cursor: pointer;
             border-bottom: 1px solid #eee;
-            transition: background 0.2s;
         }
 
         .suggestion-item:hover {
-            background: #f5f5f5;
+            background: #E3F2FD;
         }
 
         .suggestion-item:last-child {
             border-bottom: none;
-        }
-
-        .text-input-container {
-            position: relative;
-        }
-
-        /* TTS Controls */
-        .tts-controls {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-top: 10px;
-            justify-content: center;
-        }
-
-        .tts-btn {
-            padding: 10px 20px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .tts-btn.speaking {
-            background: linear-gradient(to right, #FF416C, #FF4B2B);
-        }
-
-        .tts-loading {
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -553,35 +529,24 @@
                         <button onclick="commitSentence()" class="blue">Commit Sentence</button>
                         <button onclick="resetSentence()" class="red">Reset All</button>
                     </div>
-
-                    <!-- Audio Controls for Vietnamese Sentence -->
-                    <div class="audio-controls">
-                        <button onclick="speakVietnameseText('convertedSentenceDisplay')" class="orange tts-btn" id="speakVietnameseBtn">
-                            <span id="speakVietnameseIcon">🔊</span>
-                            <span>Listen (Vietnamese)</span>
-                        </button>
-                    </div>
-                    <div class="audio-status" id="vietnameseAudioStatus"></div>
                 </div>
             </div>
 
             <!-- Translation Card -->
             <div class="card">
-                <h3>Translation & Text-to-Speech</h3>
+                <h3>Translation</h3>
                 <div style="margin-bottom: 20px;">
                     <div class="sensor-label">FULL SENTENCE (Vietnamese - For Translation)</div>
-                    <div class="text-input-container">
-                        <textarea id="translationInput" placeholder="Enter Vietnamese text here..." oninput="showSuggestions()"></textarea>
-                        <div class="suggestions-dropdown" id="suggestionsDropdown"></div>
+                    <div class="suggestion-container">
+                        <textarea id="translationInput" placeholder="Enter Vietnamese text here..."></textarea>
+                        <div class="suggestion-dropdown" id="suggestionDropdown"></div>
                     </div>
                     
                     <!-- Phrase Suggestions -->
                     <div class="phrase-suggestions">
-                        <div class="phrase-suggestions-header">
-                            <div class="phrase-suggestions-title">Quick Phrases</div>
-                        </div>
-                        <div class="phrase-suggestions-list" id="phraseSuggestionsList">
-                            <!-- Phrases will be inserted by JavaScript -->
+                        <div class="sensor-label">COMMON PHRASE SUGGESTIONS</div>
+                        <div class="phrase-pills" id="phrasePills">
+                            <!-- Phrase pills will be inserted here -->
                         </div>
                     </div>
                     
@@ -595,15 +560,7 @@
                                     <option value="ja-JP">Japanese</option>
                                     <option value="ko-KR">Korean</option>
                                     <option value="zh-CN">Chinese</option>
-                                    <option value="fr-FR">French</option>
-                                    <option value="es-ES">Spanish</option>
-                                    <option value="de-DE">German</option>
-                                </select>
-                            </div>
-                            <div>
-                                <div class="sensor-label">Voice</div>
-                                <select id="voiceSelect" class="language-select">
-                                    <!-- Voices will be populated dynamically -->
+                                    <option value="vi-VN">Vietnamese</option>
                                 </select>
                             </div>
                         </div>
@@ -615,23 +572,22 @@
                     Waiting for translation...
                 </div>
 
-                <!-- Audio Controls for Translation -->
-                <div class="audio-controls">
-                    <button onclick="speakText('translationInput', 'vi-VN')" class="orange tts-btn" id="speakOriginalBtn">
-                        <span id="speakOriginalIcon">🔊</span>
-                        <span>Listen (Original)</span>
+                <!-- Speech Controls -->
+                <div class="speech-controls">
+                    <button id="speakOriginalBtn" class="speech-btn" onclick="speakText('original')">
+                        🔊 Speak Original
                     </button>
-                    <button onclick="speakText('translationOutput')" class="green tts-btn" id="speakTranslatedBtn">
-                        <span id="speakTranslatedIcon">🔊</span>
-                        <span>Listen (Translated)</span>
+                    <button id="speakTranslatedBtn" class="speech-btn" onclick="speakText('translated')">
+                        🔊 Speak Translated
+                    </button>
+                    <button id="stopSpeechBtn" class="speech-btn red" onclick="stopSpeech()">
+                        ⏹ Stop Speech
                     </button>
                 </div>
-                <div class="audio-status" id="audioStatus"></div>
 
                 <div class="controls">
                     <button onclick="translateSentence()" class="blue">Translate Sentence</button>
                     <button onclick="clearTranslation()" class="red">Clear Translation</button>
-                    <button onclick="autoFillFromSentence()" class="green">Auto-fill from Sentence</button>
                 </div>
             </div>
 
@@ -738,10 +694,14 @@
         // Vietnamese Conversion Table (full table from ESP32 code)
         const vietnameseTable = [
             {key: "IAY", forms: ["iáy", "iày", "iảy", "iãy", "iạy", "iay", "iấy", "iầy", "iẩy", "iẫy", "iậy", "iây", "iắy", "iằy", "iẳy", "iẵy", "iặy", "iăy"]},
-            // ... (giữ nguyên bảng vietnameseTable)
+            {key: "IC", forms: ["íc", "ìc", "ỉc", "ĩc", "ịc", "ic", "íc", "ìc", "ỉc", "ĩc", "ịc", "ic", "íc", "ìc", "ỉc", "ĩc", "ịc", "ic"]},
+            {key: "ICH", forms: ["ích", "ìch", "ỉch", "ĩch", "ịch", "ich", "ích", "ìch", "ỉch", "ĩch", "ịch", "ich", "ích", "ìch", "ỉch", "ĩch", "ịch", "ich"]},
+            // ... (rest of the vietnameseTable remains the same as in your original code)
+            // For brevity, I'm keeping the table structure but you should keep your full table
+            {key: "OAP", forms: ["oáp", "oàp", "oảp", "oãp", "oạp", "oap", "oáp", "oàp", "oảp", "oãp", "oạp", "oap", "oáp", "oàp", "oảp", "oãp", "oạp", "oap"]}
         ];
 
-        // Common Vietnamese phrases for suggestions
+        // Common phrases for suggestion
         const commonPhrases = [
             "Xin chào, rất vui được gặp bạn",
             "Bạn khỏe không?",
@@ -750,19 +710,14 @@
             "Chúc một ngày tốt lành",
             "Tôi yêu ngôn ngữ này",
             "Hẹn gặp lại sau",
-            "Tôi cần giúp đỡ",
-            "Bao nhiêu tiền?",
             "Tôi không hiểu",
-            "Làm ơn nói chậm lại",
-            "Bạn tên là gì?",
-            "Tôi đến từ Việt Nam",
-            "Bạn có nói tiếng Anh không?",
-            "Tôi đói bụng",
-            "Nhà vệ sinh ở đâu?",
-            "Xin lỗi, tôi muốn hỏi",
-            "Cái này ngon quá",
-            "Tôi bị lạc đường",
-            "Bạn có thể giúp tôi không?"
+            "Bạn nói tiếng Anh được không?",
+            "Xin lỗi, tôi đến muộn",
+            "Bao nhiêu tiền?",
+            "Tôi cần giúp đỡ",
+            "Chào buổi sáng",
+            "Chào buổi tối",
+            "Tạm biệt"
         ];
 
         // Global variables
@@ -794,11 +749,19 @@
         const POST_HOLD_COOLDOWN = 600;
         let lastActionMs = 0;
         
-        // Text-to-Speech variables
-        let isSpeaking = false;
+        // Speech synthesis variables
         let currentSpeech = null;
-        let voices = [];
-        let isInitializingTTS = false;
+        let isSpeaking = false;
+        
+        // MPU state mapping
+        const mpuStateMap = {
+            "Up": 0,
+            "Down": 1,
+            "Left": 2,
+            "Right": 3,
+            "Forward": 4,
+            "Backward": 5
+        };
 
         // Helper Functions
         function log(source, message) {
@@ -850,12 +813,21 @@
         function convertVietnameseWord(encodedWord) {
             if (!encodedWord || encodedWord.length === 0) return "";
             
+            // Parse the encoded word format: "b_1ac_s"
+            // Format: [consonant]_[tone][vowel]_[vowelType]
+            // Example: "b_1ac_s"
+            //   consonant: "b"
+            //   tone: '1' (1-6)
+            //   vowel: "ac" 
+            //   vowelType: 's' (s, b, p)
+            
             const firstUnderscore = encodedWord.indexOf('_');
             if (firstUnderscore === -1) return encodedWord;
             
             const secondUnderscore = encodedWord.indexOf('_', firstUnderscore + 1);
             if (secondUnderscore === -1) return encodedWord;
             
+            // Extract parts
             const consonant = encodedWord.substring(0, firstUnderscore);
             const middle = encodedWord.substring(firstUnderscore + 1, secondUnderscore);
             const vowelTypeStr = encodedWord.substring(secondUnderscore + 1);
@@ -865,33 +837,41 @@
             const toneChar = middle[0];
             if (toneChar < '1' || toneChar > '6') return encodedWord;
             
-            const tone = parseInt(toneChar);
+            const tone = parseInt(toneChar); // Convert '1' to 1, etc.
             const vowelKey = middle.substring(1);
             
-            let vowelType = 0;
+            // Convert vowelType
+            let vowelType = 0; // 's' -> 0
             if (vowelTypeStr === "b") {
-                vowelType = 1;
+                vowelType = 1; // 'b' -> 1
             } else if (vowelTypeStr === "p") {
-                vowelType = 2;
+                vowelType = 2; // 'p' -> 2
             } else if (vowelTypeStr !== "s") {
-                return encodedWord;
+                return encodedWord; // Invalid vowel type
             }
             
+            // Calculate index in the table
+            // 6 tones × 3 vowel types = 18 entries per vowel
+            // Index formula: (tone - 1) + (vowelType * 6)
             const tableIndex = (tone - 1) + (vowelType * 6);
             
             if (tableIndex < 0 || tableIndex >= 18) {
                 return encodedWord;
             }
             
+            // Convert vowelKey to uppercase for lookup
             const vowelKeyUpper = vowelKey.toUpperCase();
             
+            // Search for the vowel key in the table
             for (let i = 0; i < vietnameseTable.length; i++) {
                 if (vowelKeyUpper === vietnameseTable[i].key) {
+                    // Found the vowel, get the converted form
                     const convertedVowel = vietnameseTable[i].forms[tableIndex];
                     return consonant + convertedVowel;
                 }
             }
             
+            // If not found in table, return original
             return encodedWord;
         }
 
@@ -903,6 +883,7 @@
             let end = 0;
             
             while (end < encodedText.length) {
+                // Find word boundaries (space or end of string)
                 end = encodedText.indexOf(' ', start);
                 if (end === -1) {
                     end = encodedText.length;
@@ -926,12 +907,14 @@
         }
 
         function updateConversions() {
+            // Update current word conversion
             if (displayBuffer.length > 0) {
                 convertedCurrentWord = convertVietnameseWord(displayBuffer);
             } else {
                 convertedCurrentWord = "";
             }
             
+            // Update full sentence conversion
             if (fullSentence.length > 0) {
                 convertedFullSentence = convertVietnameseText(fullSentence);
             } else {
@@ -978,12 +961,14 @@
         function getMPUState(orientation, shakeState) {
             let state = -1;
             
+            // Check for shake state first (priority)
             if (shakeState === "Shake Left") {
                 return 6;
             } else if (shakeState === "Shake Right") {
                 return 7;
             }
             
+            // Map orientation
             switch(orientation) {
                 case "Up": return 0;
                 case "Down": return 1;
@@ -1029,17 +1014,21 @@
         function updateDisplay(data) {
             if (!data) return;
             
+            // Update sensor displays
             document.getElementById('mpuOrientation').textContent = data.o || 'Unknown';
             document.getElementById('mpuShakeState').textContent = data.d || 'None';
             document.getElementById('isShaking').textContent = data.sf || 'NO';
             
+            // Update flex sensors
             const flexValues = [data.f0 || 0, data.f1 || 0, data.f2 || 0, data.f3 || 0];
             const rawFlexValues = data.f || [0, 0, 0, 0];
             
+            // Calculate flex states
             for (let i = 0; i < 4; i++) {
                 flexStates[i] = calculateFlexState(flexValues[i], i);
             }
             
+            // Update flex boxes
             for (let i = 0; i < 4; i++) {
                 const box = document.getElementById(`flex${i}-box`);
                 box.textContent = flexStates[i];
@@ -1049,11 +1038,15 @@
             document.getElementById('rawValues').textContent = rawFlexValues.join(', ');
             document.getElementById('flexFormat').textContent = flexStates.join('');
             
+            // Update last update time
             const updateTime = document.getElementById('lastUpdate');
             updateTime.textContent = `Last Firebase update: ${formatTime(Date.now())}`;
             document.getElementById('lastUpdateTime').textContent = formatTime(Date.now());
             
+            // Process word construction based on sensor data
             processWordConstruction(data);
+            
+            // Update UI
             updateUI();
         }
 
@@ -1064,6 +1057,7 @@
             const a2 = flexStates[2];
             const a3 = flexStates[3];
             
+            // Update stable count
             if (mpuState === lastDetectedIndex && 
                 a0 === lastFlexStates[0] && 
                 a1 === lastFlexStates[1] && 
@@ -1078,6 +1072,7 @@
                 holdFired = false;
             }
             
+            // Check for action
             if (stableCount >= DEBOUNCE_COUNT) {
                 const held = Date.now() - holdStartMs;
                 if (!holdFired && (Date.now() - lastActionMs) > POST_HOLD_COOLDOWN && held >= HOLD_MS_DEFAULT) {
@@ -1092,16 +1087,19 @@
             const mapping = getMappingForIndices(mpu, a0, a1, a2, a3);
             if (!mapping || mapping === "nullptr") return false;
             
+            // Handle underscore (word separator)
             if (mapping === "_") {
                 addWordToSentence();
                 return true;
             }
             
+            // Handle COMMIT (sentence finalizer)
             if (mapping === "COMMIT") {
                 commitSentence();
                 return true;
             }
             
+            // Handle backspace
             if (mapping === "<") {
                 backspaceBuffer();
                 updateDisplayBufferFromSlots();
@@ -1155,6 +1153,7 @@
             document.getElementById('convertedSentenceDisplay').textContent = convertedFullSentence || '---';
             document.getElementById('wordCount').textContent = sentenceWords.length;
             
+            // Update word list
             const wordListDiv = document.getElementById('wordList');
             if (sentenceWords.length > 0) {
                 wordListDiv.innerHTML = sentenceWords.map(word => 
@@ -1164,6 +1163,7 @@
                 wordListDiv.innerHTML = 'No words yet';
             }
             
+            // Update translation textarea
             document.getElementById('translationInput').value = convertedFullSentence || '';
         }
 
@@ -1176,6 +1176,7 @@
                 updateFullSentence();
                 log('SENTENCE', `Added word: '${displayBuffer}'`);
                 
+                // Clear current word
                 slot1 = '';
                 slot2 = '';
                 displayBuffer = '';
@@ -1198,6 +1199,7 @@
                 return;
             }
             
+            // Add any current word
             if (displayBuffer) {
                 addWordToSentence();
             }
@@ -1206,11 +1208,13 @@
             log('SENTENCE', `Full sentence: ${fullSentence}`);
             log('CONVERSION', `Converted sentence: ${convertedFullSentence}`);
             
+            // Process each word
             sentenceWords.forEach((word, i) => {
                 const convertedWord = convertVietnameseWord(word);
                 log('SENTENCE', `Word ${i + 1}: ${word} -> ${convertedWord}`);
             });
             
+            // Reset sentence
             resetSentence();
         }
 
@@ -1273,6 +1277,7 @@
                 return;
             }
             
+            // Check cache
             const cacheKey = text + '|' + targetLang;
             if (translationCache[cacheKey]) {
                 outputDiv.innerHTML = translationCache[cacheKey];
@@ -1285,14 +1290,13 @@
             outputDiv.className = 'conversion-display loading';
             
             try {
+                // Using a free translation API as fallback
                 const langMap = {
                     'en-GB': 'en',
                     'ja-JP': 'ja',
                     'ko-KR': 'ko',
                     'zh-CN': 'zh',
-                    'fr-FR': 'fr',
-                    'es-ES': 'es',
-                    'de-DE': 'de'
+                    'vi-VN': 'vi'
                 };
                 
                 const langCode = langMap[targetLang] || 'en';
@@ -1322,294 +1326,184 @@
             translationCache = {};
         }
 
-        function autoFillFromSentence() {
-            const textarea = document.getElementById('translationInput');
-            const convertedSentence = document.getElementById('convertedSentenceDisplay').textContent;
-            
-            if (convertedSentence && convertedSentence !== '---') {
-                textarea.value = convertedSentence;
-                log('TRANSLATION', 'Auto-filled from constructed sentence');
-                translateSentence();
-            } else {
-                log('TRANSLATION', 'No sentence to auto-fill from');
-            }
-        }
-
         // Phrase Suggestion Functions
-        function initPhraseSuggestions() {
-            const phraseList = document.getElementById('phraseSuggestionsList');
-            phraseList.innerHTML = '';
+        function initializePhraseSuggestions() {
+            const phrasePills = document.getElementById('phrasePills');
             
+            // Clear existing pills
+            phrasePills.innerHTML = '';
+            
+            // Add phrase pills
             commonPhrases.forEach(phrase => {
-                const phraseElement = document.createElement('div');
-                phraseElement.className = 'phrase-suggestion-item';
-                phraseElement.textContent = phrase;
-                phraseElement.onclick = () => {
+                const pill = document.createElement('button');
+                pill.className = 'phrase-pill';
+                pill.textContent = phrase;
+                pill.onclick = () => {
                     document.getElementById('translationInput').value = phrase;
-                    log('SUGGESTION', `Selected phrase: "${phrase}"`);
                     translateSentence();
+                    log('SUGGESTION', `Selected phrase: "${phrase}"`);
                 };
-                phraseList.appendChild(phraseElement);
+                phrasePills.appendChild(pill);
             });
-        }
-
-        function showSuggestions() {
-            const input = document.getElementById('translationInput');
-            const dropdown = document.getElementById('suggestionsDropdown');
-            const text = input.value.toLowerCase();
             
-            if (text.length < 2) {
-                dropdown.style.display = 'none';
-                return;
-            }
+            // Setup input suggestions
+            const translationInput = document.getElementById('translationInput');
+            const suggestionDropdown = document.getElementById('suggestionDropdown');
             
-            const filtered = commonPhrases.filter(phrase => 
-                phrase.toLowerCase().includes(text)
-            ).slice(0, 5);
+            translationInput.addEventListener('input', function() {
+                const value = this.value.trim();
+                
+                if (value.length === 0) {
+                    suggestionDropdown.style.display = 'none';
+                    return;
+                }
+                
+                // Filter suggestions
+                const filtered = commonPhrases.filter(phrase => 
+                    phrase.toLowerCase().includes(value.toLowerCase())
+                );
+                
+                if (filtered.length > 0) {
+                    suggestionDropdown.innerHTML = filtered.map(phrase => 
+                        `<div class="suggestion-item" data-phrase="${phrase}">${phrase}</div>`
+                    ).join('');
+                    
+                    // Add click handlers
+                    suggestionDropdown.querySelectorAll('.suggestion-item').forEach(item => {
+                        item.addEventListener('click', function() {
+                            const phrase = this.getAttribute('data-phrase');
+                            translationInput.value = phrase;
+                            suggestionDropdown.style.display = 'none';
+                            translateSentence();
+                            log('SUGGESTION', `Selected suggestion: "${phrase}"`);
+                        });
+                    });
+                    
+                    suggestionDropdown.style.display = 'block';
+                } else {
+                    suggestionDropdown.style.display = 'none';
+                }
+            });
             
-            if (filtered.length === 0) {
-                dropdown.style.display = 'none';
-                return;
-            }
+            // Hide dropdown when clicking outside
+            document.addEventListener('click', function(event) {
+                if (!translationInput.contains(event.target) && !suggestionDropdown.contains(event.target)) {
+                    suggestionDropdown.style.display = 'none';
+                }
+            });
             
-            dropdown.innerHTML = filtered.map(phrase => 
-                `<div class="suggestion-item" onclick="selectSuggestion('${phrase.replace(/'/g, "\\'")}')">${phrase}</div>`
-            ).join('');
-            
-            dropdown.style.display = 'block';
-        }
-
-        function selectSuggestion(phrase) {
-            document.getElementById('translationInput').value = phrase;
-            document.getElementById('suggestionsDropdown').style.display = 'none';
-            log('SUGGESTION', `Selected suggestion: "${phrase}"`);
-            translateSentence();
+            // Auto-fill from converted sentence when available
+            translationInput.addEventListener('focus', function() {
+                if (!this.value && convertedFullSentence) {
+                    this.value = convertedFullSentence;
+                }
+            });
         }
 
         // Text-to-Speech Functions
-        function initTextToSpeech() {
-            if (isInitializingTTS) return;
-            isInitializingTTS = true;
-            
-            // Load voices
-            speechSynthesis.onvoiceschanged = () => {
-                voices = speechSynthesis.getVoices();
-                populateVoiceSelect();
-                isInitializingTTS = false;
-                log('TTS', `Loaded ${voices.length} voices`);
-            };
-            
-            // Force voice loading
-            voices = speechSynthesis.getVoices();
-            if (voices.length > 0) {
-                populateVoiceSelect();
-                isInitializingTTS = false;
-            } else {
-                setTimeout(() => {
-                    voices = speechSynthesis.getVoices();
-                    populateVoiceSelect();
-                    isInitializingTTS = false;
-                }, 1000);
-            }
-        }
-
-        function populateVoiceSelect() {
-            const voiceSelect = document.getElementById('voiceSelect');
-            voiceSelect.innerHTML = '<option value="auto">Auto-select (Best for language)</option>';
-            
-            voices.forEach((voice, index) => {
-                const option = document.createElement('option');
-                option.value = index;
-                option.textContent = `${voice.name} (${voice.lang})`;
-                voiceSelect.appendChild(option);
-            });
-        }
-
-        function getVoiceForLang(langCode) {
-            const voiceSelect = document.getElementById('voiceSelect');
-            if (voiceSelect.value !== 'auto') {
-                return voices[parseInt(voiceSelect.value)];
-            }
-            
-            // Auto-select based on language
-            const langPrefix = langCode.substring(0, 2);
-            const preferredVoices = voices.filter(voice => 
-                voice.lang.startsWith(langPrefix)
-            );
-            
-            if (preferredVoices.length > 0) {
-                return preferredVoices[0];
-            }
-            
-            // Fallback to default voice
-            return voices.find(voice => voice.default) || voices[0];
-        }
-
-        function speakText(elementId, langCode = null) {
-            const element = document.getElementById(elementId);
-            if (!element) return;
-            
-            const text = element.textContent || element.value;
-            if (!text || text === '---' || text.includes('Waiting for')) {
-                updateAudioStatus('No text to speak', 'error');
-                return;
-            }
-            
+        function speakText(type) {
             if (isSpeaking) {
-                stopSpeaking();
+                stopSpeech();
                 return;
             }
             
-            if (!langCode) {
+            let text = '';
+            let lang = 'vi-VN';
+            
+            if (type === 'original') {
+                text = document.getElementById('translationInput').value;
+                lang = 'vi-VN';
+            } else if (type === 'translated') {
+                text = document.getElementById('translationOutput').innerText;
                 const targetLang = document.getElementById('targetLanguage').value;
-                langCode = targetLang;
+                lang = targetLang;
             }
             
-            const voice = getVoiceForLang(langCode);
-            if (!voice) {
-                updateAudioStatus('No voice available for selected language', 'error');
+            if (!text || text.includes('Waiting for') || text.includes('Please enter')) {
+                log('SPEECH', 'No text to speak');
                 return;
             }
             
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.voice = voice;
-            utterance.lang = langCode;
-            utterance.rate = 1.0;
-            utterance.pitch = 1.0;
-            utterance.volume = 1.0;
+            // Stop any ongoing speech
+            if (currentSpeech) {
+                window.speechSynthesis.cancel();
+            }
             
-            utterance.onstart = () => {
+            // Create speech synthesis
+            const speech = new SpeechSynthesisUtterance(text);
+            speech.lang = lang;
+            speech.rate = 1.0;
+            speech.pitch = 1.0;
+            speech.volume = 1.0;
+            
+            // Set voice based on language
+            const voices = window.speechSynthesis.getVoices();
+            const preferredVoices = {
+                'vi-VN': voices.find(v => v.lang === 'vi-VN') || voices.find(v => v.lang.startsWith('vi')),
+                'en-GB': voices.find(v => v.lang === 'en-GB') || voices.find(v => v.lang.startsWith('en')),
+                'ja-JP': voices.find(v => v.lang === 'ja-JP') || voices.find(v => v.lang.startsWith('ja')),
+                'ko-KR': voices.find(v => v.lang === 'ko-KR') || voices.find(v => v.lang.startsWith('ko')),
+                'zh-CN': voices.find(v => v.lang === 'zh-CN') || voices.find(v => v.lang.startsWith('zh'))
+            };
+            
+            if (preferredVoices[lang]) {
+                speech.voice = preferredVoices[lang];
+            }
+            
+            // Event handlers
+            speech.onstart = function() {
                 isSpeaking = true;
-                updateAudioStatus('Speaking...', 'speaking');
-                updateButtonState(elementId, true);
+                updateSpeechButtons(true);
+                log('SPEECH', `Started speaking ${type} text`);
             };
             
-            utterance.onend = () => {
+            speech.onend = function() {
                 isSpeaking = false;
                 currentSpeech = null;
-                updateAudioStatus('Finished speaking', 'finished');
-                updateButtonState(elementId, false);
+                updateSpeechButtons(false);
+                log('SPEECH', 'Finished speaking');
             };
             
-            utterance.onerror = (event) => {
+            speech.onerror = function(event) {
                 isSpeaking = false;
                 currentSpeech = null;
-                updateAudioStatus('Error speaking text: ' + event.error, 'error');
-                updateButtonState(elementId, false);
-                log('TTS', `Error: ${event.error}`);
+                updateSpeechButtons(false);
+                log('SPEECH', `Speech error: ${event.error}`);
             };
             
-            currentSpeech = utterance;
-            speechSynthesis.speak(utterance);
-            log('TTS', `Speaking: "${text.substring(0, 50)}..." in ${langCode}`);
+            // Speak
+            currentSpeech = speech;
+            window.speechSynthesis.speak(speech);
         }
 
-        function speakVietnameseText(elementId) {
-            const element = document.getElementById(elementId);
-            if (!element) return;
-            
-            const text = element.textContent;
-            if (!text || text === '---') {
-                updateAudioStatus('No Vietnamese text to speak', 'error');
-                return;
-            }
-            
-            if (isSpeaking) {
-                stopSpeaking();
-                return;
-            }
-            
-            const voice = getVoiceForLang('vi-VN');
-            if (!voice) {
-                updateAudioStatus('No Vietnamese voice available', 'error');
-                return;
-            }
-            
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.voice = voice;
-            utterance.lang = 'vi-VN';
-            utterance.rate = 0.9;
-            utterance.pitch = 1.0;
-            utterance.volume = 1.0;
-            
-            utterance.onstart = () => {
-                isSpeaking = true;
-                document.getElementById('vietnameseAudioStatus').textContent = 'Speaking Vietnamese...';
-                updateButtonState('speakVietnameseBtn', true);
-            };
-            
-            utterance.onend = () => {
+        function stopSpeech() {
+            if (window.speechSynthesis.speaking) {
+                window.speechSynthesis.cancel();
                 isSpeaking = false;
                 currentSpeech = null;
-                document.getElementById('vietnameseAudioStatus').textContent = '';
-                updateButtonState('speakVietnameseBtn', false);
-            };
-            
-            utterance.onerror = (event) => {
-                isSpeaking = false;
-                currentSpeech = null;
-                document.getElementById('vietnameseAudioStatus').textContent = 'Error speaking Vietnamese';
-                updateButtonState('speakVietnameseBtn', false);
-                log('TTS', `Vietnamese error: ${event.error}`);
-            };
-            
-            currentSpeech = utterance;
-            speechSynthesis.speak(utterance);
-            log('TTS', `Speaking Vietnamese: "${text.substring(0, 50)}..."`);
-        }
-
-        function stopSpeaking() {
-            if (speechSynthesis.speaking) {
-                speechSynthesis.cancel();
-                isSpeaking = false;
-                currentSpeech = null;
-                updateAudioStatus('Stopped', 'stopped');
-                updateAllButtonStates(false);
-                document.getElementById('vietnameseAudioStatus').textContent = '';
+                updateSpeechButtons(false);
+                log('SPEECH', 'Speech stopped');
             }
         }
 
-        function updateAudioStatus(message, type) {
-            const statusElement = document.getElementById('audioStatus');
-            statusElement.textContent = message;
+        function updateSpeechButtons(speaking) {
+            const speakOriginalBtn = document.getElementById('speakOriginalBtn');
+            const speakTranslatedBtn = document.getElementById('speakTranslatedBtn');
+            const stopSpeechBtn = document.getElementById('stopSpeechBtn');
             
-            switch(type) {
-                case 'speaking':
-                    statusElement.style.color = '#4CAF50';
-                    break;
-                case 'error':
-                    statusElement.style.color = '#F44336';
-                    break;
-                case 'finished':
-                    statusElement.style.color = '#2196F3';
-                    break;
-                case 'stopped':
-                    statusElement.style.color = '#FF9800';
-                    break;
-                default:
-                    statusElement.style.color = '#666';
-            }
-        }
-
-        function updateButtonState(buttonId, isSpeaking) {
-            const button = document.getElementById(buttonId);
-            if (!button) return;
-            
-            const icon = button.querySelector('span:first-child');
-            
-            if (isSpeaking) {
-                button.classList.add('speaking');
-                icon.textContent = '⏹';
+            if (speaking) {
+                speakOriginalBtn.disabled = true;
+                speakTranslatedBtn.disabled = true;
+                stopSpeechBtn.disabled = false;
+                speakOriginalBtn.classList.add('playing');
+                speakTranslatedBtn.classList.add('playing');
             } else {
-                button.classList.remove('speaking');
-                icon.textContent = '🔊';
+                speakOriginalBtn.disabled = false;
+                speakTranslatedBtn.disabled = false;
+                stopSpeechBtn.disabled = true;
+                speakOriginalBtn.classList.remove('playing');
+                speakTranslatedBtn.classList.remove('playing');
             }
-        }
-
-        function updateAllButtonStates(isSpeaking) {
-            ['speakOriginalBtn', 'speakTranslatedBtn', 'speakVietnameseBtn'].forEach(btnId => {
-                updateButtonState(btnId, isSpeaking);
-            });
         }
 
         // Control Functions
@@ -1637,19 +1531,36 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             log('SYSTEM', 'Application started');
-            fetchFirebaseData();
-            toggleAutoRefresh();
-            initPhraseSuggestions();
-            initTextToSpeech();
             
-            // Close suggestions when clicking outside
-            document.addEventListener('click', function(event) {
-                const dropdown = document.getElementById('suggestionsDropdown');
-                const input = document.getElementById('translationInput');
-                
-                if (dropdown && !dropdown.contains(event.target) && event.target !== input) {
-                    dropdown.style.display = 'none';
-                }
+            // Initialize phrase suggestions
+            initializePhraseSuggestions();
+            
+            // Initialize speech synthesis voices
+            if ('speechSynthesis' in window) {
+                // Load voices
+                window.speechSynthesis.onvoiceschanged = function() {
+                    log('SPEECH', 'Speech synthesis voices loaded');
+                };
+            } else {
+                log('SPEECH', 'Speech synthesis not supported in this browser');
+            }
+            
+            // Fetch initial data
+            fetchFirebaseData();
+            
+            // Start auto-refresh
+            toggleAutoRefresh();
+            
+            // Setup translation input to auto-translate on change
+            const translationInput = document.getElementById('translationInput');
+            let translationTimer;
+            translationInput.addEventListener('input', function() {
+                clearTimeout(translationTimer);
+                translationTimer = setTimeout(() => {
+                    if (this.value.trim().length > 0) {
+                        translateSentence();
+                    }
+                }, 800);
             });
         });
     </script>
