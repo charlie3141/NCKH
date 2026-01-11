@@ -727,7 +727,7 @@
         let fullSentence = "";
         let convertedFullSentence = "";
         
-        // Flex sensor state
+        // Flex sensor state - USE THE ALREADY CALCULATED STATES FROM ESP32
         let flexStates = [0, 0, 0, 0];
         let lastFlexStates = [-1, -1, -1, -1];
         let stableCount = 0;
@@ -931,20 +931,6 @@
             }
         }
 
-        // Calculate flex state from raw value (for fallback if rawFlex is not available)
-        function calculateFlexState(rawValue, sensorIndex) {
-            const STRAIGHT_THRESHOLD = 150;
-            const bentThresholds = [300, 450, 350, 300];
-            
-            if (rawValue <= STRAIGHT_THRESHOLD) {
-                return 0;
-            } else if (rawValue <= bentThresholds[sensorIndex]) {
-                return 1;
-            } else {
-                return 2;
-            }
-        }
-
         function getMPUState(orientation, shakeState) {
             let state = -1;
             
@@ -998,7 +984,6 @@
             }
         }
 
-        // FIXED: Updated to use rawFlex instead of f array
         function updateDisplay(data) {
             if (!data) return;
             
@@ -1007,24 +992,26 @@
             document.getElementById('mpuShakeState').textContent = data.d || 'None';
             document.getElementById('isShaking').textContent = data.sf || 'NO';
             
-            // FIXED: Use rawFlex array for flex sensor values (already thresholded by ESP32)
-            const rawFlexData = data.rawFlex || [0, 0, 0, 0];
-            const rawValues = data.f || [0, 0, 0, 0]; // Raw ADC values
+            // Use the ALREADY CALCULATED states from Firebase (f0, f1, f2, f3)
+            // These are already 0, 1, 2 states from ESP32
+            flexStates = [
+                data.f0 || 0, 
+                data.f1 || 0, 
+                data.f2 || 0, 
+                data.f3 || 0
+            ];
             
-            // Update flex states from rawFlex (already thresholded 0,1,2)
-            for (let i = 0; i < 4; i++) {
-                flexStates[i] = rawFlexData[i] || 0;
-            }
+            // Raw values are just for display
+            const rawFlexValues = data.f || [0, 0, 0, 0];
             
-            // Update flex boxes
+            // Update flex boxes with the calculated states
             for (let i = 0; i < 4; i++) {
                 const box = document.getElementById(`flex${i}-box`);
                 box.textContent = flexStates[i];
                 box.className = `flex-box active-${flexStates[i]}`;
             }
             
-            // FIXED: Display raw values from 'f' array and state from 'rawFlex'
-            document.getElementById('rawValues').textContent = rawValues.join(', ');
+            document.getElementById('rawValues').textContent = rawFlexValues.join(', ');
             document.getElementById('flexFormat').textContent = flexStates.join('');
             
             // Update last update time
@@ -1039,31 +1026,24 @@
             updateUI();
         }
 
-        // FIXED: Updated to use rawFlex directly
         function processWordConstruction(data) {
             const mpuState = getMPUState(data.o || "Unknown", data.d || "None");
-            const rawFlexData = data.rawFlex || [0, 0, 0, 0];
-            const a0 = rawFlexData[0] || 0;
-            const a1 = rawFlexData[1] || 0;
-            const a2 = rawFlexData[2] || 0;
-            const a3 = rawFlexData[3] || 0;
-            
-            // Update flex states array
-            flexStates[0] = a0;
-            flexStates[1] = a1;
-            flexStates[2] = a2;
-            flexStates[3] = a3;
+            const a0 = flexStates[0];
+            const a1 = flexStates[1];
+            const a2 = flexStates[2];
+            const a3 = flexStates[3];
             
             // Update stable count
-            const currentState = [mpuState, a0, a1, a2, a3].join(',');
-            const lastState = [lastDetectedIndex, ...lastFlexStates].join(',');
-            
-            if (currentState === lastState) {
+            if (mpuState === lastDetectedIndex && 
+                a0 === lastFlexStates[0] && 
+                a1 === lastFlexStates[1] && 
+                a2 === lastFlexStates[2] && 
+                a3 === lastFlexStates[3]) {
                 stableCount++;
             } else {
                 stableCount = 1;
                 lastDetectedIndex = mpuState;
-                lastFlexStates = [a0, a1, a2, a3];
+                lastFlexStates = [...flexStates];
                 holdStartMs = Date.now();
                 holdFired = false;
             }
