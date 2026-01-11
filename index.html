@@ -374,6 +374,16 @@
             padding: 5px;
             border-bottom: 1px solid #eee;
         }
+
+        .threshold-info {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 10px;
+            padding: 10px;
+            background: #f0f8ff;
+            border-radius: 8px;
+            border-left: 4px solid #2196F3;
+        }
     </style>
 </head>
 <body>
@@ -421,11 +431,11 @@
                     </div>
                     
                     <div class="controls">
-                        <button onclick="clearCurrentWord()" class="red">Clear Current</button>
-                        <button onclick="backspace()">Backspace</button>
-                        <button onclick="addWordToSentence()" class="green">Add Word (_)</button>
-                        <button onclick="commitSentence()" class="blue">Commit Sentence</button>
-                        <button onclick="resetSentence()" class="red">Reset All</button>
+                        <button id="clearCurrentWord" class="red">Clear Current</button>
+                        <button id="backspace">Backspace</button>
+                        <button id="addWordToSentence" class="green">Add Word (_)</button>
+                        <button id="commitSentence" class="blue">Commit Sentence</button>
+                        <button id="resetSentence" class="red">Reset All</button>
                     </div>
                 </div>
             </div>
@@ -459,8 +469,8 @@
                 </div>
 
                 <div class="controls">
-                    <button onclick="translateSentence()" class="blue">Translate Sentence</button>
-                    <button onclick="clearTranslation()" class="red">Clear Translation</button>
+                    <button id="translateSentence" class="blue">Translate Sentence</button>
+                    <button id="clearTranslation" class="red">Clear Translation</button>
                 </div>
             </div>
 
@@ -495,14 +505,24 @@
                     </div>
                 </div>
                 
+                <div class="threshold-info">
+                    <div><strong>Fixed Straight Threshold:</strong> 150</div>
+                    <div><strong>Bent Thresholds:</strong> 
+                        A0: <span id="bentThreshold0">300</span>, 
+                        A1: <span id="bentThreshold1">450</span>, 
+                        A2: <span id="bentThreshold2">350</span>, 
+                        A3: <span id="bentThreshold3">300</span>
+                    </div>
+                </div>
+                
                 <div class="sensor-item" style="margin-top: 15px;">
                     <div class="sensor-label">SYSTEM STATUS</div>
                     <div>Last Update: <span id="lastUpdateTime" class="last-update">Never</span></div>
                 </div>
                 
                 <div class="controls" style="margin-top: 15px;">
-                    <button onclick="refreshData()" class="blue">Refresh Now</button>
-                    <button onclick="toggleAutoRefresh()" id="autoRefreshBtn" class="green">Auto: ON</button>
+                    <button id="refreshData" class="blue">Refresh Now</button>
+                    <button id="autoRefreshBtn" class="green">Auto: ON</button>
                 </div>
             </div>
 
@@ -515,7 +535,7 @@
                     </div>
                 </div>
                 <div class="controls" style="margin-top: 15px;">
-                    <button onclick="clearLog()" class="red">Clear Log</button>
+                    <button id="clearLog" class="red">Clear Log</button>
                 </div>
             </div>
         </div>
@@ -714,7 +734,7 @@
         let firebaseData = null;
         let lastUpdateTime = 0;
         let autoRefresh = true;
-        let autoRefreshInterval;
+        let autoRefreshInterval = null;
         let logEntries = [];
         const MAX_LOG_ENTRIES = 20;
         
@@ -727,8 +747,13 @@
         let fullSentence = "";
         let convertedFullSentence = "";
         
-        // Flex sensor state - USE THE ALREADY CALCULATED STATES FROM ESP32
+        // Flex sensor state and thresholds
         let flexStates = [0, 0, 0, 0];
+        let rawFlexValues = [0, 0, 0, 0];
+        const STRAIGHT_THRESHOLD = 150;
+        let bentThresholds = [300, 450, 350, 300]; // Default values
+        
+        // Word construction state
         let lastFlexStates = [-1, -1, -1, -1];
         let stableCount = 0;
         let lastDetectedIndex = -1;
@@ -764,6 +789,8 @@
 
         function updateLogDisplay() {
             const logContainer = document.getElementById('logContainer');
+            if (!logContainer) return;
+            
             logContainer.innerHTML = logEntries.map(entry => 
                 `<div class="log-entry">
                     <span style="color: #666; font-size: 0.8rem;">[${entry.timestamp}] ${entry.source}:</span>
@@ -781,11 +808,14 @@
             const indicator = document.getElementById('connectionStatus');
             const statusText = document.getElementById('statusText');
             
+            if (!indicator || !statusText) return;
+            
             if (connected) {
                 indicator.className = 'indicator online';
                 statusText.textContent = 'Connected to Firebase';
             } else {
                 indicator.className = 'indicator';
+                indicator.style.background = '#F44336';
                 statusText.textContent = 'Disconnected from Firebase';
             }
         }
@@ -799,21 +829,12 @@
         function convertVietnameseWord(encodedWord) {
             if (!encodedWord || encodedWord.length === 0) return "";
             
-            // Parse the encoded word format: "b_1ac_s"
-            // Format: [consonant]_[tone][vowel]_[vowelType]
-            // Example: "b_1ac_s"
-            //   consonant: "b"
-            //   tone: '1' (1-6)
-            //   vowel: "ac" 
-            //   vowelType: 's' (s, b, p)
-            
             const firstUnderscore = encodedWord.indexOf('_');
             if (firstUnderscore === -1) return encodedWord;
             
             const secondUnderscore = encodedWord.indexOf('_', firstUnderscore + 1);
             if (secondUnderscore === -1) return encodedWord;
             
-            // Extract parts
             const consonant = encodedWord.substring(0, firstUnderscore);
             const middle = encodedWord.substring(firstUnderscore + 1, secondUnderscore);
             const vowelTypeStr = encodedWord.substring(secondUnderscore + 1);
@@ -823,41 +844,33 @@
             const toneChar = middle[0];
             if (toneChar < '1' || toneChar > '6') return encodedWord;
             
-            const tone = parseInt(toneChar); // Convert '1' to 1, etc.
+            const tone = parseInt(toneChar);
             const vowelKey = middle.substring(1);
             
-            // Convert vowelType
-            let vowelType = 0; // 's' -> 0
+            let vowelType = 0;
             if (vowelTypeStr === "b") {
-                vowelType = 1; // 'b' -> 1
+                vowelType = 1;
             } else if (vowelTypeStr === "p") {
-                vowelType = 2; // 'p' -> 2
+                vowelType = 2;
             } else if (vowelTypeStr !== "s") {
-                return encodedWord; // Invalid vowel type
+                return encodedWord;
             }
             
-            // Calculate index in the table
-            // 6 tones × 3 vowel types = 18 entries per vowel
-            // Index formula: (tone - 1) + (vowelType * 6)
             const tableIndex = (tone - 1) + (vowelType * 6);
             
             if (tableIndex < 0 || tableIndex >= 18) {
                 return encodedWord;
             }
             
-            // Convert vowelKey to uppercase for lookup
             const vowelKeyUpper = vowelKey.toUpperCase();
             
-            // Search for the vowel key in the table
             for (let i = 0; i < vietnameseTable.length; i++) {
                 if (vowelKeyUpper === vietnameseTable[i].key) {
-                    // Found the vowel, get the converted form
                     const convertedVowel = vietnameseTable[i].forms[tableIndex];
                     return consonant + convertedVowel;
                 }
             }
             
-            // If not found in table, return original
             return encodedWord;
         }
 
@@ -869,7 +882,6 @@
             let end = 0;
             
             while (end < encodedText.length) {
-                // Find word boundaries (space or end of string)
                 end = encodedText.indexOf(' ', start);
                 if (end === -1) {
                     end = encodedText.length;
@@ -893,18 +905,32 @@
         }
 
         function updateConversions() {
-            // Update current word conversion
-            if (displayBuffer.length > 0) {
+            if (displayBuffer && displayBuffer.length > 0) {
                 convertedCurrentWord = convertVietnameseWord(displayBuffer);
             } else {
                 convertedCurrentWord = "";
             }
             
-            // Update full sentence conversion
-            if (fullSentence.length > 0) {
+            if (fullSentence && fullSentence.length > 0) {
                 convertedFullSentence = convertVietnameseText(fullSentence);
             } else {
                 convertedFullSentence = "";
+            }
+        }
+
+        // Flex sensor calculation functions
+        function calculateFlexState(rawValue, sensorIndex) {
+            const bentThreshold = bentThresholds[sensorIndex];
+            return mapFlexStateSimple(rawValue, bentThreshold);
+        }
+
+        function mapFlexStateSimple(rawValue, bentThreshold) {
+            if (rawValue <= STRAIGHT_THRESHOLD) {
+                return 0;
+            } else if (rawValue <= bentThreshold) {
+                return 1;
+            } else {
+                return 2;
             }
         }
 
@@ -932,16 +958,12 @@
         }
 
         function getMPUState(orientation, shakeState) {
-            let state = -1;
-            
-            // Check for shake state first (priority)
             if (shakeState === "Shake Left") {
                 return 6;
             } else if (shakeState === "Shake Right") {
                 return 7;
             }
             
-            // Map orientation
             switch(orientation) {
                 case "Up": return 0;
                 case "Down": return 1;
@@ -988,36 +1010,76 @@
             if (!data) return;
             
             // Update sensor displays
-            document.getElementById('mpuOrientation').textContent = data.o || 'Unknown';
-            document.getElementById('mpuShakeState').textContent = data.d || 'None';
-            document.getElementById('isShaking').textContent = data.sf || 'NO';
+            const mpuOrientation = document.getElementById('mpuOrientation');
+            const mpuShakeState = document.getElementById('mpuShakeState');
+            const isShaking = document.getElementById('isShaking');
             
-            // Use the ALREADY CALCULATED states from Firebase (f0, f1, f2, f3)
-            // These are already 0, 1, 2 states from ESP32
-            flexStates = [
-                data.f0 || 0, 
-                data.f1 || 0, 
-                data.f2 || 0, 
-                data.f3 || 0
-            ];
+            if (mpuOrientation) mpuOrientation.textContent = data.o || 'Unknown';
+            if (mpuShakeState) mpuShakeState.textContent = data.d || 'None';
+            if (isShaking) isShaking.textContent = data.sf || 'NO';
             
-            // Raw values are just for display
-            const rawFlexValues = data.f || [0, 0, 0, 0];
-            
-            // Update flex boxes with the calculated states
-            for (let i = 0; i < 4; i++) {
-                const box = document.getElementById(`flex${i}-box`);
-                box.textContent = flexStates[i];
-                box.className = `flex-box active-${flexStates[i]}`;
+            // Update raw flex values from Firebase
+            if (data.f && Array.isArray(data.f) && data.f.length >= 4) {
+                rawFlexValues = data.f.slice(0, 4);
+            } else {
+                rawFlexValues = [
+                    data.f0 || data.f0 || 0,
+                    data.f1 || data.f1 || 0,
+                    data.f2 || data.f2 || 0,
+                    data.f3 || data.f3 || 0
+                ];
             }
             
-            document.getElementById('rawValues').textContent = rawFlexValues.join(', ');
-            document.getElementById('flexFormat').textContent = flexStates.join('');
+            // Update bent thresholds if available
+            if (data.flexBentThresholds && Array.isArray(data.flexBentThresholds)) {
+                bentThresholds = data.flexBentThresholds.slice(0, 4);
+            } else {
+                bentThresholds = [
+                    data.bent0 || 300,
+                    data.bent1 || 450,
+                    data.bent2 || 350,
+                    data.bent3 || 300
+                ];
+            }
+            
+            // Calculate flex states
+            for (let i = 0; i < 4; i++) {
+                flexStates[i] = calculateFlexState(rawFlexValues[i], i);
+            }
+            
+            // Update flex boxes
+            for (let i = 0; i < 4; i++) {
+                const box = document.getElementById(`flex${i}-box`);
+                if (box) {
+                    box.textContent = flexStates[i];
+                    box.className = `flex-box active-${flexStates[i]}`;
+                }
+            }
+            
+            // Update raw values display
+            const rawValues = document.getElementById('rawValues');
+            const flexFormat = document.getElementById('flexFormat');
+            
+            if (rawValues) rawValues.textContent = rawFlexValues.join(', ');
+            if (flexFormat) flexFormat.textContent = flexStates.join('');
+            
+            // Update bent thresholds display
+            const bent0 = document.getElementById('bentThreshold0');
+            const bent1 = document.getElementById('bentThreshold1');
+            const bent2 = document.getElementById('bentThreshold2');
+            const bent3 = document.getElementById('bentThreshold3');
+            
+            if (bent0) bent0.textContent = bentThresholds[0];
+            if (bent1) bent1.textContent = bentThresholds[1];
+            if (bent2) bent2.textContent = bentThresholds[2];
+            if (bent3) bent3.textContent = bentThresholds[3];
             
             // Update last update time
             const updateTime = document.getElementById('lastUpdate');
-            updateTime.textContent = `Last Firebase update: ${formatTime(Date.now())}`;
-            document.getElementById('lastUpdateTime').textContent = formatTime(Date.now());
+            const lastUpdateTimeElem = document.getElementById('lastUpdateTime');
+            
+            if (updateTime) updateTime.textContent = `Last Firebase update: ${formatTime(Date.now())}`;
+            if (lastUpdateTimeElem) lastUpdateTimeElem.textContent = formatTime(Date.now());
             
             // Process word construction based on sensor data
             processWordConstruction(data);
@@ -1033,7 +1095,6 @@
             const a2 = flexStates[2];
             const a3 = flexStates[3];
             
-            // Update stable count
             if (mpuState === lastDetectedIndex && 
                 a0 === lastFlexStates[0] && 
                 a1 === lastFlexStates[1] && 
@@ -1048,7 +1109,6 @@
                 holdFired = false;
             }
             
-            // Check for action
             if (stableCount >= DEBOUNCE_COUNT) {
                 const held = Date.now() - holdStartMs;
                 if (!holdFired && (Date.now() - lastActionMs) > POST_HOLD_COOLDOWN && held >= HOLD_MS_DEFAULT) {
@@ -1063,22 +1123,13 @@
             const mapping = getMappingForIndices(mpu, a0, a1, a2, a3);
             if (!mapping || mapping === "nullptr") return false;
             
-            // Handle underscore (word separator)
             if (mapping === "_") {
                 addWordToSentence();
                 return true;
             }
             
-            // Handle COMMIT (sentence finalizer)
             if (mapping === "COMMIT") {
                 commitSentence();
-                return true;
-            }
-            
-            // Handle backspace
-            if (mapping === "<") {
-                backspaceBuffer();
-                updateDisplayBufferFromSlots();
                 return true;
             }
             
@@ -1121,26 +1172,37 @@
         }
 
         function updateUI() {
-            document.getElementById('slot1').textContent = slot1 || '---';
-            document.getElementById('slot2').textContent = slot2 || '---';
-            document.getElementById('displayBuffer').textContent = displayBuffer || '---';
-            document.getElementById('convertedCurrentWord').textContent = convertedCurrentWord || '---';
-            document.getElementById('sentenceDisplay').textContent = fullSentence || '---';
-            document.getElementById('convertedSentenceDisplay').textContent = convertedFullSentence || '---';
-            document.getElementById('wordCount').textContent = sentenceWords.length;
-            
-            // Update word list
+            const slot1Elem = document.getElementById('slot1');
+            const slot2Elem = document.getElementById('slot2');
+            const displayBufferElem = document.getElementById('displayBuffer');
+            const convertedCurrentWordElem = document.getElementById('convertedCurrentWord');
+            const sentenceDisplayElem = document.getElementById('sentenceDisplay');
+            const convertedSentenceDisplayElem = document.getElementById('convertedSentenceDisplay');
+            const wordCountElem = document.getElementById('wordCount');
             const wordListDiv = document.getElementById('wordList');
-            if (sentenceWords.length > 0) {
-                wordListDiv.innerHTML = sentenceWords.map(word => 
-                    `<div class="word-item">${word}</div>`
-                ).join('');
-            } else {
-                wordListDiv.innerHTML = 'No words yet';
+            
+            if (slot1Elem) slot1Elem.textContent = slot1 || '---';
+            if (slot2Elem) slot2Elem.textContent = slot2 || '---';
+            if (displayBufferElem) displayBufferElem.textContent = displayBuffer || '---';
+            if (convertedCurrentWordElem) convertedCurrentWordElem.textContent = convertedCurrentWord || '---';
+            if (sentenceDisplayElem) sentenceDisplayElem.textContent = fullSentence || '---';
+            if (convertedSentenceDisplayElem) convertedSentenceDisplayElem.textContent = convertedFullSentence || '---';
+            if (wordCountElem) wordCountElem.textContent = sentenceWords.length;
+            
+            if (wordListDiv) {
+                if (sentenceWords.length > 0) {
+                    wordListDiv.innerHTML = sentenceWords.map(word => 
+                        `<div class="word-item">${word}</div>`
+                    ).join('');
+                } else {
+                    wordListDiv.innerHTML = 'No words yet';
+                }
             }
             
-            // Update translation textarea
-            document.getElementById('translationInput').value = convertedFullSentence || '';
+            const translationInput = document.getElementById('translationInput');
+            if (translationInput) {
+                translationInput.value = convertedFullSentence || '';
+            }
         }
 
         // Sentence Functions
@@ -1152,7 +1214,6 @@
                 updateFullSentence();
                 log('SENTENCE', `Added word: '${displayBuffer}'`);
                 
-                // Clear current word
                 slot1 = '';
                 slot2 = '';
                 displayBuffer = '';
@@ -1175,7 +1236,6 @@
                 return;
             }
             
-            // Add any current word
             if (displayBuffer) {
                 addWordToSentence();
             }
@@ -1184,13 +1244,11 @@
             log('SENTENCE', `Full sentence: ${fullSentence}`);
             log('CONVERSION', `Converted sentence: ${convertedFullSentence}`);
             
-            // Process each word
             sentenceWords.forEach((word, i) => {
                 const convertedWord = convertVietnameseWord(word);
                 log('SENTENCE', `Word ${i + 1}: ${word} -> ${convertedWord}`);
             });
             
-            // Reset sentence
             resetSentence();
         }
 
@@ -1236,9 +1294,11 @@
 
         async function translateSentence() {
             const textarea = document.getElementById('translationInput');
-            const text = textarea.value.trim();
+            const text = textarea ? textarea.value.trim() : '';
             const targetLang = document.getElementById('targetLanguage').value;
             const outputDiv = document.getElementById('translationOutput');
+            
+            if (!outputDiv) return;
             
             if (!text) {
                 outputDiv.innerHTML = '<span style="color: #F44336;">Please enter text to translate!</span>';
@@ -1253,7 +1313,6 @@
                 return;
             }
             
-            // Check cache
             const cacheKey = text + '|' + targetLang;
             if (translationCache[cacheKey]) {
                 outputDiv.innerHTML = translationCache[cacheKey];
@@ -1266,7 +1325,6 @@
             outputDiv.className = 'conversion-display loading';
             
             try {
-                // Using a free translation API as fallback
                 const langMap = {
                     'en-GB': 'en',
                     'ja-JP': 'ja',
@@ -1296,9 +1354,12 @@
         }
 
         function clearTranslation() {
-            document.getElementById('translationOutput').innerHTML = 'Waiting for translation...';
-            document.getElementById('translationOutput').className = 'conversion-display';
-            translationCache = {};
+            const outputDiv = document.getElementById('translationOutput');
+            if (outputDiv) {
+                outputDiv.innerHTML = 'Waiting for translation...';
+                outputDiv.className = 'conversion-display';
+                translationCache = {};
+            }
         }
 
         // Control Functions
@@ -1310,6 +1371,8 @@
             autoRefresh = !autoRefresh;
             const btn = document.getElementById('autoRefreshBtn');
             
+            if (!btn) return;
+            
             if (autoRefresh) {
                 btn.textContent = 'Auto: ON';
                 btn.className = 'green';
@@ -1318,16 +1381,62 @@
             } else {
                 btn.textContent = 'Auto: OFF';
                 btn.className = 'red';
-                clearInterval(autoRefreshInterval);
+                if (autoRefreshInterval) {
+                    clearInterval(autoRefreshInterval);
+                    autoRefreshInterval = null;
+                }
                 log('SYSTEM', 'Auto-refresh disabled');
             }
+        }
+
+        function initializeAutoRefresh() {
+            const btn = document.getElementById('autoRefreshBtn');
+            if (!btn) return;
+            
+            // Set initial state to ON
+            autoRefresh = true;
+            btn.textContent = 'Auto: ON';
+            btn.className = 'green';
+            autoRefreshInterval = setInterval(fetchFirebaseData, 2000);
+            
+            log('SYSTEM', 'Auto-refresh initialized and enabled');
         }
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             log('SYSTEM', 'Application started');
+            
+            // Initialize all button event listeners
+            const buttons = {
+                'clearCurrentWord': clearCurrentWord,
+                'backspace': backspace,
+                'addWordToSentence': addWordToSentence,
+                'commitSentence': commitSentence,
+                'resetSentence': resetSentence,
+                'translateSentence': translateSentence,
+                'clearTranslation': clearTranslation,
+                'refreshData': refreshData,
+                'autoRefreshBtn': toggleAutoRefresh,
+                'clearLog': clearLog
+            };
+            
+            // Attach event listeners to all buttons
+            Object.keys(buttons).forEach(buttonId => {
+                const button = document.getElementById(buttonId);
+                if (button) {
+                    button.addEventListener('click', buttons[buttonId]);
+                }
+            });
+            
+            // Initialize auto-refresh
+            initializeAutoRefresh();
+            
+            // Fetch initial data
             fetchFirebaseData();
-            toggleAutoRefresh(); // Start with auto-refresh enabled
+            
+            // Initialize UI
+            updateUI();
+            updateLogDisplay();
         });
     </script>
 </body>
