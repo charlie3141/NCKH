@@ -465,71 +465,76 @@
             transition: height 0.1s ease;
         }
 
-        /* Auto-suggestions styles */
-        .auto-suggestions {
-            position: relative;
-            margin-top: 10px;
-        }
-
-        .auto-suggestions-container {
+        /* Dynamic suggestions styles */
+        .dynamic-suggestions {
             position: absolute;
             top: 100%;
             left: 0;
             width: 100%;
             background: white;
-            border: 1px solid #eaeaea;
+            border: 1px solid #ddd;
             border-radius: 8px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            z-index: 100;
             max-height: 200px;
             overflow-y: auto;
+            display: none;
         }
 
-        .auto-suggestion-item {
+        .dynamic-suggestions.show {
+            display: block;
+        }
+
+        .suggestion-item {
             padding: 10px 15px;
-            border-bottom: 1px solid #eee;
             cursor: pointer;
-            transition: all 0.2s;
+            border-bottom: 1px solid #eee;
+            transition: background 0.2s;
         }
 
-        .auto-suggestion-item:hover {
-            background: #f0f0f0;
+        .suggestion-item:hover {
+            background: #f0f7ff;
         }
 
-        .auto-suggestion-item:last-child {
+        .suggestion-item:last-child {
             border-bottom: none;
         }
 
-        .voice-controls {
+        .text-input-container {
+            position: relative;
+        }
+
+        /* Gender selection */
+        .gender-selection {
             display: flex;
             gap: 10px;
             margin-top: 10px;
             justify-content: center;
         }
 
-        .voice-btn {
+        .gender-btn {
             padding: 8px 16px;
-            background: linear-gradient(to right, #FF9800, #F57C00);
-            color: white;
-            border: none;
-            border-radius: 20px;
-            font-size: 0.85rem;
+            background: #f0f0f0;
+            border: 2px solid #ddd;
+            border-radius: 6px;
             cursor: pointer;
-            transition: all 0.2s;
+            font-weight: bold;
         }
 
-        .voice-btn.active {
-            background: linear-gradient(to right, #4CAF50, #2E7D32);
-            transform: scale(1.05);
+        .gender-btn.active {
+            background: linear-gradient(to right, #4A00E0, #8E2DE2);
+            color: white;
+            border-color: #4A00E0;
         }
 
-        .voice-btn.female {
+        .gender-btn.male {
+            background: linear-gradient(to right, #2196F3, #1976D2);
+            color: white;
+        }
+
+        .gender-btn.female {
             background: linear-gradient(to right, #E91E63, #C2185B);
-        }
-
-        .voice-btn.female.active {
-            background: linear-gradient(to right, #E91E63, #AD1457);
-            transform: scale(1.05);
+            color: white;
         }
     </style>
 </head>
@@ -563,30 +568,23 @@
                     <div class="sensor-label">FULL SENTENCE (Vietnamese)</div>
                     <div class="conversion-display" id="convertedSentenceDisplay">---</div>
                     
-                    <!-- Voice Selection -->
-                    <div class="voice-controls">
-                        <button class="voice-btn active" onclick="selectVoice('male')" id="maleVoiceBtn">
-                            🔊 Male Voice
-                        </button>
-                        <button class="voice-btn female" onclick="selectVoice('female')" id="femaleVoiceBtn">
-                            🔊 Female Voice
-                        </button>
-                    </div>
-                    
-                    <!-- Auto-suggestions -->
-                    <div class="auto-suggestions" id="autoSuggestionsContainer" style="display: none;">
-                        <div class="sensor-label">SUGGESTED PHRASES</div>
-                        <div class="auto-suggestions-container" id="autoSuggestions">
-                            <!-- Auto-suggestions will appear here -->
-                        </div>
-                    </div>
-                    
                     <!-- Phrase Suggestions -->
                     <div class="phrase-suggestions">
                         <h4>📝 COMMON PHRASE SUGGESTIONS</h4>
                         <div class="phrase-pills" id="phrasePills">
                             <!-- Phrase pills will be added here by JavaScript -->
                         </div>
+                        
+                        <!-- Dynamic Suggestions -->
+                        <div class="dynamic-suggestions" id="dynamicSuggestions">
+                            <!-- Dynamic suggestions will appear here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Gender Selection for Speech -->
+                    <div class="gender-selection">
+                        <div class="gender-btn male active" onclick="setGender('male')">👨 Male Voice</div>
+                        <div class="gender-btn female" onclick="setGender('female')">👩 Female Voice</div>
                     </div>
                     
                     <!-- Speech Controls -->
@@ -635,7 +633,13 @@
                 <h3>Translation</h3>
                 <div style="margin-bottom: 20px;">
                     <div class="sensor-label">FULL SENTENCE (Vietnamese - For Translation)</div>
-                    <textarea id="translationInput" placeholder="Enter Vietnamese text here..."></textarea>
+                    <div class="text-input-container">
+                        <textarea id="translationInput" placeholder="Enter Vietnamese text here..." 
+                                  oninput="handleTranslationInput()"></textarea>
+                        <div class="dynamic-suggestions" id="translationSuggestions">
+                            <!-- Dynamic suggestions for translation -->
+                        </div>
+                    </div>
                     
                     <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 10px;">
                         <div><strong>Translation Options:</strong></div>
@@ -959,7 +963,7 @@
             "Backward": 5
         };
 
-        // Common phrases for suggestions
+        // Phrase Suggestions
         const commonPhrases = [
             "Xin chào, rất vui được gặp bạn",
             "Bạn khỏe không?",
@@ -977,11 +981,60 @@
         let isSpeaking = false;
         let currentSpeech = null;
         let audioVisualizerInterval = null;
-        const audioCache = {};
-        let selectedVoice = 'male'; // 'male' or 'female'
-        let voices = [];
-        let maleVoices = [];
-        let femaleVoices = [];
+        let selectedGender = 'male'; // Default to male voice
+
+        // Gemini TTS API Configuration
+        const GEMINI_API_KEY = ""; // Add your API key here
+        const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent";
+        
+        // Voice mapping for Gemini TTS
+        const voiceMap = {
+            "vi-VN": { male: "Aoede", female: "Kore" },
+            "en-GB": { male: "Kore", female: "Aoede" },
+            "ja-JP": { male: "Aoede", female: "Kore" },
+            "ko-KR": { male: "Kore", female: "Aoede" },
+            "zh-CN": { male: "Zubenelgenubi", female: "Aoede" }
+        };
+
+        // Helper to convert PCM16 (L16) data to a playable WAV Blob
+        const pcmToWav = (base64PCM, sampleRate = 24000) => {
+            try {
+                const binaryString = atob(base64PCM);
+                const len = binaryString.length;
+                const bytes = new Uint8Array(len);
+                for (let i = 0; i < len; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+
+                const wavHeader = new ArrayBuffer(44);
+                const view = new DataView(wavHeader);
+
+                const writeString = (view, offset, string) => {
+                    for (let i = 0; i < string.length; i++) {
+                        view.setUint8(offset + i, string.charCodeAt(i));
+                    }
+                };
+
+                writeString(view, 0, "RIFF");
+                view.setUint32(4, 36 + len, true);
+                writeString(view, 8, "WAVE");
+                writeString(view, 12, "fmt ");
+                view.setUint32(16, 16, true);
+                view.setUint16(20, 1, true);
+                view.setUint16(22, 1, true);
+                view.setUint32(24, sampleRate, true);
+                view.setUint32(28, sampleRate * 2, true);
+                view.setUint16(32, 2, true);
+                view.setUint16(34, 16, true);
+                writeString(view, 36, "data");
+                view.setUint32(40, len, true);
+
+                return new Blob([wavHeader, bytes], { type: "audio/wav" });
+            } catch (error) {
+                console.error("Error converting PCM to WAV:", error);
+                return null;
+            }
+        };
 
         // Helper Functions
         function log(source, message) {
@@ -1125,8 +1178,8 @@
                 convertedFullSentence = "";
             }
             
-            // Update auto-suggestions when word changes
-            updateAutoSuggestions();
+            // Update phrase suggestions based on current word
+            updateDynamicSuggestions(convertedCurrentWord);
         }
 
         // Firebase Data Functions
@@ -1381,6 +1434,12 @@
             } else {
                 speakVnBtn.classList.remove('speaking');
             }
+            
+            // Update gender buttons
+            document.querySelectorAll('.gender-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`.gender-btn.${selectedGender}`).classList.add('active');
         }
 
         // Sentence Functions
@@ -1392,6 +1451,9 @@
                 updateFullSentence();
                 log('SENTENCE', `Added word: '${displayBuffer}'`);
                 
+                // Update dynamic suggestions based on current sentence
+                updateSentenceSuggestions();
+                
                 // Clear current word
                 slot1 = '';
                 slot2 = '';
@@ -1399,9 +1461,6 @@
                 convertedCurrentWord = '';
                 
                 updateUI();
-                
-                // Show auto-suggestions after adding word
-                updateAutoSuggestions();
             } else {
                 log('SENTENCE', 'Sentence full! Max 10 words reached.');
             }
@@ -1444,11 +1503,12 @@
             displayBuffer = '';
             convertedCurrentWord = '';
             
+            // Clear suggestions
+            document.getElementById('dynamicSuggestions').innerHTML = '';
+            document.getElementById('dynamicSuggestions').classList.remove('show');
+            
             log('SENTENCE', 'Sentence reset - ready for new input');
             updateUI();
-            
-            // Hide auto-suggestions
-            hideAutoSuggestions();
         }
 
         function clearCurrentWord() {
@@ -1456,11 +1516,13 @@
             slot2 = '';
             displayBuffer = '';
             convertedCurrentWord = '';
+            
+            // Clear suggestions
+            document.getElementById('dynamicSuggestions').innerHTML = '';
+            document.getElementById('dynamicSuggestions').classList.remove('show');
+            
             updateUI();
             log('WORD', 'Current word cleared');
-            
-            // Hide auto-suggestions
-            hideAutoSuggestions();
         }
 
         function backspaceBuffer() {
@@ -1468,68 +1530,12 @@
                 displayBuffer = displayBuffer.slice(0, -1);
                 updateConversions();
                 log('WORD', `Backspace - Buffer: ${displayBuffer}`);
-                
-                // Update auto-suggestions after backspace
-                updateAutoSuggestions();
             }
         }
 
         function backspace() {
             backspaceBuffer();
             updateUI();
-        }
-
-        // Auto-suggestions Functions
-        function updateAutoSuggestions() {
-            const currentWord = convertedCurrentWord.toLowerCase().trim();
-            const container = document.getElementById('autoSuggestionsContainer');
-            const suggestionsDiv = document.getElementById('autoSuggestions');
-            
-            if (!currentWord || currentWord.length < 2) {
-                hideAutoSuggestions();
-                return;
-            }
-            
-            // Filter phrases that contain the current word
-            const filteredPhrases = commonPhrases.filter(phrase => 
-                phrase.toLowerCase().includes(currentWord)
-            );
-            
-            if (filteredPhrases.length === 0) {
-                hideAutoSuggestions();
-                return;
-            }
-            
-            // Show suggestions
-            container.style.display = 'block';
-            suggestionsDiv.innerHTML = '';
-            
-            filteredPhrases.slice(0, 5).forEach(phrase => {
-                const suggestionItem = document.createElement('div');
-                suggestionItem.className = 'auto-suggestion-item';
-                suggestionItem.textContent = phrase;
-                suggestionItem.onclick = () => {
-                    useSuggestedPhrase(phrase);
-                };
-                suggestionsDiv.appendChild(suggestionItem);
-            });
-        }
-
-        function hideAutoSuggestions() {
-            const container = document.getElementById('autoSuggestionsContainer');
-            container.style.display = 'none';
-        }
-
-        function useSuggestedPhrase(phrase) {
-            // Set the phrase in translation input
-            document.getElementById('translationInput').value = phrase;
-            // Auto-translate
-            translateSentence();
-            
-            // Hide suggestions
-            hideAutoSuggestions();
-            
-            log('PHRASE', `Selected phrase: "${phrase}"`);
         }
 
         // Phrase Suggestion Functions
@@ -1542,77 +1548,219 @@
                 pill.className = 'phrase-pill';
                 pill.textContent = phrase;
                 pill.onclick = () => {
-                    useSuggestedPhrase(phrase);
+                    // Set the phrase in translation input
+                    document.getElementById('translationInput').value = phrase;
+                    // Auto-translate
+                    translatePhrase(phrase);
+                    log('PHRASE', `Selected phrase: "${phrase}"`);
                 };
                 phrasePills.appendChild(pill);
             });
         }
 
-        // Voice Selection Functions
-        function selectVoice(voiceType) {
-            selectedVoice = voiceType;
+        function translatePhrase(phrase) {
+            const textarea = document.getElementById('translationInput');
+            const outputDiv = document.getElementById('translationOutput');
             
-            const maleBtn = document.getElementById('maleVoiceBtn');
-            const femaleBtn = document.getElementById('femaleVoiceBtn');
-            
-            if (voiceType === 'male') {
-                maleBtn.classList.add('active');
-                femaleBtn.classList.remove('active');
-            } else {
-                femaleBtn.classList.add('active');
-                maleBtn.classList.remove('active');
-            }
-            
-            log('SPEECH', `Voice changed to: ${voiceType}`);
+            textarea.value = phrase;
+            translateSentence();
         }
 
-        function getVoiceForLanguage(langCode) {
-            const voices = speechSynthesis.getVoices();
+        // Dynamic Suggestion Functions
+        function updateDynamicSuggestions(currentWord) {
+            const suggestionsDiv = document.getElementById('dynamicSuggestions');
             
-            // Try to find appropriate voice based on selected gender
-            let filteredVoices = voices.filter(voice => {
-                return voice.lang.startsWith(langCode.split('-')[0]) || 
-                       voice.lang === langCode;
-            });
-            
-            if (filteredVoices.length === 0) {
-                return null; // Let browser choose default
+            if (!currentWord || currentWord.trim().length === 0) {
+                suggestionsDiv.innerHTML = '';
+                suggestionsDiv.classList.remove('show');
+                return;
             }
             
-            // Simple gender detection based on voice name
-            if (selectedVoice === 'male') {
-                // Look for male voices
-                const maleKeywords = ['male', 'man', 'men', 'andro', 'deep', 'low'];
-                const maleVoice = filteredVoices.find(voice => 
-                    maleKeywords.some(keyword => 
-                        voice.name.toLowerCase().includes(keyword)
-                    )
-                );
-                return maleVoice || filteredVoices[0];
+            const filteredPhrases = commonPhrases.filter(phrase => 
+                phrase.toLowerCase().includes(currentWord.toLowerCase())
+            );
+            
+            if (filteredPhrases.length > 0) {
+                suggestionsDiv.innerHTML = filteredPhrases.map(phrase => `
+                    <div class="suggestion-item" onclick="selectSuggestion('${phrase}')">
+                        ${phrase}
+                    </div>
+                `).join('');
+                suggestionsDiv.classList.add('show');
             } else {
-                // Look for female voices
-                const femaleKeywords = ['female', 'woman', 'women', 'girl', 'lady', 'feminine'];
-                const femaleVoice = filteredVoices.find(voice => 
-                    femaleKeywords.some(keyword => 
-                        voice.name.toLowerCase().includes(keyword)
-                    )
-                );
-                return femaleVoice || filteredVoices[0];
+                suggestionsDiv.innerHTML = '';
+                suggestionsDiv.classList.remove('show');
+            }
+        }
+
+        function updateSentenceSuggestions() {
+            if (sentenceWords.length === 0) return;
+            
+            const currentSentence = sentenceWords.join(' ');
+            const filteredPhrases = commonPhrases.filter(phrase => 
+                phrase.toLowerCase().startsWith(currentSentence.toLowerCase())
+            );
+            
+            const suggestionsDiv = document.getElementById('dynamicSuggestions');
+            
+            if (filteredPhrases.length > 0) {
+                suggestionsDiv.innerHTML = filteredPhrases.map(phrase => `
+                    <div class="suggestion-item" onclick="completeSentence('${phrase}')">
+                        ${phrase.substring(currentSentence.length)}
+                    </div>
+                `).join('');
+                suggestionsDiv.classList.add('show');
+            } else {
+                suggestionsDiv.innerHTML = '';
+                suggestionsDiv.classList.remove('show');
+            }
+        }
+
+        function selectSuggestion(phrase) {
+            // Set as current word
+            const encodedWord = phrase.split(' ')[0]; // Get first word for simplicity
+            displayBuffer = encodedWord;
+            convertedCurrentWord = phrase.split(' ')[0];
+            
+            // Update UI
+            document.getElementById('displayBuffer').textContent = displayBuffer;
+            document.getElementById('convertedCurrentWord').textContent = convertedCurrentWord;
+            
+            // Clear suggestions
+            document.getElementById('dynamicSuggestions').innerHTML = '';
+            document.getElementById('dynamicSuggestions').classList.remove('show');
+            
+            log('SUGGESTION', `Selected suggestion: "${phrase}"`);
+        }
+
+        function completeSentence(phrase) {
+            // Split the phrase into words
+            const phraseWords = phrase.split(' ');
+            const currentWords = convertedFullSentence.split(' ');
+            
+            // Add remaining words to sentence
+            for (let i = currentWords.length; i < phraseWords.length && sentenceWords.length < 10; i++) {
+                sentenceWords.push(phraseWords[i]);
+            }
+            
+            updateFullSentence();
+            updateUI();
+            
+            // Clear suggestions
+            document.getElementById('dynamicSuggestions').innerHTML = '';
+            document.getElementById('dynamicSuggestions').classList.remove('show');
+            
+            log('SUGGESTION', `Completed sentence with: "${phrase}"`);
+        }
+
+        // Handle translation input for suggestions
+        function handleTranslationInput() {
+            const input = document.getElementById('translationInput').value;
+            const suggestionsDiv = document.getElementById('translationSuggestions');
+            
+            if (!input || input.trim().length === 0) {
+                suggestionsDiv.innerHTML = '';
+                suggestionsDiv.classList.remove('show');
+                return;
+            }
+            
+            const filteredPhrases = commonPhrases.filter(phrase => 
+                phrase.toLowerCase().includes(input.toLowerCase())
+            );
+            
+            if (filteredPhrases.length > 0) {
+                suggestionsDiv.innerHTML = filteredPhrases.map(phrase => `
+                    <div class="suggestion-item" onclick="selectTranslationSuggestion('${phrase}')">
+                        ${phrase}
+                    </div>
+                `).join('');
+                suggestionsDiv.classList.add('show');
+            } else {
+                suggestionsDiv.innerHTML = '';
+                suggestionsDiv.classList.remove('show');
+            }
+        }
+
+        function selectTranslationSuggestion(phrase) {
+            document.getElementById('translationInput').value = phrase;
+            document.getElementById('translationSuggestions').innerHTML = '';
+            document.getElementById('translationSuggestions').classList.remove('show');
+            translateSentence();
+        }
+
+        // Gender Selection
+        function setGender(gender) {
+            selectedGender = gender;
+            updateUI();
+            log('SPEECH', `Voice gender set to: ${gender}`);
+        }
+
+        // Gemini TTS Functions
+        async function speakWithRetry(text, langCode, retries = 3) {
+            if (!GEMINI_API_KEY) {
+                throw new Error("API key not configured");
+            }
+
+            const voiceName = voiceMap[langCode]?.[selectedGender] || "Aoede";
+            
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+                    const response = await fetch(
+                        `${GEMINI_API_URL}?key=${GEMINI_API_KEY}`,
+                        {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            signal: controller.signal,
+                            body: JSON.stringify({
+                                contents: [{ parts: [{ text: text }] }],
+                                generationConfig: {
+                                    responseModalities: ["AUDIO"],
+                                    speechConfig: {
+                                        voiceConfig: { prebuiltVoiceConfig: { voiceName } },
+                                    },
+                                },
+                            }),
+                        }
+                    );
+
+                    clearTimeout(timeoutId);
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(`API_ERROR_${response.status}: ${errorData?.error?.message || response.statusText}`);
+                    }
+
+                    const data = await response.json();
+                    const inlineData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+                    
+                    if (!inlineData || !inlineData.data) {
+                        throw new Error("NO_DATA");
+                    }
+
+                    return inlineData.data;
+                } catch (err) {
+                    if (i === retries - 1) throw err;
+                    const delay = Math.pow(2, i) * 1000;
+                    await new Promise(r => setTimeout(r, delay));
+                }
             }
         }
 
         // Speech Synthesis Functions
-        function speakVietnameseSentence() {
+        async function speakVietnameseSentence() {
             const text = convertedFullSentence || document.getElementById('convertedSentenceDisplay').textContent;
             if (!text || text === '---') {
                 log('SPEECH', 'No Vietnamese text to speak');
                 return;
             }
             
-            speakText(text, 'vi-VN');
+            await speakTextAI(text, 'vi-VN');
         }
 
-        function speakTranslation() {
+        async function speakTranslation() {
             const text = document.getElementById('translationOutput').textContent;
             if (!text || text.includes('Waiting for translation') || text.includes('Please enter')) {
                 log('SPEECH', 'No translation text to speak');
@@ -1620,10 +1768,77 @@
             }
             
             const lang = document.getElementById('voiceLanguage').value;
-            speakText(text, lang);
+            await speakTextAI(text, lang);
         }
 
-        function speakText(text, langCode) {
+        async function speakTextAI(text, langCode) {
+            if (isSpeaking) {
+                stopAllSpeech();
+                return;
+            }
+            
+            if (!GEMINI_API_KEY) {
+                // Fallback to Web Speech API if no Gemini API key
+                speakTextWeb(text, langCode);
+                return;
+            }
+            
+            setIsSpeaking(true);
+            startAudioVisualizer();
+            
+            try {
+                const audioDataBase64 = await speakWithRetry(text, langCode);
+                const wavBlob = pcmToWav(audioDataBase64, 24000);
+                
+                if (!wavBlob) {
+                    throw new Error("Failed to create audio blob");
+                }
+                
+                const audioUrl = URL.createObjectURL(wavBlob);
+                const audio = new Audio(audioUrl);
+                currentSpeech = audio;
+                
+                audio.onended = function() {
+                    setIsSpeaking(false);
+                    currentSpeech = null;
+                    stopAudioVisualizer();
+                    updateUI();
+                    URL.revokeObjectURL(audioUrl);
+                    log('SPEECH', 'Finished speaking (AI)');
+                };
+                
+                audio.onerror = function(event) {
+                    setIsSpeaking(false);
+                    currentSpeech = null;
+                    stopAudioVisualizer();
+                    updateUI();
+                    URL.revokeObjectURL(audioUrl);
+                    log('SPEECH', `Audio error: ${event.error}`);
+                };
+                
+                audio.play().catch(e => {
+                    console.error("Audio Playback Error:", e);
+                    setIsSpeaking(false);
+                    currentSpeech = null;
+                    stopAudioVisualizer();
+                    updateUI();
+                    URL.revokeObjectURL(audioUrl);
+                });
+                
+                log('SPEECH', `Started AI speech: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
+            } catch (err) {
+                console.error("TTS Error:", err);
+                setIsSpeaking(false);
+                stopAudioVisualizer();
+                updateUI();
+                
+                // Fallback to Web Speech API
+                log('SPEECH', 'Falling back to Web Speech API');
+                speakTextWeb(text, langCode);
+            }
+        }
+
+        function speakTextWeb(text, langCode) {
             if (isSpeaking) {
                 stopAllSpeech();
                 return;
@@ -1642,13 +1857,39 @@
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = langCode;
             utterance.rate = 0.9;
-            utterance.pitch = selectedVoice === 'male' ? 0.8 : 1.2;
+            utterance.pitch = selectedGender === 'male' ? 0.8 : 1.2;
             utterance.volume = 1;
             
-            // Try to get appropriate voice
-            const voice = getVoiceForLanguage(langCode);
-            if (voice) {
-                utterance.voice = voice;
+            // Set voice based on language and gender preference
+            const voices = speechSynthesis.getVoices();
+            let targetVoice = null;
+            
+            // Try to find a voice that matches the language and gender
+            if (selectedGender === 'male') {
+                targetVoice = voices.find(voice => 
+                    (voice.lang === langCode || voice.lang.startsWith(langCode.split('-')[0])) &&
+                    (voice.name.toLowerCase().includes('male') || 
+                     voice.name.toLowerCase().includes('man') ||
+                     !voice.name.toLowerCase().includes('female'))
+                );
+            } else {
+                targetVoice = voices.find(voice => 
+                    (voice.lang === langCode || voice.lang.startsWith(langCode.split('-')[0])) &&
+                    (voice.name.toLowerCase().includes('female') || 
+                     voice.name.toLowerCase().includes('woman'))
+                );
+            }
+            
+            // If no gender-specific voice found, use any matching language
+            if (!targetVoice) {
+                targetVoice = voices.find(voice => 
+                    voice.lang === langCode || 
+                    voice.lang.startsWith(langCode.split('-')[0])
+                );
+            }
+            
+            if (targetVoice) {
+                utterance.voice = targetVoice;
             }
             
             // Event listeners
@@ -1656,7 +1897,7 @@
                 isSpeaking = true;
                 updateUI();
                 startAudioVisualizer();
-                log('SPEECH', `Started speaking with ${selectedVoice} voice: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
+                log('SPEECH', `Started speaking (Web): "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
             };
             
             utterance.onend = function() {
@@ -1664,7 +1905,7 @@
                 currentSpeech = null;
                 stopAudioVisualizer();
                 updateUI();
-                log('SPEECH', 'Finished speaking');
+                log('SPEECH', 'Finished speaking (Web)');
             };
             
             utterance.onerror = function(event) {
@@ -1679,15 +1920,26 @@
             window.speechSynthesis.speak(utterance);
         }
 
+        function setIsSpeaking(speaking) {
+            isSpeaking = speaking;
+            updateUI();
+        }
+
         function stopAllSpeech() {
             if (window.speechSynthesis) {
                 window.speechSynthesis.cancel();
-                isSpeaking = false;
-                currentSpeech = null;
-                stopAudioVisualizer();
-                updateUI();
-                log('SPEECH', 'Speech stopped');
             }
+            
+            if (currentSpeech && currentSpeech.pause) {
+                currentSpeech.pause();
+                currentSpeech.currentTime = 0;
+            }
+            
+            isSpeaking = false;
+            currentSpeech = null;
+            stopAudioVisualizer();
+            updateUI();
+            log('SPEECH', 'Speech stopped');
         }
 
         function startAudioVisualizer() {
@@ -1834,41 +2086,37 @@
             
             // Load voices for speech synthesis
             if ('speechSynthesis' in window) {
-                // Get available voices
-                function loadVoices() {
-                    voices = speechSynthesis.getVoices();
-                    
-                    // Simple gender classification based on voice name
-                    maleVoices = voices.filter(voice => 
-                        voice.name.toLowerCase().includes('male') ||
-                        voice.name.toLowerCase().includes('man') ||
-                        voice.name.toLowerCase().includes('andro')
-                    );
-                    
-                    femaleVoices = voices.filter(voice => 
-                        voice.name.toLowerCase().includes('female') ||
-                        voice.name.toLowerCase().includes('woman') ||
-                        voice.name.toLowerCase().includes('girl')
-                    );
-                    
-                    log('SPEECH', `Loaded ${voices.length} voices (${maleVoices.length} male, ${femaleVoices.length} female)`);
-                }
+                // Trigger voice loading
+                speechSynthesis.getVoices();
                 
-                speechSynthesis.onvoiceschanged = loadVoices;
-                loadVoices(); // Call in case voices are already loaded
+                // Some browsers need this event
+                speechSynthesis.onvoiceschanged = function() {
+                    log('SPEECH', 'Speech synthesis voices loaded');
+                };
             }
             
             // Start with auto-refresh
             fetchFirebaseData();
             toggleAutoRefresh();
             
-            // Click outside to hide suggestions
+            // Close suggestions when clicking outside
             document.addEventListener('click', function(event) {
-                const suggestionsContainer = document.getElementById('autoSuggestionsContainer');
-                if (suggestionsContainer && !suggestionsContainer.contains(event.target)) {
-                    hideAutoSuggestions();
+                const suggestions = document.getElementById('dynamicSuggestions');
+                const translationSuggestions = document.getElementById('translationSuggestions');
+                
+                if (suggestions && !suggestions.contains(event.target)) {
+                    suggestions.classList.remove('show');
+                }
+                
+                if (translationSuggestions && !translationSuggestions.contains(event.target)) {
+                    translationSuggestions.classList.remove('show');
                 }
             });
+            
+            // Check for API key
+            if (!GEMINI_API_KEY) {
+                log('SYSTEM', 'Note: Gemini TTS API key not configured. Using Web Speech API as fallback.');
+            }
         });
     </script>
 </body>
