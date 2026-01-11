@@ -1,5 +1,3 @@
-code này gần ổn rồi, chỉ thêm phần phrase suggestion và đọc âm thanh từ code bên dưới:
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -376,6 +374,16 @@ code này gần ổn rồi, chỉ thêm phần phrase suggestion và đọc âm 
             padding: 5px;
             border-bottom: 1px solid #eee;
         }
+
+        .threshold-info {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 10px;
+            padding: 10px;
+            background: #f0f8ff;
+            border-radius: 8px;
+            border-left: 4px solid #2196F3;
+        }
     </style>
 </head>
 <body>
@@ -497,6 +505,16 @@ code này gần ổn rồi, chỉ thêm phần phrase suggestion và đọc âm 
                     </div>
                 </div>
                 
+                <div class="threshold-info">
+                    <div><strong>Fixed Straight Threshold:</strong> 150</div>
+                    <div><strong>Bent Thresholds:</strong> 
+                        A0: <span id="bentThreshold0">300</span>, 
+                        A1: <span id="bentThreshold1">450</span>, 
+                        A2: <span id="bentThreshold2">350</span>, 
+                        A3: <span id="bentThreshold3">300</span>
+                    </div>
+                </div>
+                
                 <div class="sensor-item" style="margin-top: 15px;">
                     <div class="sensor-label">SYSTEM STATUS</div>
                     <div>Last Update: <span id="lastUpdateTime" class="last-update">Never</span></div>
@@ -561,9 +579,9 @@ code này gần ổn rồi, chỉ thêm phần phrase suggestion và đọc âm 
         ];
 
         const tableC = [
-            [ ["B","C","D"],["Đ","G","H"],["K","L","M"] ],
-            [ ["N","P","Q"],["R","S","T"],["V","X","CH"] ],
-            [ ["GH","KH","NG"],["NGH","NH","PH"],["TH","TR","_"] ]
+            [ ["B","C","D"],["Đ","G","H"],["K","L","M"} ],
+            [ ["N","P","Q"],{"R","S","T"},{"V","X","CH"} ],
+            [ {"GH","KH","NG"},{"NGH","NH","PH"},{"TH","TR","_"} ]
         ];
 
         // Vietnamese Conversion Table (full table from ESP32 code)
@@ -729,8 +747,13 @@ code này gần ổn rồi, chỉ thêm phần phrase suggestion và đọc âm 
         let fullSentence = "";
         let convertedFullSentence = "";
         
-        // Flex sensor state
+        // Flex sensor state and thresholds
         let flexStates = [0, 0, 0, 0];
+        let rawFlexValues = [0, 0, 0, 0];
+        const STRAIGHT_THRESHOLD = 150;
+        let bentThresholds = [300, 450, 350, 300]; // Default values
+        
+        // Word construction state
         let lastFlexStates = [-1, -1, -1, -1];
         let stableCount = 0;
         let lastDetectedIndex = -1;
@@ -910,6 +933,28 @@ code này gần ổn rồi, chỉ thêm phần phrase suggestion và đọc âm 
             }
         }
 
+        // Flex sensor calculation functions
+        function calculateFlexState(rawValue, sensorIndex) {
+            // Use default bent thresholds if not calibrated
+            const bentThreshold = bentThresholds[sensorIndex];
+            return mapFlexStateSimple(rawValue, bentThreshold);
+        }
+
+        function mapFlexStateSimple(rawValue, bentThreshold) {
+            // Simple mapping based on your ESP32 logic:
+            // 0: rawValue <= STRAIGHT_THRESHOLD (straight)
+            // 1: STRAIGHT_THRESHOLD < rawValue <= bentThreshold (partially bent)
+            // 2: rawValue > bentThreshold (fully bent)
+            
+            if (rawValue <= STRAIGHT_THRESHOLD) {
+                return 0; // Straight/not bent
+            } else if (rawValue <= bentThreshold) {
+                return 1; // Partially bent
+            } else {
+                return 2; // Fully bent
+            }
+        }
+
         // Firebase Data Functions
         async function fetchFirebaseData() {
             try {
@@ -930,19 +975,6 @@ code này gần ổn rồi, chỉ thêm phần phrase suggestion và đọc âm 
                 updateConnectionStatus(false);
                 log('Firebase', `Error: ${error.message}`);
                 return null;
-            }
-        }
-
-        function calculateFlexState(rawValue, sensorIndex) {
-            const STRAIGHT_THRESHOLD = 150;
-            const bentThresholds = [300, 450, 350, 300];
-            
-            if (rawValue <= STRAIGHT_THRESHOLD) {
-                return 0;
-            } else if (rawValue <= bentThresholds[sensorIndex]) {
-                return 1;
-            } else {
-                return 2;
             }
         }
 
@@ -1007,13 +1039,35 @@ code này gần ổn rồi, chỉ thêm phần phrase suggestion và đọc âm 
             document.getElementById('mpuShakeState').textContent = data.d || 'None';
             document.getElementById('isShaking').textContent = data.sf || 'NO';
             
-            // Update flex sensors
-            const flexValues = [data.f0 || 0, data.f1 || 0, data.f2 || 0, data.f3 || 0];
-            const rawFlexValues = data.f || [0, 0, 0, 0];
+            // Update raw flex values from Firebase
+            // Try to get values from f array first, then individual f0, f1, etc.
+            if (data.f && Array.isArray(data.f) && data.f.length >= 4) {
+                rawFlexValues = data.f.slice(0, 4);
+            } else {
+                rawFlexValues = [
+                    data.f0 || data.f0 || 0,
+                    data.f1 || data.f1 || 0,
+                    data.f2 || data.f2 || 0,
+                    data.f3 || data.f3 || 0
+                ];
+            }
+            
+            // Update bent thresholds if available
+            if (data.flexBentThresholds && Array.isArray(data.flexBentThresholds)) {
+                bentThresholds = data.flexBentThresholds.slice(0, 4);
+            } else {
+                // Use defaults or values from Firebase if available
+                bentThresholds = [
+                    data.bent0 || 300,
+                    data.bent1 || 450,
+                    data.bent2 || 350,
+                    data.bent3 || 300
+                ];
+            }
             
             // Calculate flex states
             for (let i = 0; i < 4; i++) {
-                flexStates[i] = calculateFlexState(flexValues[i], i);
+                flexStates[i] = calculateFlexState(rawFlexValues[i], i);
             }
             
             // Update flex boxes
@@ -1023,8 +1077,15 @@ code này gần ổn rồi, chỉ thêm phần phrase suggestion và đọc âm 
                 box.className = `flex-box active-${flexStates[i]}`;
             }
             
+            // Update raw values display
             document.getElementById('rawValues').textContent = rawFlexValues.join(', ');
             document.getElementById('flexFormat').textContent = flexStates.join('');
+            
+            // Update bent thresholds display
+            document.getElementById('bentThreshold0').textContent = bentThresholds[0];
+            document.getElementById('bentThreshold1').textContent = bentThresholds[1];
+            document.getElementById('bentThreshold2').textContent = bentThresholds[2];
+            document.getElementById('bentThreshold3').textContent = bentThresholds[3];
             
             // Update last update time
             const updateTime = document.getElementById('lastUpdate');
