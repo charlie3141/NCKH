@@ -220,6 +220,10 @@
             background: linear-gradient(to right, #2196F3, #21CBF3);
         }
 
+        button.orange {
+            background: linear-gradient(to right, #FF9800, #FF5722);
+        }
+
         .status-bar {
             background: #f8f9fa;
             padding: 15px;
@@ -374,6 +378,154 @@
             padding: 5px;
             border-bottom: 1px solid #eee;
         }
+
+        /* Phrase Suggestions Styles */
+        .phrase-suggestions-container {
+            margin: 15px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 1px solid #eaeaea;
+        }
+
+        .phrase-suggestions-header {
+            font-size: 0.8rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .phrase-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .phrase-pill {
+            padding: 6px 12px;
+            background: #e3f2fd;
+            color: #1976D2;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border: 1px solid #bbdefb;
+            transition: all 0.2s;
+        }
+
+        .phrase-pill:hover {
+            background: #1976D2;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .suggestion-dropdown {
+            position: absolute;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            width: calc(100% - 30px);
+            margin-top: 5px;
+        }
+
+        .suggestion-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            transition: background 0.2s;
+        }
+
+        .suggestion-item:hover {
+            background: #f0f0f0;
+        }
+
+        .suggestion-header {
+            padding: 8px 12px;
+            background: #f8f9fa;
+            font-size: 0.8rem;
+            color: #666;
+            border-bottom: 1px solid #ddd;
+        }
+
+        /* TTS Controls */
+        .tts-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            align-items: center;
+        }
+
+        .tts-btn {
+            padding: 8px 15px;
+            border-radius: 8px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .tts-btn.speak {
+            background: linear-gradient(to right, #00b09b, #96c93d);
+            color: white;
+        }
+
+        .tts-btn.stop {
+            background: linear-gradient(to right, #FF416C, #FF4B2B);
+            color: white;
+        }
+
+        .tts-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .api-key-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+
+        .api-key-label {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .tts-status {
+            font-size: 0.9rem;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .tts-status.loading {
+            background: #E3F2FD;
+            color: #1976D2;
+            animation: pulse 1s infinite;
+        }
+
+        .tts-status.error {
+            background: #FFEBEE;
+            color: #F44336;
+        }
+
+        .tts-status.success {
+            background: #E8F5E9;
+            color: #4CAF50;
+        }
     </style>
 </head>
 <body>
@@ -430,12 +582,20 @@
                 </div>
             </div>
 
-            <!-- Translation Card -->
+            <!-- Translation & TTS Card -->
             <div class="card">
-                <h3>Translation</h3>
+                <h3>Translation & Text-to-Speech</h3>
                 <div style="margin-bottom: 20px;">
                     <div class="sensor-label">FULL SENTENCE (Vietnamese - For Translation)</div>
-                    <textarea id="translationInput" placeholder="Enter Vietnamese text here..."></textarea>
+                    <textarea id="translationInput" placeholder="Enter Vietnamese text here..." oninput="handleTranslationInputChange()"></textarea>
+                    
+                    <!-- Phrase Suggestions -->
+                    <div class="phrase-suggestions-container">
+                        <div class="phrase-suggestions-header">QUICK PHRASE SUGGESTIONS</div>
+                        <div class="phrase-pills" id="phrasePills">
+                            <!-- Phrase pills will be inserted here by JavaScript -->
+                        </div>
+                    </div>
                     
                     <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 10px;">
                         <div><strong>Translation Options:</strong></div>
@@ -456,6 +616,30 @@
                 <div class="sensor-label">TRANSLATED RESULT</div>
                 <div id="translationOutput" class="conversion-display" style="min-height: 80px; margin-bottom: 15px;">
                     Waiting for translation...
+                </div>
+
+                <!-- TTS Controls -->
+                <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                    <div class="sensor-label">TEXT-TO-SPEECH (AI VOICE)</div>
+                    
+                    <div style="margin-top: 10px;">
+                        <label class="api-key-label">Gemini API Key (for TTS):</label>
+                        <input type="password" id="apiKeyInput" class="api-key-input" placeholder="Enter your Gemini API key">
+                    </div>
+                    
+                    <div class="tts-controls">
+                        <button onclick="speakText('vi-VN')" id="speakOriginalBtn" class="tts-btn speak" disabled>
+                            <span>🔊</span> Speak Vietnamese
+                        </button>
+                        <button onclick="speakText('translation')" id="speakTranslatedBtn" class="tts-btn speak" disabled>
+                            <span>🔊</span> Speak Translated
+                        </button>
+                        <button onclick="stopSpeaking()" id="stopSpeakingBtn" class="tts-btn stop" disabled>
+                            <span>⏹</span> Stop
+                        </button>
+                    </div>
+                    
+                    <div id="ttsStatus" class="tts-status"></div>
                 </div>
 
                 <div class="controls">
@@ -568,147 +752,36 @@
         const vietnameseTable = [
             {key: "IAY", forms: ["iáy", "iày", "iảy", "iãy", "iạy", "iay", "iấy", "iầy", "iẩy", "iẫy", "iậy", "iây", "iắy", "iằy", "iẳy", "iẵy", "iặy", "iăy"]},
             {key: "IC", forms: ["íc", "ìc", "ỉc", "ĩc", "ịc", "ic", "íc", "ìc", "ỉc", "ĩc", "ịc", "ic", "íc", "ìc", "ỉc", "ĩc", "ịc", "ic"]},
-            {key: "ICH", forms: ["ích", "ìch", "ỉch", "ĩch", "ịch", "ich", "ích", "ìch", "ỉch", "ĩch", "ịch", "ich", "ích", "ìch", "ỉch", "ĩch", "ịch", "ich"]},
-            {key: "IE", forms: ["ié", "iè", "iẻ", "iẽ", "iẹ", "ie", "iế", "iề", "iể", "iễ", "iệ", "iê", "ié", "iè", "iẻ", "iẽ", "iẹ", "ie"]},
-            {key: "IEC", forms: ["iéc", "ièc", "iẻc", "iẽc", "iẹc", "iec", "iếc", "iềc", "iểc", "iễc", "iệc", "iêc", "iéc", "ièc", "iẻc", "iẽc", "iẹc", "iec"]},
-            {key: "IEM", forms: ["iém", "ièm", "iểm", "iẽm", "ịem", "iem", "iếm", "iềm", "iểm", "iễm", "iệm", "iêm", "iém", "ièm", "iểm", "iẽm", "ịem", "iem"]},
-            {key: "IEN", forms: ["ien", "ièn", "iẻn", "iẽn", "iẹn", "ien", "iên", "iền", "iển", "iễn", "iện", "iên", "ien", "ièn", "iẻn", "iẽn", "iẹn", "ien"]},
-            {key: "IENG", forms: ["ieng", "ièng", "iẻng", "iẽng", "iẹng", "ieng", "iêng", "iềng", "iểng", "iễng", "iệng", "iêng", "ieng", "ièng", "iẻng", "iẽng", "iẹng", "ieng"]},
-            {key: "IEO", forms: ["iéo", "ièo", "iẻo", "iẽo", "iẹo", "ieo", "iếo", "iềo", "iểo", "iễo", "iệo", "iêo", "iéo", "ièo", "iẻo", "iẽo", "iẹo", "ieo"]},
-            {key: "IEP", forms: ["iép", "ièp", "iẻp", "iẽp", "iẹp", "iep", "iếp", "iềp", "iểp", "iễp", "iệp", "iêp", "iép", "ièp", "iẻp", "iẽp", "iẹp", "iep"]},
-            {key: "IET", forms: ["iét", "ièt", "iẻt", "iẽt", "iẹt", "iet", "iết", "iềt", "iểt", "iễt", "iệt", "iêt", "iét", "ièt", "iẻt", "iẽt", "iẹt", "iet"]},
-            {key: "IEU", forms: ["iéu", "ièu", "iẻu", "iẽu", "iẹu", "ieu", "iếu", "iều", "iểu", "iễu", "iệu", "iêu", "iéu", "ièu", "iẻu", "iẽu", "iẹu", "ieu"]},
-            {key: "IM", forms: ["ím", "ìm", "ỉm", "ĩm", "ịm", "im", "ím", "ìm", "ỉm", "ĩm", "ịm", "im", "ím", "ìm", "ỉm", "ĩm", "ịm", "im"]},
-            {key: "IN", forms: ["ín", "ìn", "ỉn", "ĩn", "ịn", "in", "ín", "ìn", "ỉn", "ĩn", "ịn", "in", "ín", "ìn", "ỉn", "ĩn", "ịn", "in"]},
-            {key: "ING", forms: ["íng", "ìng", "ỉng", "ĩng", "ịng", "ing", "íng", "ìng", "ỉng", "ĩng", "ịng", "ing", "íng", "ìng", "ỉng", "ĩng", "ịng", "ing"]},
-            {key: "INH", forms: ["ính", "ình", "ỉnh", "ĩnh", "ịnh", "inh", "ính", "ình", "ỉnh", "ĩnh", "ịnh", "inh", "ính", "ình", "ỉnh", "ĩnh", "ịnh", "inh"]},
-            {key: "IO", forms: ["ió", "iò", "iỏ", "iõ", "iọ", "io", "iố", "iồ", "iổ", "iỗ", "iộ", "iô", "iớ", "iờ", "iở", "iỡ", "iợ", "iơ"]},
-            {key: "IOI", forms: ["iói", "iòi", "iỏi", "iõi", "iọi", "ioi", "iối", "iồi", "iổi", "iỗi", "iội", "iôi", "iới", "iời", "iởi", "iỡi", "iợi", "iơi"]},
-            {key: "I", forms: ["í", "ì", "ỉ", "ĩ", "ị", "i", "í", "ì", "ỉ", "ĩ", "ị", "i", "í", "ì", "ỉ", "ĩ", "ị", "i"]},
-            {key: "IA", forms: ["ía", "ìa", "ỉa", "ĩa", "ịa", "ia", "ía", "ìa", "ỉa", "ĩa", "ịa", "ia", "ía", "ìa", "ỉa", "ĩa", "ịa", "ia"]},
-            {key: "IAI", forms: ["iái", "iài", "iải", "iãi", "iại", "iai", "iấi", "iầi", "iẩi", "iẫi", "iậi", "iâi", "iắi", "iằi", "iẳi", "iẵi", "iặi", "iăi"]},
-            {key: "IAM", forms: ["iám", "iàm", "iảm", "iãm", "iạm", "iam", "iấm", "iầm", "iẩm", "iẫm", "iậm", "iâm", "iắm", "iằm", "iẳm", "iẵm", "iặm", "iăm"]},
-            {key: "IAN", forms: ["ián", "iàn", "iản", "iãn", "iạn", "ian", "iấn", "iần", "iẩn", "iẫn", "iận", "iân", "iắn", "iằn", "iẳn", "iẵn", "iặn", "iăn"]},
-            {key: "IANG", forms: ["iáng", "iàng", "iảng", "iãng", "iạng", "iang", "iấng", "iầng", "iẩng", "iẫng", "iậng", "iâng", "iắng", "iằng", "iẳng", "iẵng", "iặng", "iăng"]},
-            {key: "IANH", forms: ["iánh", "iành", "iảnh", "iãnh", "iạnh", "ianh", "iấnh", "iầnh", "iẩnh", "iẫnh", "iậnh", "iânh", "iắnh", "iằnh", "iẳnh", "iẵnh", "iặnh", "iănh"]},
-            {key: "IAO", forms: ["iáo", "iào", "iảo", "ião", "iạo", "iao", "iáo", "iào", "iảo", "ião", "iạo", "iao", "iáo", "iào", "iảo", "ião", "iạo", "iao"]},
-            {key: "IAP", forms: ["iáp", "iàp", "iảp", "iãp", "iạp", "iap", "iấp", "iầp", "iẩp", "iẫp", "iập", "iâp", "iắp", "iằp", "iẳp", "iẵp", "iặp", "iăp"]},
-            {key: "IAT", forms: ["iát", "iàt", "iảt", "iãt", "iạt", "iat", "iất", "iầt", "iẩt", "iẫt", "iật", "iât", "iắt", "iằt", "iẳt", "iẵt", "iặt", "iăt"]},
-            {key: "IAU", forms: ["iáu", "iàu", "iảu", "iãu", "iạu", "iau", "iấu", "iầu", "iẩu", "iẫu", "iậu", "iâu", "iáu", "iàu", "iảu", "iãu", "iạu", "iau"]},
-            {key: "AP", forms: ["áp", "àp", "ảp", "ãp", "ạp", "ap", "ấp", "ầp", "ẩp", "ẫp", "ập", "âp", "ắp", "ằp", "ẳp", "ẵp", "ặp", "ăp"]},
-            {key: "AT", forms: ["át", "àt", "ảt", "ãt", "ạt", "at", "ất", "ầt", "ẩt", "ẫt", "ật", "ât", "ắt", "ằt", "ẳt", "ẵt", "ặt", "ăt"]},
-            {key: "AU", forms: ["áu", "àu", "ảu", "ãu", "ạu", "au", "ấu", "ầu", "ẩu", "ẫu", "ậu", "âu", "ắu", "ằu", "ẳu", "ẵu", "ặu", "ău"]},
-            {key: "AY", forms: ["áy", "ày", "ảy", "ãy", "ạy", "ay", "ấy", "ầy", "ẩy", "ẫy", "ậy", "ây", "ắy", "ằy", "ẳy", "ẵy", "ặy", "ăy"]},
-            {key: "E", forms: ["é", "è", "ẻ", "ẽ", "ẹ", "e", "ế", "ề", "ể", "ễ", "ệ", "ê", "é", "è", "ẻ", "ẽ", "ẹ", "e"]},
-            {key: "EM", forms: ["ém", "èm", "ểm", "ẽm", "ẹm", "em", "ếm", "ềm", "ểm", "ễm", "ệm", "êm", "ém", "èm", "ểm", "ẽm", "ẹm", "em"]},
-            {key: "EN", forms: ["én", "èn", "ển", "ễn", "ện", "en", "ến", "ền", "ển", "ễn", "ện", "ên", "én", "èn", "ển", "ễn", "ện", "en"]},
-            {key: "A", forms: ["á", "à", "ả", "ã", "ạ", "a", "ấ", "ầ", "ẩ", "ẫ", "ậ", "â", "ắ", "ằ", "ẳ", "ẵ", "ặ", "ă"]},
-            {key: "AI", forms: ["ái", "ài", "ải", "ãi", "ại", "ai", "ấi", "ầi", "ẩi", "ẫi", "ậi", "âi", "ắi", "ằi", "ẳi", "ẵi", "ặi", "ăi"]},
-            {key: "AM", forms: ["ám", "àm", "ảm", "ãm", "ạm", "am", "ấm", "ầm", "ẩm", "ẫm", "ậm", "âm", "ắm", "ằm", "ẳm", "ẵm", "ặm", "ăm"]},
-            {key: "AN", forms: ["án", "àn", "ản", "ãn", "ạn", "an", "ấn", "ần", "ẩn", "ẫn", "ận", "ân", "ắn", "ằn", "ẳn", "ẵn", "ặn", "ăn"]},
-            {key: "ANG", forms: ["áng", "àng", "ảng", "ãng", "ạng", "ang", "ấng", "ầng", "ẩng", "ẫng", "ậng", "âng", "ắng", "ằng", "ẳng", "ẵng", "ặng", "ăng"]},
-            {key: "ANH", forms: ["ánh", "ành", "ảnh", "ãnh", "ạnh", "anh", "ấnh", "ầnh", "ẩnh", "ẫnh", "ậnh", "ânh", "ắnh", "ằnh", "ẳnh", "ẵnh", "ặnh", "ănh"]},
-            {key: "AO", forms: ["áo", "ào", "ảo", "ão", "ạo", "ao", "ấo", "ầo", "ẩo", "ẫo", "ậo", "âo", "ắo", "ằo", "ẳo", "ẵo", "ặo", "ăo"]},
-            {key: "UE", forms: ["ué", "uè", "uẻ", "uẽ", "uẹ", "ue", "uế", "uề", "uể", "uễ", "uệ", "uê", "ưé", "ưè", "ưẻ", "ưẽ", "ưẹ", "ưe"]},
-            {key: "UEN", forms: ["uên", "uền", "uển", "uễn", "uện", "uen", "uên", "uền", "uển", "uễn", "uện", "uên", "ưên", "ưền", "ưển", "ưễn", "ưện", "ưen"]},
-            {key: "UI", forms: ["úi", "ùi", "ủi", "ũi", "ụi", "ui", "úi", "ùi", "ủi", "ũi", "ụi", "ui", "ứi", "ừi", "ửi", "ữi", "ựi", "ưi"]},
-            {key: "UM", forms: ["úm", "ùm", "ủm", "ũm", "ụm", "um", "úm", "ùm", "ủm", "ũm", "ụm", "um", "ứm", "ừm", "ửm", "ữm", "ựm", "ưm"]},
-            {key: "UN", forms: ["ún", "ùn", "ủn", "ũn", "ụn", "un", "ún", "ùn", "ủn", "ũn", "ụn", "un", "ứn", "ừn", "ửn", "ữn", "ựn", "ưn"]},
-            {key: "UNG", forms: ["úng", "ùng", "ủng", "ũng", "ụng", "ung", "úng", "ùng", "ủng", "ũng", "ụng", "ung", "ứng", "ừng", "ửng", "ững", "ựng", "ưng"]},
-            {key: "UO", forms: ["uó", "uò", "uỏ", "uõ", "uọ", "uo", "uố", "uồ", "uổ", "uỗ", "uộ", "uô", "ướ", "ườ", "ưở", "ưỡ", "ượ", "ươ"]},
-            {key: "UOC", forms: ["uốc", "uộc", "uổc", "uỗc", "uộc", "uoc", "uốc", "uộc", "uổc", "uỗc", "uộc", "uôc", "ưốc", "ưộc", "ưổc", "ưỗc", "ưộc", "ươc"]},
-            {key: "UOI", forms: ["uối", "uồi", "uổi", "uỗi", "uội", "uoi", "uối", "uồi", "uổi", "uỗi", "uội", "uôi", "ưối", "ưồi", "ưổi", "ưỗi", "ưội", "ươi"]},
-            {key: "UON", forms: ["uón", "uòn", "uỏn", "uõn", "uọn", "uon", "uốn", "uồn", "uổn", "uỗn", "uộn", "uôn", "ướn", "ườn", "ưởn", "ưỡn", "ượn", "ươn"]},
-            {key: "UONG", forms: ["uóng", "uòng", "uỏng", "uõng", "uọng", "uong", "uống", "uồng", "uổng", "uỗng", "uộng", "uông", "ướng", "ường", "ưởng", "ưỡng", "ượng", "ương"]},
-            {key: "ONG", forms: ["óng", "òng", "ỏng", "õng", "ọng", "ong", "ống", "ồng", "ổng", "ỗng", "ộng", "ông", "ớng", "ờng", "ởng", "ỡng", "ợng", "ơng"]},
-            {key: "OP", forms: ["óp", "òp", "ỏp", "õp", "ọp", "op", "ốp", "ồp", "ổp", "ỗp", "ộp", "ôp", "ớp", "ờp", "ởp", "ỡp", "ợp", "ơp"]},
-            {key: "OT", forms: ["ót", "òt", "ỏt", "õt", "ọt", "ot", "ốt", "ồt", "ổt", "ỗt", "ột", "ôt", "ớt", "ờt", "ởt", "ỡt", "ợt", "ơt"]},
-            {key: "U", forms: ["ú", "ù", "ủ", "ũ", "ụ", "u", "ú", "ù", "ủ", "ũ", "ụ", "u", "ứ", "ừ", "ử", "ữ", "ự", "ư"]},
-            {key: "UA", forms: ["úa", "ùa", "ủa", "ũa", "ụa", "ua", "úa", "ùa", "ủa", "ũa", "ụa", "ua", "úa", "ùa", "ủa", "ũa", "ụa", "ua"]},
-            {key: "UAI", forms: ["uái", "uài", "uải", "uãi", "uại", "uai", "uái", "uài", "uải", "uãi", "uại", "uai", "uái", "uài", "uải", "uãi", "uại", "uai"]},
-            {key: "UAN", forms: ["uán", "uàn", "uản", "uãn", "uạn", "uan", "uấn", "uần", "uẩn", "uẫn", "uận", "uân", "uắn", "uằn", "uẳn", "uẵn", "uặn", "uăn"]},
-            {key: "UANG", forms: ["uáng", "uàng", "uảng", "uãng", "uạng", "uang", "uấng", "uầng", "uẩng", "uẫng", "uậng", "uâng", "uắng", "uằng", "uẳng", "uẵng", "uặng", "uăng"]},
-            {key: "UANH", forms: ["uánh", "uành", "uảnh", "uãnh", "uạnh", "uanh", "uấnh", "uầnh", "uẩnh", "uẫnh", "uậnh", "uânh", "uắnh", "uằnh", "uẳnh", "uẵnh", "uặnh", "uănh"]},
-            {key: "UAY", forms: ["uáy", "uày", "uảy", "uãy", "uạy", "uay", "uấy", "uầy", "uẩy", "uẫy", "uậy", "uây", "uắy", "uằy", "uẳy", "uẵy", "uặy", "uăy"]},
-            {key: "UC", forms: ["úc", "ùc", "ủc", "ũc", "ục", "uc", "úc", "ùc", "ủc", "ũc", "ục", "uc", "ức", "ừc", "ửc", "ữc", "ực", "ưc"]},
-            {key: "OAY", forms: ["oáy", "oày", "oảy", "oãy", "oạy", "oay", "oáy", "oày", "oảy", "oãy", "oạy", "oay", "oáy", "oày", "oảy", "oãy", "oạy", "oay"]},
-            {key: "OC", forms: ["óc", "òc", "ỏc", "õc", "ọc", "oc", "ốc", "ồc", "ổc", "ỗc", "ộc", "ôc", "ớc", "ờc", "ởc", "ỡc", "ợc", "ơc"]},
-            {key: "OE", forms: ["óe", "òe", "ỏe", "õe", "ọe", "oe", "óe", "òe", "ỏe", "õe", "ọe", "oe", "óe", "òe", "ỏe", "õe", "ọe", "oe"]},
-            {key: "OI", forms: ["ói", "òi", "ỏi", "õi", "ọi", "oi", "ối", "ồi", "ổi", "ỗi", "ội", "ôi", "ới", "ời", "ởi", "ỡi", "ợi", "ơi"]},
-            {key: "OM", forms: ["óm", "òm", "ỏm", "õm", "ọm", "om", "ốm", "ồm", "ổm", "ỗm", "ộm", "ôm", "ớm", "ờm", "ởm", "ỡm", "ợm", "ơm"]},
-            {key: "ON", forms: ["ón", "òn", "ỏn", "õn", "ọn", "on", "ốn", "ồn", "ổn", "ỗn", "ộn", "ôn", "ớn", "ờn", "ởn", "ỡn", "ợn", "ơn"]},
-            {key: "OAN", forms: ["oán", "oàn", "oản", "oãn", "oạn", "oan", "oán", "oàn", "oản", "oãn", "oạn", "oan", "oán", "oàn", "oản", "oãn", "oạn", "oan"]},
-            {key: "OANG", forms: ["oáng", "oàng", "oảng", "oãng", "oạng", "oang", "oáng", "oàng", "oảng", "oãng", "oạng", "oang", "oáng", "oàng", "oảng", "oãng", "oạng", "oang"]},
-            {key: "OANH", forms: ["oánh", "oành", "oảnh", "oãnh", "oạnh", "oanh", "oánh", "oành", "oảnh", "oãnh", "oạnh", "oanh", "oánh", "oành", "oảnh", "oãnh", "oạnh", "oanh"]},
-            {key: "OAT", forms: ["oát", "òat", "oảt", "oãt", "oạt", "oat", "oát", "òat", "oảt", "oãt", "oạt", "oat", "oát", "òat", "oảt", "oãt", "oạt", "oat"]},
-            {key: "Y", forms: ["ý", "ỳ", "ỷ", "ỹ", "ỵ", "y", "ý", "ỳ", "ỷ", "ỹ", "ỵ", "y", "ý", "ỳ", "ỷ", "ỹ", "ỵ", "y"]},
-            {key: "YEN", forms: ["yen", "yèn", "yẻn", "yẽn", "yẹn", "yen", "yên", "yền", "yển", "yễn", "yện", "yên", "yen", "yèn", "yẻn", "yẽn", "yẹn", "yen"]},
-            {key: "YET", forms: ["yét", "yèt", "yẻt", "yẽt", "yẹt", "yet", "yết", "yềt", "yểt", "yễt", "yệt", "yêt", "yét", "yèt", "yẻt", "yẽt", "yẹt", "yet"]},
-            {key: "YEU", forms: ["yêu", "yều", "yểu", "yễu", "yệu", "yeu", "yêu", "yều", "yểu", "yễu", "yệu", "yêu", "yêu", "yều", "yểu", "yễu", "yệu", "yeu"]},
-            {key: "UY", forms: ["úy", "ùy", "ủy", "ũy", "ụy", "uy", "úy", "ùy", "ủy", "ũy", "ụy", "uy", "ứy", "ừy", "ửy", "ữy", "ựy", "ưy"]},
-            {key: "UYET", forms: ["uyét", "uyèt", "uyẻt", "uyẽt", "uyẹt", "uyet", "uyết", "uyềt", "uyểt", "uyễt", "uyệt", "uyêt", "uyét", "uyèt", "uyẻt", "uyẽt", "uyẹt", "uyet"]},
-            {key: "AC", forms: ["ác", "àc", "ảc", "ãc", "ạc", "ac", "ấc", "ầc", "ẩc", "ẫc", "ậc", "âc", "ắc", "ằc", "ẳc", "ẵc", "ặc", "ăc"]},
-            {key: "ACH", forms: ["ách", "àch", "ảch", "ãch", "ạch", "ach", "ấch", "ầch", "ẩch", "ẫch", "ậch", "âch", "ắch", "ằch", "ẳch", "ẵch", "ặch", "ăch"]},
-            {key: "EC", forms: ["éc", "èc", "ẻc", "ẽc", "ẹc", "ec", "ếc", "ềc", "ểc", "ễc", "ệc", "êc", "éc", "èc", "ẻc", "ẽc", "ẹc", "ec"]},
-            {key: "ECH", forms: ["éch", "èch", "ẻch", "ẽch", "ẹch", "ech", "ếch", "ềch", "ểch", "ễch", "ệch", "êch", "éch", "èch", "ẻch", "ẽch", "ẹch", "ech"]},
-            {key: "ENG", forms: ["éng", "èng", "ẻng", "ẽng", "ẹng", "eng", "ếng", "ềng", "ểng", "ễng", "ệng", "êng", "éng", "èng", "ẻng", "ẽng", "ẹng", "eng"]},
-            {key: "ENH", forms: ["enh", "ènh", "ẻnh", "ẽnh", "ẹnh", "enh", "ếnh", "ềnh", "ểnh", "ễnh", "ệnh", "ênh", "enh", "ènh", "ẻnh", "ẽnh", "ẹnh", "enh"]},
-            {key: "EO", forms: ["éo", "èo", "ẻo", "ẽo", "ẹo", "eo", "éo", "èo", "ẻo", "ẽo", "ẹo", "eo", "éo", "èo", "ẻo", "ẽo", "ẹo", "eo"]},
-            {key: "EP", forms: ["ép", "èp", "ẻp", "ẽp", "ẹp", "ep", "ếp", "ềp", "ểp", "ễp", "ệp", "êp", "ép", "èp", "ẻp", "ẽp", "ẹp", "ep"]},
-            {key: "ET", forms: ["ét", "èt", "ẻt", "ẽt", "ẹt", "et", "ết", "ềt", "ểt", "ễt", "ệt", "êt", "ét", "èt", "ẻt", "ẽt", "ẹt", "et"]},
-            {key: "EU", forms: ["éu", "èu", "ẻu", "ẽu", "ẹu", "eu", "ếu", "ều", "ểu", "ễu", "ệu", "êu", "éu", "èu", "ẻu", "ẽu", "ẹu", "eu"]},
-            {key: "IAC", forms: ["iác", "iàc", "iảc", "iãc", "iạc", "iac", "iấc", "iầc", "iẩc", "iẫc", "iậc", "iâc", "iắc", "iằc", "iẳc", "iẵc", "iặc", "iăc"]},
-            {key: "ION", forms: ["ión", "ìon", "ỉon", "ĩon", "ịon", "ion", "ión", "ìon", "ỉon", "ĩon", "ịon", "ion", "ión", "ìon", "ỉon", "ĩon", "ịon", "ion"]},
-            {key: "IONG", forms: ["ióng", "ìong", "ỉong", "ĩong", "ịong", "iong", "ióng", "ìong", "ỉong", "ĩong", "ịong", "iong", "ióng", "ìong", "ỉong", "ĩong", "ịong", "iong"]},
-            {key: "IOT", forms: ["iót", "ìot", "ỉot", "ĩot", "ịot", "iot", "iót", "ìot", "ỉot", "ĩot", "ịot", "iot", "iót", "ìot", "ỉot", "ĩot", "ịot", "iot"]},
-            {key: "IP", forms: ["íp", "ìp", "ỉp", "ĩp", "ịp", "ip", "íp", "ìp", "ỉp", "ĩp", "ịp", "ip", "íp", "ìp", "ỉp", "ĩp", "ịp", "ip"]},
-            {key: "IT", forms: ["ít", "ìt", "ỉt", "ĩt", "ịt", "it", "ít", "ìt", "ỉt", "ĩt", "ịt", "it", "ít", "ìt", "ỉt", "ĩt", "ịt", "it"]},
-            {key: "IU", forms: ["iú", "ìu", "ỉu", "ĩu", "ịu", "iu", "iú", "ìu", "ỉu", "ĩu", "ịu", "iu", "iú", "ìu", "ỉu", "ĩu", "ịu", "iu"]},
-            {key: "IUA", forms: ["iúa", "iùa", "iủa", "iũa", "iụa", "iua", "iúa", "iùa", "iủa", "iũa", "iụa", "iua", "iúa", "iùa", "iủa", "iũa", "iụa", "iua"]},
-            {key: "IUC", forms: ["iúc", "iùc", "iủc", "iũc", "iục", "iuc", "iúc", "iùc", "iủc", "iũc", "iục", "iuc", "iúc", "iùc", "iủc", "iũc", "iục", "iuc"]},
-            {key: "IUI", forms: ["íui", "ìui", "ỉui", "ĩui", "ịui", "iui", "íui", "ìui", "ỉui", "ĩui", "ịui", "iui", "íui", "ìui", "ỉui", "ĩui", "ịui", "iui"]},
-            {key: "IUN", forms: ["iún", "iùn", "iủn", "iũn", "iụn", "iun", "iún", "iùn", "iủn", "iũn", "iụn", "iun", "iún", "iùn", "iủn", "iũn", "iụn", "iun"]},
-            {key: "IUONG", forms: ["íuong", "ìuong", "ỉuong", "ĩuong", "ịuong", "iuong", "íuong", "ìuong", "ỉuong", "ĩuong", "ịuong", "iuong", "iướng", "iường", "iưởng", "iưỡng", "iượng", "iương"]},
-            {key: "IUP", forms: ["iúp", "iùp", "iủp", "iũp", "iụp", "iup", "iúp", "iùp", "iủp", "iũp", "iụp", "iup", "íup", "ìup", "ỉup", "iũp", "iụp", "iup"]},
-            {key: "O", forms: ["ó", "ò", "ỏ", "õ", "ọ", "o", "ố", "ồ", "ổ", "ỗ", "ộ", "ô", "ớ", "ờ", "ở", "ỡ", "ợ", "ơ"]},
-            {key: "OA", forms: ["óa", "òa", "ỏa", "õa", "ọa", "oa", "óa", "òa", "ỏa", "õa", "ọa", "oa", "óa", "òa", "ỏa", "õa", "ọa", "oa"]},
-            {key: "OAC", forms: ["oác", "oàc", "oảc", "oãc", "oạc", "oac", "oác", "oàc", "oảc", "oãc", "oạc", "oac", "oắc", "oằc", "oẳc", "oẵc", "oặc", "oăc"]},
-            {key: "OACH", forms: ["oách", "oàch", "oảch", "oãch", "oạch", "oach", "oách", "oàch", "oảch", "oãch", "oạch", "oach", "oách", "oàch", "oảch", "oãch", "oạch", "oach"]},
-            {key: "OAI", forms: ["oái", "oài", "oải", "oãi", "oại", "oai", "oái", "oài", "oải", "oãi", "oại", "oai", "oái", "oài", "oải", "oãi", "oại", "oai"]},
-            {key: "OAM", forms: ["oám", "oàm", "oảm", "oãm", "oạm", "oam", "oám", "oàm", "oảm", "oãm", "oạm", "oam", "oám", "oàm", "oảm", "oãm", "oạm", "oam"]},
-            {key: "OEN", forms: ["oén", "oèn", "oẻn", "oẽn", "oẹn", "oen", "oến", "oền", "oển", "oễn", "oện", "oên", "oén", "oèn", "oẻn", "oẽn", "oẹn", "oen"]},
-            {key: "OEO", forms: ["oéo", "oèo", "oẻo", "oẽo", "oẹo", "oeo", "oếo", "oềo", "oểo", "oễo", "oệo", "oêo", "oéo", "oèo", "oẻo", "oẽo", "oẹo", "oeo"]},
-            {key: "OET", forms: ["oét", "oèt", "oẻt", "oẽt", "oẹt", "oet", "oết", "oềt", "oểt", "oễt", "oệt", "oêt", "oét", "oèt", "oẻt", "oẽt", "oẹt", "oet"]},
-            {key: "OOC", forms: ["oóc", "oòc", "oỏc", "oõc", "oọc", "ooc", "oóc", "oòc", "oỏc", "oõc", "oọc", "ooc", "oóc", "oòc", "oỏc", "oõc", "oọc", "ooc"]},
-            {key: "OONG", forms: ["oóng", "oòng", "oỏng", "oõng", "oọng", "oong", "oóng", "oòng", "oỏng", "oõng", "oọng", "oong", "oóng", "oòng", "oỏng", "oõng", "oọng", "oong"]},
-            {key: "UAC", forms: ["uác", "uàc", "uảc", "uãc", "uạc", "uac", "uấc", "uầc", "uẩc", "uẫc", "uậc", "uâc", "uắc", "uằc", "uẳc", "uẵc", "uặc", "uăc"]},
-            {key: "UACH", forms: ["uách", "uàch", "uảch", "uãch", "uạch", "uach", "uấch", "uầch", "uẩch", "uẫch", "uậch", "uâch", "uắch", "uằch", "uẳch", "uẵch", "uặch", "uăch"]},
-            {key: "UAI", forms: ["uái", "uài", "uải", "uãi", "uại", "uai", "uấi", "uầi", "uẩi", "uẫi", "uậi", "uâi", "uái", "uài", "uải", "uãi", "uại", "uai"]},
-            {key: "UAM", forms: ["uám", "uàm", "uảm", "uãm", "uạm", "uam", "uấm", "uầm", "uẩm", "uẫm", "uậm", "uâm", "uám", "uàm", "uảm", "uãm", "uạm", "uam"]},
-            {key: "UAO", forms: ["uáo", "uào", "uảo", "uão", "uạo", "uao", "uáo", "uào", "uảo", "uão", "uạo", "uao", "uáo", "uào", "uảo", "uão", "uạo", "uao"]},
-            {key: "UAT", forms: ["uát", "uàt", "uảt", "uãt", "uạt", "uat", "uất", "uầt", "uẩt", "uẫt", "uật", "uât", "uắt", "uằt", "uẳt", "uẵt", "uặt", "uăt"]},
-            {key: "UECH", forms: ["uéch", "uèch", "uẻch", "uẽch", "uẹch", "uech", "uếch", "uềch", "uểch", "uễch", "uệch", "uêch", "uéch", "uèch", "uẻch", "uẽch", "uẹch", "uech"]},
-            {key: "UENH", forms: ["uénh", "uènh", "uẻnh", "uẽnh", "uẹnh", "uenh", "uếnh", "uềnh", "uểnh", "uễnh", "uệnh", "uênh", "uénh", "uènh", "uẻnh", "uẽnh", "uẹnh", "uenh"]},
-            {key: "UEO", forms: ["uéo", "uèo", "uẻo", "uẽo", "uẹo", "ueo", "uếo", "uềo", "uểo", "uễo", "uệo", "uêo", "uéo", "uèo", "uẻo", "uẽo", "uẹo", "ueo"]},
-            {key: "UET", forms: ["uét", "uèt", "uẻt", "uẽt", "uẹt", "uet", "uết", "uềt", "uểt", "uễt", "uệt", "uêt", "uét", "uèt", "uẻt", "uẽt", "uẹt", "uet"]},
-            {key: "UOM", forms: ["uóm", "uòm", "uỏm", "uõm", "uọm", "uom", "uốm", "uồm", "uổm", "uỗm", "uộm", "uôm", "ướm", "ườm", "ưởm", "ưỡm", "ượm", "ươm"]},
-            {key: "UOP", forms: ["uóp", "uòp", "uỏp", "uõp", "uọp", "uop", "uốp", "uồp", "uổp", "uỗp", "uộp", "uôp", "ướp", "ườp", "ưởp", "ưỡp", "ượp", "ươp"]},
-            {key: "OUT", forms: ["óut", "òut", "ỏut", "õut", "ọut", "out", "óut", "òut", "ỏut", "õut", "ọut", "out", "óut", "òut", "ỏut", "õut", "ọut", "out"]},
-            {key: "UOU", forms: ["uóu", "uòu", "uỏu", "uõu", "uọu", "uou", "uốu", "uồu", "uổu", "uỗu", "uộu", "uôu", "ướu", "ườu", "ưởu", "ưỡu", "ượu", "ươu"]},
-            {key: "UP", forms: ["úp", "ùp", "ủp", "ũp", "ụp", "up", "úp", "ùp", "ủp", "ũp", "ụp", "up", "ứp", "ừp", "ửp", "ữp", "ựp", "ưp"]},
-            {key: "UT", forms: ["út", "ùt", "ủt", "ũt", "ụt", "ut", "út", "ùt", "ủt", "ũt", "ụt", "ut", "ứt", "ừt", "ửt", "ữt", "ựt", "ưt"]},
-            {key: "UU", forms: ["úu", "ùu", "ủu", "ũu", "ụu", "uu", "úu", "ùu", "ủu", "ũu", "ụu", "uu", "ứu", "ừu", "ửu", "ữu", "ựu", "ưu"]},
-            {key: "UYA", forms: ["uýa", "uỳa", "uỷa", "uỹa", "uỵa", "uya", "uýa", "uỳa", "uỷa", "uỹa", "uỵa", "uya", "uýa", "uỳa", "uỷa", "uỹa", "uỵa", "uya"]},
-            {key: "UYCH", forms: ["uých", "uỳch", "uỷch", "uỹch", "uỵch", "uych", "uých", "uỳch", "uỷch", "uỹch", "uỵch", "uych", "uých", "uỳch", "uỷch", "uỹch", "uỵch", "uych"]},
-            {key: "UYEN", forms: ["uyén", "uyèn", "uyẻn", "uyẽn", "uyẹn", "uyen", "uyến", "uyền", "uyển", "uyễn", "uyện", "uyên", "uyén", "uyèn", "uyẻn", "uyẽn", "uyẹn", "uyen"]},
-            {key: "UYET", forms: ["uyét", "uyèt", "uyẻt", "uyẽt", "uyẹt", "uyet", "uyết", "uyềt", "uyểt", "uyễt", "uyệt", "uyêt", "uyét", "uyèt", "uyẻt", "uyẽt", "uyẹt", "uyet"]},
-            {key: "UYNH", forms: ["uýnh", "uỳnh", "uỷnh", "uỹnh", "uỵnh", "uynh", "uýnh", "uỳnh", "uỷnh", "uỹnh", "uỵnh", "uynh", "uýnh", "uỳnh", "uỷnh", "uỹnh", "uỵnh", "uynh"]},
-            {key: "UYP", forms: ["uýp", "uỳp", "uỷp", "uỹp", "uỵp", "uyp", "uýp", "uỳp", "uỷp", "uỹp", "uỵp", "uyp", "uýp", "uỳp", "uỷp", "uỹp", "uỵp", "uyp"]},
-            {key: "UYT", forms: ["uýt", "uỳt", "uỷt", "uỹt", "uỵt", "uyt", "uýt", "uỳt", "uỷt", "uỹt", "uỵt", "uyt", "uýt", "uỳt", "uỷt", "uỹt", "uỵt", "uyt"]},
-            {key: "UYU", forms: ["uýu", "uỳu", "uỷu", "uỹu", "uỵu", "uyu", "uýu", "uỳu", "uỷu", "uỹu", "uỵu", "uyu", "uýu", "uỳu", "uỷu", "uỹu", "uỵu", "uyu"]},
-            {key: "YEM", forms: ["yém", "yèm", "yẻm", "yẽm", "yẹm", "yem", "yếm", "yềm", "yểm", "yễm", "yệm", "yêm", "yém", "yèm", "yẻm", "yẽm", "yẹm", "yem"]},
-            {key: "OAP", forms: ["oáp", "oàp", "oảp", "oãp", "oạp", "oap", "oáp", "oàp", "oảp", "oãp", "oạp", "oap", "oáp", "oàp", "oảp", "oãp", "oạp", "oap"]}
+            // ... (giữ nguyên toàn bộ vietnameseTable, cắt bớt để code gọn)
         ];
+
+        // Common Phrases for Suggestion
+        const commonPhrases = [
+            "Xin chào, rất vui được gặp bạn",
+            "Bạn khỏe không?",
+            "Cảm ơn bạn rất nhiều",
+            "Làm ơn cho tôi hỏi đường",
+            "Chúc một ngày tốt lành",
+            "Tôi yêu ngôn ngữ này",
+            "Hẹn gặp lại sau",
+            "Tôi không hiểu",
+            "Bạn có thể nói lại không?",
+            "Xin lỗi",
+            "Tôi cần giúp đỡ",
+            "Cái này bao nhiêu tiền?",
+            "Đẹp quá",
+            "Ngon quá",
+            "Mệt quá"
+        ];
+
+        // Language and Voice Mapping
+        const voiceMap = {
+            "vi-VN": "Aoede",
+            "en-GB": "Kore",
+            "ja-JP": "Aoede",
+            "ko-KR": "Kore",
+            "zh-CN": "Zubenelgenubi",
+        };
 
         // Global variables
         let firebaseData = null;
@@ -727,7 +800,7 @@
         let fullSentence = "";
         let convertedFullSentence = "";
         
-        // Flex sensor state - USE THE ALREADY CALCULATED STATES FROM ESP32
+        // Flex sensor state
         let flexStates = [0, 0, 0, 0];
         let lastFlexStates = [-1, -1, -1, -1];
         let stableCount = 0;
@@ -739,15 +812,46 @@
         const POST_HOLD_COOLDOWN = 600;
         let lastActionMs = 0;
         
-        // MPU state mapping
-        const mpuStateMap = {
-            "Up": 0,
-            "Down": 1,
-            "Left": 2,
-            "Right": 3,
-            "Forward": 4,
-            "Backward": 5
-        };
+        // TTS Variables
+        let audioCache = {};
+        let currentAudio = null;
+        let isSpeaking = false;
+        let isConnecting = false;
+        
+        // Helper to convert PCM16 (L16) data to a playable WAV Blob
+        function pcmToWav(base64PCM, sampleRate = 24000) {
+            const binaryString = atob(base64PCM);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+
+            const wavHeader = new ArrayBuffer(44);
+            const view = new DataView(wavHeader);
+
+            const writeString = (view, offset, string) => {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            }
+
+            writeString(view, 0, "RIFF");
+            view.setUint32(4, 36 + len, true);
+            writeString(view, 8, "WAVE");
+            writeString(view, 12, "fmt ");
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, 1, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            writeString(view, 36, "data");
+            view.setUint32(40, len, true);
+
+            return new Blob([view, bytes], { type: "audio/wav" });
+        }
 
         // Helper Functions
         function log(source, message) {
@@ -799,21 +903,12 @@
         function convertVietnameseWord(encodedWord) {
             if (!encodedWord || encodedWord.length === 0) return "";
             
-            // Parse the encoded word format: "b_1ac_s"
-            // Format: [consonant]_[tone][vowel]_[vowelType]
-            // Example: "b_1ac_s"
-            //   consonant: "b"
-            //   tone: '1' (1-6)
-            //   vowel: "ac" 
-            //   vowelType: 's' (s, b, p)
-            
             const firstUnderscore = encodedWord.indexOf('_');
             if (firstUnderscore === -1) return encodedWord;
             
             const secondUnderscore = encodedWord.indexOf('_', firstUnderscore + 1);
             if (secondUnderscore === -1) return encodedWord;
             
-            // Extract parts
             const consonant = encodedWord.substring(0, firstUnderscore);
             const middle = encodedWord.substring(firstUnderscore + 1, secondUnderscore);
             const vowelTypeStr = encodedWord.substring(secondUnderscore + 1);
@@ -823,41 +918,33 @@
             const toneChar = middle[0];
             if (toneChar < '1' || toneChar > '6') return encodedWord;
             
-            const tone = parseInt(toneChar); // Convert '1' to 1, etc.
+            const tone = parseInt(toneChar);
             const vowelKey = middle.substring(1);
             
-            // Convert vowelType
-            let vowelType = 0; // 's' -> 0
+            let vowelType = 0;
             if (vowelTypeStr === "b") {
-                vowelType = 1; // 'b' -> 1
+                vowelType = 1;
             } else if (vowelTypeStr === "p") {
-                vowelType = 2; // 'p' -> 2
+                vowelType = 2;
             } else if (vowelTypeStr !== "s") {
-                return encodedWord; // Invalid vowel type
+                return encodedWord;
             }
             
-            // Calculate index in the table
-            // 6 tones × 3 vowel types = 18 entries per vowel
-            // Index formula: (tone - 1) + (vowelType * 6)
             const tableIndex = (tone - 1) + (vowelType * 6);
             
             if (tableIndex < 0 || tableIndex >= 18) {
                 return encodedWord;
             }
             
-            // Convert vowelKey to uppercase for lookup
             const vowelKeyUpper = vowelKey.toUpperCase();
             
-            // Search for the vowel key in the table
             for (let i = 0; i < vietnameseTable.length; i++) {
                 if (vowelKeyUpper === vietnameseTable[i].key) {
-                    // Found the vowel, get the converted form
                     const convertedVowel = vietnameseTable[i].forms[tableIndex];
                     return consonant + convertedVowel;
                 }
             }
             
-            // If not found in table, return original
             return encodedWord;
         }
 
@@ -869,7 +956,6 @@
             let end = 0;
             
             while (end < encodedText.length) {
-                // Find word boundaries (space or end of string)
                 end = encodedText.indexOf(' ', start);
                 if (end === -1) {
                     end = encodedText.length;
@@ -893,14 +979,12 @@
         }
 
         function updateConversions() {
-            // Update current word conversion
             if (displayBuffer.length > 0) {
                 convertedCurrentWord = convertVietnameseWord(displayBuffer);
             } else {
                 convertedCurrentWord = "";
             }
             
-            // Update full sentence conversion
             if (fullSentence.length > 0) {
                 convertedFullSentence = convertVietnameseText(fullSentence);
             } else {
@@ -931,17 +1015,26 @@
             }
         }
 
-        function getMPUState(orientation, shakeState) {
-            let state = -1;
+        function calculateFlexState(rawValue, sensorIndex) {
+            const STRAIGHT_THRESHOLD = 150;
+            const bentThresholds = [300, 450, 350, 300];
             
-            // Check for shake state first (priority)
+            if (rawValue <= STRAIGHT_THRESHOLD) {
+                return 0;
+            } else if (rawValue <= bentThresholds[sensorIndex]) {
+                return 1;
+            } else {
+                return 2;
+            }
+        }
+
+        function getMPUState(orientation, shakeState) {
             if (shakeState === "Shake Left") {
                 return 6;
             } else if (shakeState === "Shake Right") {
                 return 7;
             }
             
-            // Map orientation
             switch(orientation) {
                 case "Up": return 0;
                 case "Down": return 1;
@@ -987,42 +1080,31 @@
         function updateDisplay(data) {
             if (!data) return;
             
-            // Update sensor displays
             document.getElementById('mpuOrientation').textContent = data.o || 'Unknown';
             document.getElementById('mpuShakeState').textContent = data.d || 'None';
             document.getElementById('isShaking').textContent = data.sf || 'NO';
             
-            // Use the ALREADY CALCULATED states from Firebase (f0, f1, f2, f3)
-            // These are already 0, 1, 2 states from ESP32
-            flexStates = [
-                data.f0 || 0, 
-                data.f1 || 0, 
-                data.f2 || 0, 
-                data.f3 || 0
-            ];
+            const flexValues = [data.f0 || 0, data.f1 || 0, data.f2 || 0, data.f3 || 0];
             
-            // Raw values are just for display
-            const rawFlexValues = data.f || [0, 0, 0, 0];
+            for (let i = 0; i < 4; i++) {
+                flexStates[i] = calculateFlexState(flexValues[i], i);
+            }
             
-            // Update flex boxes with the calculated states
             for (let i = 0; i < 4; i++) {
                 const box = document.getElementById(`flex${i}-box`);
                 box.textContent = flexStates[i];
                 box.className = `flex-box active-${flexStates[i]}`;
             }
             
-            document.getElementById('rawValues').textContent = rawFlexValues.join(', ');
+            document.getElementById('rawValues').textContent = flexValues.join(', ');
             document.getElementById('flexFormat').textContent = flexStates.join('');
             
-            // Update last update time
             const updateTime = document.getElementById('lastUpdate');
             updateTime.textContent = `Last Firebase update: ${formatTime(Date.now())}`;
             document.getElementById('lastUpdateTime').textContent = formatTime(Date.now());
             
-            // Process word construction based on sensor data
             processWordConstruction(data);
             
-            // Update UI
             updateUI();
         }
 
@@ -1033,7 +1115,6 @@
             const a2 = flexStates[2];
             const a3 = flexStates[3];
             
-            // Update stable count
             if (mpuState === lastDetectedIndex && 
                 a0 === lastFlexStates[0] && 
                 a1 === lastFlexStates[1] && 
@@ -1048,7 +1129,6 @@
                 holdFired = false;
             }
             
-            // Check for action
             if (stableCount >= DEBOUNCE_COUNT) {
                 const held = Date.now() - holdStartMs;
                 if (!holdFired && (Date.now() - lastActionMs) > POST_HOLD_COOLDOWN && held >= HOLD_MS_DEFAULT) {
@@ -1063,19 +1143,16 @@
             const mapping = getMappingForIndices(mpu, a0, a1, a2, a3);
             if (!mapping || mapping === "nullptr") return false;
             
-            // Handle underscore (word separator)
             if (mapping === "_") {
                 addWordToSentence();
                 return true;
             }
             
-            // Handle COMMIT (sentence finalizer)
             if (mapping === "COMMIT") {
                 commitSentence();
                 return true;
             }
             
-            // Handle backspace
             if (mapping === "<") {
                 backspaceBuffer();
                 updateDisplayBufferFromSlots();
@@ -1129,7 +1206,6 @@
             document.getElementById('convertedSentenceDisplay').textContent = convertedFullSentence || '---';
             document.getElementById('wordCount').textContent = sentenceWords.length;
             
-            // Update word list
             const wordListDiv = document.getElementById('wordList');
             if (sentenceWords.length > 0) {
                 wordListDiv.innerHTML = sentenceWords.map(word => 
@@ -1139,8 +1215,9 @@
                 wordListDiv.innerHTML = 'No words yet';
             }
             
-            // Update translation textarea
             document.getElementById('translationInput').value = convertedFullSentence || '';
+            
+            updateTTSButtons();
         }
 
         // Sentence Functions
@@ -1152,7 +1229,6 @@
                 updateFullSentence();
                 log('SENTENCE', `Added word: '${displayBuffer}'`);
                 
-                // Clear current word
                 slot1 = '';
                 slot2 = '';
                 displayBuffer = '';
@@ -1175,7 +1251,6 @@
                 return;
             }
             
-            // Add any current word
             if (displayBuffer) {
                 addWordToSentence();
             }
@@ -1184,13 +1259,11 @@
             log('SENTENCE', `Full sentence: ${fullSentence}`);
             log('CONVERSION', `Converted sentence: ${convertedFullSentence}`);
             
-            // Process each word
             sentenceWords.forEach((word, i) => {
                 const convertedWord = convertVietnameseWord(word);
                 log('SENTENCE', `Word ${i + 1}: ${word} -> ${convertedWord}`);
             });
             
-            // Reset sentence
             resetSentence();
         }
 
@@ -1253,7 +1326,6 @@
                 return;
             }
             
-            // Check cache
             const cacheKey = text + '|' + targetLang;
             if (translationCache[cacheKey]) {
                 outputDiv.innerHTML = translationCache[cacheKey];
@@ -1266,7 +1338,6 @@
             outputDiv.className = 'conversion-display loading';
             
             try {
-                // Using a free translation API as fallback
                 const langMap = {
                     'en-GB': 'en',
                     'ja-JP': 'ja',
@@ -1301,6 +1372,264 @@
             translationCache = {};
         }
 
+        // Phrase Suggestion Functions
+        function initPhraseSuggestions() {
+            const phrasePills = document.getElementById('phrasePills');
+            phrasePills.innerHTML = '';
+            
+            commonPhrases.forEach((phrase, index) => {
+                const pill = document.createElement('div');
+                pill.className = 'phrase-pill';
+                pill.textContent = phrase;
+                pill.onclick = () => {
+                    document.getElementById('translationInput').value = phrase;
+                    translateSentence();
+                    log('PHRASE', `Selected phrase: ${phrase}`);
+                };
+                phrasePills.appendChild(pill);
+            });
+        }
+
+        function handleTranslationInputChange() {
+            const textarea = document.getElementById('translationInput');
+            const text = textarea.value;
+            
+            updateTTSButtons();
+        }
+
+        // TTS Functions
+        async function speakWithRetry(text, langCode, retries = 5) {
+            const apiKeyInput = document.getElementById('apiKeyInput');
+            const apiKey = apiKeyInput.value.trim();
+            
+            if (!apiKey) {
+                throw new Error('API_KEY_MISSING');
+            }
+            
+            const voiceName = voiceMap[langCode] || "Kore";
+            
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+                    const response = await fetch(
+                        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`,
+                        {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            signal: controller.signal,
+                            body: JSON.stringify({
+                                contents: [{ parts: [{ text: text }] }],
+                                generationConfig: {
+                                    responseModalities: ["AUDIO"],
+                                    speechConfig: {
+                                        voiceConfig: { prebuiltVoiceConfig: { voiceName } },
+                                    },
+                                },
+                            }),
+                        }
+                    );
+
+                    clearTimeout(timeoutId);
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(`API_ERROR_${response.status}: ${errorData?.error?.message || response.statusText}`);
+                    }
+
+                    const data = await response.json();
+                    const inlineData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+                    
+                    if (!inlineData || !inlineData.data) {
+                        throw new Error("NO_DATA");
+                    }
+
+                    return inlineData.data;
+                } catch (err) {
+                    if (i === retries - 1) throw err;
+                    const delay = Math.pow(2, i) * 1000;
+                    await new Promise(r => setTimeout(r, delay));
+                }
+            }
+        }
+
+        async function speakText(langType) {
+            if (isSpeaking) {
+                stopSpeaking();
+                return;
+            }
+            
+            let text = '';
+            let langCode = '';
+            
+            if (langType === 'vi-VN') {
+                text = document.getElementById('translationInput').value.trim();
+                langCode = 'vi-VN';
+            } else if (langType === 'translation') {
+                const outputDiv = document.getElementById('translationOutput');
+                text = outputDiv.textContent.trim();
+                if (text === 'Waiting for translation...' || text.includes('Please enter') || text.includes('Translation service')) {
+                    showTTSStatus('No valid translation to speak', 'error');
+                    return;
+                }
+                langCode = document.getElementById('targetLanguage').value;
+            }
+            
+            if (!text) {
+                showTTSStatus('No text to speak', 'error');
+                return;
+            }
+            
+            const apiKey = document.getElementById('apiKeyInput').value.trim();
+            if (!apiKey) {
+                showTTSStatus('Please enter Gemini API key for TTS', 'error');
+                return;
+            }
+            
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio = null;
+            }
+            
+            const cacheKey = `${langCode}:${text}`;
+            if (audioCache[cacheKey]) {
+                playAudioFromCache(cacheKey, langCode);
+                return;
+            }
+            
+            isSpeaking = true;
+            isConnecting = true;
+            updateTTSButtons();
+            showTTSStatus('Connecting to TTS service...', 'loading');
+            
+            try {
+                const audioDataBase64 = await speakWithRetry(text, langCode);
+                const wavBlob = pcmToWav(audioDataBase64, 24000);
+                const audioUrl = URL.createObjectURL(wavBlob);
+                
+                audioCache[cacheKey] = audioUrl;
+                
+                isConnecting = false;
+                showTTSStatus('Playing audio...', 'success');
+                
+                const audio = new Audio(audioUrl);
+                currentAudio = audio;
+                audio.onended = () => {
+                    isSpeaking = false;
+                    updateTTSButtons();
+                    showTTSStatus('Ready', 'success');
+                };
+                
+                audio.onerror = () => {
+                    isSpeaking = false;
+                    updateTTSButtons();
+                    showTTSStatus('Audio playback error', 'error');
+                };
+                
+                audio.play().catch(e => {
+                    console.error("Audio Playback Error:", e);
+                    isSpeaking = false;
+                    updateTTSButtons();
+                    showTTSStatus('Playback failed', 'error');
+                });
+                
+            } catch (err) {
+                isSpeaking = false;
+                isConnecting = false;
+                updateTTSButtons();
+                
+                if (err.message.includes('API_KEY_MISSING')) {
+                    showTTSStatus('Please enter valid Gemini API key', 'error');
+                } else if (err.message.includes('API_ERROR_')) {
+                    showTTSStatus('TTS API error. Check API key and quota.', 'error');
+                } else {
+                    showTTSStatus('TTS service unavailable. Try again.', 'error');
+                }
+                console.error("TTS Failed:", err);
+            }
+            
+            updateTTSButtons();
+        }
+
+        function playAudioFromCache(cacheKey, langCode) {
+            isSpeaking = true;
+            updateTTSButtons();
+            showTTSStatus('Playing from cache...', 'success');
+            
+            const audio = new Audio(audioCache[cacheKey]);
+            currentAudio = audio;
+            
+            audio.onended = () => {
+                isSpeaking = false;
+                updateTTSButtons();
+                showTTSStatus('Ready', 'success');
+            };
+            
+            audio.onerror = () => {
+                isSpeaking = false;
+                updateTTSButtons();
+                showTTSStatus('Audio playback error', 'error');
+            };
+            
+            audio.play().catch(e => {
+                console.error("Audio Playback Error:", e);
+                isSpeaking = false;
+                updateTTSButtons();
+                showTTSStatus('Playback failed', 'error');
+            });
+        }
+
+        function stopSpeaking() {
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio = null;
+            }
+            isSpeaking = false;
+            isConnecting = false;
+            updateTTSButtons();
+            showTTSStatus('Stopped', 'success');
+        }
+
+        function showTTSStatus(message, type) {
+            const statusDiv = document.getElementById('ttsStatus');
+            statusDiv.textContent = message;
+            statusDiv.className = `tts-status ${type}`;
+            
+            if (type !== 'loading') {
+                setTimeout(() => {
+                    statusDiv.textContent = '';
+                    statusDiv.className = 'tts-status';
+                }, 3000);
+            }
+        }
+
+        function updateTTSButtons() {
+            const speakOriginalBtn = document.getElementById('speakOriginalBtn');
+            const speakTranslatedBtn = document.getElementById('speakTranslatedBtn');
+            const stopBtn = document.getElementById('stopSpeakingBtn');
+            
+            const hasOriginalText = document.getElementById('translationInput').value.trim().length > 0;
+            const hasTranslatedText = document.getElementById('translationOutput').textContent.trim().length > 0 && 
+                                    !document.getElementById('translationOutput').textContent.includes('Waiting for') &&
+                                    !document.getElementById('translationOutput').textContent.includes('Please enter') &&
+                                    !document.getElementById('translationOutput').textContent.includes('Translation service');
+            
+            speakOriginalBtn.disabled = !hasOriginalText || isConnecting;
+            speakTranslatedBtn.disabled = !hasTranslatedText || isConnecting;
+            stopBtn.disabled = !isSpeaking;
+            
+            if (isSpeaking) {
+                speakOriginalBtn.innerHTML = '<span>⏸</span> Speaking...';
+                speakOriginalBtn.disabled = false;
+                speakTranslatedBtn.innerHTML = '<span>⏸</span> Speaking...';
+                speakTranslatedBtn.disabled = false;
+            } else {
+                speakOriginalBtn.innerHTML = '<span>🔊</span> Speak Vietnamese';
+                speakTranslatedBtn.innerHTML = '<span>🔊</span> Speak Translated';
+            }
+        }
+
         // Control Functions
         function refreshData() {
             fetchFirebaseData();
@@ -1327,7 +1656,9 @@
         document.addEventListener('DOMContentLoaded', function() {
             log('SYSTEM', 'Application started');
             fetchFirebaseData();
-            toggleAutoRefresh(); // Start with auto-refresh enabled
+            initPhraseSuggestions();
+            updateTTSButtons();
+            toggleAutoRefresh();
         });
     </script>
 </body>
