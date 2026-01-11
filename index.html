@@ -1,937 +1,461 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Gangtay — Firebase Display + Audio Play</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 20px;
-    min-height: 100vh;
-  }
-  
-  .container {
-    max-width: 1400px;
-    margin: 0 auto;
-  }
-  
-  h1 {
-    color: white;
-    text-align: center;
-    margin-bottom: 30px;
-    font-size: 2.5em;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-  }
-  
-  .section {
-    background: white;
-    border-radius: 12px;
-    padding: 24px;
-    margin-bottom: 20px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-  }
-  
-  .section h2 {
-    color: #333;
-    margin-bottom: 16px;
-    font-size: 1.5em;
-    border-bottom: 3px solid #667eea;
-    padding-bottom: 12px;
-  }
-  
-  /* Controls */
-  input, button, select {
-    padding: 10px 14px;
-    border: 2px solid #e0e0e0;
-    border-radius: 6px;
-    font-size: 14px;
-    font-family: inherit;
-  }
-  
-  input:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-  }
-  
-  button {
-    background: #667eea;
-    color: white;
-    border: none;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.3s ease;
-  }
-  
-  button:hover {
-    background: #5568d3;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-  }
-  
-  button:active {
-    transform: translateY(0);
-  }
-  
-  .row {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    margin-bottom: 12px;
-  }
-  
-  .row > div {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-  
-  label {
-    font-size: 12px;
-    font-weight: 600;
-    color: #666;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  
-  /* Data Display Cards */
-  #dataDisplay {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 16px;
-    margin-bottom: 20px;
-  }
-  
-  .data-card {
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    padding: 18px;
-    border-radius: 10px;
-    text-align: center;
-    border: 2px solid #e0e0e0;
-    transition: all 0.3s ease;
-  }
-  
-  .data-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-    border-color: #667eea;
-  }
-  
-  .data-card label {
-    display: block;
-    font-size: 11px;
-    color: #666;
-    margin-bottom: 8px;
-  }
-  
-  .data-card .value {
-    font-size: 28px;
-    font-weight: 700;
-    color: #667eea;
-    font-family: 'Courier New', monospace;
-  }
-  
-  /* Current Word Display */
-  .word-display {
-    background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
-    padding: 24px;
-    border-radius: 12px;
-    text-align: center;
-    margin-bottom: 20px;
-    box-shadow: 0 8px 24px rgba(132, 250, 176, 0.3);
-  }
-  
-  .word-display .label {
-    font-size: 14px;
-    font-weight: 600;
-    color: #2d5c4e;
-    margin-bottom: 12px;
-  }
-  
-  .word-display .word {
-    font-size: 48px;
-    font-weight: 700;
-    color: #1a3a31;
-    font-family: 'Courier New', monospace;
-    letter-spacing: 2px;
-  }
-  
-  /* Audio Section */
-  .audio-section {
-    background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
-    padding: 20px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-  }
-  
-  #audioButtons {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin: 16px 0;
-  }
-  
-  .audio-btn {
-    padding: 12px 18px;
-    background: #ff7675;
-    color: white;
-    border: 2px solid white;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    font-family: 'Courier New', monospace;
-  }
-  
-  .audio-btn:hover {
-    background: #d63031;
-    transform: scale(1.05);
-  }
-  
-  .audio-btn.playing {
-    background: #ffd700;
-    color: #333;
-    animation: pulse 0.6s infinite;
-  }
-  
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-  }
-  
-  /* Log */
-  #log {
-    background: #1e1e1e;
-    color: #0dff08;
-    padding: 16px;
-    border-radius: 8px;
-    font-family: 'Courier New', monospace;
-    font-size: 12px;
-    min-height: 200px;
-    max-height: 300px;
-    overflow-y: auto;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    border: 2px solid #0dff08;
-  }
-  
-  /* Status indicator */
-  #status {
-    padding: 8px 14px;
-    border-radius: 6px;
-    font-weight: 600;
-    background: #ffe0e0;
-    color: #d32f2f;
-    margin-left: auto;
-  }
-  
-  #status.status-ok {
-    background: #c8e6c9;
-    color: #2e7d32;
-  }
-  
-  /* Raw payload */
-  .raw-payload {
-    background: #f5f5f5;
-    padding: 12px;
-    border-radius: 6px;
-    border-left: 4px solid #667eea;
-    font-family: 'Courier New', monospace;
-    font-size: 12px;
-    overflow-x: auto;
-    word-break: break-all;
-    margin-top: 12px;
-  }
-  
-  /* Test section */
-  .test-section {
-    background: linear-gradient(135deg, #ffe0e0 0%, #ffd6d6 100%);
-    padding: 16px;
-    border-radius: 10px;
-    margin-bottom: 20px;
-    border: 2px dashed #dc3545;
-  }
-  
-  .test-section h3 {
-    color: #d32f2f;
-    margin-bottom: 12px;
-    font-size: 1.1em;
-  }
-  
-  .controls-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 12px;
-  }
-  
-  .control-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 Sentence Constructor - Firebase Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(to right, #4A00E0, #8E2DE2);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        .dashboard {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            border: 1px solid #eaeaea;
+        }
+        
+        .card h3 {
+            color: #4A00E0;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .data-display {
+            font-size: 1.2rem;
+            margin: 10px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #eaeaea;
+        }
+        
+        .value {
+            font-weight: bold;
+            color: #2196F3;
+        }
+        
+        .sensor-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .sensor-item {
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #4CAF50;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(to right, #4A00E0, #8E2DE2);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .status-bar {
+            background: #f8f9fa;
+            padding: 15px;
+            border-top: 1px solid #eaeaea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .indicator.online {
+            background: #4CAF50;
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .logs {
+            max-height: 200px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+        
+        .log-entry {
+            padding: 5px;
+            border-bottom: 1px solid #eaeaea;
+        }
+        
+        .timestamp {
+            color: #666;
+            font-size: 0.8rem;
+        }
+        
+        .message {
+            color: #333;
+        }
+        
+        .error {
+            color: #F44336;
+        }
+        
+        .success {
+            color: #4CAF50;
+        }
+        
+        .firebase-data {
+            background: #FFF3E0;
+            border: 2px solid #FFB74D;
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h1>🎤 Gangtay Audio Demo</h1>
-
-    <!-- Configuration Section -->
-    <div class="section">
-      <h2>Configuration</h2>
-      <div class="row">
-        <div style="flex: 1; min-width: 300px;">
-          <label>Firebase URL</label>
-          <input id="firebaseUrl" value="https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/message.json" style="width: 100%;">
-        </div>
-        <div style="flex: 0.6; min-width: 200px;">
-          <label>Poll Interval (ms)</label>
-          <input id="pollMs" type="number" value="800" min="100">
-        </div>
-      </div>
-      <div class="row">
-        <div style="flex: 1; min-width: 300px;">
-          <label>T1.TXT URL</label>
-          <input id="t1Url" value="https://raw.githubusercontent.com/charlie3141/NCKH/main/T1.TXT" style="width: 100%;">
-        </div>
-        <div style="flex: 0.6; min-width: 200px;">
-          <label>Audio Base URL</label>
-          <input id="audioBase" value="/audio/" style="width: 100%;">
-        </div>
-      </div>
-      <div class="row" style="margin-top: 16px;">
-        <button id="unlock" style="background: #ff9800;">🔓 Unlock Audio</button>
-        <button id="start" style="background: #4caf50;">▶️ Start</button>
-        <button id="stop" style="background: #f44336;">⏹️ Stop</button>
-        <div id="status">Status: idle</div>
-      </div>
-    </div>
-
-    <!-- Data Display -->
-    <div class="section">
-      <h2>Live Sensor Data</h2>
-      
-      <div class="word-display">
-        <div class="label">📝 Current Word</div>
-        <div class="word" id="currentWord">-</div>
-      </div>
-
-      <div id="dataDisplay">
-        <div class="data-card">
-          <label>Flex 0</label>
-          <div class="value" id="flex0">-</div>
-        </div>
-        <div class="data-card">
-          <label>Flex 1</label>
-          <div class="value" id="flex1">-</div>
-        </div>
-        <div class="data-card">
-          <label>Flex 2</label>
-          <div class="value" id="flex2">-</div>
-        </div>
-        <div class="data-card">
-          <label>Flex 3</label>
-          <div class="value" id="flex3">-</div>
-        </div>
-        <div class="data-card">
-          <label>MPU State</label>
-          <div class="value" id="mpuState">-</div>
-        </div>
-        <div class="data-card">
-          <label>Last Word</label>
-          <div class="value" id="lastWord">-</div>
-        </div>
-      </div>
-
-      <div class="raw-payload">
-        <strong>Raw Payload:</strong> <code id="rawPayload">-</code>
-      </div>
-    </div>
-
-    <!-- Audio Playback -->
-    <div class="section">
-      <h2>Audio Playback</h2>
-      
-      <div class="audio-section">
-        <strong style="color: #d32f2f;">🧪 Manual Word Test</strong>
-        <div class="row" style="margin-top: 12px;">
-          <div style="flex: 1; min-width: 200px;">
-            <input id="manualWordInput" placeholder="Type word (e.g., 'an', 'em')" style="width: 100%;">
-          </div>
-          <button id="testWordBtn" style="background: #dc3545;">🔊 Test Word</button>
-          <button id="testIndexBtn" style="background: #6f42c1;">Test Index</button>
-          <input id="testIndexInput" type="number" placeholder="Index" min="0" max="10000" style="width: 100px;">
-        </div>
-      </div>
-
-      <strong>Recent Audio Buttons:</strong>
-      <div id="audioButtons"></div>
-      
-      <div style="margin-top: 16px; padding: 12px; background: #f0f0f0; border-radius: 6px;">
-        <strong>Now Playing:</strong> <span id="playingStatus" style="font-family: 'Courier New'; font-weight: 700; color: #667eea;">None</span>
-      </div>
-    </div>
-
-    <!-- Log -->
-    <div class="section">
-      <h2>System Log</h2>
-      <pre id="log">Waiting to start...</pre>
-    </div>
-  </div>
-
-<script>
-/* ============================================================
-   Global State
-============================================================ */
-const firebaseUrlEl = document.getElementById('firebaseUrl');
-const t1UrlEl = document.getElementById('t1Url');
-const audioBaseEl = document.getElementById('audioBase');
-const pollMsEl = document.getElementById('pollMs');
-const logEl = document.getElementById('log');
-const statusEl = document.getElementById('status');
-const useSseEl = document.getElementById('useSse');
-
-let pollId = null;
-let lastPayload = null;
-let audioUnlocked = false;
-let lastEtag = null;
-let sse = null;
-
-let audioMap = new Map();
-let playingIndex = null;
-
-let textToIndexMap = new Map();
-
-const displayEls = {
-  flex0: document.getElementById('flex0'),
-  flex1: document.getElementById('flex1'),
-  flex2: document.getElementById('flex2'),
-  flex3: document.getElementById('flex3'),
-  mpuState: document.getElementById('mpuState'),
-  lastWord: document.getElementById('lastWord'),
-  currentWord: document.getElementById('currentWord'),
-  rawPayload: document.getElementById('rawPayload'),
-  playingStatus: document.getElementById('playingStatus'),
-  audioButtons: document.getElementById('audioButtons'),
-  manualWordInput: document.getElementById('manualWordInput'),
-  testWordBtn: document.getElementById('testWordBtn'),
-  testIndexBtn: document.getElementById('testIndexBtn'),
-  testIndexInput: document.getElementById('testIndexInput')
-};
-
-/* ============================================================
-   Utilities
-============================================================ */
-function log(msg){
-  const t = new Date().toLocaleTimeString();
-  logEl.textContent = `[${t}] ${msg}\n` + logEl.textContent;
-  if (logEl.textContent.split('\n').length > 50) {
-    logEl.textContent = logEl.textContent.split('\n').slice(0, 50).join('\n');
-  }
-  console.log(msg);
-}
-
-function pad4(n){
-  return String(n).padStart(4,"0");
-}
-
-function fileUrlForIndex(i){
-  let base = audioBaseEl.value.trim();
-  if (!base.endsWith("/")) base += "/";
-  if (/^https?:\/\//.test(base)) return base + pad4(i) + ".mp3";
-  if (base.startsWith("/")) return location.origin + base + pad4(i) + ".mp3";
-  return location.origin + "/" + base + pad4(i) + ".mp3";
-}
-
-async function tryUnlock(){
-  if (audioUnlocked) return true;
-  try{
-    const a = new Audio();
-    a.muted = true;
-    await a.play().catch(()=>{});
-    audioUnlocked = true;
-    log("✓ Audio unlocked");
-    return true;
-  }catch(e){
-    log("✗ Unlock failed: "+e);
-    return false;
-  }
-}
-
-/* ============================================================
-   Load T1.TXT and build text→index mapping
-============================================================ */
-async function loadT1Mapping(){
-  try {
-    const url = t1UrlEl.value.trim();
-    if (!url) {
-      log("⚠ No T1.TXT URL provided");
-      return;
-    }
-    
-    const resp = await fetch(url, { 
-      method: "GET",
-      cache: "no-store",
-      headers: { "Accept": "text/plain" }
-    });
-    
-    if (!resp.ok) {
-      log("✗ T1.TXT load failed: HTTP " + resp.status);
-      return;
-    }
-    
-    const text = await resp.text();
-    if (!text || text.length === 0) {
-      log("✗ T1.TXT is empty");
-      return;
-    }
-    
-    textToIndexMap.clear();
-    
-    const lines = text.split('\n');
-    let parsed = 0;
-    
-    for (const line of lines) {
-      const trim = line.trim();
-      if (!trim || trim.startsWith('#')) continue;
-      
-      // Split by whitespace: first is index, second+ is word
-      const parts = trim.split(/\s+/);
-      if (parts.length >= 2) {
-        const indexStr = parts[0];
-        const wordStr = parts.slice(1).join('_');  // Handle multi-word entries
+    <div class="container">
+        <header>
+            <h1>ESP32 Sentence Constructor - Firebase Interface</h1>
+            <div>Receiving data from Firebase and sending commands</div>
+        </header>
         
-        if (/^\d+$/.test(indexStr)) {
-          const idx = parseInt(indexStr, 10);
-          const word = wordStr.toLowerCase().replace(/_/g, '_');  // Normalize
-          textToIndexMap.set(word, idx);
-          parsed++;
+        <div class="dashboard">
+            <!-- Firebase Data Card -->
+            <div class="card">
+                <h3>Firebase Data</h3>
+                <div class="data-display firebase-data">
+                    <div><strong>Firebase URL:</strong> <span id="firebaseUrl">https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/message.json</span></div>
+                    <div><strong>Status:</strong> <span id="firebaseStatus" class="value">Connecting...</span></div>
+                </div>
+                
+                <div class="sensor-grid">
+                    <div class="sensor-item">
+                        <div class="sensor-label">MPU6050 State</div>
+                        <div class="value" id="mpuState">---</div>
+                        <div class="sensor-label">Orientation</div>
+                        <div id="mpuOrientation">---</div>
+                    </div>
+                    
+                    <div class="sensor-item">
+                        <div class="sensor-label">Flex Sensors</div>
+                        <div class="value" id="flexStates">---</div>
+                        <div class="sensor-label">Raw Values</div>
+                        <div id="rawFlexValues">---</div>
+                    </div>
+                </div>
+                
+                <div class="controls">
+                    <button onclick="sendCommandToFirebase('start_calibration')">Start Calibration</button>
+                    <button onclick="sendCommandToFirebase('use_default_calibration')">Use Default Calibration</button>
+                    <button onclick="sendCommandToFirebase('clear_word')">Clear Word</button>
+                    <button onclick="sendCommandToFirebase('reset_sentence')">Reset Sentence</button>
+                </div>
+            </div>
+            
+            <!-- Word Construction Card -->
+            <div class="card">
+                <h3>Word Construction</h3>
+                <div class="data-display">
+                    <div><strong>Current Word:</strong> <span id="displayBuffer" class="value">---</span></div>
+                    <div><strong>Converted Word:</strong> <span id="convertedCurrentWord" class="value">---</span></div>
+                </div>
+                
+                <div class="data-display">
+                    <div><strong>Full Sentence:</strong> <span id="fullSentence" class="value">---</span></div>
+                    <div><strong>Converted Sentence:</strong> <span id="convertedFullSentence" class="value">---</span></div>
+                </div>
+                
+                <div class="data-display">
+                    <div><strong>Words in Sentence:</strong> <span id="sentenceWordCount" class="value">0</span></div>
+                    <div><strong>Slot 1:</strong> <span id="slot1">---</span></div>
+                    <div><strong>Slot 2:</strong> <span id="slot2">---</span></div>
+                </div>
+                
+                <div class="controls">
+                    <button onclick="sendCommandToFirebase('add_word')">Add Word (_)</button>
+                    <button onclick="sendCommandToFirebase('commit_sentence')">Commit Sentence</button>
+                    <button onclick="sendCommandToFirebase('backspace')">Backspace</button>
+                </div>
+            </div>
+            
+            <!-- System Status Card -->
+            <div class="card">
+                <h3>System Status</h3>
+                <div class="data-display">
+                    <div><strong>Calibration:</strong> <span id="calibrationStatus" class="value">Not calibrated</span></div>
+                    <div><strong>Calibration Time:</strong> <span id="calibrationTime">0s</span></div>
+                    <div><strong>Stable Count:</strong> <span id="stableCount">0</span>/3</div>
+                    <div><strong>Hold Time:</strong> <span id="holdTime">0.0s</span> (need 0.8s)</div>
+                </div>
+                
+                <div class="data-display">
+                    <div><strong>Shake State:</strong> <span id="shakeState" class="value">None</span></div>
+                    <div><strong>Is Shaking:</strong> <span id="isShaking">false</span></div>
+                </div>
+                
+                <h4 style="margin-top: 20px;">Recent Logs</h4>
+                <div class="logs" id="logContainer">
+                    <div class="log-entry">Waiting for data...</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="status-bar">
+            <div>
+                <span class="indicator" id="connectionStatus"></span>
+                <span id="statusText">Connecting to Firebase...</span>
+            </div>
+            <div>
+                <span id="lastUpdate">Last update: --:--:--</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js"></script>
+    
+    <script>
+        // Your Firebase configuration
+        const firebaseConfig = {
+            databaseURL: "https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app"
+        };
+
+        // Initialize Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const database = firebase.getDatabase(app);
+        
+        // Firebase paths
+        const DATA_PATH = 'esp32/data';
+        const COMMAND_PATH = 'esp32/command';
+        const LOGS_PATH = 'esp32/logs';
+        
+        let lastUpdateTime = 0;
+        const logs = [];
+        const MAX_LOGS = 20;
+        
+        // Initialize Firebase listeners
+        function initializeFirebase() {
+            // Listen for ESP32 data
+            const dataRef = firebase.ref(database, DATA_PATH);
+            firebase.onValue(dataRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    lastUpdateTime = Date.now();
+                    updateUI(data);
+                    updateConnectionStatus();
+                }
+            });
+            
+            // Listen for logs
+            const logsRef = firebase.ref(database, LOGS_PATH);
+            firebase.onChildAdded(logsRef, (snapshot) => {
+                const log = snapshot.val();
+                if (log) {
+                    addLog(log);
+                }
+            });
+            
+            console.log("Firebase initialized and listening for data");
         }
-      }
-    }
-    
-    log(`✓ T1.TXT loaded: ${parsed} entries from ${url}`);
-  } catch (e) {
-    log(`✗ T1.TXT error: ${e.message || e}`);
-  }
-}
-
-/* ============================================================
-   Audio System
-============================================================ */
-function getAudio(i){
-  if (audioMap.has(i)) return audioMap.get(i);
-  
-  const a = document.createElement("audio");
-  a.preload = "auto";
-  a.playsInline = true;
-  a.crossOrigin = "anonymous";
-  audioMap.set(i, a);
-  return a;
-}
-
-async function playIndex(i){
-  if (!await tryUnlock()){
-    log("✗ Tap Unlock audio first.");
-    return;
-  }
-
-  if (playingIndex === i){
-    log("ℹ Already playing index "+pad4(i));
-    return;
-  }
-
-  const a = getAudio(i);
-  const url = fileUrlForIndex(i) + "?ts=" + Date.now();
-  a.src = url;
-
-  a.onended = () => {
-    playingIndex = null;
-    displayEls.playingStatus.textContent = 'None';
-    log("✓ Play ended: "+pad4(i));
-  };
-
-  try{
-    await a.play();
-    playingIndex = i;
-    displayEls.playingStatus.textContent = pad4(i);
-    log("▶ Play started: "+pad4(i));
-  }catch(e){
-    log("✗ Play rejected: "+e);
-  }
-}
-
-function showAudioButtons(){
-  const recent = Array.from(audioMap.keys()).slice(-10);
-  displayEls.audioButtons.innerHTML = '';
-  
-  for (const idx of recent) {
-    const btn = document.createElement('button');
-    btn.className = 'audio-btn' + (playingIndex === idx ? ' playing' : '');
-    btn.textContent = pad4(idx);
-    btn.onclick = () => playIndex(idx);
-    displayEls.audioButtons.appendChild(btn);
-  }
-}
-
-/* ============================================================
-   Display live data from Firebase
-============================================================ */
-function displayData(payload){
-  if (!payload) return;
-  
-  // Display raw payload
-  try {
-    displayEls.rawPayload.textContent = JSON.stringify(payload);
-  } catch (e) {
-    displayEls.rawPayload.textContent = String(payload);
-  }
-
-  if (typeof payload === 'string') {
-    let dataText = payload;
-    
-    // If framed format, extract data
-    if (isValidPacket(payload)) {
-      dataText = parseFramedPacket(payload) || payload;
-    }
-
-    // Numeric data: flex0,flex1,flex2,flex3,mpu
-    if (/^\d+,\d+,\d+,\d+,\d/.test(dataText)) {
-      const parts = dataText.split(',');
-      if (parts.length >= 5) {
-        displayEls.flex0.textContent = parts[0];
-        displayEls.flex1.textContent = parts[1];
-        displayEls.flex2.textContent = parts[2];
-        displayEls.flex3.textContent = parts[3];
-        displayEls.mpuState.textContent = parts[4];
-      }
-    }
-    // Word data: just text without numbers/commas
-    else if (!/[0-9,]/.test(dataText) && dataText.length > 0) {
-      displayEls.currentWord.textContent = dataText.toUpperCase();
-      displayEls.lastWord.textContent = dataText;
-    }
-  }
-
-  if (typeof payload === 'object' && payload !== null) {
-    if (payload.flex0 !== undefined) displayEls.flex0.textContent = payload.flex0;
-    if (payload.flex1 !== undefined) displayEls.flex1.textContent = payload.flex1;
-    if (payload.flex2 !== undefined) displayEls.flex2.textContent = payload.flex2;
-    if (payload.flex3 !== undefined) displayEls.flex3.textContent = payload.flex3;
-    if (payload.mpu !== undefined) displayEls.mpuState.textContent = payload.mpu;
-    if (payload.word !== undefined) {
-      displayEls.currentWord.textContent = payload.word.toUpperCase();
-      displayEls.lastWord.textContent = payload.word;
-    }
-  }
-}
-
-/* ============================================================
-   Fingerprinting & Detection
-============================================================ */
-function fingerprint(obj){
-  if (obj === null || obj === undefined) return String(obj);
-  if (typeof obj !== 'object') return String(obj);
-  let clone;
-  try{
-    clone = JSON.parse(JSON.stringify(obj));
-  }catch(e){
-    clone = obj;
-  }
-  if (clone && typeof clone === 'object'){
-    delete clone.ts;
-    delete clone.time;
-    delete clone.timestamp;
-    delete clone._ts;
-    delete clone.etag;
-  }
-  try{
-    return JSON.stringify(clone);
-  }catch(e){
-    return String(clone);
-  }
-}
-
-/* ============================================================
-   Process payload: detect audio or word
-============================================================ */
-function processPayload(j){
-  if (!j) return;
-
-  // Filter out malformed packets
-  if (typeof j.text === 'string') {
-    if (!isValidPacket(j.text) && /^\d+,\d+,\d+,\d+,\d/.test(j.text) === false && j.text.length > 20) {
-      log("⚠ Corrupted packet: " + j.text.slice(0, 30));
-      return;
-    }
-  }
-
-  // Display the data
-  displayData(j);
-  log("✓ Payload: " + JSON.stringify(j).slice(0, 100));
-
-  // Try numeric index
-  if (typeof j.index === "number") {
-    return playIndex(j.index);
-  }
-
-  if (typeof j.word === "string") {
-    let word = j.word.trim().toLowerCase();
-    if (word && textToIndexMap.has(word)) {
-      const idx = textToIndexMap.get(word);
-      log(`📖 Word: "${word}" → index ${pad4(idx)}`);
-      return playIndex(idx);
-    }
-  }
-
-  // Try text-based word matching
-  if (typeof j.text === "string") {
-    let textData = j.text;
-    
-    // Extract from framed format if needed
-    if (isValidPacket(textData)) {
-      textData = parseFramedPacket(textData) || textData;
-    }
-
-    textData = textData.trim().toLowerCase();
-
-    // Numeric index
-    if (/^\d+$/.test(textData)) {
-      return playIndex(parseInt(textData, 10));
-    }
-
-    // Sensor data (flex values) - skip
-    if (/^\d+,\d+,\d+,\d+,\d/.test(textData)) {
-      return;
-    }
-
-    if (textData.includes(',')) {
-      const parts = textData.split(',').map(p => p.trim()).filter(p => p && p.length > 0);
-      
-      // Try each part as a word
-      for (const word of parts) {
-        if (word && textToIndexMap.has(word)) {
-          const idx = textToIndexMap.get(word);
-          log(`📖 T1.TXT: "${word}" → index ${pad4(idx)}`);
-          return playIndex(idx);
+        
+        // Send command to Firebase
+        function sendCommandToFirebase(command) {
+            const commandRef = firebase.ref(database, COMMAND_PATH);
+            firebase.set(commandRef, {
+                command: command,
+                timestamp: Date.now()
+            }).then(() => {
+                console.log("Command sent:", command);
+                addLog({ source: "WEB", message: "Sent command: " + command, timestamp: Date.now() });
+            }).catch((error) => {
+                console.error("Error sending command:", error);
+                addLog({ source: "WEB", message: "Error sending command: " + error, timestamp: Date.now() });
+            });
         }
-      }
-      
-      // If no word found, just display it
-      displayEls.currentWord.textContent = parts.join(' + ').toUpperCase();
-      displayEls.lastWord.textContent = parts.join(' + ');
-      return;
-    }
-
-    // Single word lookup in T1.TXT
-    if (textToIndexMap.has(textData)) {
-      const idx = textToIndexMap.get(textData);
-      log(`📖 T1.TXT: "${textData}" → index ${pad4(idx)}`);
-      return playIndex(idx);
-    }
-  }
-}
-
-/* ============================================================
-   Validate framed packet format
-============================================================ */
-function isValidPacket(text) {
-  const trim = String(text || '').trim();
-  // Must start with $ and contain *HEX
-  return /^\$.*\*[0-9A-Fa-f]+$/.test(trim);
-}
-
-function parseFramedPacket(text) {
-  const trim = String(text || '').trim();
-  if (!isValidPacket(trim)) return null;
-  
-  // Remove $ prefix and *CHECKSUM suffix
-  const start = trim.indexOf('$') + 1;
-  const end = trim.lastIndexOf('*');
-  if (start < 1 || end < 0 || end <= start) return null;
-  
-  return trim.substring(start, end);
-}
-
-/* ============================================================
-   Polling
-============================================================ */
-async function pollOnce(){
-  const url = firebaseUrlEl.value.trim();
-  if (!url) return;
-
-  try{
-    const hdr = {};
-    if (lastEtag) hdr["If-None-Match"] = lastEtag;
-
-    const r = await fetch(url, { method:"GET", headers:hdr, cache:"no-store" });
-
-    if (r.status === 304) return;
-    if (!r.ok){
-      log("✗ Fetch failed: "+r.status);
-      return;
-    }
-
-    const et = r.headers.get("ETag");
-    if (et) lastEtag = et;
-
-    const j = await r.json();
-    const fp = fingerprint(j);
-    if (fp === lastPayload) return;
-
-    lastPayload = fp;
-    processPayload(j);
-    showAudioButtons();
-  }catch(e){
-    log("✗ Poll error: "+e);
-  }
-}
-
-function startPolling(){
-  if (pollId) return;
-  const ms = Math.max(100, Number(pollMsEl.value)||800);
-  pollId = setInterval(pollOnce, ms);
-  statusEl.textContent = "Status: polling ✓";
-  statusEl.className = "status-ok";
-  log("▶ Polling started at "+ms+" ms");
-  pollOnce();
-}
-
-function stopPolling(){
-  if (pollId){
-    clearInterval(pollId);
-    pollId = null;
-  }
-  statusEl.textContent = "Status: idle";
-  statusEl.className = "";
-  log("⏹ Polling stopped");
-}
-
-/* ============================================================
-   SSE
-============================================================ */
-function handleStreamData(raw){
-  if (!raw || !String(raw).trim() || String(raw).trim() === ":") return;
-
-  try{
-    const pkt = JSON.parse(raw);
-    const j = pkt && pkt.data !== undefined ? pkt.data : pkt;
-
-    if (!j) return;
-
-    const fp = fingerprint(j);
-    if (fp === lastPayload) return;
-    lastPayload = fp;
-
-    processPayload(j);
-    showAudioButtons();
-  }catch(e){
-    log("⚠ SSE parse: "+e);
-  }
-}
-
-function startSse(url){
-  stopSse();
-  try{
-    sse = new EventSource(url);
-
-    sse.onopen = () => {
-      log("🔌 SSE connected");
-      statusEl.textContent = "Status: SSE ✓";
-      statusEl.className = "status-ok";
-    };
-
-    sse.addEventListener("put", ev => {
-      if (ev.data) handleStreamData(ev.data);
-    });
-
-    sse.addEventListener("patch", ev => {
-      if (ev.data) handleStreamData(ev.data);
-    });
-
-    sse.onmessage = (ev) => {
-      if (ev.data) handleStreamData(ev.data);
-    };
-
-    sse.onerror = () => {
-      log("⚠ SSE error → fallback to polling");
-      stopSse();
-      startPolling();
-    };
-
-  }catch(e){
-    log("✗ SSE failed: "+e+" → polling");
-    stopSse();
-    startPolling();
-  }
-}
-
-function stopSse(){
-  if (sse){
-    try{sse.close();}catch(_){}
-    sse = null;
-  }
-}
-
-/* ============================================================
-   UI Events
-============================================================ */
-document.getElementById("unlock").addEventListener("click", tryUnlock);
-
-document.getElementById("start").addEventListener("click", async ()=>{
-  const url = firebaseUrlEl.value.trim();
-  if (!url){ log("✗ No Firebase URL"); return; }
-  
-  await loadT1Mapping();
-
-  lastPayload = null;
-  lastEtag = null;
-
-  if (useSseEl.checked){
-    log("ℹ Attempting SSE (will fallback)");
-    startSse(url);
-  } else {
-    startPolling();
-  }
-});
-
-document.getElementById("stop").addEventListener("click", ()=>{
-  stopSse();
-  stopPolling();
-  lastPayload = null;
-  lastEtag = null;
-  log("⏹ All stopped");
-});
-
-document.getElementById("testWordBtn").addEventListener("click", () => {
-  const word = displayEls.manualWordInput.value.trim().toLowerCase();
-  if (!word) {
-    log("⚠ Enter a word first");
-    return;
-  }
-  
-  if (textToIndexMap.has(word)) {
-    const idx = textToIndexMap.get(word);
-    log(`🧪 Testing word: "${word}" → index ${pad4(idx)}`);
-    playIndex(idx);
-  } else {
-    log(`✗ Word not in T1.TXT: "${word}"`);
-  }
-});
-
-document.getElementById("testIndexBtn").addEventListener("click", () => {
-  const idx = parseInt(displayEls.testIndexInput.value || "0", 10);
-  log(`🧪 Testing index: ${pad4(idx)}`);
-  playIndex(idx);
-});
-
-// Initial log
-log("Ready! Set Firebase URL and click Start.");
-</script>
-
+        
+        // Update UI with data from Firebase
+        function updateUI(data) {
+            // Update connection status
+            document.getElementById('firebaseStatus').textContent = 'Connected';
+            document.getElementById('firebaseStatus').className = 'value success';
+            
+            // Update sensors
+            if (data.mpuState !== undefined) {
+                document.getElementById('mpuState').textContent = data.mpuState;
+                document.getElementById('mpuOrientation').textContent = data.mpuOrientation || '---';
+                document.getElementById('shakeState').textContent = data.shakeState || 'None';
+                document.getElementById('isShaking').textContent = data.isShaking ? 'true' : 'false';
+            }
+            
+            // Update flex sensors
+            if (data.flexStates) {
+                document.getElementById('flexStates').textContent = 
+                    data.flex0 + ' ' + data.flex1 + ' ' + data.flex2 + ' ' + data.flex3;
+                document.getElementById('rawFlexValues').textContent = 
+                    data.rawFlex0 + ', ' + data.rawFlex1 + ', ' + data.rawFlex2 + ', ' + data.rawFlex3;
+            }
+            
+            // Update calibration
+            if (data.calibrationStatus) {
+                document.getElementById('calibrationStatus').textContent = data.calibrationStatus;
+                document.getElementById('calibrationTime').textContent = data.calibrationTime + 's';
+            }
+            
+            // Update word construction
+            if (data.displayBuffer !== undefined) {
+                document.getElementById('displayBuffer').textContent = data.displayBuffer || '---';
+                document.getElementById('convertedCurrentWord').textContent = data.convertedCurrentWord || '---';
+                document.getElementById('fullSentence').textContent = data.fullSentence || '---';
+                document.getElementById('convertedFullSentence').textContent = data.convertedFullSentence || '---';
+                document.getElementById('sentenceWordCount').textContent = data.sentenceWordCount || '0';
+                document.getElementById('slot1').textContent = data.slot1 || '---';
+                document.getElementById('slot2').textContent = data.slot2 || '---';
+            }
+            
+            // Update system status
+            if (data.stableCount !== undefined) {
+                document.getElementById('stableCount').textContent = data.stableCount;
+                document.getElementById('holdTime').textContent = data.holdTime + 's';
+            }
+            
+            // Update last update time
+            const now = new Date();
+            document.getElementById('lastUpdate').textContent = 
+                'Last update: ' + now.toLocaleTimeString();
+        }
+        
+        // Update connection status
+        function updateConnectionStatus() {
+            const timeSinceUpdate = Date.now() - lastUpdateTime;
+            const indicator = document.getElementById('connectionStatus');
+            const statusText = document.getElementById('statusText');
+            
+            if (timeSinceUpdate < 5000) {
+                indicator.className = 'indicator online';
+                statusText.textContent = 'Connected (updated ' + Math.floor(timeSinceUpdate/1000) + 's ago)';
+            } else if (timeSinceUpdate < 15000) {
+                indicator.className = 'indicator';
+                indicator.style.background = '#FF9800';
+                statusText.textContent = 'Stale data (updated ' + Math.floor(timeSinceUpdate/1000) + 's ago)';
+            } else {
+                indicator.className = 'indicator';
+                indicator.style.background = '#F44336';
+                statusText.textContent = 'No data (last update ' + Math.floor(timeSinceUpdate/1000) + 's ago)';
+            }
+        }
+        
+        // Add log entry
+        function addLog(log) {
+            logs.unshift(log);
+            if (logs.length > MAX_LOGS) {
+                logs.pop();
+            }
+            
+            updateLogDisplay();
+        }
+        
+        // Update log display
+        function updateLogDisplay() {
+            const container = document.getElementById('logContainer');
+            container.innerHTML = '';
+            
+            logs.forEach(log => {
+                const entry = document.createElement('div');
+                entry.className = 'log-entry';
+                
+                const time = new Date(log.timestamp);
+                const timeStr = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                
+                entry.innerHTML = `
+                    <span class="timestamp">${timeStr} [${log.source || 'SYS'}]</span><br>
+                    <span class="message">${log.message}</span>
+                `;
+                
+                container.appendChild(entry);
+            });
+        }
+        
+        // Start connection monitoring
+        setInterval(updateConnectionStatus, 1000);
+        
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            initializeFirebase();
+            addLog({ source: "WEB", message: "Web interface loaded", timestamp: Date.now() });
+        });
+    </script>
 </body>
 </html>
