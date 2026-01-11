@@ -3,44 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vietnamese Sentence Constructor</title>
+    <title>Vietnamese Sentence Processor</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #333; min-height: 100vh; padding: 20px; }
-        .container { max-width: 1400px; margin: 0 auto; background: white; border-radius: 15px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden; }
-        header { background: linear-gradient(to right, #4A00E0, #8E2DE2); color: white; padding: 20px; text-align: center; }
+        body { font-family: Arial, sans-serif; background: #f0f2f5; color: #333; min-height: 100vh; padding: 20px; }
+        
+        .container { max-width: 1400px; margin: 0 auto; }
+        
+        header { background: linear-gradient(to right, #4A00E0, #8E2DE2); color: white; padding: 20px; border-radius: 10px 10px 0 0; text-align: center; }
         h1 { font-size: 2rem; margin-bottom: 5px; }
-        .dashboard { padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; }
+        
+        .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px; padding: 20px; background: white; border-radius: 0 0 10px 10px; }
+        
         .card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 3px 10px rgba(0,0,0,0.1); border: 1px solid #eaeaea; }
         .card h3 { color: #4A00E0; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #f0f0f0; }
-        .conversion-display { font-size: 1.5rem; font-weight: bold; color: #2196F3; margin: 10px 0; min-height: 60px; display: flex; align-items: center; justify-content: center; background: #E3F2FD; border-radius: 10px; padding: 15px; border: 2px solid #2196F3; line-height: 1.4; }
-        .sentence-display { font-size: 1.8rem; font-weight: bold; color: #4CAF50; margin: 10px 0; min-height: 80px; display: flex; align-items: center; justify-content: center; background: #E8F5E9; border-radius: 10px; padding: 20px; border: 2px solid #4CAF50; line-height: 1.4; }
-        .current-word-display { font-size: 2rem; font-weight: bold; color: #FF5722; margin: 10px 0; min-height: 60px; display: flex; align-items: center; justify-content: center; background: #FFF8E1; border-radius: 10px; padding: 15px; border: 2px dashed #FFC107; }
-        .word-list { margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 10px; border: 1px solid #eaeaea; }
-        .word-item { display: inline-block; padding: 8px 15px; margin: 5px; background: #e3f2fd; border-radius: 20px; border: 1px solid #bbdefb; }
-        .sensor-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        .sensor-item { padding: 12px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid; }
+        
+        /* Sensor Display */
+        .sensor-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
+        .sensor-item { padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid; }
         .sensor-item.mpu { border-left-color: #2196F3; }
         .sensor-item.flex { border-left-color: #4CAF50; }
-        .sensor-value { font-size: 1.8rem; font-weight: bold; color: #333; margin: 5px 0; }
-        .sensor-label { font-size: 0.8rem; color: #666; text-transform: uppercase; letter-spacing: 1px; }
-        .flex-box { display: inline-block; width: 40px; height: 40px; line-height: 40px; text-align: center; background: #f8f9fa; border-radius: 8px; margin: 2px; font-weight: bold; border: 2px solid transparent; }
-        .flex-box.active-0 { background: #4CAF50; color: white; }
-        .flex-box.active-1 { background: #FF9800; color: white; }
-        .flex-box.active-2 { background: #F44336; color: white; }
+        .sensor-label { font-size: 0.8rem; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+        .sensor-value { font-size: 1.5rem; font-weight: bold; color: #333; }
+        
+        /* Flex Boxes */
+        .flex-container { display: flex; gap: 10px; margin: 10px 0; }
+        .flex-box { width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 8px; font-weight: bold; font-size: 1.2rem; }
+        .flex-box.state-0 { background: #4CAF50; color: white; }
+        .flex-box.state-1 { background: #FF9800; color: white; }
+        .flex-box.state-2 { background: #F44336; color: white; }
+        
+        /* Word Display */
+        .word-display { font-size: 1.8rem; font-weight: bold; margin: 10px 0; min-height: 60px; display: flex; align-items: center; justify-content: center; background: #E3F2FD; border-radius: 10px; padding: 15px; border: 2px solid #2196F3; }
+        .vietnamese-display { font-size: 1.5rem; color: #2196F3; margin: 10px 0; min-height: 50px; display: flex; align-items: center; justify-content: center; background: #E8F5E9; border-radius: 10px; padding: 10px; border: 2px solid #4CAF50; }
+        
+        /* Sentence Display */
+        .sentence-container { margin: 15px 0; }
+        .sentence-box { background: #FFF3E0; border-radius: 10px; padding: 15px; border: 2px solid #FFB74D; min-height: 80px; margin-bottom: 10px; }
+        .sentence-text { font-size: 1.5rem; font-weight: bold; color: #FF9800; }
+        .vietnamese-text { font-size: 1.3rem; color: #4CAF50; }
+        
+        /* Controls */
         .controls { display: flex; gap: 10px; margin-top: 20px; justify-content: center; flex-wrap: wrap; }
         button { padding: 12px 24px; border: none; border-radius: 8px; background: linear-gradient(to right, #4A00E0, #8E2DE2); color: white; font-weight: bold; cursor: pointer; transition: all 0.2s; }
         button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
         button.red { background: linear-gradient(to right, #FF416C, #FF4B2B); }
         button.green { background: linear-gradient(to right, #00b09b, #96c93d); }
         button.blue { background: linear-gradient(to right, #2196F3, #21CBF3); }
-        .status-bar { background: #f8f9fa; padding: 15px; border-top: 1px solid #eaeaea; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* Status Bar */
+        .status-bar { background: #f8f9fa; padding: 15px; border-top: 1px solid #eaeaea; display: flex; justify-content: space-between; align-items: center; margin-top: 20px; border-radius: 0 0 10px 10px; }
         .indicator { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 8px; }
-        .indicator.online { background: #4CAF50; animation: blink 1s infinite; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        .calibration-info { font-size: 0.8rem; color: #666; margin-top: 10px; }
-        .shake-active { color: #FF5722 !important; font-weight: bold !important; animation: shake 0.5s infinite; }
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-2px); } 75% { transform: translateX(2px); } }
+        .indicator.online { background: #4CAF50; }
+        .indicator.offline { background: #F44336; }
         
         /* Calibration */
         .calibration-status { margin: 15px 0; padding: 15px; border-radius: 10px; text-align: center; font-weight: bold; }
@@ -48,624 +63,214 @@
         .calibrated { background: #D4EDDA; border: 2px solid #28A745; color: #155724; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
         
-        /* Translation */
-        .translation-box { margin: 10px 0; padding: 15px; background: #FFF3E0; border-radius: 10px; border: 2px solid #FFB74D; }
-        .phrase-suggestions { max-height: 150px; overflow-y: auto; padding: 10px; background: #f8f9fa; border-radius: 8px; margin-bottom: 10px; }
-        .phrase-btn { width: 100%; text-align: left; padding: 8px; margin: 2px 0; background: #e3f2fd; border: 1px solid #bbdefb; border-radius: 4px; cursor: pointer; }
-        .phrase-btn:hover { background: #bbdefb; }
-        .tts-btn { padding: 10px 20px; border-radius: 8px; border: 2px solid #4CAF50; background: white; color: #4CAF50; font-weight: bold; cursor: pointer; transition: all 0.2s; }
-        .tts-btn:hover { background: #4CAF50; color: white; }
+        /* Word List */
+        .word-list { margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 10px; border: 1px solid #eaeaea; min-height: 60px; }
+        .word-item { display: inline-block; padding: 8px 15px; margin: 5px; background: #e3f2fd; border-radius: 20px; border: 1px solid #bbdefb; }
+        
+        /* Raw Data */
+        .raw-data { font-family: monospace; background: #f8f9fa; padding: 10px; border-radius: 5px; margin-top: 10px; font-size: 0.9rem; color: #666; }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Vietnamese Sentence Constructor</h1>
-            <div>Processing on Vercel - Raw data from ESP32 Firebase</div>
+            <h1>Vietnamese Sentence Processor</h1>
+            <div>Processing raw data from Firebase exactly like ESP32</div>
         </header>
         
         <div class="dashboard">
-            <!-- Sentence Construction Card -->
+            <!-- Raw Sensor Data Card -->
             <div class="card">
-                <h3>Sentence Construction</h3>
-                <div style="text-align: center; padding: 20px; margin-bottom: 20px;">
-                    <div class="sensor-label">CURRENT WORD (Encoded)</div>
-                    <div class="current-word-display" id="displayBuffer">---</div>
-                    <div class="sensor-label">CURRENT WORD (Vietnamese)</div>
-                    <div class="conversion-display" id="convertedCurrentWord">---</div>
-                    
-                    <div class="sensor-label">FULL SENTENCE (Encoded)</div>
-                    <div class="sentence-display" id="sentenceDisplay">---</div>
-                    <div class="sensor-label">FULL SENTENCE (Vietnamese)</div>
-                    <div class="conversion-display" id="convertedSentenceDisplay">---</div>
-                    
-                    <div class="word-list" id="wordList">No words yet</div>
-                    <div class="word-count">Words in sentence: <span id="wordCount">0</span>/10</div>
-                    
-                    <div style="display: flex; justify-content: space-around; margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 10px;">
-                        <div><div class="sensor-label">SLOT 1</div><div class="sensor-value" id="slot1" style="font-size: 1.2rem;">---</div></div>
-                        <div><div class="sensor-label">SLOT 2</div><div class="sensor-value" id="slot2" style="font-size: 1.2rem;">---</div></div>
-                    </div>
-                    
-                    <div class="controls">
-                        <button onclick="clearWord()" class="red">Clear Current</button>
-                        <button onclick="backspace()">Backspace</button>
-                        <button onclick="addWordToSentence()" class="green">Add Word (_)</button>
-                        <button onclick="commitSentence()" class="blue">Commit Sentence</button>
-                        <button onclick="resetSentence()" class="red">Reset All</button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Sensors Display Card -->
-            <div class="card">
-                <h3>Sensor Data (Raw from Firebase)</h3>
+                <h3>Raw Sensor Data from Firebase</h3>
                 <div class="sensor-grid">
                     <div class="sensor-item mpu">
-                        <div class="sensor-label">MPU6050 STATE</div>
-                        <div class="sensor-value" id="mpuOrientation">Unknown</div>
-                        <div class="sensor-label">STATE CODE</div>
+                        <div class="sensor-label">MPU6050</div>
                         <div class="sensor-value" id="mpuState">-1</div>
-                        <div class="sensor-label">SHAKE STATUS</div>
-                        <div class="sensor-value" id="mpuShakeState">None</div>
-                        <div class="sensor-label">RAW DATA</div>
-                        <div class="sensor-value" id="rawData">---</div>
+                        <div class="sensor-label">Orientation</div>
+                        <div class="sensor-value" id="mpuOrientation">Unknown</div>
+                        <div class="sensor-label">Shake State</div>
+                        <div class="sensor-value" id="shakeState">None</div>
                     </div>
+                    
                     <div class="sensor-item flex">
-                        <div class="sensor-label">FLEX SENSORS (RAW)</div>
-                        <div>
-                            <div><span class="flex-box" id="flex0-box">0</span><span class="flex-box" id="flex1-box">0</span><span class="flex-box" id="flex2-box">0</span><span class="flex-box" id="flex3-box">0</span></div>
-                            <div class="calibration-info" id="rawValues">Raw: 0, 0, 0, 0</div>
+                        <div class="sensor-label">Flex Sensors (Raw)</div>
+                        <div class="flex-container">
+                            <div class="flex-box" id="flex0-box">0</div>
+                            <div class="flex-box" id="flex1-box">0</div>
+                            <div class="flex-box" id="flex2-box">0</div>
+                            <div class="flex-box" id="flex3-box">0</div>
                         </div>
-                        <div class="sensor-label" style="margin-top: 10px;">State: <span id="flexFormat">0000</span> (a0,a1,a2,a3)</div>
+                        <div class="sensor-label">Raw Values</div>
+                        <div class="sensor-value">
+                            A0: <span id="rawFlex0">0</span> | 
+                            A1: <span id="rawFlex1">0</span> | 
+                            A2: <span id="rawFlex2">0</span> | 
+                            A3: <span id="rawFlex3">0</span>
+                        </div>
+                        <div class="sensor-label">Calculated States</div>
+                        <div class="sensor-value">
+                            <span id="flexState0">0</span>
+                            <span id="flexState1">0</span>
+                            <span id="flexState2">0</span>
+                            <span id="flexState3">0</span>
+                        </div>
                     </div>
                 </div>
                 
                 <div class="calibration-status" id="calibrationStatus">
-                    Not calibrated
-                </div>
-                
-                <div style="margin-top: 15px;">
-                    <div class="sensor-label">FLEX THRESHOLDS</div>
-                    <div>Straight: <input type="number" id="straightThreshold" value="150" style="width: 60px;"> | 
-                         Bent: <input type="number" id="bentThreshold0" value="300" style="width: 60px;">,
-                         <input type="number" id="bentThreshold1" value="450" style="width: 60px;">,
-                         <input type="number" id="bentThreshold2" value="350" style="width: 60px;">,
-                         <input type="number" id="bentThreshold3" value="300" style="width: 60px;">
-                    </div>
+                    Not calibrated (using defaults)
                 </div>
                 
                 <div class="controls">
-                    <button onclick="startCalibration()" class="blue">Calibrate Flex Sensors</button>
-                    <button onclick="applyThresholds()" class="green">Apply Thresholds</button>
+                    <button onclick="processor.startCalibration()" class="blue">Start 10s Calibration</button>
+                    <button onclick="useDefaultThresholds()" class="green">Use Defaults</button>
                 </div>
             </div>
             
-            <!-- Translation & TTS Card -->
+            <!-- Word Construction Card -->
             <div class="card">
-                <h3>Translation & Text-to-Speech</h3>
-                <div style="margin-bottom: 15px;">
-                    <div class="sensor-label">VIETNAMESE TEXT TO TRANSLATE</div>
-                    <div class="conversion-display" id="textToTranslate">---</div>
+                <h3>Word Construction</h3>
+                <div class="sensor-label">CURRENT WORD BUFFER</div>
+                <div class="word-display" id="displayBuffer">---</div>
+                
+                <div class="sensor-label">VIETNAMESE CONVERSION</div>
+                <div class="vietnamese-display" id="convertedCurrentWord">---</div>
+                
+                <div style="display: flex; justify-content: space-around; margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                    <div>
+                        <div class="sensor-label">SLOT 1</div>
+                        <div class="sensor-value" style="font-size: 1.2rem;" id="slot1">---</div>
+                    </div>
+                    <div>
+                        <div class="sensor-label">SLOT 2</div>
+                        <div class="sensor-value" style="font-size: 1.2rem;" id="slot2">---</div>
+                    </div>
                 </div>
                 
-                <div style="margin-bottom: 15px;">
-                    <div class="sensor-label">TARGET LANGUAGE</div>
-                    <select id="targetLanguage" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 10px;">
-                        <option value="en">English</option>
-                        <option value="vi">Vietnamese</option>
-                        <option value="ja">Japanese</option>
-                        <option value="ko">Korean</option>
-                        <option value="zh">Chinese</option>
-                    </select>
+                <div style="margin: 15px 0;">
+                    <div class="sensor-label">SYSTEM STATE</div>
+                    <div>Stable Count: <span id="stableCount">0</span>/3</div>
+                    <div>Hold Time: <span id="holdTime">0.0</span>s (need 0.8s)</div>
+                </div>
+                
+                <div class="controls">
+                    <button onclick="processor.clearWord()" class="red">Clear Current</button>
+                    <button onclick="processor.backspace()">Backspace</button>
+                    <button onclick="processor.addWordToSentence()" class="green">Add Word (_)</button>
+                    <button onclick="processor.commitSentence()" class="blue">Commit Sentence</button>
+                    <button onclick="processor.resetSentence()" class="red">Reset All</button>
+                </div>
+            </div>
+            
+            <!-- Sentence Building Card -->
+            <div class="card">
+                <h3>Sentence Building</h3>
+                <div class="sentence-container">
+                    <div class="sensor-label">FULL SENTENCE (Encoded)</div>
+                    <div class="sentence-box">
+                        <div class="sentence-text" id="sentenceDisplay">---</div>
+                    </div>
                     
-                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                        <button onclick="translateText()" class="blue" style="flex: 1;">Translate with Gemini</button>
-                        <button onclick="translateWithMyMemory()" class="green" style="flex: 1;">Translate with MyMemory</button>
+                    <div class="sensor-label">FULL SENTENCE (Vietnamese)</div>
+                    <div class="sentence-box">
+                        <div class="vietnamese-text" id="convertedSentenceDisplay">---</div>
+                    </div>
+                    
+                    <div class="word-list" id="wordList">
+                        No words yet
+                    </div>
+                    
+                    <div class="sensor-label">Word Count: <span id="wordCount">0</span>/10</div>
+                </div>
+            </div>
+            
+            <!-- Debug Info Card -->
+            <div class="card">
+                <h3>Debug Information</h3>
+                <div style="margin-bottom: 15px;">
+                    <div class="sensor-label">FLEX THRESHOLDS</div>
+                    <div>Straight: 150 | 
+                        Bent: A0:<span id="bent0">300</span> 
+                        A1:<span id="bent1">450</span> 
+                        A2:<span id="bent2">350</span> 
+                        A3:<span id="bent3">300</span>
                     </div>
                 </div>
                 
-                <div style="margin-bottom: 15px;">
-                    <div class="sensor-label">TRANSLATED TEXT</div>
-                    <div class="conversion-display" id="translatedText">---</div>
-                    <div class="sensor-label" style="margin-top: 5px;">Status: <span id="translationStatus">Ready</span></div>
+                <div>
+                    <div class="sensor-label">LAST FIREBASE DATA</div>
+                    <div class="raw-data" id="rawDataDisplay">
+                        Waiting for data...
+                    </div>
                 </div>
                 
-                <div style="margin-bottom: 15px;">
-                    <div class="sensor-label">TEXT-TO-SPEECH</div>
-                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                        <button onclick="speakText('female')" class="green" style="flex: 1;" id="speakFemaleBtn">🔊 Speak (Female)</button>
-                        <button onclick="speakText('male')" class="blue" style="flex: 1;" id="speakMaleBtn">🔊 Speak (Male)</button>
+                <div style="margin-top: 15px;">
+                    <div class="sensor-label">MANUAL THRESHOLD SETTING</div>
+                    <div style="display: flex; gap: 5px; margin-top: 10px;">
+                        <input type="number" id="thresh0" value="300" placeholder="A0" style="width: 60px; padding: 5px;">
+                        <input type="number" id="thresh1" value="450" placeholder="A1" style="width: 60px; padding: 5px;">
+                        <input type="number" id="thresh2" value="350" placeholder="A2" style="width: 60px; padding: 5px;">
+                        <input type="number" id="thresh3" value="300" placeholder="A3" style="width: 60px; padding: 5px;">
+                        <button onclick="applyManualThresholds()" style="padding: 5px 10px;">Apply</button>
                     </div>
-                    <div id="ttsStatus" style="text-align: center; font-size: 0.9rem; color: #666;">Ready</div>
                 </div>
             </div>
         </div>
         
         <div class="status-bar">
-            <div><span class="indicator" id="connectionStatus"></span><span id="statusText">Connecting to Firebase...</span></div>
-            <div><span id="lastUpdate">Last update: --:--:--</span></div>
+            <div>
+                <span class="indicator" id="connectionStatus"></span>
+                <span id="statusText">Connecting to Firebase...</span>
+            </div>
+            <div>
+                <span id="lastUpdate">Last update: --:--:--</span>
+            </div>
         </div>
     </div>
 
+    <script src="vietnamese-processor.js"></script>
     <script>
-        // Firebase configuration
-        const firebaseConfig = {
-            databaseURL: "https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app"
-        };
+        // Additional helper functions for the HTML interface
         
-        // Firebase paths
-        const DATA_PATH = '/sensorData';
-        const COMMAND_PATH = '/commands';
+        function useDefaultThresholds() {
+            const thresholds = [300, 450, 350, 300];
+            processor.setThresholds(thresholds);
+            alert('Default thresholds applied: 300, 450, 350, 300');
+        }
         
-        // Word construction tables (moved from ESP32 to JavaScript)
-        const tableA = [
-            ["IAY","IC","ICH","IE","IEC","IEM","IEN","IENG","IEO"],
-            ["IEP","IET","IEU","IM","IN","ING","INH","IO","IOI"],
-            ["ENG","ENH","EO","EP","ET","EU","I","IA","IAC"],
-            ["IAI","IAM","IAN","IANG","IANH","IAO","IAP","IAT","IAU"],
-            ["AP","AT","AU","AY","E","EC","ECH","EM","EN"],
-            ["A","AC","ACH","AI","AM","AN","ANG","ANH","AO"],
-            ["IUN","IUONG","IUP","O","OA","OAC","OACH","OAI","OAM"],
-            ["ION","IONG","IOT","IP","IT","IU","IUA","IUC","IUI"]
-        ];
-
-        const tableB = [
-            ["UE","UECH","UEN","UENH","UEO","UET","UI","UM","UN"],
-            ["UNG","UO","UOC","UOI","UOM","UON","UONG","UOP","OUT"],
-            ["ONG","OOC","OONG","OP","OT","U","UA","UAC","UACH"],
-            ["UAI","UAM","UAN","UANG","UANH","UAO","UAT","UAY","UC"],
-            ["OAY","OC","OE","OEN","OEO","OET","OI","OM","ON"],
-            ["COMMIT","_",null,null,"OAN","OANG","OANH","OAP","OAT"],
-            ["UYNH","UYP","UYT","UYU","Y","YEM","YEN","YET","YEU"],
-            ["UOU","UP","UT","UU","UY","UYA","UYCH","UYEN","UYET"]
-        ];
-
-        const tableC = [
-            [ ["B","C","D"], ["Đ","G","H"], ["K","L","M"] ],
-            [ ["N","P","Q"], ["R","S","T"], ["V","X","CH"] ],
-            [ ["GH","KH","NG"], ["NGH","NH","PH"], ["TH","TR","_"] ]
-        ];
-
-        // Vietnamese conversion table (simplified version)
-        const vietnameseTable = {
-            "IAY": ["iáy","iày","iảy","iãy","iạy","iay"],
-            "IC": ["íc","ìc","ỉc","ĩc","ịc","ic"],
-            "ICH": ["ích","ìch","ỉch","ĩch","ịch","ich"],
-            // ... (include all entries from ESP32 code)
-        };
-
-        // State variables (moved from ESP32 to JavaScript)
-        let rawFlexValues = [0, 0, 0, 0];
-        let flexStates = [0, 0, 0, 0];
-        let mpuState = -1;
-        let mpuOrientation = "Unknown";
-        let shakeState = "None";
-        let isShaking = false;
+        function applyManualThresholds() {
+            const thresh0 = parseInt(document.getElementById('thresh0').value) || 300;
+            const thresh1 = parseInt(document.getElementById('thresh1').value) || 450;
+            const thresh2 = parseInt(document.getElementById('thresh2').value) || 350;
+            const thresh3 = parseInt(document.getElementById('thresh3').value) || 300;
+            
+            const thresholds = [thresh0, thresh1, thresh2, thresh3];
+            processor.setThresholds(thresholds);
+            
+            // Update display
+            document.getElementById('bent0').textContent = thresh0;
+            document.getElementById('bent1').textContent = thresh1;
+            document.getElementById('bent2').textContent = thresh2;
+            document.getElementById('bent3').textContent = thresh3;
+            
+            alert(`Thresholds applied: ${thresh0}, ${thresh1}, ${thresh2}, ${thresh3}`);
+        }
         
-        // Flex calibration
-        let calibrating = false;
-        let calibrationComplete = false;
-        let calibrationStartTime = 0;
-        const CALIBRATION_DURATION = 10000;
-        const STRAIGHT_THRESHOLD = 150;
-        let flexBentThresholds = [300, 450, 350, 300];
-        
-        // Word construction
-        let slot1 = "";
-        let slot2 = "";
-        let displayBuffer = "";
-        let convertedCurrentWord = "";
-        
-        // Sentence building
-        const MAX_WORDS = 10;
-        let sentenceWords = [];
-        let fullSentence = "";
-        let convertedFullSentence = "";
-        
-        // Translation
-        let translatedSentence = "";
-        let translationLanguage = "en";
-        let ttsGender = "female";
-        let isTranslating = false;
-        let isSpeaking = false;
-        
-        // Firebase connection
-        let lastFirebaseData = null;
-        let lastUpdateTime = 0;
-        
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            loadThresholdsFromStorage();
-            startFirebaseListener();
-            setInterval(updateUI, 100);
-        });
-        
-        function loadThresholdsFromStorage() {
-            const saved = localStorage.getItem('flexThresholds');
-            if (saved) {
-                flexBentThresholds = JSON.parse(saved);
-                document.getElementById('bentThreshold0').value = flexBentThresholds[0];
-                document.getElementById('bentThreshold1').value = flexBentThresholds[1];
-                document.getElementById('bentThreshold2').value = flexBentThresholds[2];
-                document.getElementById('bentThreshold3').value = flexBentThresholds[3];
+        // Update raw data display
+        setInterval(() => {
+            if (lastFirebaseData) {
+                document.getElementById('rawDataDisplay').textContent = 
+                    JSON.stringify(lastFirebaseData, null, 2);
             }
-        }
+        }, 1000);
         
-        function saveThresholdsToStorage() {
-            localStorage.setItem('flexThresholds', JSON.stringify(flexBentThresholds));
-        }
-        
-        function startFirebaseListener() {
-            // Use Firebase REST API to listen for changes
-            setInterval(fetchFirebaseData, 500);
-        }
-        
-        function fetchFirebaseData() {
-            fetch(`${firebaseConfig.databaseURL}${DATA_PATH}.json`)
-                .then(response => response.json())
-                .then(data => {
-                    lastFirebaseData = data;
-                    lastUpdateTime = Date.now();
-                    
-                    // Update raw values
-                    if (data && data.rawFlex) {
-                        rawFlexValues = data.rawFlex;
-                        mpuState = data.mpuState || -1;
-                        mpuOrientation = data.mpuOrientation || "Unknown";
-                        shakeState = data.shakeState || "None";
-                        isShaking = data.isShaking || false;
-                        
-                        // Calculate flex states
-                        calculateFlexStates();
-                        
-                        // Update word construction
-                        updateWordConstruction();
-                    }
-                    
-                    updateConnectionStatus();
-                })
-                .catch(error => {
-                    console.error('Firebase error:', error);
-                    updateConnectionStatus(false);
-                });
-        }
-        
-        function calculateFlexStates() {
-            for (let i = 0; i < 4; i++) {
-                if (rawFlexValues[i] <= STRAIGHT_THRESHOLD) {
-                    flexStates[i] = 0;
-                } else if (rawFlexValues[i] <= flexBentThresholds[i]) {
-                    flexStates[i] = 1;
-                } else {
-                    flexStates[i] = 2;
-                }
-            }
-        }
-        
-        function updateWordConstruction() {
-            // Same logic as ESP32 but in JavaScript
-            // Implement getMappingForIndices, performActionSlotLogic, etc.
-            // This is where you process the raw data to construct words
-            
-            // For now, just update the display
-            updateDisplayFromSlots();
-        }
-        
-        function updateDisplayFromSlots() {
-            // Update display buffer from slots
-            displayBuffer = (slot1 + slot2).toLowerCase();
-            
-            // Convert to Vietnamese
-            convertedCurrentWord = convertVietnameseWord(displayBuffer);
-            
-            // Update UI
-            document.getElementById('displayBuffer').textContent = displayBuffer || '---';
-            document.getElementById('convertedCurrentWord').textContent = convertedCurrentWord || '---';
-            document.getElementById('slot1').textContent = slot1 || '---';
-            document.getElementById('slot2').textContent = slot2 || '---';
-        }
-        
-        function convertVietnameseWord(encodedWord) {
-            // Implement Vietnamese conversion logic here
-            // This should match the ESP32's convertVietnameseWord function
-            return encodedWord; // Placeholder
-        }
-        
-        function convertVietnameseText(encodedText) {
-            // Implement full text conversion
-            return encodedText; // Placeholder
-        }
-        
-        function addWordToSentence() {
-            if (displayBuffer.length === 0) return;
-            
-            if (sentenceWords.length < MAX_WORDS) {
-                sentenceWords.push(displayBuffer);
-                
-                // Update full sentence
-                fullSentence = sentenceWords.join(' ');
-                convertedFullSentence = convertVietnameseText(fullSentence);
-                
-                // Update UI
-                document.getElementById('sentenceDisplay').textContent = fullSentence || '---';
-                document.getElementById('convertedSentenceDisplay').textContent = convertedFullSentence || '---';
-                document.getElementById('wordCount').textContent = sentenceWords.length;
-                
-                // Update word list
-                updateWordList();
-                
-                // Clear current word
-                slot1 = "";
-                slot2 = "";
-                displayBuffer = "";
-                convertedCurrentWord = "";
-                
-                console.log(`Added word: ${sentenceWords[sentenceWords.length - 1]}`);
-            }
-        }
-        
-        function updateWordList() {
-            const wordListDiv = document.getElementById('wordList');
-            wordListDiv.innerHTML = '';
-            
-            sentenceWords.forEach(word => {
-                const wordDiv = document.createElement('div');
-                wordDiv.className = 'word-item';
-                wordDiv.textContent = word;
-                wordListDiv.appendChild(wordDiv);
-            });
-            
-            if (sentenceWords.length === 0) {
-                wordListDiv.textContent = 'No words yet';
-            }
-        }
-        
-        function commitSentence() {
-            if (sentenceWords.length === 0) {
-                alert('No words to commit!');
-                return;
-            }
-            
-            console.log('Committing sentence:', fullSentence);
-            console.log('Converted:', convertedFullSentence);
-            
-            // Here you would send to TTS or other processing
-            // For now, just show in translation box
-            document.getElementById('textToTranslate').textContent = convertedFullSentence;
-            
-            // You could also send a command to ESP32 to play audio
-            sendCommand('playSentence', {sentence: fullSentence});
-        }
-        
-        function resetSentence() {
-            sentenceWords = [];
-            fullSentence = "";
-            convertedFullSentence = "";
-            slot1 = "";
-            slot2 = "";
-            displayBuffer = "";
-            convertedCurrentWord = "";
-            
-            updateDisplayFromSlots();
-            updateWordList();
-            document.getElementById('sentenceDisplay').textContent = '---';
-            document.getElementById('convertedSentenceDisplay').textContent = '---';
-            document.getElementById('wordCount').textContent = '0';
-        }
-        
-        function clearWord() {
-            slot1 = "";
-            slot2 = "";
-            displayBuffer = "";
-            convertedCurrentWord = "";
-            updateDisplayFromSlots();
-        }
-        
-        function backspace() {
-            if (displayBuffer.length > 0) {
-                displayBuffer = displayBuffer.slice(0, -1);
-                convertedCurrentWord = convertVietnameseWord(displayBuffer);
-                updateDisplayFromSlots();
-            }
-        }
-        
-        function startCalibration() {
-            calibrating = true;
-            calibrationComplete = false;
-            calibrationStartTime = Date.now();
-            
-            // Reset bent thresholds
-            for (let i = 0; i < 4; i++) {
-                flexBentThresholds[i] = STRAIGHT_THRESHOLD + 1;
-            }
-            
-            const calibrationInterval = setInterval(() => {
-                if (!calibrating) {
-                    clearInterval(calibrationInterval);
-                    return;
-                }
-                
-                const elapsed = Date.now() - calibrationStartTime;
-                const timeLeft = Math.max(0, CALIBRATION_DURATION - elapsed);
-                
-                // Update bent thresholds with maximum values
-                for (let i = 0; i < 4; i++) {
-                    if (rawFlexValues[i] > flexBentThresholds[i]) {
-                        flexBentThresholds[i] = rawFlexValues[i];
-                    }
-                }
-                
-                // Update UI
-                document.getElementById('calibrationStatus').className = 'calibration-status calibrating';
-                document.getElementById('calibrationStatus').innerHTML = 
-                    `CALIBRATING... ${Math.round(timeLeft/1000)}s left<br>Bend each sensor fully!`;
-                
-                if (timeLeft <= 0) {
-                    endCalibration();
-                    clearInterval(calibrationInterval);
-                }
-            }, 100);
-        }
-        
-        function endCalibration() {
-            calibrating = false;
-            calibrationComplete = true;
-            
-            // Validate thresholds
-            for (let i = 0; i < 4; i++) {
-                if (flexBentThresholds[i] <= STRAIGHT_THRESHOLD + 50) {
-                    console.warn(`Flex ${i} threshold too low, using default`);
-                    flexBentThresholds[i] = [300, 450, 350, 300][i];
-                }
-            }
-            
-            // Save to storage
-            saveThresholdsToStorage();
-            
-            // Update UI
-            document.getElementById('calibrationStatus').className = 'calibration-status calibrated';
-            document.getElementById('calibrationStatus').textContent = 'CALIBRATION COMPLETE ✓';
-            
-            // Update input fields
-            document.getElementById('bentThreshold0').value = flexBentThresholds[0];
-            document.getElementById('bentThreshold1').value = flexBentThresholds[1];
-            document.getElementById('bentThreshold2').value = flexBentThresholds[2];
-            document.getElementById('bentThreshold3').value = flexBentThresholds[3];
-        }
-        
-        function applyThresholds() {
-            flexBentThresholds[0] = parseInt(document.getElementById('bentThreshold0').value);
-            flexBentThresholds[1] = parseInt(document.getElementById('bentThreshold1').value);
-            flexBentThresholds[2] = parseInt(document.getElementById('bentThreshold2').value);
-            flexBentThresholds[3] = parseInt(document.getElementById('bentThreshold3').value);
-            
-            saveThresholdsToStorage();
-            calculateFlexStates();
-            
-            alert('Thresholds applied!');
-        }
-        
-        function updateUI() {
-            // Update sensor displays
-            document.getElementById('mpuOrientation').textContent = mpuOrientation;
-            document.getElementById('mpuState').textContent = mpuState;
-            document.getElementById('mpuShakeState').textContent = shakeState;
-            document.getElementById('rawData').textContent = JSON.stringify(lastFirebaseData || {});
-            
-            // Update flex sensors
-            const flexBoxes = ['flex0-box', 'flex1-box', 'flex2-box', 'flex3-box'];
-            for (let i = 0; i < 4; i++) {
-                const box = document.getElementById(flexBoxes[i]);
-                box.textContent = flexStates[i];
-                box.className = `flex-box active-${flexStates[i]}`;
-            }
-            
-            document.getElementById('flexFormat').textContent = flexStates.join('');
-            document.getElementById('rawValues').textContent = `Raw: ${rawFlexValues.join(', ')}`;
-            
-            // Update connection status
-            updateConnectionStatus();
-        }
-        
-        function updateConnectionStatus(connected = true) {
-            const indicator = document.getElementById('connectionStatus');
-            const statusText = document.getElementById('statusText');
-            const lastUpdate = document.getElementById('lastUpdate');
-            
-            if (connected && lastFirebaseData) {
-                indicator.className = 'indicator online';
-                statusText.textContent = 'Connected to Firebase';
-                
-                const now = new Date();
-                lastUpdate.textContent = `Last update: ${now.toLocaleTimeString()}`;
-            } else {
-                indicator.className = 'indicator';
-                indicator.style.background = '#F44336';
-                statusText.textContent = 'Disconnected from Firebase';
-            }
-        }
-        
-        function sendCommand(type, param = '') {
-            const command = {
-                type: type,
-                param: param,
-                timestamp: Date.now(),
-                executed: false
-            };
-            
-            fetch(`${firebaseConfig.databaseURL}${COMMAND_PATH}.json`, {
-                method: 'PATCH',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(command)
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Command sent:', command);
-            })
-            .catch(error => {
-                console.error('Error sending command:', error);
-            });
-        }
-        
-        // Translation functions
-        function translateText() {
-            const text = document.getElementById('textToTranslate').textContent;
-            if (text === '---' || text.trim() === '') {
-                alert('Please wait for Vietnamese text to appear');
-                return;
-            }
-            
-            const lang = document.getElementById('targetLanguage').value;
-            document.getElementById('translationStatus').textContent = 'Translating...';
-            document.getElementById('translationStatus').style.color = '#FF9800';
-            
-            // Simulate translation (replace with actual API call)
-            setTimeout(() => {
-                translatedSentence = `Translated to ${lang}: ${text}`;
-                document.getElementById('translatedText').textContent = translatedSentence;
-                document.getElementById('translationStatus').textContent = 'Translated ✓';
-                document.getElementById('translationStatus').style.color = '#4CAF50';
-            }, 1000);
-        }
-        
-        function translateWithMyMemory() {
-            // Implement MyMemory translation
-            alert('MyMemory translation would go here');
-        }
-        
-        function speakText(gender) {
-            const text = document.getElementById('translatedText').textContent;
-            if (text === '---' || text.trim() === '') {
-                alert('Please translate text first');
-                return;
-            }
-            
-            const statusDiv = document.getElementById('ttsStatus');
-            const femaleBtn = document.getElementById('speakFemaleBtn');
-            const maleBtn = document.getElementById('speakMaleBtn');
-            
-            statusDiv.textContent = `Preparing ${gender} voice...`;
-            statusDiv.style.color = '#FF9800';
-            
-            if (gender === 'female') {
-                femaleBtn.disabled = true;
-                femaleBtn.innerHTML = '🔊 Speaking...';
-            } else {
-                maleBtn.disabled = true;
-                maleBtn.innerHTML = '🔊 Speaking...';
-            }
-            
-            // Simulate TTS (replace with actual API call)
-            setTimeout(() => {
-                statusDiv.textContent = 'Speaking completed ✓';
-                statusDiv.style.color = '#4CAF50';
-                femaleBtn.disabled = false;
-                maleBtn.disabled = false;
-                femaleBtn.innerHTML = '🔊 Speak (Female)';
-                maleBtn.innerHTML = '🔊 Speak (Male)';
-            }, 2000);
-        }
+        // Update thresholds display
+        setInterval(() => {
+            document.getElementById('bent0').textContent = flexBentThresholds[0];
+            document.getElementById('bent1').textContent = flexBentThresholds[1];
+            document.getElementById('bent2').textContent = flexBentThresholds[2];
+            document.getElementById('bent3').textContent = flexBentThresholds[3];
+        }, 1000);
     </script>
 </body>
 </html>
