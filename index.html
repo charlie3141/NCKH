@@ -464,6 +464,73 @@
             border-radius: 2px;
             transition: height 0.1s ease;
         }
+
+        /* Auto-suggestions styles */
+        .auto-suggestions {
+            position: relative;
+            margin-top: 10px;
+        }
+
+        .auto-suggestions-container {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background: white;
+            border: 1px solid #eaeaea;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            z-index: 1000;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .auto-suggestion-item {
+            padding: 10px 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .auto-suggestion-item:hover {
+            background: #f0f0f0;
+        }
+
+        .auto-suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .voice-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            justify-content: center;
+        }
+
+        .voice-btn {
+            padding: 8px 16px;
+            background: linear-gradient(to right, #FF9800, #F57C00);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .voice-btn.active {
+            background: linear-gradient(to right, #4CAF50, #2E7D32);
+            transform: scale(1.05);
+        }
+
+        .voice-btn.female {
+            background: linear-gradient(to right, #E91E63, #C2185B);
+        }
+
+        .voice-btn.female.active {
+            background: linear-gradient(to right, #E91E63, #AD1457);
+            transform: scale(1.05);
+        }
     </style>
 </head>
 <body>
@@ -495,6 +562,24 @@
                     <div class="sentence-display" id="sentenceDisplay">---</div>
                     <div class="sensor-label">FULL SENTENCE (Vietnamese)</div>
                     <div class="conversion-display" id="convertedSentenceDisplay">---</div>
+                    
+                    <!-- Voice Selection -->
+                    <div class="voice-controls">
+                        <button class="voice-btn active" onclick="selectVoice('male')" id="maleVoiceBtn">
+                            🔊 Male Voice
+                        </button>
+                        <button class="voice-btn female" onclick="selectVoice('female')" id="femaleVoiceBtn">
+                            🔊 Female Voice
+                        </button>
+                    </div>
+                    
+                    <!-- Auto-suggestions -->
+                    <div class="auto-suggestions" id="autoSuggestionsContainer" style="display: none;">
+                        <div class="sensor-label">SUGGESTED PHRASES</div>
+                        <div class="auto-suggestions-container" id="autoSuggestions">
+                            <!-- Auto-suggestions will appear here -->
+                        </div>
+                    </div>
                     
                     <!-- Phrase Suggestions -->
                     <div class="phrase-suggestions">
@@ -874,7 +959,7 @@
             "Backward": 5
         };
 
-        // Phrase Suggestions
+        // Common phrases for suggestions
         const commonPhrases = [
             "Xin chào, rất vui được gặp bạn",
             "Bạn khỏe không?",
@@ -893,6 +978,10 @@
         let currentSpeech = null;
         let audioVisualizerInterval = null;
         const audioCache = {};
+        let selectedVoice = 'male'; // 'male' or 'female'
+        let voices = [];
+        let maleVoices = [];
+        let femaleVoices = [];
 
         // Helper Functions
         function log(source, message) {
@@ -1035,6 +1124,9 @@
             } else {
                 convertedFullSentence = "";
             }
+            
+            // Update auto-suggestions when word changes
+            updateAutoSuggestions();
         }
 
         // Firebase Data Functions
@@ -1307,6 +1399,9 @@
                 convertedCurrentWord = '';
                 
                 updateUI();
+                
+                // Show auto-suggestions after adding word
+                updateAutoSuggestions();
             } else {
                 log('SENTENCE', 'Sentence full! Max 10 words reached.');
             }
@@ -1351,6 +1446,9 @@
             
             log('SENTENCE', 'Sentence reset - ready for new input');
             updateUI();
+            
+            // Hide auto-suggestions
+            hideAutoSuggestions();
         }
 
         function clearCurrentWord() {
@@ -1360,6 +1458,9 @@
             convertedCurrentWord = '';
             updateUI();
             log('WORD', 'Current word cleared');
+            
+            // Hide auto-suggestions
+            hideAutoSuggestions();
         }
 
         function backspaceBuffer() {
@@ -1367,12 +1468,68 @@
                 displayBuffer = displayBuffer.slice(0, -1);
                 updateConversions();
                 log('WORD', `Backspace - Buffer: ${displayBuffer}`);
+                
+                // Update auto-suggestions after backspace
+                updateAutoSuggestions();
             }
         }
 
         function backspace() {
             backspaceBuffer();
             updateUI();
+        }
+
+        // Auto-suggestions Functions
+        function updateAutoSuggestions() {
+            const currentWord = convertedCurrentWord.toLowerCase().trim();
+            const container = document.getElementById('autoSuggestionsContainer');
+            const suggestionsDiv = document.getElementById('autoSuggestions');
+            
+            if (!currentWord || currentWord.length < 2) {
+                hideAutoSuggestions();
+                return;
+            }
+            
+            // Filter phrases that contain the current word
+            const filteredPhrases = commonPhrases.filter(phrase => 
+                phrase.toLowerCase().includes(currentWord)
+            );
+            
+            if (filteredPhrases.length === 0) {
+                hideAutoSuggestions();
+                return;
+            }
+            
+            // Show suggestions
+            container.style.display = 'block';
+            suggestionsDiv.innerHTML = '';
+            
+            filteredPhrases.slice(0, 5).forEach(phrase => {
+                const suggestionItem = document.createElement('div');
+                suggestionItem.className = 'auto-suggestion-item';
+                suggestionItem.textContent = phrase;
+                suggestionItem.onclick = () => {
+                    useSuggestedPhrase(phrase);
+                };
+                suggestionsDiv.appendChild(suggestionItem);
+            });
+        }
+
+        function hideAutoSuggestions() {
+            const container = document.getElementById('autoSuggestionsContainer');
+            container.style.display = 'none';
+        }
+
+        function useSuggestedPhrase(phrase) {
+            // Set the phrase in translation input
+            document.getElementById('translationInput').value = phrase;
+            // Auto-translate
+            translateSentence();
+            
+            // Hide suggestions
+            hideAutoSuggestions();
+            
+            log('PHRASE', `Selected phrase: "${phrase}"`);
         }
 
         // Phrase Suggestion Functions
@@ -1385,22 +1542,63 @@
                 pill.className = 'phrase-pill';
                 pill.textContent = phrase;
                 pill.onclick = () => {
-                    // Set the phrase in translation input
-                    document.getElementById('translationInput').value = phrase;
-                    // Auto-translate
-                    translatePhrase(phrase);
-                    log('PHRASE', `Selected phrase: "${phrase}"`);
+                    useSuggestedPhrase(phrase);
                 };
                 phrasePills.appendChild(pill);
             });
         }
 
-        function translatePhrase(phrase) {
-            const textarea = document.getElementById('translationInput');
-            const outputDiv = document.getElementById('translationOutput');
+        // Voice Selection Functions
+        function selectVoice(voiceType) {
+            selectedVoice = voiceType;
             
-            textarea.value = phrase;
-            translateSentence();
+            const maleBtn = document.getElementById('maleVoiceBtn');
+            const femaleBtn = document.getElementById('femaleVoiceBtn');
+            
+            if (voiceType === 'male') {
+                maleBtn.classList.add('active');
+                femaleBtn.classList.remove('active');
+            } else {
+                femaleBtn.classList.add('active');
+                maleBtn.classList.remove('active');
+            }
+            
+            log('SPEECH', `Voice changed to: ${voiceType}`);
+        }
+
+        function getVoiceForLanguage(langCode) {
+            const voices = speechSynthesis.getVoices();
+            
+            // Try to find appropriate voice based on selected gender
+            let filteredVoices = voices.filter(voice => {
+                return voice.lang.startsWith(langCode.split('-')[0]) || 
+                       voice.lang === langCode;
+            });
+            
+            if (filteredVoices.length === 0) {
+                return null; // Let browser choose default
+            }
+            
+            // Simple gender detection based on voice name
+            if (selectedVoice === 'male') {
+                // Look for male voices
+                const maleKeywords = ['male', 'man', 'men', 'andro', 'deep', 'low'];
+                const maleVoice = filteredVoices.find(voice => 
+                    maleKeywords.some(keyword => 
+                        voice.name.toLowerCase().includes(keyword)
+                    )
+                );
+                return maleVoice || filteredVoices[0];
+            } else {
+                // Look for female voices
+                const femaleKeywords = ['female', 'woman', 'women', 'girl', 'lady', 'feminine'];
+                const femaleVoice = filteredVoices.find(voice => 
+                    femaleKeywords.some(keyword => 
+                        voice.name.toLowerCase().includes(keyword)
+                    )
+                );
+                return femaleVoice || filteredVoices[0];
+            }
         }
 
         // Speech Synthesis Functions
@@ -1444,18 +1642,13 @@
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = langCode;
             utterance.rate = 0.9;
-            utterance.pitch = 1;
+            utterance.pitch = selectedVoice === 'male' ? 0.8 : 1.2;
             utterance.volume = 1;
             
-            // Set voice based on language
-            const voices = speechSynthesis.getVoices();
-            const targetVoice = voices.find(voice => 
-                voice.lang === langCode || 
-                voice.lang.startsWith(langCode.split('-')[0])
-            );
-            
-            if (targetVoice) {
-                utterance.voice = targetVoice;
+            // Try to get appropriate voice
+            const voice = getVoiceForLanguage(langCode);
+            if (voice) {
+                utterance.voice = voice;
             }
             
             // Event listeners
@@ -1463,7 +1656,7 @@
                 isSpeaking = true;
                 updateUI();
                 startAudioVisualizer();
-                log('SPEECH', `Started speaking: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
+                log('SPEECH', `Started speaking with ${selectedVoice} voice: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
             };
             
             utterance.onend = function() {
@@ -1641,19 +1834,41 @@
             
             // Load voices for speech synthesis
             if ('speechSynthesis' in window) {
-                speechSynthesis.getVoices(); // Trigger voice loading
+                // Get available voices
+                function loadVoices() {
+                    voices = speechSynthesis.getVoices();
+                    
+                    // Simple gender classification based on voice name
+                    maleVoices = voices.filter(voice => 
+                        voice.name.toLowerCase().includes('male') ||
+                        voice.name.toLowerCase().includes('man') ||
+                        voice.name.toLowerCase().includes('andro')
+                    );
+                    
+                    femaleVoices = voices.filter(voice => 
+                        voice.name.toLowerCase().includes('female') ||
+                        voice.name.toLowerCase().includes('woman') ||
+                        voice.name.toLowerCase().includes('girl')
+                    );
+                    
+                    log('SPEECH', `Loaded ${voices.length} voices (${maleVoices.length} male, ${femaleVoices.length} female)`);
+                }
+                
+                speechSynthesis.onvoiceschanged = loadVoices;
+                loadVoices(); // Call in case voices are already loaded
             }
             
             // Start with auto-refresh
             fetchFirebaseData();
             toggleAutoRefresh();
             
-            // Setup voice loading
-            if ('speechSynthesis' in window) {
-                speechSynthesis.onvoiceschanged = function() {
-                    log('SPEECH', 'Speech synthesis voices loaded');
-                };
-            }
+            // Click outside to hide suggestions
+            document.addEventListener('click', function(event) {
+                const suggestionsContainer = document.getElementById('autoSuggestionsContainer');
+                if (suggestionsContainer && !suggestionsContainer.contains(event.target)) {
+                    hideAutoSuggestions();
+                }
+            });
         });
     </script>
 </body>
