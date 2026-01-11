@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ESP32 Sensor Monitor</title>
+    <title>ESP32 Sensor Interface - Firebase</title>
     <style>
         * {
             margin: 0;
@@ -11,834 +11,1008 @@
             box-sizing: border-box;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        
+
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #333;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e6e6e6;
             min-height: 100vh;
             padding: 20px;
         }
-        
+
         .container {
             max-width: 1400px;
             margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
         }
-        
+
         header {
-            background: linear-gradient(to right, #4A00E0, #8E2DE2);
-            color: white;
-            padding: 20px;
             text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
-        
+
         h1 {
-            font-size: 2rem;
-            margin-bottom: 5px;
+            color: #64b5f6;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(100, 181, 246, 0.3);
         }
-        
+
+        .subtitle {
+            color: #90a4ae;
+            font-size: 1.1rem;
+        }
+
         .dashboard {
-            padding: 20px;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
         }
-        
+
         .card {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-            border: 1px solid #eaeaea;
+            background: rgba(25, 25, 35, 0.8);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: transform 0.3s ease;
         }
-        
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
         .card h3 {
-            color: #4A00E0;
-            margin-bottom: 15px;
+            color: #4fc3f7;
+            margin-bottom: 20px;
             padding-bottom: 10px;
-            border-bottom: 2px solid #f0f0f0;
+            border-bottom: 2px solid rgba(79, 195, 247, 0.3);
+            font-size: 1.4rem;
         }
-        
+
         .sensor-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
+            gap: 15px;
         }
-        
+
         .sensor-item {
-            padding: 12px;
-            background: #f8f9fa;
-            border-radius: 8px;
+            background: rgba(30, 30, 46, 0.8);
+            padding: 15px;
+            border-radius: 10px;
             border-left: 4px solid;
         }
-        
+
         .sensor-item.mpu {
-            border-left-color: #2196F3;
+            border-left-color: #4fc3f7;
         }
-        
+
         .sensor-item.flex {
-            border-left-color: #4CAF50;
+            border-left-color: #81c784;
         }
-        
-        .sensor-item.shake {
-            border-left-color: #FF9800;
-        }
-        
-        .sensor-item.direction {
-            border-left-color: #9C27B0;
-        }
-        
-        .sensor-value {
-            font-size: 1.8rem;
-            font-weight: bold;
-            color: #333;
-            margin: 5px 0;
-        }
-        
+
         .sensor-label {
-            font-size: 0.8rem;
-            color: #666;
+            font-size: 0.85rem;
+            color: #90a4ae;
             text-transform: uppercase;
             letter-spacing: 1px;
+            margin-bottom: 5px;
         }
-        
-        .flex-box {
-            display: inline-block;
-            width: 40px;
-            height: 40px;
-            line-height: 40px;
-            text-align: center;
-            background: #f8f9fa;
-            border-radius: 8px;
-            margin: 2px;
+
+        .sensor-value {
+            font-size: 2rem;
             font-weight: bold;
-            border: 2px solid transparent;
+            color: #fff;
         }
-        
-        .flex-box.active-0 {
-            background: #4CAF50;
-            color: white;
-        }
-        
-        .flex-box.active-1 {
-            background: #FF9800;
-            color: white;
-        }
-        
-        .flex-box.active-2 {
-            background: #F44336;
-            color: white;
-        }
-        
-        .flex-box.active-3 {
-            background: #2196F3;
-            color: white;
-        }
-        
-        .flex-box.active-4 {
-            background: #9C27B0;
-            color: white;
-        }
-        
-        .status-bar {
-            background: #f8f9fa;
-            padding: 15px;
-            border-top: 1px solid #eaeaea;
+
+        .flex-container {
             display: flex;
-            justify-content: space-between;
+            gap: 10px;
             align-items: center;
+            margin-top: 10px;
         }
-        
-        .indicator {
+
+        .flex-box {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            background: rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .flex-box.state-0 {
+            background: #4caf50;
+            box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
+        }
+
+        .flex-box.state-1 {
+            background: #ff9800;
+            box-shadow: 0 0 15px rgba(255, 152, 0, 0.5);
+        }
+
+        .flex-box.state-2 {
+            background: #f44336;
+            box-shadow: 0 0 15px rgba(244, 67, 54, 0.5);
+        }
+
+        .shake-active {
+            animation: shake 0.5s infinite;
+            color: #ff5252 !important;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-3px); }
+            75% { transform: translateX(3px); }
+        }
+
+        .status-indicator {
+            display: inline-block;
             width: 12px;
             height: 12px;
             border-radius: 50%;
-            display: inline-block;
             margin-right: 8px;
         }
-        
-        .indicator.online {
-            background: #4CAF50;
-            animation: blink 1s infinite;
+
+        .status-online {
+            background: #4caf50;
+            box-shadow: 0 0 10px #4caf50;
+            animation: pulse 1.5s infinite;
         }
-        
-        .indicator.offline {
-            background: #F44336;
-        }
-        
-        @keyframes blink {
+
+        @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
         }
-        
-        .shake-active {
-            color: #FF5722 !important;
-            font-weight: bold !important;
-            animation: shake 0.5s infinite;
+
+        .status-offline {
+            background: #f44336;
         }
-        
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-2px); }
-            75% { transform: translateX(2px); }
-        }
-        
-        .connection-status {
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 0.9rem;
+
+        .display-area {
+            background: rgba(30, 30, 46, 0.8);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            border: 2px solid rgba(79, 195, 247, 0.2);
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
             font-weight: bold;
+            color: #bb86fc;
+            text-align: center;
+            word-break: break-word;
         }
-        
-        .connected {
-            background: #E8F5E9;
-            color: #2E7D32;
-            border: 1px solid #C8E6C9;
-        }
-        
-        .disconnected {
-            background: #FFEBEE;
-            color: #C62828;
-            border: 1px solid #FFCDD2;
-        }
-        
+
         .controls {
             display: flex;
             gap: 10px;
             margin-top: 20px;
-            justify-content: center;
             flex-wrap: wrap;
         }
-        
+
         button {
             padding: 12px 24px;
             border: none;
             border-radius: 8px;
-            background: linear-gradient(to right, #4A00E0, #8E2DE2);
+            background: linear-gradient(to right, #2979ff, #00b0ff);
             color: white;
             font-weight: bold;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
         }
-        
+
         button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 5px 15px rgba(41, 121, 255, 0.4);
         }
-        
+
         button:active {
             transform: translateY(0);
         }
-        
-        .raw-data {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 15px;
-            font-family: monospace;
-            font-size: 0.9rem;
-            max-height: 200px;
+
+        button.red {
+            background: linear-gradient(to right, #ff416c, #ff4b2b);
+        }
+
+        button.green {
+            background: linear-gradient(to right, #00b09b, #96c93d);
+        }
+
+        button.purple {
+            background: linear-gradient(to right, #8e2de2, #4a00e0);
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 5px;
+        }
+
+        .data-label {
+            color: #90a4ae;
+        }
+
+        .data-value {
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .log-container {
+            max-height: 300px;
             overflow-y: auto;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-        
-        .bonus-row {
-            margin-top: 15px;
-            padding: 15px;
-            background: #E3F2FD;
+            background: rgba(0, 0, 0, 0.2);
             border-radius: 8px;
-            border: 1px solid #bbdefb;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
         }
-        
-        .bonus-row h4 {
-            color: #1976D2;
-            margin-bottom: 10px;
+
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: #cfd8dc;
+        }
+
+        .log-time {
+            color: #81c784;
+            margin-right: 10px;
+        }
+
+        .log-source {
+            color: #64b5f6;
+            margin-right: 10px;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            color: #90a4ae;
+            font-size: 0.9rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .last-update {
+            color: #bb86fc;
+            font-weight: bold;
+        }
+
+        .warning {
+            color: #ff9800;
+            background: rgba(255, 152, 0, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 3px solid #ff9800;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .sensor-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .container {
+                padding: 10px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>ESP32 Sensor Monitor</h1>
-            <div>Real-time data from Firebase</div>
+            <h1>ESP32 Sensor Interface</h1>
+            <p class="subtitle">Real-time data from Firebase Realtime Database</p>
+            <div style="margin-top: 15px;">
+                <span id="connectionStatus" class="status-indicator status-offline"></span>
+                <span id="statusText">Connecting to Firebase...</span>
+                <span style="margin-left: 20px;" class="last-update">Last update: <span id="lastUpdateTime">Never</span></span>
+            </div>
         </header>
-        
+
         <div class="dashboard">
-            <!-- Main Sensors Card -->
+            <!-- Sensor Data Card -->
             <div class="card">
-                <h3>Main Sensors</h3>
+                <h3>Sensor Data</h3>
                 <div class="sensor-grid">
                     <div class="sensor-item mpu">
-                        <div class="sensor-label">MPU6050 ORIENTATION</div>
-                        <div class="sensor-value" id="mpuOrientation">---</div>
-                        <div class="sensor-label">State Code</div>
+                        <div class="sensor-label">MPU6050 Orientation</div>
+                        <div class="sensor-value" id="mpuOrientation">Unknown</div>
+                        <div class="sensor-label" style="margin-top: 10px;">State Code</div>
                         <div class="sensor-value" id="mpuState">-1</div>
                     </div>
                     
-                    <div class="sensor-item shake">
-                        <div class="sensor-label">SHAKE STATUS</div>
-                        <div class="sensor-value" id="shakeStatus">---</div>
-                        <div class="sensor-label">Is Shaking</div>
-                        <div class="sensor-value" id="isShaking">NO</div>
-                    </div>
-                    
                     <div class="sensor-item flex">
-                        <div class="sensor-label">FLEX SENSORS</div>
-                        <div>
-                            <div>
-                                <span class="flex-box" id="flex0-box">0</span>
-                                <span class="flex-box" id="flex1-box">0</span>
-                                <span class="flex-box" id="flex2-box">0</span>
-                                <span class="flex-box" id="flex3-box">0</span>
-                            </div>
-                            <div class="sensor-label">Raw Values</div>
-                            <div id="rawFlexValues">---</div>
+                        <div class="sensor-label">Flex Sensor States</div>
+                        <div class="sensor-value" id="flexStates">0,0,0,0</div>
+                        <div class="flex-container">
+                            <div class="flex-box" id="flex0">0</div>
+                            <div class="flex-box" id="flex1">0</div>
+                            <div class="flex-box" id="flex2">0</div>
+                            <div class="flex-box" id="flex3">0</div>
                         </div>
+                        <div class="sensor-label" style="margin-top: 10px;">Raw Values (f0-f3)</div>
+                        <div class="sensor-value" id="rawFlexValues" style="font-size: 1.2rem;">0,0,0,0</div>
                     </div>
                     
-                    <div class="sensor-item direction">
-                        <div class="sensor-label">SHAKE DIRECTION</div>
-                        <div class="sensor-value" id="shakeDirection">---</div>
-                        <div class="sensor-label">After Shake</div>
-                        <div id="afterShakeStatus">---</div>
+                    <div class="sensor-item" style="border-left-color: #ff9800;">
+                        <div class="sensor-label">Shake Detection</div>
+                        <div class="sensor-value" id="shakeState">NO</div>
+                        <div class="sensor-label" style="margin-top: 10px;">Direction</div>
+                        <div class="sensor-value" id="shakeDirection">None</div>
+                    </div>
+                    
+                    <div class="sensor-item" style="border-left-color: #bb86fc;">
+                        <div class="sensor-label">System Status</div>
+                        <div class="sensor-value" id="btConnected">false</div>
+                        <div class="sensor-label" style="margin-top: 10px;">Message ID</div>
+                        <div class="sensor-value" id="messageId">0</div>
+                        <div class="sensor-label" style="margin-top: 10px;">Timestamp</div>
+                        <div class="sensor-value" id="isoTime" style="font-size: 1rem;">--</div>
                     </div>
                 </div>
                 
-                <div class="connection-status" id="connectionStatus">
-                    <span class="indicator offline"></span>
-                    Disconnected from Firebase
-                </div>
-            </div>
-            
-            <!-- Bonus Rows Card (Based on Direction) -->
-            <div class="card">
-                <h3>Bonus Rows</h3>
-                <div class="bonus-row" id="bonusRow1">
-                    <h4>Bonus Row 1</h4>
-                    <div>Direction: <span id="bonusDir1">---</span></div>
-                    <div>Function: <span id="bonusFunc1">---</span></div>
-                    <div>Status: <span id="bonusStatus1">---</span></div>
+                <div class="warning" id="flexDataWarning" style="display: none;">
+                    <strong>Note:</strong> Using f0, f1, f2, f3 values for flex sensors instead of 'f' array
                 </div>
                 
-                <div class="bonus-row" id="bonusRow2">
-                    <h4>Bonus Row 2</h4>
-                    <div>Direction: <span id="bonusDir2">---</span></div>
-                    <div>Function: <span id="bonusFunc2">---</span></div>
-                    <div>Status: <span id="bonusStatus2">---</span></div>
+                <div class="data-row">
+                    <span class="data-label">Flex Mapping:</span>
+                    <span class="data-value" id="flexMapping">a0=0,a1=0,a2=0,a3=0</span>
                 </div>
-                
-                <div class="controls">
-                    <button onclick="simulateData()">Simulate Data</button>
-                    <button onclick="toggleAutoRefresh()" id="autoRefreshBtn">Auto Refresh: ON</button>
+                <div class="data-row">
+                    <span class="data-label">MPU Raw Value:</span>
+                    <span class="data-value" id="mpuRawValue">0</span>
                 </div>
-            </div>
-            
-            <!-- Raw Data Card -->
-            <div class="card">
-                <h3>Raw Data & Log</h3>
-                <div class="raw-data" id="rawData">
-                    Waiting for data...
-                </div>
-                <div class="controls">
-                    <button onclick="clearLog()">Clear Log</button>
-                    <button onclick="copyData()">Copy JSON</button>
+                <div class="data-row">
+                    <span class="data-label">WiFi RSSI:</span>
+                    <span class="data-value" id="wifiRSSI">-21</span>
                 </div>
             </div>
-            
-            <!-- Word Construction Card (From ESP32 Logic) -->
+
+            <!-- Word Construction Card -->
             <div class="card">
                 <h3>Word Construction</h3>
-                <div style="margin-bottom: 15px;">
-                    <div class="sensor-label">CURRENT WORD</div>
-                    <div class="sensor-value" id="currentWord" style="font-size: 1.5rem; min-height: 40px;">---</div>
-                </div>
                 
-                <div style="margin-bottom: 15px;">
-                    <div class="sensor-label">SLOT 1</div>
-                    <div id="slot1" style="font-size: 1.2rem;">---</div>
-                </div>
+                <div class="sensor-label">Current Word (Encoded)</div>
+                <div class="display-area" id="currentWord">---</div>
                 
-                <div style="margin-bottom: 15px;">
-                    <div class="sensor-label">SLOT 2</div>
-                    <div id="slot2" style="font-size: 1.2rem;">---</div>
+                <div class="sensor-label">Vietnamese Conversion</div>
+                <div class="display-area" id="vietnameseWord">---</div>
+                
+                <div class="sensor-label">Current Sentence</div>
+                <div class="display-area" id="currentSentence">No words in sentence</div>
+                
+                <div class="sensor-label">Converted Sentence</div>
+                <div class="display-area" id="convertedSentence">---</div>
+                
+                <div style="display: flex; justify-content: space-between; margin: 15px 0;">
+                    <div>
+                        <div class="sensor-label">Slot 1</div>
+                        <div style="font-size: 1.2rem; color: #4fc3f7;" id="slot1Display">---</div>
+                    </div>
+                    <div>
+                        <div class="sensor-label">Slot 2</div>
+                        <div style="font-size: 1.2rem; color: #81c784;" id="slot2Display">---</div>
+                    </div>
                 </div>
                 
                 <div class="controls">
-                    <button onclick="resetWord()">Reset Word</button>
-                    <button onclick="simulateWord()">Simulate Word</button>
+                    <button onclick="addWordToSentence()" class="green">Add Word (_)</button>
+                    <button onclick="commitSentence()" class="purple">Commit Sentence</button>
+                    <button onclick="clearCurrentWord()" class="red">Clear Word</button>
+                    <button onclick="backspace()">Backspace</button>
+                    <button onclick="resetSentence()" class="red">Reset Sentence</button>
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <div class="sensor-label">Word List</div>
+                    <div id="wordList" style="min-height: 40px; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 5px;">
+                        No words yet
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Features Card -->
+        <div class="card">
+            <h3>Additional Features & Debug</h3>
+            
+            <div class="warning">
+                Note: This is a static HTML version. Some ESP32-specific features (like DFPlayer audio, SD card search, and calibration) are simulated.
+            </div>
+            
+            <div style="margin: 20px 0;">
+                <div class="sensor-label">Search Buffer</div>
+                <div class="display-area" id="searchBuffer">---</div>
+                
+                <div class="controls">
+                    <button onclick="simulateSearch()" class="purple">Simulate Search</button>
+                    <button onclick="simulatePlay()" class="green">Simulate Play Audio</button>
+                </div>
+            </div>
+            
+            <div>
+                <div class="sensor-label">JSON Data Structure</div>
+                <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin-top: 10px; font-family: monospace; font-size: 0.8rem; overflow-x: auto;">
+                    <div>Key fields from Firebase:</div>
+                    <div style="color: #81c784;">"f0": <span id="jsonF0">0</span>, // Flex sensor 0</div>
+                    <div style="color: #81c784;">"f1": <span id="jsonF1">0</span>, // Flex sensor 1</div>
+                    <div style="color: #81c784;">"f2": <span id="jsonF2">0</span>, // Flex sensor 2</div>
+                    <div style="color: #81c784;">"f3": <span id="jsonF3">0</span>, // Flex sensor 3</div>
+                    <div style="color: #4fc3f7;">"o": "<span id="jsonO">Down</span>", // MPU orientation</div>
+                    <div style="color: #ff9800;">"sf": "<span id="jsonSf">NO</span>", // Shake detection</div>
+                    <div style="color: #ff9800;">"d": "<span id="jsonD">None</span>" // Shake direction</div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 15px;">
+                <div class="sensor-label">System Log</div>
+                <div class="log-container" id="logContainer">
+                    <div class="log-entry">
+                        <span class="log-time">00:00:00</span>
+                        <span class="log-source">SYSTEM</span>
+                        <span>HTML interface initialized</span>
+                    </div>
                 </div>
             </div>
         </div>
         
-        <div class="status-bar">
-            <div>
-                <span id="statusText">Fetching data...</span>
-            </div>
-            <div>
-                <span id="lastUpdate">Last update: --:--:--</span>
-            </div>
-        </div>
+        <footer>
+            <p>Data source: <span id="firebaseUrl">https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/sensorData.json</span></p>
+            <p>Auto-refresh every 2 seconds | Last data fetch: <span id="lastFetchTime">Never</span></p>
+        </footer>
     </div>
 
     <script>
         // Firebase configuration
         const FIREBASE_URL = 'https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/sensorData.json';
         
-        // State variables
-        let autoRefresh = true;
-        let lastData = null;
-        let logEntries = [];
-        let lastUpdateTime = null;
-        
-        // Word construction state (from ESP32 code)
-        let wordConstructionState = {
-            slot1: '',
-            slot2: '',
-            currentWord: '',
-            lastFlexStates: [-1, -1, -1, -1],
-            stableCount: 0,
-            holdStartMs: 0,
-            holdFired: false
-        };
-        
-        // Tables from ESP32 code (simplified for display)
+        // Tables for word construction - CORRECTED ORDER (same as your ESP32 code)
         const tableA = [
-            ["IAY","IC","ICH","IE","IEC","IEM","IEN","IENG","IEO"],
-            ["IEP","IET","IEU","IM","IN","ING","INH","IO","IOI"],
-            ["ENG","ENH","EO","EP","ET","EU","I","IA","IAC"],
-            ["IAI","IAM","IAN","IANG","IANH","IAO","IAP","IAT","IAU"],
-            ["AP","AT","AU","AY","E","EC","ECH","EM","EN"],
-            ["A","AC","ACH","AI","AM","AN","ANG","ANH","AO"],
-            ["IUN","IUONG","IUP","O","OA","OAC","OACH","OAI","OAM"],
-            ["ION","IONG","IOT","IP","IT","IU","IUA","IUC","IUI"]
+            ["IAY","IC","ICH","IE","IEC","IEM","IEN","IENG","IEO"],  // Row 1 (index 0)
+            ["IEP","IET","IEU","IM","IN","ING","INH","IO","IOI"],    // Row 2 (index 1)  
+            ["ENG","ENH","EO","EP","ET","EU","I","IA","IAC"],        // Row 3 (index 2)
+            ["IAI","IAM","IAN","IANG","IANH","IAO","IAP","IAT","IAU"], // Row 8 (index 7)
+            ["AP","AT","AU","AY","E","EC","ECH","EM","EN"],          // Row 5 (index 4)
+            ["A","AC","ACH","AI","AM","AN","ANG","ANH","AO"],        // Row 6 (index 5)
+            ["IUN","IUONG","IUP","O","OA","OAC","OACH","OAI","OAM"], // Row 7 (index 6)
+            ["ION","IONG","IOT","IP","IT","IU","IUA","IUC","IUI"],   // Row 4 (index 3)
         ];
-        
+
         const tableB = [
-            ["UE","UECH","UEN","UENH","UEO","UET","UI","UM","UN"],
-            ["UNG","UO","UOC","UOI","UOM","UON","UONG","UOP","OUT"],
-            ["ONG","OOC","OONG","OP","OT","U","UA","UAC","UACH"],
-            ["UAI","UAM","UAN","UANG","UANH","UAO","UAT","UAY","UC"],
-            ["OAY","OC","OE","OEN","OEO","OET","OI","OM","ON"],
-            ["COMMIT","_","nullptr","nullptr","OAN","OANG","OANH","OAP","OAT"],
-            ["UYNH","UYP","UYT","UYU","Y","YEM","YEN","YET","YEU"],
-            ["UOU","UP","UT","UU","UY","UYA","UYCH","UYEN","UYET"]
+            ["UE","UECH","UEN","UENH","UEO","UET","UI","UM","UN"],                     // Row 5
+            ["UNG","UO","UOC","UOI","UOM","UON","UONG","UOP","OUT"],                   // Row 6
+            ["ONG","OOC","OONG","OP","OT","U","UA","UAC","UACH"],                      // Row 3
+            ["UAI","UAM","UAN","UANG","UANH","UAO","UAT","UAY","UC"],                  // Row 4
+            ["OAY","OC","OE","OEN","OEO","OET","OI","OM","ON"],                        // Row 2
+            ["COMMIT","_","nullptr","nullptr","OAN","OANG","OANH","OAP","OAT"],  // Row 1
+            ["UYNH","UYP","UYT","UYU","Y","YEM","YEN","YET","YEU"],                    // Row 8
+            ["UOU","UP","UT","UU","UY","UYA","UYCH","UYEN","UYET"],                    // Row 7
         ];
-        
-        // Format time
-        function formatTime(timestamp) {
-            const date = new Date(timestamp);
-            return date.toLocaleTimeString([], { 
-                hour: '2-digit', 
-                minute: '2-digit', 
-                second: '2-digit' 
-            });
-        }
-        
+
+        const tableC = [
+            [ ["B","C","D"], ["Đ","G","H"], ["K","L","M"] ],
+            [ ["N","P","Q"], ["R","S","T"], ["V","X","CH"] ],
+            [ ["GH","KH","NG"], ["NGH","NH","PH"], ["TH","TR","_"] ]
+        ];
+
+        // Vietnamese conversion table (simplified for this example)
+        const vietnameseTable = {
+            "IAY": ["iáy", "iày", "iảy", "iãy", "iạy", "iay"],
+            "IC": ["íc", "ìc", "ỉc", "ĩc", "ịc", "ic"],
+            "ICH": ["ích", "ìch", "ỉch", "ĩch", "ịch", "ich"],
+            // Add more as needed from your ESP32 code
+        };
+
+        // Application state
+        let appState = {
+            // Sensor data - CORRECTED: Using f0, f1, f2, f3 instead of 'f' array
+            f0: 0, f1: 0, f2: 0, f3: 0,
+            o: "Unknown",
+            sf: "NO",
+            d: "None",
+            
+            // Word construction
+            slot1: "",
+            slot2: "",
+            currentWord: "",
+            vietnameseWord: "",
+            
+            // Sentence building
+            sentenceWords: [],
+            currentSentence: "",
+            convertedSentence: "",
+            
+            // System
+            lastUpdate: 0,
+            isConnected: false,
+            logs: [],
+            flexStates: [0, 0, 0, 0],
+            
+            // MPU state mapping
+            mpuState: -1,
+            orientation: "Unknown",
+            
+            // Additional data from JSON
+            btConnected: false,
+            messageId: 0,
+            isoTime: "",
+            wifiRSSI: -21,
+            rawFlexValues: [0, 0, 0, 0]
+        };
+
+        // DOM elements
+        const elements = {
+            mpuOrientation: document.getElementById('mpuOrientation'),
+            mpuState: document.getElementById('mpuState'),
+            flexStates: document.getElementById('flexStates'),
+            flex0: document.getElementById('flex0'),
+            flex1: document.getElementById('flex1'),
+            flex2: document.getElementById('flex2'),
+            flex3: document.getElementById('flex3'),
+            shakeState: document.getElementById('shakeState'),
+            shakeDirection: document.getElementById('shakeDirection'),
+            rawFlexValues: document.getElementById('rawFlexValues'),
+            flexMapping: document.getElementById('flexMapping'),
+            btConnected: document.getElementById('btConnected'),
+            messageId: document.getElementById('messageId'),
+            isoTime: document.getElementById('isoTime'),
+            currentWord: document.getElementById('currentWord'),
+            vietnameseWord: document.getElementById('vietnameseWord'),
+            currentSentence: document.getElementById('currentSentence'),
+            convertedSentence: document.getElementById('convertedSentence'),
+            slot1Display: document.getElementById('slot1Display'),
+            slot2Display: document.getElementById('slot2Display'),
+            wordList: document.getElementById('wordList'),
+            searchBuffer: document.getElementById('searchBuffer'),
+            logContainer: document.getElementById('logContainer'),
+            connectionStatus: document.getElementById('connectionStatus'),
+            statusText: document.getElementById('statusText'),
+            lastUpdateTime: document.getElementById('lastUpdateTime'),
+            lastFetchTime: document.getElementById('lastFetchTime'),
+            flexDataWarning: document.getElementById('flexDataWarning'),
+            mpuRawValue: document.getElementById('mpuRawValue'),
+            wifiRSSI: document.getElementById('wifiRSSI'),
+            jsonF0: document.getElementById('jsonF0'),
+            jsonF1: document.getElementById('jsonF1'),
+            jsonF2: document.getElementById('jsonF2'),
+            jsonF3: document.getElementById('jsonF3'),
+            jsonO: document.getElementById('jsonO'),
+            jsonSf: document.getElementById('jsonSf'),
+            jsonD: document.getElementById('jsonD')
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            addLog("SYSTEM", "HTML interface initialized");
+            elements.flexDataWarning.style.display = 'block';
+            fetchSensorData();
+            setInterval(fetchSensorData, 2000); // Refresh every 2 seconds
+        });
+
         // Fetch data from Firebase
-        async function fetchData() {
+        async function fetchSensorData() {
             try {
                 const response = await fetch(FIREBASE_URL);
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 
                 const data = await response.json();
-                lastUpdateTime = Date.now();
-                
-                // Update UI with new data
-                updateDisplay(data);
-                
-                // Update connection status
+                updateAppState(data);
+                updateDisplay();
                 updateConnectionStatus(true);
                 
-                return data;
+                elements.lastFetchTime.textContent = new Date().toLocaleTimeString();
             } catch (error) {
-                console.error('Error fetching data:', error);
+                console.error('Error fetching sensor data:', error);
                 updateConnectionStatus(false);
+                addLog("ERROR", `Failed to fetch data: ${error.message}`);
+            }
+        }
+
+        // Update application state with new data - CORRECTED VERSION
+        function updateAppState(data) {
+            // Store raw data - CORRECTED: Using f0, f1, f2, f3 directly
+            appState.f0 = data.f0 || 0;
+            appState.f1 = data.f1 || 0;
+            appState.f2 = data.f2 || 0;
+            appState.f3 = data.f3 || 0;
+            appState.o = data.o || "Unknown";
+            appState.sf = data.sf || "NO";
+            appState.d = data.d || "None";
+            
+            // Store raw flex values for display
+            appState.rawFlexValues = [appState.f0, appState.f1, appState.f2, appState.f3];
+            
+            // Calculate flex states (0, 1, 2) based on thresholds
+            // Using same logic as ESP32: 0=straight, 1=partially bent, 2=fully bent
+            appState.flexStates = calculateFlexStates(appState.rawFlexValues);
+            
+            // Map MPU orientation to state code
+            appState.mpuState = mapOrientationToState(appState.o);
+            appState.orientation = appState.o;
+            
+            // Store additional data
+            appState.btConnected = data.btConnected || false;
+            appState.messageId = data.messageId || 0;
+            appState.isoTime = data.isoTime || "";
+            appState.wifiRSSI = data.wifiRSSI || -21;
+            
+            // Process shake detection
+            if (appState.sf === "YES" || appState.d.includes("Shake")) {
+                elements.shakeState.classList.add('shake-active');
+            } else {
+                elements.shakeState.classList.remove('shake-active');
+            }
+            
+            // Update word construction based on sensor states
+            updateWordConstruction();
+            
+            appState.lastUpdate = Date.now();
+            
+            // Log the data source
+            addLog("DATA", `Flex values: f0=${appState.f0}, f1=${appState.f1}, f2=${appState.f2}, f3=${appState.f3}`);
+        }
+
+        // Calculate flex states (simplified version)
+        function calculateFlexStates(rawFlex) {
+            const STRAIGHT_THRESHOLD = 150;
+            const BENT_THRESHOLDS = [300, 450, 350, 300]; // Default bent thresholds
+            
+            return rawFlex.map((value, index) => {
+                if (value <= STRAIGHT_THRESHOLD) return 0;
+                if (value <= BENT_THRESHOLDS[index]) return 1;
+                return 2;
+            });
+        }
+
+        // Map orientation to state code
+        function mapOrientationToState(orientation) {
+            const mapping = {
+                "Up": 0,
+                "Down": 1,
+                "Left": 2,
+                "Right": 3,
+                "Forward": 4,
+                "Backward": 5,
+                "Shake Left": 6,
+                "Shake Right": 7
+            };
+            return mapping[orientation] !== undefined ? mapping[orientation] : -1;
+        }
+
+        // Update word construction based on current sensor states
+        function updateWordConstruction() {
+            const mpuState = appState.mpuState;
+            const a0 = appState.flexStates[0];
+            const a1 = appState.flexStates[1];
+            const a2 = appState.flexStates[2];
+            const a3 = appState.flexStates[3];
+            
+            // Get mapping from tables
+            const mapping = getMappingForIndices(mpuState, a0, a1, a2, a3);
+            
+            if (mapping && mapping !== "nullptr") {
+                // Handle special characters
+                if (mapping === "_") {
+                    // Word separator - would add word to sentence in real system
+                    addLog("WORD", "Word separator detected (_)");
+                } else if (mapping === "COMMIT") {
+                    // Sentence finalizer
+                    addLog("WORD", "COMMIT detected - would finalize sentence");
+                } else if (mapping === "<") {
+                    // Backspace
+                    backspace();
+                } else {
+                    // Regular word part
+                    updateSlots(mpuState, a0, mapping);
+                    updateCurrentWord();
+                }
+            }
+        }
+
+        // Get mapping from tables (same logic as ESP32)
+        function getMappingForIndices(mpuState, a0, a1, a2, a3) {
+            if (mpuState < 0 || mpuState > 7) return null;
+            
+            if (a3 === 2) {
+                // Use tableC (3x3x3)
+                if (a0 < 3 && a1 < 3 && a2 < 3) {
+                    return tableC[a0][a1][a2];
+                }
                 return null;
             }
-        }
-        
-        // Update display with sensor data
-        function updateDisplay(data) {
-            if (!data) return;
             
-            // Update MPU data
-            document.getElementById('mpuOrientation').textContent = data.o || data.mpuOrientation || '---';
-            document.getElementById('mpuState').textContent = data.m || data.mpuState || '-1';
+            // For tableA (a3=0) and tableB (a3=1)
+            const table = a3 === 0 ? tableA : tableB;
+            const flatIndex = a1 * 3 + a2;
             
-            // Update shake data
-            document.getElementById('shakeStatus').textContent = data.sf || data.shakeState || '---';
-            document.getElementById('isShaking').textContent = data.isShaking ? 'YES' : 'NO';
-            
-            // Update flex sensors
-            const flexValues = data.f || [data.f0, data.f1, data.f2, data.f3];
-            const rawFlex = data.rawFlex || [0, 0, 0, 0];
-            
-            // Update flex boxes
-            for (let i = 0; i < 4; i++) {
-                const box = document.getElementById(`flex${i}-box`);
-                if (box) {
-                    const value = flexValues[i] || 0;
-                    box.textContent = value;
-                    
-                    // Remove all classes
-                    box.className = 'flex-box';
-                    
-                    // Add appropriate class
-                    if (value === 0) box.classList.add('active-0');
-                    else if (value === 1) box.classList.add('active-1');
-                    else if (value === 2) box.classList.add('active-2');
-                    else if (value === 3) box.classList.add('active-3');
-                    else box.classList.add('active-4');
-                }
+            if (flatIndex >= 0 && flatIndex < 9) {
+                return table[mpuState][flatIndex];
             }
             
-            // Update raw flex values
-            document.getElementById('rawFlexValues').textContent = 
-                `f0: ${flexValues[0] || 0}, f1: ${flexValues[1] || 0}, f2: ${flexValues[2] || 0}, f3: ${flexValues[3] || 0}`;
+            return null;
+        }
+
+        // Update slots based on flex sensor A0 state
+        function updateSlots(mpuState, a0, mapping) {
+            const modeChar = flexModeCharFromA0(a0);
             
-            // Update shake direction
-            const direction = data.d || data.shakeState || 'None';
-            document.getElementById('shakeDirection').textContent = direction;
-            document.getElementById('afterShakeStatus').textContent = 
-                direction !== 'None' ? 'Active' : 'Inactive';
-            
-            // Apply shake animation if shaking
-            const shakeElement = document.getElementById('shakeStatus');
-            if (data.isShaking || data.sh === true) {
-                shakeElement.classList.add('shake-active');
+            if (appState.flexStates[3] === 2) {
+                // Slot 2 logic
+                appState.slot2 = `${mapping}_${modeChar}`;
+                elements.slot2Display.textContent = appState.slot2;
             } else {
-                shakeElement.classList.remove('shake-active');
+                // Slot 1 logic
+                appState.slot1 = `${mapping}_${mpuState}`;
+                elements.slot1Display.textContent = appState.slot1;
             }
-            
-            // Update bonus rows based on direction
-            updateBonusRows(direction, data);
-            
-            // Update raw data display
-            updateRawData(data);
-            
-            // Update last update time
-            document.getElementById('lastUpdate').textContent = 
-                `Last update: ${formatTime(lastUpdateTime)}`;
-            
-            // Update word construction
-            updateWordConstruction(data, flexValues);
-            
-            // Store last data
-            lastData = data;
         }
-        
-        // Update bonus rows based on direction
-        function updateBonusRows(direction, data) {
-            const bonusRow1 = document.getElementById('bonusRow1');
-            const bonusRow2 = document.getElementById('bonusRow2');
+
+        // Get flex mode character
+        function flexModeCharFromA0(a0) {
+            switch(a0) {
+                case 0: return 's';
+                case 1: return 'b';
+                case 2: return 'p';
+                default: return 'x';
+            }
+        }
+
+        // Update current word from slots
+        function updateCurrentWord() {
+            appState.currentWord = (appState.slot1 + appState.slot2).toLowerCase();
+            appState.vietnameseWord = convertVietnameseWord(appState.currentWord);
             
-            // Reset bonus rows
-            bonusRow1.style.display = 'block';
-            bonusRow2.style.display = 'block';
+            elements.currentWord.textContent = appState.currentWord || "---";
+            elements.vietnameseWord.textContent = appState.vietnameseWord || "---";
+        }
+
+        // Convert Vietnamese word (simplified)
+        function convertVietnameseWord(encodedWord) {
+            if (!encodedWord) return "";
             
-            // Map directions to functions
-            const directionMap = {
-                'Left': { func: 'Navigate Back', status: 'Previous Page' },
-                'Right': { func: 'Navigate Forward', status: 'Next Page' },
-                'Up': { func: 'Scroll Up', status: 'Content Up' },
-                'Down': { func: 'Scroll Down', status: 'Content Down' },
-                'Forward': { func: 'Confirm', status: 'Action OK' },
-                'Backward': { func: 'Cancel', status: 'Action Cancel' },
-                'Shake Left': { func: 'Undo', status: 'Last Action' },
-                'Shake Right': { func: 'Redo', status: 'Next Action' },
-                'None': { func: 'Idle', status: 'Waiting' }
+            // Simple conversion for demonstration
+            // In your actual system, you'd use the full Vietnamese table
+            const conversions = {
+                "b_1ac_s": "bác",
+                "c_2em_s": "cém",
+                "d_3an_s": "dán",
+                "m_1a_s": "má",
+                "t_2ai_s": "tài"
             };
             
-            const dirInfo = directionMap[direction] || { func: 'Unknown', status: 'N/A' };
+            return conversions[encodedWord] || `[Converted: ${encodedWord}]`;
+        }
+
+        // Add word to sentence
+        function addWordToSentence() {
+            if (!appState.currentWord) {
+                addLog("SENTENCE", "No current word to add");
+                return;
+            }
             
-            // Update bonus row 1
-            document.getElementById('bonusDir1').textContent = direction;
-            document.getElementById('bonusFunc1').textContent = dirInfo.func;
-            document.getElementById('bonusStatus1').textContent = dirInfo.status;
+            appState.sentenceWords.push(appState.currentWord);
+            updateSentenceDisplay();
             
-            // Bonus row 2 - Additional information
-            document.getElementById('bonusDir2').textContent = data.isShaking ? 'SHAKING' : 'STABLE';
-            document.getElementById('bonusFunc2').textContent = `BT: ${data.btConnected ? 'Connected' : 'Disconnected'}`;
-            document.getElementById('bonusStatus2').textContent = `Heap: ${data.freeHeap || 0} bytes`;
+            // Clear current word
+            appState.slot1 = "";
+            appState.slot2 = "";
+            appState.currentWord = "";
+            appState.vietnameseWord = "";
             
-            // Color code based on direction
-            if (direction.includes('Shake')) {
-                bonusRow1.style.background = '#FFF3CD';
-                bonusRow1.style.borderColor = '#FFC107';
-            } else if (direction !== 'None') {
-                bonusRow1.style.background = '#D4EDDA';
-                bonusRow1.style.borderColor = '#28A745';
-            } else {
-                bonusRow1.style.background = '#E3F2FD';
-                bonusRow1.style.borderColor = '#bbdefb';
+            updateCurrentWord();
+            updateSlotsDisplay();
+            
+            addLog("SENTENCE", `Added word: ${appState.sentenceWords[appState.sentenceWords.length - 1]}`);
+        }
+
+        // Update sentence display
+        function updateSentenceDisplay() {
+            appState.currentSentence = appState.sentenceWords.join(" ");
+            appState.convertedSentence = appState.sentenceWords.map(word => 
+                convertVietnameseWord(word)).join(" ");
+            
+            elements.currentSentence.textContent = appState.currentSentence || "No words in sentence";
+            elements.convertedSentence.textContent = appState.convertedSentence || "---";
+            
+            // Update word list
+            elements.wordList.innerHTML = appState.sentenceWords.map((word, index) => 
+                `<div style="display: inline-block; margin: 5px; padding: 5px 10px; background: rgba(79, 195, 247, 0.2); border-radius: 15px;">${word}</div>`
+            ).join("");
+            
+            if (appState.sentenceWords.length === 0) {
+                elements.wordList.innerHTML = "No words yet";
             }
         }
-        
-        // Update raw data display
-        function updateRawData(data) {
-            const rawDataElement = document.getElementById('rawData');
-            const timestamp = new Date().toLocaleTimeString();
-            
-            // Create a formatted log entry
-            const logEntry = `[${timestamp}] 
-MPU: ${data.o || '---'} (State: ${data.m || -1})
-Flex: [${data.f ? data.f.join(',') : `${data.f0},${data.f1},${data.f2},${data.f3}`}]
-Shake: ${data.sf || 'NO'} | Direction: ${data.d || 'None'}
-BT: ${data.btConnected ? 'Connected' : 'Disconnected'} | Heap: ${data.freeHeap || 0}
-------------------------------`;
-            
-            // Add to log
-            logEntries.unshift(logEntry);
-            if (logEntries.length > 10) {
-                logEntries.pop();
+
+        // Commit sentence
+        function commitSentence() {
+            if (appState.sentenceWords.length === 0) {
+                addLog("SENTENCE", "No words to commit");
+                return;
             }
             
-            // Update display
-            rawDataElement.textContent = logEntries.join('\n');
+            addLog("SENTENCE", `=== COMMIT SENTENCE ===`);
+            addLog("SENTENCE", `Full: ${appState.currentSentence}`);
+            addLog("SENTENCE", `Converted: ${appState.convertedSentence}`);
+            
+            // In real system, this would trigger audio playback
+            // For now, just show a message
+            alert(`Sentence committed!\n\nEncoded: ${appState.currentSentence}\n\nVietnamese: ${appState.convertedSentence}`);
+            
+            // Reset sentence
+            resetSentence();
         }
-        
-        // Update word construction based on sensor data
-        function updateWordConstruction(data, flexValues) {
-            const mpuState = data.m || 0;
+
+        // Clear current word
+        function clearCurrentWord() {
+            appState.slot1 = "";
+            appState.slot2 = "";
+            appState.currentWord = "";
+            appState.vietnameseWord = "";
             
-            // Simulate word construction logic from ESP32
-            // This is a simplified version for display purposes
-            
-            // Check if flex states have changed
-            const flexChanged = flexValues.some((val, idx) => 
-                val !== wordConstructionState.lastFlexStates[idx]);
-            
-            if (flexChanged) {
-                wordConstructionState.lastFlexStates = [...flexValues];
-                wordConstructionState.stableCount = 0;
-                wordConstructionState.holdStartMs = Date.now();
-                wordConstructionState.holdFired = false;
-            } else {
-                wordConstructionState.stableCount++;
-            }
-            
-            // If stable for "3 counts" (simulating debounce)
-            if (wordConstructionState.stableCount >= 3) {
-                const held = Date.now() - wordConstructionState.holdStartMs;
+            updateCurrentWord();
+            updateSlotsDisplay();
+            addLog("WORD", "Current word cleared");
+        }
+
+        // Backspace function
+        function backspace() {
+            if (appState.currentWord.length > 0) {
+                appState.currentWord = appState.currentWord.slice(0, -1);
+                appState.vietnameseWord = convertVietnameseWord(appState.currentWord);
                 
-                // Simulate the table lookup logic
-                if (!wordConstructionState.holdFired && held >= 800) {
-                    // Determine which table to use based on flex[3]
-                    const useTableC = flexValues[3] === 2;
-                    
-                    let mapping = '';
-                    if (useTableC) {
-                        // Simplified table C logic
-                        mapping = `C[${mpuState}][${flexValues[0]}][${flexValues[1]}]`;
-                    } else {
-                        // Use table A or B based on flex[3]
-                        const table = flexValues[3] === 1 ? tableB : tableA;
-                        const flatIndex = flexValues[1] * 3 + flexValues[2];
-                        
-                        if (table[mpuState] && table[mpuState][flatIndex]) {
-                            mapping = table[mpuState][flatIndex];
-                        } else {
-                            mapping = '---';
-                        }
-                    }
-                    
-                    // Update slots based on flex[3]
-                    if (flexValues[3] === 2) {
-                        wordConstructionState.slot1 = `${mapping}_${mpuState}`;
-                    } else {
-                        const mode = flexValues[0] === 0 ? 's' : 
-                                    flexValues[0] === 1 ? 'b' : 'p';
-                        wordConstructionState.slot2 = `${mapping}_${mode}`;
-                    }
-                    
-                    // Update current word
-                    wordConstructionState.currentWord = 
-                        (wordConstructionState.slot1 + wordConstructionState.slot2).toLowerCase();
-                    
-                    wordConstructionState.holdFired = true;
-                }
+                elements.currentWord.textContent = appState.currentWord || "---";
+                elements.vietnameseWord.textContent = appState.vietnameseWord || "---";
+                
+                addLog("WORD", `Backspace - Word: ${appState.currentWord}`);
             }
-            
-            // Update display
-            document.getElementById('slot1').textContent = wordConstructionState.slot1 || '---';
-            document.getElementById('slot2').textContent = wordConstructionState.slot2 || '---';
-            document.getElementById('currentWord').textContent = 
-                wordConstructionState.currentWord || '---';
         }
-        
+
+        // Reset sentence
+        function resetSentence() {
+            appState.sentenceWords = [];
+            appState.currentSentence = "";
+            appState.convertedSentence = "";
+            updateSentenceDisplay();
+            addLog("SENTENCE", "Sentence reset");
+        }
+
+        // Update slots display
+        function updateSlotsDisplay() {
+            elements.slot1Display.textContent = appState.slot1 || "---";
+            elements.slot2Display.textContent = appState.slot2 || "---";
+        }
+
+        // Update display with current state
+        function updateDisplay() {
+            // MPU data
+            elements.mpuOrientation.textContent = appState.orientation;
+            elements.mpuState.textContent = appState.mpuState;
+            
+            // Flex sensors - CORRECTED: Using f0, f1, f2, f3 values
+            elements.flexStates.textContent = appState.flexStates.join(",");
+            elements.flex0.textContent = appState.flexStates[0];
+            elements.flex0.className = `flex-box state-${appState.flexStates[0]}`;
+            elements.flex1.textContent = appState.flexStates[1];
+            elements.flex1.className = `flex-box state-${appState.flexStates[1]}`;
+            elements.flex2.textContent = appState.flexStates[2];
+            elements.flex2.className = `flex-box state-${appState.flexStates[2]}`;
+            elements.flex3.textContent = appState.flexStates[3];
+            elements.flex3.className = `flex-box state-${appState.flexStates[3]}`;
+            
+            // Shake detection
+            elements.shakeState.textContent = appState.sf;
+            elements.shakeDirection.textContent = appState.d;
+            
+            // Raw values - CORRECTED: Showing f0, f1, f2, f3
+            elements.rawFlexValues.textContent = appState.rawFlexValues.join(", ");
+            elements.flexMapping.textContent = `a0=${appState.flexStates[0]},a1=${appState.flexStates[1]},a2=${appState.flexStates[2]},a3=${appState.flexStates[3]}`;
+            
+            // Other data
+            elements.btConnected.textContent = appState.btConnected ? "true" : "false";
+            elements.messageId.textContent = appState.messageId;
+            elements.isoTime.textContent = appState.isoTime ? new Date(appState.isoTime).toLocaleTimeString() : "--";
+            elements.mpuRawValue.textContent = appState.o;
+            elements.wifiRSSI.textContent = appState.wifiRSSI;
+            
+            // JSON display
+            elements.jsonF0.textContent = appState.f0;
+            elements.jsonF1.textContent = appState.f1;
+            elements.jsonF2.textContent = appState.f2;
+            elements.jsonF3.textContent = appState.f3;
+            elements.jsonO.textContent = appState.o;
+            elements.jsonSf.textContent = appState.sf;
+            elements.jsonD.textContent = appState.d;
+            
+            // Last update time
+            elements.lastUpdateTime.textContent = new Date(appState.lastUpdate).toLocaleTimeString();
+        }
+
         // Update connection status
-        function updateConnectionStatus(connected) {
-            const statusElement = document.getElementById('connectionStatus');
-            const indicator = statusElement.querySelector('.indicator');
-            const text = connected ? 'Connected to Firebase' : 'Disconnected from Firebase';
+        function updateConnectionStatus(isConnected) {
+            appState.isConnected = isConnected;
             
-            statusElement.className = `connection-status ${connected ? 'connected' : 'disconnected'}`;
-            indicator.className = `indicator ${connected ? 'online' : 'offline'}`;
-            statusElement.innerHTML = `<span class="indicator ${connected ? 'online' : 'offline'}"></span>${text}`;
-            
-            document.getElementById('statusText').textContent = 
-                connected ? 'Connected - Receiving data' : 'Disconnected - Check connection';
-        }
-        
-        // Toggle auto-refresh
-        function toggleAutoRefresh() {
-            autoRefresh = !autoRefresh;
-            document.getElementById('autoRefreshBtn').textContent = 
-                `Auto Refresh: ${autoRefresh ? 'ON' : 'OFF'}`;
-            
-            if (autoRefresh) {
-                document.getElementById('statusText').textContent = 'Auto-refresh enabled';
+            if (isConnected) {
+                elements.connectionStatus.className = 'status-indicator status-online';
+                elements.statusText.textContent = 'Connected to Firebase';
+                elements.statusText.style.color = '#4caf50';
             } else {
-                document.getElementById('statusText').textContent = 'Auto-refresh disabled';
+                elements.connectionStatus.className = 'status-indicator status-offline';
+                elements.statusText.textContent = 'Disconnected from Firebase';
+                elements.statusText.style.color = '#f44336';
             }
         }
-        
-        // Clear log
-        function clearLog() {
-            logEntries = [];
-            document.getElementById('rawData').textContent = 'Log cleared...';
-        }
-        
-        // Copy data to clipboard
-        function copyData() {
-            if (lastData) {
-                const jsonStr = JSON.stringify(lastData, null, 2);
-                navigator.clipboard.writeText(jsonStr)
-                    .then(() => {
-                        document.getElementById('statusText').textContent = 'Data copied to clipboard!';
-                        setTimeout(() => {
-                            if (autoRefresh) {
-                                document.getElementById('statusText').textContent = 'Connected - Receiving data';
-                            }
-                        }, 2000);
-                    })
-                    .catch(err => {
-                        console.error('Failed to copy:', err);
-                        document.getElementById('statusText').textContent = 'Failed to copy data';
-                    });
-            }
-        }
-        
-        // Reset word construction
-        function resetWord() {
-            wordConstructionState = {
-                slot1: '',
-                slot2: '',
-                currentWord: '',
-                lastFlexStates: [-1, -1, -1, -1],
-                stableCount: 0,
-                holdStartMs: 0,
-                holdFired: false
+
+        // Add log entry
+        function addLog(source, message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = {
+                time: timestamp,
+                source: source,
+                message: message
             };
             
-            document.getElementById('slot1').textContent = '---';
-            document.getElementById('slot2').textContent = '---';
-            document.getElementById('currentWord').textContent = '---';
+            appState.logs.unshift(logEntry);
+            if (appState.logs.length > 20) appState.logs.pop();
             
-            document.getElementById('statusText').textContent = 'Word construction reset';
+            // Update log display
+            elements.logContainer.innerHTML = appState.logs.map(log => 
+                `<div class="log-entry">
+                    <span class="log-time">${log.time}</span>
+                    <span class="log-source">${log.source}</span>
+                    <span>${log.message}</span>
+                </div>`
+            ).join("");
         }
-        
-        // Simulate word construction
-        function simulateWord() {
-            // Simulate random flex values
-            const randomFlex = [
-                Math.floor(Math.random() * 3),
-                Math.floor(Math.random() * 3),
-                Math.floor(Math.random() * 3),
-                Math.floor(Math.random() * 3)
-            ];
-            
-            // Create simulated data
-            const simulatedData = {
-                m: Math.floor(Math.random() * 8),
-                f: randomFlex,
-                o: ['Up', 'Down', 'Left', 'Right', 'Forward', 'Backward'][Math.floor(Math.random() * 6)],
-                sf: Math.random() > 0.7 ? 'YES' : 'NO',
-                d: Math.random() > 0.8 ? 'Shake Left' : (Math.random() > 0.6 ? 'Shake Right' : 'None'),
-                isShaking: Math.random() > 0.7
-            };
-            
-            // Update display with simulated data
-            updateWordConstruction(simulatedData, randomFlex);
-            
-            document.getElementById('statusText').textContent = 'Simulated word construction';
-        }
-        
-        // Simulate data for testing
-        function simulateData() {
-            const simulatedData = {
-                btConnected: true,
-                btLastSeen: Math.floor(Math.random() * 10000),
-                c: Math.floor(Math.random() * 200),
-                d: ['None', 'Shake Left', 'Shake Right', 'Left', 'Right'][Math.floor(Math.random() * 5)],
-                f: [
-                    Math.floor(Math.random() * 5),
-                    Math.floor(Math.random() * 5),
-                    Math.floor(Math.random() * 5),
-                    Math.floor(Math.random() * 5)
-                ],
-                f0: Math.floor(Math.random() * 500),
-                f1: Math.floor(Math.random() * 500),
-                f2: Math.floor(Math.random() * 500),
-                f3: Math.floor(Math.random() * 500),
-                f4: Math.floor(Math.random() * 10),
-                freeHeap: 200000 + Math.floor(Math.random() * 50000),
-                interval: 50,
-                isShaking: Math.random() > 0.7,
-                isoTime: new Date().toISOString(),
-                m: Math.floor(Math.random() * 8),
-                messageId: Math.floor(Math.random() * 100),
-                mo: ['Up', 'Down', 'Left', 'Right', 'Forward', 'Backward'][Math.floor(Math.random() * 6)],
-                mpuOrientation: ['Up', 'Down', 'Left', 'Right', 'Forward', 'Backward'][Math.floor(Math.random() * 6)],
-                mpuState: Math.floor(Math.random() * 8),
-                ms: 1,
-                o: ['Up', 'Down', 'Left', 'Right', 'Forward', 'Backward'][Math.floor(Math.random() * 6)],
-                rawFlex: [
-                    Math.floor(Math.random() * 3),
-                    Math.floor(Math.random() * 3),
-                    Math.floor(Math.random() * 3),
-                    Math.floor(Math.random() * 3)
-                ],
-                s: Math.floor(Math.random() * 2),
-                sb: Math.floor(Math.random() * 2),
-                sf: Math.random() > 0.7 ? 'YES' : 'NO',
-                sh: Math.random() > 0.7,
-                shakeState: ['None', 'Shake Left', 'Shake Right'][Math.floor(Math.random() * 3)],
-                ss: 'None',
-                t: Math.floor(Math.random() * 100000),
-                timestamp: Date.now(),
-                w: -20 - Math.floor(Math.random() * 20),
-                wifiRSSI: -30 - Math.floor(Math.random() * 20)
-            };
-            
-            updateDisplay(simulatedData);
-            document.getElementById('statusText').textContent = 'Using simulated data';
-        }
-        
-        // Main update loop
-        async function updateLoop() {
-            if (autoRefresh) {
-                await fetchData();
+
+        // Simulate search function
+        function simulateSearch() {
+            if (!appState.currentWord) {
+                addLog("SEARCH", "No word to search for");
+                return;
             }
             
-            setTimeout(updateLoop, 1000); // Update every second
+            elements.searchBuffer.textContent = `Searching for: ${appState.currentWord}`;
+            addLog("SEARCH", `Simulating search for: ${appState.currentWord}`);
+            
+            // Simulate search result
+            setTimeout(() => {
+                elements.searchBuffer.textContent = `Found: "${appState.currentWord}" (Simulated result)`;
+                addLog("SEARCH", `Simulated result found for: ${appState.currentWord}`);
+            }, 1000);
         }
-        
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            // Start the update loop
-            updateLoop();
-            
-            // Initial fetch
-            fetchData();
-            
-            // Set up auto-refresh button
-            document.getElementById('autoRefreshBtn').addEventListener('click', toggleAutoRefresh);
-        });
+
+        // Simulate audio play
+        function simulatePlay() {
+            addLog("AUDIO", "Simulating audio playback");
+            alert("Audio playback simulated (In ESP32, this would play through DFPlayer)");
+        }
     </script>
 </body>
 </html>
