@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ESP32 Sensor Dashboard</title>
+    <title>ESP32 Glove Controller - Firebase Web Interface</title>
     <style>
         * {
             margin: 0;
@@ -24,7 +24,7 @@
             margin: 0 auto;
             background: white;
             border-radius: 15px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             overflow: hidden;
         }
 
@@ -36,12 +36,12 @@
         }
 
         h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
+            font-size: 2rem;
+            margin-bottom: 5px;
         }
 
         .subtitle {
-            font-size: 1.1rem;
+            font-size: 1rem;
             opacity: 0.9;
         }
 
@@ -56,7 +56,7 @@
             background: white;
             border-radius: 10px;
             padding: 20px;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
             border: 1px solid #eaeaea;
         }
 
@@ -65,6 +65,76 @@
             margin-bottom: 15px;
             padding-bottom: 10px;
             border-bottom: 2px solid #f0f0f0;
+        }
+
+        .conversion-display {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2196F3;
+            margin: 10px 0;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #E3F2FD;
+            border-radius: 10px;
+            padding: 15px;
+            border: 2px solid #2196F3;
+            line-height: 1.4;
+        }
+
+        .sentence-display {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #4CAF50;
+            margin: 10px 0;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #E8F5E9;
+            border-radius: 10px;
+            padding: 20px;
+            border: 2px solid #4CAF50;
+            line-height: 1.4;
+        }
+
+        .current-word-display {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #FF5722;
+            margin: 10px 0;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #FFF8E1;
+            border-radius: 10px;
+            padding: 15px;
+            border: 2px dashed #FFC107;
+        }
+
+        .word-list {
+            margin: 15px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 1px solid #eaeaea;
+        }
+
+        .word-item {
+            display: inline-block;
+            padding: 8px 15px;
+            margin: 5px;
+            background: #e3f2fd;
+            border-radius: 20px;
+            border: 1px solid #bbdefb;
+        }
+
+        .word-count {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 10px;
         }
 
         .sensor-grid {
@@ -92,161 +162,157 @@
             border-left-color: #FF5722;
         }
 
+        .sensor-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #333;
+            margin: 5px 0;
+        }
+
         .sensor-label {
             font-size: 0.8rem;
             color: #666;
             text-transform: uppercase;
             letter-spacing: 1px;
-            margin-bottom: 5px;
-        }
-
-        .sensor-value {
-            font-size: 1.8rem;
-            font-weight: bold;
-            color: #333;
-        }
-
-        .flex-box-container {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
         }
 
         .flex-box {
-            flex: 1;
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            line-height: 40px;
             text-align: center;
-            padding: 15px;
             background: #f8f9fa;
             border-radius: 8px;
+            margin: 2px;
+            font-weight: bold;
             border: 2px solid transparent;
-            transition: all 0.3s ease;
         }
 
-        .flex-box.active {
+        .flex-box.active-0 {
             background: #4CAF50;
             color: white;
-            border-color: #388E3C;
-            transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
 
-        .flex-box.active-medium {
+        .flex-box.active-1 {
             background: #FF9800;
             color: white;
-            border-color: #F57C00;
-            transform: translateY(-3px);
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
         }
 
-        .flex-box.active-high {
+        .flex-box.active-2 {
             background: #F44336;
             color: white;
-            border-color: #D32F2F;
-            transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
 
-        .flex-value {
-            font-size: 2rem;
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(to right, #4A00E0, #8E2DE2);
+            color: white;
             font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
-        .flex-label {
-            font-size: 0.8rem;
-            opacity: 0.9;
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
 
-        .flex-threshold {
-            font-size: 0.7rem;
-            color: #666;
-            margin-top: 3px;
+        button:active {
+            transform: translateY(0);
         }
 
-        .status-indicator {
-            display: inline-block;
+        button.red {
+            background: linear-gradient(to right, #FF416C, #FF4B2B);
+        }
+
+        button.green {
+            background: linear-gradient(to right, #00b09b, #96c93d);
+        }
+
+        button.blue {
+            background: linear-gradient(to right, #2196F3, #21CBF3);
+        }
+
+        button.orange {
+            background: linear-gradient(to right, #FF9800, #FF5722);
+        }
+
+        .status-bar {
+            background: #f8f9fa;
+            padding: 15px;
+            border-top: 1px solid #eaeaea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .indicator {
             width: 12px;
             height: 12px;
             border-radius: 50%;
+            display: inline-block;
             margin-right: 8px;
         }
 
-        .status-indicator.online {
+        .indicator.online {
             background: #4CAF50;
             animation: blink 1s infinite;
         }
 
-        .status-indicator.offline {
+        .indicator.offline {
             background: #F44336;
         }
 
         @keyframes blink {
-            0%, 100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.5;
-            }
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
 
         .shake-active {
             color: #FF5722 !important;
+            font-weight: bold !important;
             animation: shake 0.5s infinite;
         }
 
         @keyframes shake {
-            0%, 100% {
-                transform: translateX(0);
-            }
-            25% {
-                transform: translateX(-2px);
-            }
-            75% {
-                transform: translateX(2px);
-            }
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-2px); }
+            75% { transform: translateX(2px); }
         }
 
         .bonus-row {
-            background: #FFF3E0;
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 10px;
-            border: 2px solid #FFB74D;
+            background: #FFF3E0 !important;
+            border: 2px dashed #FF9800 !important;
+            color: #E65100 !important;
         }
 
-        .bonus-label {
-            color: #E65100;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .bonus-value {
-            font-size: 1.2rem;
-            color: #333;
-        }
-
-        .last-update {
-            text-align: right;
-            font-size: 0.9rem;
-            color: #666;
-            margin-top: 10px;
+        .loading {
+            animation: pulse 1s infinite;
+            color: #2196F3 !important;
         }
 
         .connection-status {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 15px;
-            background: #f8f9fa;
-            border-top: 1px solid #eaeaea;
-        }
-
-        .firebase-url {
-            font-size: 0.8rem;
+            font-size: 0.9rem;
             color: #666;
-            word-break: break-all;
         }
 
-        .data-format {
+        .timestamp {
+            font-size: 0.8rem;
+            color: #999;
+        }
+
+        .raw-data {
             font-family: monospace;
             background: #f5f5f5;
             padding: 10px;
@@ -254,515 +320,1079 @@
             margin-top: 10px;
             font-size: 0.9rem;
             color: #666;
+            overflow-x: auto;
         }
 
-        .threshold-info {
-            display: flex;
-            justify-content: space-between;
+        .input-debug {
+            font-family: monospace;
+            font-size: 0.8rem;
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
             margin-top: 10px;
+        }
+
+        .debug-info {
             font-size: 0.8rem;
             color: #666;
+            margin-top: 5px;
         }
 
-        .calibration-status {
-            padding: 10px;
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background: #333;
+            color: white;
             border-radius: 8px;
-            margin-top: 10px;
-            text-align: center;
-            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            z-index: 1000;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
         }
 
-        .calibrating {
-            background: #FFF3CD;
-            border: 2px solid #FFC107;
-            color: #856404;
-            animation: pulse 1s infinite;
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
         }
 
-        .calibrated {
-            background: #D4EDDA;
-            border: 2px solid #28A745;
-            color: #155724;
+        .toast.success {
+            background: #4CAF50;
         }
 
-        @keyframes pulse {
-            0%, 100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.7;
-            }
+        .toast.error {
+            background: #F44336;
         }
 
-        .state-indicator {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: bold;
-            margin-left: 5px;
+        .toast.info {
+            background: #2196F3;
         }
-
-        .state-0 { background: #4CAF50; color: white; }
-        .state-1 { background: #FF9800; color: white; }
-        .state-2 { background: #F44336; color: white; }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>ESP32 Sensor Dashboard</h1>
-            <div class="subtitle">Real-time sensor data from Firebase</div>
+            <h1>ESP32 Glove Controller - Firebase Interface</h1>
+            <div class="subtitle">Real-time sensor data from Firebase | Vietnamese Word Constructor</div>
         </header>
 
         <div class="dashboard">
-            <!-- Flex Sensors Card -->
+            <!-- Sensor Data Card -->
             <div class="card">
-                <h3>Flex Sensors</h3>
-                <div class="flex-box-container">
-                    <div class="flex-box" id="flex0">
-                        <div class="flex-label">F0</div>
-                        <div class="flex-value" id="flex0-value">0</div>
-                        <div class="flex-threshold">Threshold: 300</div>
-                        <div class="state-indicator state-0" id="flex0-state">0</div>
-                    </div>
-                    <div class="flex-box" id="flex1">
-                        <div class="flex-label">F1</div>
-                        <div class="flex-value" id="flex1-value">0</div>
-                        <div class="flex-threshold">Threshold: 450</div>
-                        <div class="state-indicator state-0" id="flex1-state">0</div>
-                    </div>
-                    <div class="flex-box" id="flex2">
-                        <div class="flex-label">F2</div>
-                        <div class="flex-value" id="flex2-value">0</div>
-                        <div class="flex-threshold">Threshold: 350</div>
-                        <div class="state-indicator state-0" id="flex2-state">0</div>
-                    </div>
-                    <div class="flex-box" id="flex3">
-                        <div class="flex-label">F3</div>
-                        <div class="flex-value" id="flex3-value">0</div>
-                        <div class="flex-threshold">Threshold: 300</div>
-                        <div class="state-indicator state-0" id="flex3-state">0</div>
-                    </div>
-                </div>
-                <div class="threshold-info">
-                    <div>Straight threshold: ≤150</div>
-                    <div>Bent threshold: configured values</div>
-                </div>
-                <div class="calibration-status" id="calibration-status">
-                    Not calibrated (using defaults)
-                </div>
-                <div class="data-format">
-                    Format: BT-&gt; F:<span id="flex-format">0000,0000,0000,0000</span>
-                </div>
-            </div>
-
-            <!-- MPU6050 Card -->
-            <div class="card">
-                <h3>MPU6050 Orientation</h3>
+                <h3>Sensor Data from Firebase</h3>
                 <div class="sensor-grid">
                     <div class="sensor-item mpu">
-                        <div class="sensor-label">Current State</div>
-                        <div class="sensor-value" id="mpu-state">Down</div>
+                        <div class="sensor-label">MPU6050 ORIENTATION</div>
+                        <div class="sensor-value" id="mpuOrientation">Unknown</div>
+                        <div class="sensor-label">STATE CODE</div>
+                        <div class="sensor-value" id="mpuState">-1</div>
                     </div>
-                    <div class="sensor-item mpu">
-                        <div class="sensor-label">State Code</div>
-                        <div class="sensor-value" id="mpu-code">1</div>
+                    
+                    <div class="sensor-item flex">
+                        <div class="sensor-label">FLEX SENSORS</div>
+                        <div>
+                            <div>
+                                <span class="flex-box" id="flex0-box">0</span>
+                                <span class="flex-box" id="flex1-box">0</span>
+                                <span class="flex-box" id="flex2-box">0</span>
+                                <span class="flex-box" id="flex3-box">0</span>
+                            </div>
+                            <div class="sensor-label" style="margin-top: 10px;">
+                                State: <span id="flexFormat">0000</span> (a0,a1,a2,a3)
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div class="data-format">
-                    Format: O:<span id="mpu-format">Down</span>
-                </div>
-            </div>
 
-            <!-- Shake Detection Card -->
-            <div class="card">
-                <h3>Shake Detection</h3>
-                <div class="sensor-grid">
                     <div class="sensor-item shake">
-                        <div class="sensor-label">Shake Status</div>
-                        <div class="sensor-value" id="shake-status">NO</div>
+                        <div class="sensor-label">SHAKE STATUS</div>
+                        <div class="sensor-value" id="shakeStatus">NO</div>
+                        <div class="sensor-label">SHAKE DIRECTION</div>
+                        <div class="sensor-value" id="shakeDirection">None</div>
                     </div>
-                    <div class="sensor-item shake">
-                        <div class="sensor-label">Direction</div>
-                        <div class="sensor-value" id="shake-direction">None</div>
+
+                    <div class="sensor-item">
+                        <div class="sensor-label">CONNECTION STATUS</div>
+                        <div class="sensor-value" id="connectionStatus">Disconnected</div>
+                        <div class="sensor-label">LAST UPDATE</div>
+                        <div class="sensor-value" id="lastUpdate">--:--:--</div>
                     </div>
                 </div>
-                <div class="data-format">
-                    Format: S:<span id="shake-format">NO</span> | D:<span id="direction-format">None</span>
+
+                <div class="raw-data">
+                    <div class="sensor-label">RAW FIREBASE DATA</div>
+                    <div id="rawJson">No data received yet...</div>
+                </div>
+
+                <div class="input-debug">
+                    <div class="sensor-label">INPUT DEBUG</div>
+                    <div>MPU State: <span id="debugMpuState">-1</span></div>
+                    <div>Flex States: <span id="debugFlexStates">0,0,0,0</span></div>
+                    <div>Stable Count: <span id="debugStableCount">0</span>/3</div>
+                    <div>Hold Time: <span id="debugHoldTime">0.0</span>s (needs 0.8s)</div>
+                    <div>Last Action: <span id="debugLastAction">0.0</span>s ago</div>
+                </div>
+
+                <div class="controls">
+                    <button onclick="fetchFirebaseData()" class="green">⟳ Refresh Now</button>
+                    <button onclick="toggleAutoRefresh()" id="autoRefreshBtn" class="blue">▶ Start Auto-Refresh</button>
+                    <button onclick="clearAllData()" class="red">Clear All</button>
                 </div>
             </div>
 
-            <!-- Bonus Rows (Based on Direction) -->
-            <div class="card" id="bonus-section" style="display: none;">
-                <h3>Bonus Information</h3>
-                <div class="bonus-row" id="bonus-row1">
-                    <div class="bonus-label">Bonus Row 1 (Shake Direction Based)</div>
-                    <div class="bonus-value" id="bonus-value1">No shake detected</div>
-                </div>
-                <div class="bonus-row" id="bonus-row2">
-                    <div class="bonus-label">Bonus Row 2 (Shake Direction Based)</div>
-                    <div class="bonus-value" id="bonus-value2">No shake detected</div>
-                </div>
-            </div>
-
-            <!-- Raw Data Display -->
+            <!-- Word Construction Card -->
             <div class="card">
-                <h3>Raw Data from Firebase</h3>
-                <div class="sensor-item">
-                    <div class="sensor-label">Latest JSON</div>
-                    <pre id="raw-json" style="white-space: pre-wrap; word-wrap: break-word; font-family: monospace; font-size: 0.9rem; max-height: 200px; overflow-y: auto; background: #f5f5f5; padding: 10px; border-radius: 5px;">Loading...</pre>
+                <h3>Word Construction</h3>
+                <div style="text-align: center; padding: 20px; margin-bottom: 20px;">
+                    <div class="sensor-label">CURRENT WORD (Encoded)</div>
+                    <div class="current-word-display" id="displayBuffer">---</div>
+                    
+                    <div class="sensor-label">CURRENT WORD (Vietnamese)</div>
+                    <div class="conversion-display" id="convertedCurrentWord">---</div>
+                    
+                    <div style="margin: 15px 0; color: #666;">
+                        <div><strong>Use '_' to add word to sentence</strong></div>
+                        <div><strong>Use 'COMMIT' to finalize sentence</strong></div>
+                    </div>
+                    
+                    <div class="sensor-label">FULL SENTENCE (Encoded)</div>
+                    <div class="sentence-display" id="sentenceDisplay">---</div>
+                    
+                    <div class="sensor-label">FULL SENTENCE (Vietnamese)</div>
+                    <div class="conversion-display" id="convertedSentenceDisplay">---</div>
+                    
+                    <div class="word-list" id="wordList">No words yet</div>
+                    <div class="word-count">Words in sentence: <span id="wordCount">0</span>/10</div>
+                    
+                    <div style="display: flex; justify-content: space-around; margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                        <div>
+                            <div class="sensor-label">SLOT 1</div>
+                            <div class="sensor-value" id="slot1" style="font-size: 1.2rem;">---</div>
+                        </div>
+                        <div>
+                            <div class="sensor-label">SLOT 2</div>
+                            <div class="sensor-value" id="slot2" style="font-size: 1.2rem;">---</div>
+                        </div>
+                    </div>
+                    
+                    <div class="controls">
+                        <button onclick="clearCurrentWord()" class="red">Clear Current</button>
+                        <button onclick="backspace()">Backspace</button>
+                        <button onclick="addWordToSentence()" class="green">Add Word (_)</button>
+                        <button onclick="commitSentence()" class="blue">Commit Sentence</button>
+                        <button onclick="resetSentence()" class="red">Reset All</button>
+                    </div>
                 </div>
-                <div class="last-update">
-                    Last updated: <span id="last-update">Never</span>
+            </div>
+
+            <!-- Translation & TTS Card -->
+            <div class="card">
+                <h3>Translation & Text-to-Speech</h3>
+                <div style="margin-bottom: 20px;">
+                    <div class="sensor-label">SENTENCE FOR TRANSLATION</div>
+                    <textarea id="translationInput" class="conversion-display" 
+                              style="width:100%; height:120px; font-size:1.2rem; padding:15px; 
+                                     border:2px solid #4CAF50; border-radius:10px; 
+                                     background:#E8F5E9; color:#333; resize:vertical;"></textarea>
+                    
+                    <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                        <div><strong>Translation Options:</strong></div>
+                        <div style="display: flex; gap: 15px; margin-top: 10px; flex-wrap: wrap;">
+                            <div>
+                                <div class="sensor-label">Target Language</div>
+                                <select id="targetLanguage" class="language-select" 
+                                        style="padding:8px 15px; border-radius:8px; border:1px solid #ccc; min-width:150px;">
+                                    <option value="en-GB">English</option>
+                                    <option value="ja-JP">Japanese</option>
+                                    <option value="ko-KR">Korean</option>
+                                    <option value="zh-CN">Chinese</option>
+                                </select>
+                            </div>
+                            <div>
+                                <div class="sensor-label">Gender</div>
+                                <div style="display: flex; gap: 10px; margin-top: 5px;">
+                                    <label style="display: flex; align-items: center; gap: 5px;">
+                                        <input type="radio" name="gender" value="female" checked> 👩 Female
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 5px;">
+                                        <input type="radio" name="gender" value="male"> 👨 Male
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sensor-label">TRANSLATED RESULT</div>
+                <div id="translationOutput" class="conversion-display" 
+                     style="min-height: 80px; margin-bottom: 15px; padding: 15px; 
+                            background: #E3F2FD; border: 2px solid #2196F3; 
+                            font-size: 1.2rem; line-height: 1.4; color: #1565C0;">
+                    Waiting for translation...
+                </div>
+
+                <div class="controls">
+                    <button onclick="translateSentence()" class="blue">Translate Sentence</button>
+                    <button onclick="speakText('vi-VN')" class="green">🔊 Speak Vietnamese</button>
+                    <button onclick="speakTranslated()" class="green">🔊 Speak Translated</button>
+                    <button onclick="clearTranslation()" class="red">Clear Translation</button>
+                </div>
+
+                <!-- Bonus Rows Section (based on shake direction) -->
+                <div id="bonusRowsSection" style="margin-top: 20px; display: none;">
+                    <div class="sensor-label">BONUS ROWS (Based on Shake Direction)</div>
+                    <div id="bonusRows" class="conversion-display bonus-row">
+                        Shake left or right to show bonus rows
+                    </div>
+                </div>
+            </div>
+
+            <!-- Log Card -->
+            <div class="card">
+                <h3>System Log</h3>
+                <div id="logContainer" 
+                     style="height: 300px; overflow-y: auto; background: #f5f5f5; 
+                            border-radius: 8px; padding: 10px; font-family: monospace; 
+                            font-size: 0.9rem;">
+                    <div>System started. Waiting for Firebase data...</div>
+                </div>
+                <div class="controls" style="margin-top: 10px;">
+                    <button onclick="clearLog()" class="red">Clear Log</button>
+                    <button onclick="exportLog()" class="blue">Export Log</button>
                 </div>
             </div>
         </div>
 
-        <div class="connection-status">
+        <div class="status-bar">
             <div>
-                <span class="status-indicator" id="status-indicator"></span>
-                <span id="status-text">Connecting to Firebase...</span>
+                <span class="indicator" id="connectionIndicator"></span>
+                <span id="statusText">Connecting to Firebase...</span>
             </div>
-            <div class="firebase-url">
-                Source: https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/sensorData.json
+            <div class="timestamp">
+                Firebase URL: <span id="firebaseUrl">gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app</span>
             </div>
         </div>
     </div>
 
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+
     <script>
-        // Firebase URL
+        // Firebase Configuration
         const FIREBASE_URL = 'https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/sensorData.json';
         
-        // Thresholds from ESP32 code
-        const STRAIGHT_THRESHOLD = 150;
-        const FLEX_BENT_THRESHOLDS = [300, 450, 350, 300]; // Default values for A0, A1, A2, A3
+        // Global state
+        let sensorData = {
+            f0: 0, f1: 0, f2: 0, f3: 0,
+            o: 'Unknown',
+            s: false,
+            d: 'None',
+            isoTime: '',
+            timestamp: 0
+        };
         
-        // State variables
-        let lastData = null;
-        let lastUpdateTime = null;
-        let isConnected = false;
-
-        // DOM Elements
-        const statusIndicator = document.getElementById('status-indicator');
-        const statusText = document.getElementById('status-text');
-        const lastUpdateElement = document.getElementById('last-update');
-        const rawJsonElement = document.getElementById('raw-json');
-        const calibrationStatus = document.getElementById('calibration-status');
-
-        // Flex sensor elements
-        const flex0Value = document.getElementById('flex0-value');
-        const flex1Value = document.getElementById('flex1-value');
-        const flex2Value = document.getElementById('flex2-value');
-        const flex3Value = document.getElementById('flex3-value');
-        const flex0State = document.getElementById('flex0-state');
-        const flex1State = document.getElementById('flex1-state');
-        const flex2State = document.getElementById('flex2-state');
-        const flex3State = document.getElementById('flex3-state');
-        const flexFormat = document.getElementById('flex-format');
-        const flexBoxes = [
-            document.getElementById('flex0'),
-            document.getElementById('flex1'),
-            document.getElementById('flex2'),
-            document.getElementById('flex3')
+        let autoRefreshInterval = null;
+        let autoRefreshEnabled = false;
+        let lastDataTime = 0;
+        
+        // Word construction state (EXACT ESP32 LOGIC)
+        const MAX_WORDS = 10;
+        let sentenceWords = [];
+        let fullSentence = '';
+        let convertedFullSentence = '';
+        let displayBuffer = '';
+        let convertedCurrentWord = '';
+        let slot1 = '';
+        let slot2 = '';
+        
+        // Tables from ESP32 code (CORRECTED ORDER as in ESP32)
+        const tableA = [
+            ["IAY","IC","ICH","IE","IEC","IEM","IEN","IENG","IEO"],  // Row 1 (index 0)5
+            ["IEP","IET","IEU","IM","IN","ING","INH","IO","IOI"],    // Row 2 (index 1)6  
+            ["ENG","ENH","EO","EP","ET","EU","I","IA","IAC"],        // Row 3 (index 2)3
+            ["IAI","IAM","IAN","IANG","IANH","IAO","IAP","IAT","IAU"], // Row 8 (index 7)4
+            ["AP","AT","AU","AY","E","EC","ECH","EM","EN"],          // Row 5 (index 4)2
+            ["A","AC","ACH","AI","AM","AN","ANG","ANH","AO"],        // Row 6 (index 5)1
+            ["IUN","IUONG","IUP","O","OA","OAC","OACH","OAI","OAM"], // Row 7 (index 6)8
+            ["ION","IONG","IOT","IP","IT","IU","IUA","IUC","IUI"]    // Row 4 (index 3)7
         ];
 
-        // MPU elements
-        const mpuState = document.getElementById('mpu-state');
-        const mpuCode = document.getElementById('mpu-code');
-        const mpuFormat = document.getElementById('mpu-format');
+        const tableB = [
+            ["UE","UECH","UEN","UENH","UEO","UET","UI","UM","UN"],                     // Row 5
+            ["UNG","UO","UOC","UOI","UOM","UON","UONG","UOP","OUT"],                   // Row 6
+            ["ONG","OOC","OONG","OP","OT","U","UA","UAC","UACH"],                      // Row 3
+            ["UAI","UAM","UAN","UANG","UANH","UAO","UAT","UAY","UC"],                  // Row 4
+            ["OAY","OC","OE","OEN","OEO","OET","OI","OM","ON"],                        // Row 2
+            ["COMMIT","_",null,null,"OAN","OANG","OANH","OAP","OAT"],  // Row 1
+            ["UYNH","UYP","UYT","UYU","Y","YEM","YEN","YET","YEU"],                    // Row 8
+            ["UOU","UP","UT","UU","UY","UYA","UYCH","UYEN","UYET"]                     // Row 7
+        ];
 
-        // Shake elements
-        const shakeStatus = document.getElementById('shake-status');
-        const shakeDirection = document.getElementById('shake-direction');
-        const shakeFormat = document.getElementById('shake-format');
-        const directionFormat = document.getElementById('direction-format');
+        const tableC = [
+            [["B","C","D"],["Đ","G","H"],["K","L","M"]],
+            [["N","P","Q"],["R","S","T"],["V","X","CH"]],
+            [["GH","KH","NG"],["NGH","NH","PH"],["TH","TR","_"]]
+        ];
 
-        // Bonus section
-        const bonusSection = document.getElementById('bonus-section');
-        const bonusValue1 = document.getElementById('bonus-value1');
-        const bonusValue2 = document.getElementById('bonus-value2');
+        // Debouncing and timing constants (EXACT ESP32 VALUES)
+        const DEBOUNCE_COUNT = 3;
+        const HOLD_MS_DEFAULT = 800;  // 0.8 seconds
+        const POST_HOLD_COOLDOWN = 600; // 0.6 seconds
 
-        // Update connection status
-        function updateConnectionStatus(connected) {
-            isConnected = connected;
-            if (connected) {
-                statusIndicator.className = 'status-indicator online';
-                statusText.textContent = 'Connected to Firebase';
-            } else {
-                statusIndicator.className = 'status-indicator offline';
-                statusText.textContent = 'Disconnected from Firebase';
+        // Word construction state variables (EXACT ESP32 LOGIC)
+        let currentMPUState = -1;
+        let lastDetectedIndex = -1;
+        let lastF0 = -1, lastF1 = -1, lastF2 = -1, lastF3idx = -1;
+        let stableCount = 0;
+        let holdStartMs = 0;
+        let holdFired = false;
+        let lastActionMs = 0;
+        let flexStates = [0, 0, 0, 0];
+        let lastFlexUpdate = 0;
+
+        // Log system
+        let logEntries = [];
+        const MAX_LOG_ENTRIES = 50;
+
+        // DOM Elements
+        const elements = {
+            mpuOrientation: document.getElementById('mpuOrientation'),
+            mpuState: document.getElementById('mpuState'),
+            shakeStatus: document.getElementById('shakeStatus'),
+            shakeDirection: document.getElementById('shakeDirection'),
+            connectionStatus: document.getElementById('connectionStatus'),
+            lastUpdate: document.getElementById('lastUpdate'),
+            flex0Box: document.getElementById('flex0-box'),
+            flex1Box: document.getElementById('flex1-box'),
+            flex2Box: document.getElementById('flex2-box'),
+            flex3Box: document.getElementById('flex3-box'),
+            flexFormat: document.getElementById('flexFormat'),
+            rawJson: document.getElementById('rawJson'),
+            connectionIndicator: document.getElementById('connectionIndicator'),
+            statusText: document.getElementById('statusText'),
+            displayBuffer: document.getElementById('displayBuffer'),
+            convertedCurrentWord: document.getElementById('convertedCurrentWord'),
+            sentenceDisplay: document.getElementById('sentenceDisplay'),
+            convertedSentenceDisplay: document.getElementById('convertedSentenceDisplay'),
+            wordList: document.getElementById('wordList'),
+            wordCount: document.getElementById('wordCount'),
+            slot1: document.getElementById('slot1'),
+            slot2: document.getElementById('slot2'),
+            translationInput: document.getElementById('translationInput'),
+            translationOutput: document.getElementById('translationOutput'),
+            bonusRowsSection: document.getElementById('bonusRowsSection'),
+            bonusRows: document.getElementById('bonusRows'),
+            logContainer: document.getElementById('logContainer'),
+            autoRefreshBtn: document.getElementById('autoRefreshBtn'),
+            toast: document.getElementById('toast'),
+            debugMpuState: document.getElementById('debugMpuState'),
+            debugFlexStates: document.getElementById('debugFlexStates'),
+            debugStableCount: document.getElementById('debugStableCount'),
+            debugHoldTime: document.getElementById('debugHoldTime'),
+            debugLastAction: document.getElementById('debugLastAction')
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchFirebaseData();
+            updateUI();
+            setInterval(updateConnectionStatus, 1000);
+            
+            // Load any saved state from localStorage
+            loadState();
+        });
+
+        // Firebase Data Fetching
+        async function fetchFirebaseData() {
+            try {
+                log('Fetching data from Firebase...', 'INFO');
+                elements.statusText.textContent = 'Fetching data...';
+                
+                const response = await fetch(FIREBASE_URL);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                lastDataTime = Date.now();
+                
+                // Update sensor data
+                sensorData = {
+                    f0: data.f0 || 0,
+                    f1: data.f1 || 0,
+                    f2: data.f2 || 0,
+                    f3: data.f3 || 0,
+                    o: data.o || data.mpuOrientation || 'Unknown',
+                    s: data.sf === 'YES' || data.sh === true || data.isShaking === true,
+                    d: data.d || data.shakeState || 'None',
+                    isoTime: data.isoTime || new Date().toISOString(),
+                    timestamp: data.timestamp || Date.now(),
+                    rawFlex: data.f || [0,0,0,0]
+                };
+                
+                // Update raw JSON display
+                elements.rawJson.textContent = JSON.stringify(data, null, 2);
+                
+                // Process word construction based on sensor data (EXACT ESP32 LOGIC)
+                processSensorData();
+                
+                // Update UI
+                updateUI();
+                
+                // Update debug info
+                updateDebugInfo();
+                
+                // Show bonus rows based on shake direction
+                updateBonusRows();
+                
+                log('Data fetched successfully', 'SUCCESS');
+                
+            } catch (error) {
+                log(`Error fetching Firebase data: ${error.message}`, 'ERROR');
+                elements.statusText.textContent = 'Connection failed';
+                elements.connectionIndicator.className = 'indicator offline';
             }
         }
 
-        // Format timestamp
-        function formatTime(timestamp) {
-            const date = new Date(timestamp);
-            return date.toLocaleTimeString([], { 
-                hour: '2-digit', 
-                minute: '2-digit', 
-                second: '2-digit' 
-            });
+        // EXACT ESP32 LOGIC for processing sensor data
+        function processSensorData() {
+            // Calculate MPU state from orientation and shake
+            const mpuState = getMPUStateCode(sensorData.o, sensorData.d);
+            
+            // Calculate flex states from raw values (using ESP32 calibration logic)
+            const newFlexStates = [
+                calculateFlexState(sensorData.f0, 0),
+                calculateFlexState(sensorData.f1, 1),
+                calculateFlexState(sensorData.f2, 2),
+                calculateFlexState(sensorData.f3, 3)
+            ];
+            
+            // Update debug display
+            elements.debugMpuState.textContent = mpuState;
+            elements.debugFlexStates.textContent = newFlexStates.join(',');
+            
+            // Check if state has changed (debouncing logic)
+            if (mpuState === lastDetectedIndex && 
+                newFlexStates[0] === lastF0 && 
+                newFlexStates[1] === lastF1 && 
+                newFlexStates[2] === lastF2 && 
+                newFlexStates[3] === lastF3idx) {
+                stableCount++;
+            } else {
+                stableCount = 1;
+                lastDetectedIndex = mpuState;
+                lastF0 = newFlexStates[0];
+                lastF1 = newFlexStates[1];
+                lastF2 = newFlexStates[2];
+                lastF3idx = newFlexStates[3];
+                holdStartMs = Date.now();
+                holdFired = false;
+            }
+            
+            elements.debugStableCount.textContent = stableCount;
+            elements.debugHoldTime.textContent = ((Date.now() - holdStartMs) / 1000).toFixed(1);
+            
+            // If stable for DEBOUNCE_COUNT, process the action
+            if (stableCount >= DEBOUNCE_COUNT) {
+                const held = Date.now() - holdStartMs;
+                const timeSinceLastAction = Date.now() - lastActionMs;
+                
+                elements.debugLastAction.textContent = (timeSinceLastAction / 1000).toFixed(1);
+                
+                // Check if we should fire the action
+                if (!holdFired && timeSinceLastAction > POST_HOLD_COOLDOWN && held >= HOLD_MS_DEFAULT) {
+                    if (performActionSlotLogic(mpuState, newFlexStates[0], newFlexStates[1], newFlexStates[2], newFlexStates[3])) {
+                        holdFired = true;
+                        lastActionMs = Date.now();
+                        log(`Action performed: ${displayBuffer}`, 'INFO');
+                    }
+                }
+            }
+            
+            // Update flex states for display
+            flexStates = newFlexStates;
         }
 
-        // Calculate flex state based on thresholds
+        // EXACT ESP32 LOGIC: Calculate MPU state code
+        function getMPUStateCode(orientation, shakeDirection) {
+            // First check for shake (priority)
+            if (shakeDirection === 'Shake Left') return 6;
+            if (shakeDirection === 'Shake Right') return 7;
+            
+            // Then check orientation
+            const orientationMap = {
+                'Up': 0, 'Down': 1, 'Left': 2, 'Right': 3,
+                'Forward': 4, 'Backward': 5
+            };
+            
+            return orientationMap[orientation] !== undefined ? orientationMap[orientation] : -1;
+        }
+
+        // EXACT ESP32 LOGIC: Calculate flex state (simplified - adjust thresholds as needed)
         function calculateFlexState(rawValue, sensorIndex) {
+            const STRAIGHT_THRESHOLD = 150;
+            const flexBentThresholds = [300, 450, 350, 300]; // Default values
+            
             if (rawValue <= STRAIGHT_THRESHOLD) {
                 return 0; // Straight/not bent
-            } else if (rawValue <= FLEX_BENT_THRESHOLDS[sensorIndex]) {
+            } else if (rawValue <= flexBentThresholds[sensorIndex]) {
                 return 1; // Partially bent
             } else {
                 return 2; // Fully bent
             }
         }
 
-        // Parse flex values from JSON
-        function parseFlexValues(data) {
-            // Use the individual f0, f1, f2, f3 fields
-            let f0 = data.f0 !== undefined ? data.f0 : 0;
-            let f1 = data.f1 !== undefined ? data.f1 : 0;
-            let f2 = data.f2 !== undefined ? data.f2 : 0;
-            let f3 = data.f3 !== undefined ? data.f3 : 0;
+        // EXACT ESP32 LOGIC: Get mapping from tables
+        function getMappingForIndices(mpuState, a0, a1, a2, a3) {
+            if (mpuState < 0 || mpuState > 7) {
+                return null;
+            }
             
-            return { f0, f1, f2, f3 };
-        }
-
-        // Update flex sensor display
-        function updateFlexSensors(flexData) {
-            // Update values
-            flex0Value.textContent = flexData.f0;
-            flex1Value.textContent = flexData.f1;
-            flex2Value.textContent = flexData.f2;
-            flex3Value.textContent = flexData.f3;
-            
-            // Calculate states
-            const state0 = calculateFlexState(flexData.f0, 0);
-            const state1 = calculateFlexState(flexData.f1, 1);
-            const state2 = calculateFlexState(flexData.f2, 2);
-            const state3 = calculateFlexState(flexData.f3, 3);
-            
-            // Update state indicators
-            flex0State.textContent = state0;
-            flex0State.className = `state-indicator state-${state0}`;
-            flex1State.textContent = state1;
-            flex1State.className = `state-indicator state-${state1}`;
-            flex2State.textContent = state2;
-            flex2State.className = `state-indicator state-${state2}`;
-            flex3State.textContent = state3;
-            flex3State.className = `state-indicator state-${state3}`;
-            
-            // Update format display (with leading zeros)
-            const formatF0 = flexData.f0.toString().padStart(4, '0');
-            const formatF1 = flexData.f1.toString().padStart(4, '0');
-            const formatF2 = flexData.f2.toString().padStart(4, '0');
-            const formatF3 = flexData.f3.toString().padStart(4, '0');
-            flexFormat.textContent = `${formatF0},${formatF1},${formatF2},${formatF3}`;
-            
-            // Update box styling based on state
-            updateFlexBoxStyle(flexBoxes[0], state0, flexData.f0);
-            updateFlexBoxStyle(flexBoxes[1], state1, flexData.f1);
-            updateFlexBoxStyle(flexBoxes[2], state2, flexData.f2);
-            updateFlexBoxStyle(flexBoxes[3], state3, flexData.f3);
-        }
-
-        // Update flex box style based on state
-        function updateFlexBoxStyle(box, state, value) {
-            // Reset all classes
-            box.className = 'flex-box';
-            
-            // Add appropriate class based on state
-            if (state === 0) {
-                // Straight
-                if (value > 0) {
-                    box.classList.add('active');
+            if (a3 === 2) {  // Use tableC (3x3x3)
+                if (a0 < 3 && a1 < 3 && a2 < 3) {
+                    return tableC[a0][a1][a2];
                 }
-            } else if (state === 1) {
-                // Partially bent
-                box.classList.add('active-medium');
-            } else if (state === 2) {
-                // Fully bent
-                box.classList.add('active-high');
+                return null;
+            }
+            
+            // For tableA (a3=0) and tableB (a3=1)
+            const a3bin = (a3 === 1) ? 1 : 0;
+            if (a1 < 0 || a1 >= 3 || a2 < 0 || a2 >= 3) {
+                return null;
+            }
+            
+            const flatIndex = a1 * 3 + a2;
+            
+            if (flatIndex >= 0 && flatIndex < 9) {
+                if (a3bin === 0) {
+                    return tableA[mpuState][flatIndex];
+                } else {
+                    return tableB[mpuState][flatIndex];
+                }
+            }
+            
+            return null;
+        }
+
+        // EXACT ESP32 LOGIC: Flex mode char from a0
+        function flexModeCharFromA0(a0) {
+            switch(a0) {
+                case 0: return 's';
+                case 1: return 'b';
+                case 2: return 'p';
+                default: return 'x';
             }
         }
 
-        // Get MPU state code from orientation
-        function getMPUStateCode(orientation) {
-            const stateMap = {
-                'Up': 0,
-                'Down': 1,
-                'Left': 2,
-                'Right': 3,
-                'Forward': 4,
-                'Backward': 5,
-                'Shaking Left': 6,
-                'Shaking Right': 7
-            };
-            return stateMap[orientation] !== undefined ? stateMap[orientation] : -1;
-        }
-
-        // Update MPU6050 display
-        function updateMPU(data) {
-            // Get orientation from different possible fields
-            let orientation = data.o || data.mpuOrientation || 'Unknown';
-            mpuState.textContent = orientation;
-            mpuFormat.textContent = orientation;
+        // EXACT ESP32 LOGIC: Perform action slot logic
+        function performActionSlotLogic(mpu, a0, a1, a2, a3) {
+            const mapping = getMappingForIndices(mpu, a0, a1, a2, a3);
+            if (!mapping || mapping === 'nullptr') {
+                return false;
+            }
             
-            // Calculate state code
-            const stateCode = getMPUStateCode(orientation);
-            mpuCode.textContent = stateCode;
+            // Handle underscore (word separator)
+            if (mapping === '_') {
+                addWordToSentence();
+                return true;
+            }
             
-            // Add shake animation if shaking
-            if (orientation.includes('Shaking')) {
-                mpuState.classList.add('shake-active');
+            // Handle COMMIT (sentence finalizer)
+            if (mapping === 'COMMIT') {
+                commitSentence();
+                return true;
+            }
+            
+            // Handle backspace
+            if (mapping === '<') {
+                backspaceBuffer();
+                updateDisplayBufferFromSlots();
+                return true;
+            }
+            
+            const isSlot1 = (a3 === 2);
+            const held = Date.now() - holdStartMs;
+            
+            if (isSlot1 && stableCount >= DEBOUNCE_COUNT && held < HOLD_MS_DEFAULT) {
+                const mode = flexModeCharFromA0(a0);
+                slot2 = `${mapping}_${mode}`;
+            } else if (isSlot1) {
+                slot1 = `${mapping}_${mpu}`;
             } else {
-                mpuState.classList.remove('shake-active');
+                const mode = flexModeCharFromA0(a0);
+                slot2 = `${mapping}_${mode}`;
+            }
+            
+            updateDisplayBufferFromSlots();
+            return true;
+        }
+
+        // EXACT ESP32 LOGIC: Backspace buffer
+        function backspaceBuffer() {
+            if (displayBuffer.length > 0) {
+                displayBuffer = displayBuffer.slice(0, -1);
+                convertedCurrentWord = convertVietnameseWord(displayBuffer);
+                log(`Backspace - Buffer: ${displayBuffer}`, 'INFO');
             }
         }
 
-        // Update shake detection display
-        function updateShakeDetection(data) {
-            // Get shake status from different possible fields
-            let shakeStatusValue = 'NO';
-            if (data.sf === 'YES' || data.S === 'YES' || data.sh === true) {
-                shakeStatusValue = 'YES';
+        // EXACT ESP32 LOGIC: Update display buffer from slots
+        function updateDisplayBufferFromSlots() {
+            const oldBuffer = displayBuffer;
+            displayBuffer = (slot1 + slot2).toLowerCase();
+            
+            if (oldBuffer !== displayBuffer) {
+                convertedCurrentWord = convertVietnameseWord(displayBuffer);
+                log(`Word updated: ${displayBuffer}`, 'INFO');
+            }
+        }
+
+        // EXACT ESP32 LOGIC: Add word to sentence
+        function addWordToSentence() {
+            if (!displayBuffer || sentenceWords.length >= MAX_WORDS) return;
+            
+            sentenceWords.push(displayBuffer);
+            fullSentence = sentenceWords.join(' ');
+            convertedFullSentence = convertVietnameseText(fullSentence);
+            
+            // Clear current word
+            displayBuffer = '';
+            convertedCurrentWord = '';
+            slot1 = '';
+            slot2 = '';
+            
+            updateUI();
+            saveState();
+            showToast('Word added to sentence', 'success');
+            log(`Added word: "${displayBuffer}" to sentence`, 'INFO');
+        }
+
+        // EXACT ESP32 LOGIC: Commit sentence
+        function commitSentence() {
+            if (sentenceWords.length === 0) {
+                showToast('No words in sentence to commit', 'error');
+                return;
             }
             
-            // Get direction from different possible fields
-            let direction = data.d || data.D || data.shakeState || 'None';
+            // Add any pending word
+            if (displayBuffer) {
+                addWordToSentence();
+            }
             
-            shakeStatus.textContent = shakeStatusValue;
-            shakeDirection.textContent = direction;
-            shakeFormat.textContent = shakeStatusValue;
-            directionFormat.textContent = direction;
+            log(`=== COMMIT SENTENCE ===`, 'SUCCESS');
+            log(`Full sentence: ${fullSentence}`, 'SUCCESS');
+            log(`Converted sentence: ${convertedFullSentence}`, 'SUCCESS');
             
-            // Add shake animation if shaking
-            if (shakeStatusValue === 'YES') {
-                shakeStatus.classList.add('shake-active');
-                shakeDirection.classList.add('shake-active');
+            // Process each word in the sentence
+            for (let i = 0; i < sentenceWords.length; i++) {
+                log(`Word ${i + 1}: ${sentenceWords[i]}`, 'INFO');
+            }
+            
+            showToast('Sentence committed successfully', 'success');
+            
+            // Reset sentence after commit
+            resetSentence();
+        }
+
+        // EXACT ESP32 LOGIC: Reset sentence
+        function resetSentence() {
+            sentenceWords = [];
+            fullSentence = '';
+            convertedFullSentence = '';
+            displayBuffer = '';
+            convertedCurrentWord = '';
+            slot1 = '';
+            slot2 = '';
+            
+            updateUI();
+            saveState();
+            showToast('Sentence reset', 'info');
+            log('Sentence reset - ready for new input', 'INFO');
+        }
+
+        // Vietnamese Conversion (simplified - you need to implement full logic)
+        function convertVietnameseWord(encodedWord) {
+            if (!encodedWord) return '';
+            
+            // This is a placeholder - implement your actual conversion logic here
+            // You need to parse the encoded word format and use the vietnameseTable
+            return encodedWord;
+        }
+
+        function convertVietnameseText(encodedText) {
+            if (!encodedText) return '';
+            
+            // This is a placeholder - implement your actual conversion logic here
+            return encodedText;
+        }
+
+        function updateUI() {
+            // Update sensor displays
+            elements.mpuOrientation.textContent = sensorData.o;
+            elements.mpuState.textContent = getMPUStateCode(sensorData.o, sensorData.d);
+            elements.shakeStatus.textContent = sensorData.s ? 'YES' : 'NO';
+            elements.shakeDirection.textContent = sensorData.d;
+            
+            // Update connection status
+            const timeDiff = Date.now() - lastDataTime;
+            if (timeDiff < 5000) {
+                elements.connectionStatus.textContent = 'Connected';
+                elements.connectionIndicator.className = 'indicator online';
+            } else if (timeDiff < 30000) {
+                elements.connectionStatus.textContent = 'Stale';
+                elements.connectionIndicator.className = 'indicator';
             } else {
-                shakeStatus.classList.remove('shake-active');
-                shakeDirection.classList.remove('shake-active');
+                elements.connectionStatus.textContent = 'Disconnected';
+                elements.connectionIndicator.className = 'indicator offline';
             }
             
-            // Show/hide bonus section based on direction
-            if (direction !== 'None') {
-                bonusSection.style.display = 'block';
-                updateBonusRows(data, direction);
+            // Update last update time
+            if (sensorData.isoTime) {
+                const date = new Date(sensorData.isoTime);
+                elements.lastUpdate.textContent = date.toLocaleTimeString();
+            }
+            
+            // Update flex sensors
+            const flexValues = [sensorData.f0, sensorData.f1, sensorData.f2, sensorData.f3];
+            const flexBoxes = [elements.flex0Box, elements.flex1Box, elements.flex2Box, elements.flex3Box];
+            
+            flexBoxes.forEach((box, index) => {
+                const value = flexValues[index];
+                box.textContent = value;
+                box.className = 'flex-box';
+                
+                // Determine state
+                const state = calculateFlexState(value, index);
+                box.classList.add(`active-${state}`);
+            });
+            
+            elements.flexFormat.textContent = `${flexStates[0]}${flexStates[1]}${flexStates[2]}${flexStates[3]}`;
+            
+            // Update word construction displays
+            elements.displayBuffer.textContent = displayBuffer || '---';
+            elements.convertedCurrentWord.textContent = convertedCurrentWord || '---';
+            elements.sentenceDisplay.textContent = fullSentence || '---';
+            elements.convertedSentenceDisplay.textContent = convertedFullSentence || '---';
+            elements.slot1.textContent = slot1 || '---';
+            elements.slot2.textContent = slot2 || '---';
+            
+            // Update word list
+            updateWordList();
+            elements.wordCount.textContent = sentenceWords.length;
+            
+            // Update translation input with current sentence
+            elements.translationInput.value = convertedFullSentence;
+            
+            // Update status text
+            if (lastDataTime > 0) {
+                const secondsAgo = Math.floor((Date.now() - lastDataTime) / 1000);
+                elements.statusText.textContent = `Connected (${secondsAgo}s ago)`;
+            }
+        }
+
+        function updateDebugInfo() {
+            elements.debugMpuState.textContent = lastDetectedIndex;
+            elements.debugFlexStates.textContent = `${lastF0},${lastF1},${lastF2},${lastF3idx}`;
+            elements.debugStableCount.textContent = stableCount;
+            elements.debugHoldTime.textContent = ((Date.now() - holdStartMs) / 1000).toFixed(1);
+            elements.debugLastAction.textContent = ((Date.now() - lastActionMs) / 1000).toFixed(1);
+        }
+
+        function updateWordList() {
+            elements.wordList.innerHTML = '';
+            sentenceWords.forEach((word, index) => {
+                const wordDiv = document.createElement('div');
+                wordDiv.className = 'word-item';
+                wordDiv.textContent = `${index + 1}. ${word}`;
+                elements.wordList.appendChild(wordDiv);
+            });
+            
+            if (sentenceWords.length === 0) {
+                elements.wordList.innerHTML = '<div style="color: #999; text-align: center;">No words yet</div>';
+            }
+        }
+
+        // Word Construction Functions
+        function clearCurrentWord() {
+            displayBuffer = '';
+            convertedCurrentWord = '';
+            slot1 = '';
+            slot2 = '';
+            
+            updateUI();
+            saveState();
+            showToast('Current word cleared', 'info');
+        }
+
+        function backspace() {
+            if (displayBuffer.length > 0) {
+                displayBuffer = displayBuffer.slice(0, -1);
+                convertedCurrentWord = convertVietnameseWord(displayBuffer);
+                updateUI();
+                saveState();
+            }
+        }
+
+        // Bonus Rows based on Shake Direction
+        function updateBonusRows() {
+            if (sensorData.d === 'Shake Left' || sensorData.d === 'Shake Right') {
+                elements.bonusRowsSection.style.display = 'block';
+                
+                // Determine which bonus rows to show based on shake direction
+                let bonusContent = '';
+                if (sensorData.d === 'Shake Left') {
+                    bonusContent = 'BONUS ROW LEFT:\nExtra functionality for left shake';
+                } else if (sensorData.d === 'Shake Right') {
+                    bonusContent = 'BONUS ROW RIGHT:\nExtra functionality for right shake';
+                }
+                
+                elements.bonusRows.textContent = bonusContent;
             } else {
-                bonusSection.style.display = 'none';
+                elements.bonusRowsSection.style.display = 'none';
             }
         }
 
-        // Update bonus rows based on shake direction
-        function updateBonusRows(data, direction) {
-            // Bonus Row 1: Display additional sensor data based on direction
-            let bonus1 = '';
-            let bonus2 = '';
+        // Translation Functions
+        async function translateSentence() {
+            const text = elements.translationInput.value.trim();
+            const targetLang = document.getElementById('targetLanguage').value;
             
-            switch(direction) {
-                case 'Shake Left':
-                    bonus1 = `Left shake detected with gyro: ${data.w !== undefined ? data.w : 'N/A'}`;
-                    bonus2 = `Flex states: ${[data.f0, data.f1, data.f2, data.f3].map(v => v !== undefined ? v : 0).join(', ')}`;
-                    break;
-                case 'Shake Right':
-                    bonus1 = `Right shake detected with gyro: ${data.w !== undefined ? data.w : 'N/A'}`;
-                    bonus2 = `Flex states: ${[data.f0, data.f1, data.f2, data.f3].map(v => v !== undefined ? v : 0).join(', ')}`;
-                    break;
-                default:
-                    bonus1 = `Direction: ${direction}`;
-                    bonus2 = `Timestamp: ${data.isoTime || 'N/A'}`;
+            if (!text) {
+                showToast('Please enter text to translate', 'error');
+                return;
             }
             
-            // Add additional data if available
-            if (data.c !== undefined) {
-                bonus1 += ` | Count: ${data.c}`;
-            }
-            if (data.messageId !== undefined) {
-                bonus2 += ` | Message ID: ${data.messageId}`;
-            }
+            elements.translationOutput.innerHTML = '<span class="loading">Translating... ⏳</span>';
             
-            bonusValue1.textContent = bonus1;
-            bonusValue2.textContent = bonus2;
-        }
-
-        // Update calibration status
-        function updateCalibrationStatus(data) {
-            if (data.calibrating) {
-                calibrationStatus.className = 'calibration-status calibrating';
-                calibrationStatus.textContent = 'Calibrating... Bend sensors fully!';
-            } else if (data.calibrationComplete) {
-                calibrationStatus.className = 'calibration-status calibrated';
-                calibrationStatus.textContent = 'Calibration Complete ✓';
-            } else {
-                calibrationStatus.className = 'calibration-status';
-                calibrationStatus.textContent = 'Not calibrated (using defaults)';
-            }
-        }
-
-        // Update raw JSON display
-        function updateRawJSON(data) {
-            rawJsonElement.textContent = JSON.stringify(data, null, 2);
-            lastUpdateTime = Date.now();
-            lastUpdateElement.textContent = formatTime(lastUpdateTime);
-        }
-
-        // Fetch data from Firebase
-        async function fetchData() {
             try {
-                const response = await fetch(FIREBASE_URL);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                
-                if (!data || Object.keys(data).length === 0) {
-                    throw new Error('No data received from Firebase');
-                }
-                
-                updateConnectionStatus(true);
-                
-                // Parse and update all displays
-                const flexData = parseFlexValues(data);
-                updateFlexSensors(flexData);
-                updateMPU(data);
-                updateShakeDetection(data);
-                updateCalibrationStatus(data);
-                updateRawJSON(data);
-                
-                lastData = data;
+                // Simulate translation
+                setTimeout(() => {
+                    elements.translationOutput.textContent = `[TRANSLATED TO ${targetLang}]: ${text}`;
+                    showToast('Translation complete', 'success');
+                    log(`Translated: "${text.substring(0, 50)}..."`, 'INFO');
+                }, 1000);
                 
             } catch (error) {
-                console.error('Error fetching data:', error);
-                updateConnectionStatus(false);
-                statusText.textContent = `Error: ${error.message}`;
-                
-                // If we have old data, show it with a stale indicator
-                if (lastData) {
-                    statusText.textContent = 'Using cached data (connection lost)';
-                }
+                elements.translationOutput.textContent = `Translation error: ${error.message}`;
+                showToast('Translation failed', 'error');
+                log(`Translation error: ${error.message}`, 'ERROR');
             }
         }
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            // Fetch data immediately
-            fetchData();
+        function speakText(lang) {
+            const text = lang === 'vi-VN' ? elements.translationInput.value : elements.translationOutput.textContent;
             
-            // Set up periodic refresh (every 2 seconds)
-            setInterval(fetchData, 2000);
-            
-            // Also refresh when window gains focus
-            window.addEventListener('focus', fetchData);
-        });
-
-        // Handle visibility change
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) {
-                fetchData();
+            if (!text || text.includes('Waiting') || text.includes('error')) {
+                showToast('No text to speak', 'error');
+                return;
             }
-        });
+            
+            // Use Web Speech API
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = lang;
+                utterance.rate = 0.8;
+                
+                // Select voice based on gender
+                const gender = document.querySelector('input[name="gender"]:checked').value;
+                const voices = speechSynthesis.getVoices();
+                const preferredVoice = voices.find(voice => 
+                    voice.lang === lang && 
+                    voice.name.toLowerCase().includes(gender)
+                );
+                
+                if (preferredVoice) {
+                    utterance.voice = preferredVoice;
+                }
+                
+                speechSynthesis.speak(utterance);
+                showToast('Speaking...', 'info');
+                log(`Speaking: "${text.substring(0, 50)}..."`, 'INFO');
+            } else {
+                showToast('Speech synthesis not supported', 'error');
+            }
+        }
+
+        function speakTranslated() {
+            const targetLang = document.getElementById('targetLanguage').value;
+            speakText(targetLang);
+        }
+
+        function clearTranslation() {
+            elements.translationOutput.textContent = 'Waiting for translation...';
+            showToast('Translation cleared', 'info');
+        }
+
+        // Auto-refresh Functions
+        function toggleAutoRefresh() {
+            if (autoRefreshEnabled) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshEnabled = false;
+                elements.autoRefreshBtn.textContent = '▶ Start Auto-Refresh';
+                elements.autoRefreshBtn.className = 'blue';
+                showToast('Auto-refresh stopped', 'info');
+                log('Auto-refresh stopped', 'INFO');
+            } else {
+                autoRefreshInterval = setInterval(fetchFirebaseData, 2000);
+                autoRefreshEnabled = true;
+                elements.autoRefreshBtn.textContent = '⏸ Stop Auto-Refresh';
+                elements.autoRefreshBtn.className = 'orange';
+                showToast('Auto-refresh started (2s interval)', 'success');
+                log('Auto-refresh started', 'INFO');
+            }
+        }
+
+        // Connection Status
+        function updateConnectionStatus() {
+            const now = Date.now();
+            const timeDiff = now - lastDataTime;
+            
+            if (timeDiff < 5000) {
+                elements.connectionIndicator.className = 'indicator online';
+            } else if (timeDiff < 30000) {
+                elements.connectionIndicator.className = 'indicator';
+            } else {
+                elements.connectionIndicator.className = 'indicator offline';
+            }
+        }
+
+        // Log System
+        function log(message, type = 'INFO') {
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = {
+                timestamp,
+                type,
+                message
+            };
+            
+            logEntries.push(entry);
+            if (logEntries.length > MAX_LOG_ENTRIES) {
+                logEntries.shift();
+            }
+            
+            // Update log display
+            updateLogDisplay();
+            
+            // Also log to console
+            console.log(`[${timestamp}] ${type}: ${message}`);
+        }
+
+        function updateLogDisplay() {
+            elements.logContainer.innerHTML = '';
+            logEntries.forEach(entry => {
+                const logLine = document.createElement('div');
+                logLine.style.marginBottom = '5px';
+                logLine.style.padding = '3px 5px';
+                logLine.style.borderRadius = '3px';
+                logLine.style.fontSize = '0.85rem';
+                
+                let color = '#666';
+                if (entry.type === 'SUCCESS') color = '#4CAF50';
+                if (entry.type === 'ERROR') color = '#F44336';
+                if (entry.type === 'INFO') color = '#2196F3';
+                
+                logLine.innerHTML = `<span style="color: #999;">[${entry.timestamp}]</span> 
+                                    <span style="color: ${color}; font-weight: bold;">${entry.type}:</span> 
+                                    <span style="color: #333;">${entry.message}</span>`;
+                
+                elements.logContainer.appendChild(logLine);
+            });
+            
+            // Auto-scroll to bottom
+            elements.logContainer.scrollTop = elements.logContainer.scrollHeight;
+        }
+
+        function clearLog() {
+            logEntries = [];
+            updateLogDisplay();
+            showToast('Log cleared', 'info');
+        }
+
+        function exportLog() {
+            const logText = logEntries.map(entry => 
+                `[${entry.timestamp}] ${entry.type}: ${entry.message}`
+            ).join('\n');
+            
+            const blob = new Blob([logText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `esp32-log-${new Date().toISOString().split('T')[0]}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showToast('Log exported', 'success');
+        }
+
+        // Toast Notifications
+        function showToast(message, type = 'info') {
+            elements.toast.textContent = message;
+            elements.toast.className = `toast ${type}`;
+            elements.toast.classList.add('show');
+            
+            setTimeout(() => {
+                elements.toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // State Persistence
+        function saveState() {
+            const state = {
+                sentenceWords,
+                fullSentence,
+                convertedFullSentence,
+                displayBuffer,
+                convertedCurrentWord,
+                slot1,
+                slot2
+            };
+            
+            localStorage.setItem('esp32GloveState', JSON.stringify(state));
+        }
+
+        function loadState() {
+            try {
+                const saved = localStorage.getItem('esp32GloveState');
+                if (saved) {
+                    const state = JSON.parse(saved);
+                    sentenceWords = state.sentenceWords || [];
+                    fullSentence = state.fullSentence || '';
+                    convertedFullSentence = state.convertedFullSentence || '';
+                    displayBuffer = state.displayBuffer || '';
+                    convertedCurrentWord = state.convertedCurrentWord || '';
+                    slot1 = state.slot1 || '';
+                    slot2 = state.slot2 || '';
+                    
+                    updateUI();
+                    log('State loaded from localStorage', 'INFO');
+                }
+            } catch (error) {
+                console.error('Error loading state:', error);
+            }
+        }
+
+        function clearAllData() {
+            if (confirm('Clear all data including sentence and logs?')) {
+                resetSentence();
+                clearLog();
+                localStorage.removeItem('esp32GloveState');
+                
+                // Reset word construction state
+                currentMPUState = -1;
+                lastDetectedIndex = -1;
+                lastF0 = -1; lastF1 = -1; lastF2 = -1; lastF3idx = -1;
+                stableCount = 0;
+                holdStartMs = 0;
+                holdFired = false;
+                lastActionMs = 0;
+                flexStates = [0, 0, 0, 0];
+                
+                showToast('All data cleared', 'info');
+            }
+        }
     </script>
 </body>
 </html>
