@@ -3,17 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ứng dụng và cải tiến "Công nghệ dịch thủ ngữ" - TỐI ƯU HIỆU SUẤT</title>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database-compat.js"></script>
+    <title>Ứng dụng và cải tiến "Công nghệ dịch thủ ngữ" vào đời sống - Phiên bản tối ưu</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
         }
 
         body {
@@ -22,33 +17,6 @@
             color: #333;
             min-height: 100vh;
             padding: 20px;
-            overflow-x: hidden;
-        }
-
-        /* Tối ưu hiệu suất rendering */
-        .container, .card, .conversion-display, .sentence-display, .current-word-display,
-        .sensor-value, .flex-box {
-            will-change: transform, opacity;
-            backface-visibility: hidden;
-            transform: translateZ(0);
-            contain: content;
-        }
-
-        /* Tắt animation khi không cần thiết */
-        @media (prefers-reduced-motion: reduce) {
-            *,
-            *::before,
-            *::after {
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.01ms !important;
-            }
-            
-            .indicator.online,
-            .shake-active,
-            .calibrating {
-                animation: none !important;
-            }
         }
 
         .container {
@@ -85,6 +53,8 @@
             padding: 20px;
             box-shadow: 0 3px 10px rgba(0,0,0,0.1);
             border: 1px solid #eaeaea;
+            will-change: transform, opacity;
+            contain: content;
         }
 
         .card h3 {
@@ -108,6 +78,8 @@
             padding: 15px;
             border: 2px solid #2196F3;
             line-height: 1.4;
+            contain: strict;
+            transform: translateZ(0);
         }
 
         .sentence-display {
@@ -124,6 +96,8 @@
             padding: 20px;
             border: 2px solid #4CAF50;
             line-height: 1.4;
+            contain: strict;
+            transform: translateZ(0);
         }
 
         .current-word-display {
@@ -139,6 +113,8 @@
             border-radius: 10px;
             padding: 15px;
             border: 2px dashed #FFC107;
+            contain: strict;
+            transform: translateZ(0);
         }
 
         .word-list {
@@ -378,12 +354,6 @@
             min-width: 150px;
         }
 
-        .radio-group {
-            display: flex;
-            gap: 15px;
-            margin-top: 5px;
-        }
-
         .firebase-status {
             font-size: 0.9rem;
             color: #666;
@@ -534,39 +504,6 @@
 
         .text-input-container {
             position: relative;
-        }
-
-        /* Gender selection */
-        .gender-selection {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-            justify-content: center;
-        }
-
-        .gender-btn {
-            padding: 8px 16px;
-            background: #f0f0f0;
-            border: 2px solid #ddd;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .gender-btn.active {
-            background: linear-gradient(to right, #4A00E0, #8E2DE2);
-            color: white;
-            border-color: #4A00E0;
-        }
-
-        .gender-btn.male {
-            background: linear-gradient(to right, #2196F3, #1976D2);
-            color: white;
-        }
-
-        .gender-btn.female {
-            background: linear-gradient(to right, #E91E63, #C2185B);
-            color: white;
         }
 
         /* Auto-suggestions panel */
@@ -722,77 +659,46 @@
             border-color: #4A00E0;
         }
 
-        /* Performance Monitor */
-        .performance-monitor {
+        /* Performance optimizations */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        .performance-info {
+            font-size: 0.7rem;
+            color: #888;
+            text-align: center;
+            margin-top: 5px;
+        }
+
+        .fast-mode {
             position: fixed;
-            bottom: 10px;
+            top: 10px;
             right: 10px;
-            background: rgba(0,0,0,0.8);
-            color: #0f0;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
+            background: #4CAF50;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
             z-index: 1000;
-            display: none;
-            border: 1px solid #0f0;
-            box-shadow: 0 0 10px rgba(0,255,0,0.3);
-        }
-
-        .performance-monitor.visible {
-            display: block;
-        }
-
-        .performance-monitor div {
-            margin: 3px 0;
-        }
-
-        .performance-monitor span {
-            font-weight: bold;
-        }
-
-        /* Connection quality indicator */
-        .connection-quality {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            margin-left: 5px;
-        }
-
-        .quality-excellent { background: #4CAF50; }
-        .quality-good { background: #8BC34A; }
-        .quality-fair { background: #FFC107; }
-        .quality-poor { background: #FF5722; }
-        .quality-bad { background: #F44336; }
-
-        /* Minimal animations for performance */
-        .sensor-value, .conversion-display, .sentence-display {
-            transition: color 0.1s ease, background-color 0.1s ease;
-        }
-
-        /* Optimize flex boxes for GPU */
-        .flex-box {
-            transform: translateZ(0);
         }
     </style>
 </head>
 <body>
-    <!-- Performance Monitor -->
-    <div class="performance-monitor" id="perfMonitor">
-        <div>FPS: <span id="fpsCounter">0</span></div>
-        <div>Latency: <span id="latencyCounter">0</span>ms</div>
-        <div>Updates/sec: <span id="updateRate">0</span></div>
-        <div>Queue: <span id="queueSize">0</span></div>
-        <div>Connection: <span class="connection-quality" id="connQuality"></span></div>
-    </div>
-
+    <div class="fast-mode" id="fastModeIndicator">🚀 Chế độ tốc độ cao: BẬT</div>
     <div class="container">
         <header>
-            <h1>Ứng dụng và cải tiến "Công nghệ dịch thủ ngữ" - TỐI ƯU HIỆU SUẤT</h1>
-            <div>Giám sát thời gian thực từ Firebase Realtime Database</div>
+            <h1>Ứng dụng và cải tiến "Công nghệ dịch thủ ngữ" vào đời sống - Phiên bản tối ưu</h1>
+            <div>Giám sát thời gian thực từ Cơ sở dữ liệu Firebase</div>
             <div class="firebase-status" id="firebaseStatus">
-                Đang kết nối với Firebase Realtime...
+                Đang kết nối với Firebase...
+            </div>
+            <div class="performance-info" id="performanceInfo">
+                Độ trễ: <span id="latency">--</span>ms | FPS: <span id="fps">--</span> | Polling: <span id="pollingRate">--</span>ms
             </div>
         </header>
 
@@ -858,12 +764,6 @@
                         </div>
                         <div class="voice-btn female" data-gender="female" data-lang="en-GB" onclick="selectVoice(this)">
                             👩 Nữ Tiếng Anh
-                        </div>
-                        <div class="voice-btn male" data-gender="male" data-lang="ja-JP" onclick="selectVoice(this)">
-                            👨 Nam Tiếng Nhật
-                        </div>
-                        <div class="voice-btn female" data-gender="female" data-lang="ja-JP" onclick="selectVoice(this)">
-                            👩 Nữ Tiếng Nhật
                         </div>
                     </div>
                     
@@ -1000,11 +900,13 @@
                 <div class="sensor-item" style="margin-top: 15px;">
                     <div class="sensor-label">TRẠNG THÁI HỆ THỐNG</div>
                     <div>Cập nhật lần cuối: <span id="lastUpdateTime" class="last-update">Chưa bao giờ</span></div>
+                    <div>Thời gian xử lý: <span id="processingTime" class="last-update">0ms</span></div>
                 </div>
                 
                 <div class="controls" style="margin-top: 15px;">
                     <button onclick="refreshData()" class="blue">Làm mới ngay</button>
-                    <button onclick="toggleAutoRefresh()" id="autoRefreshBtn" class="green">Realtime: BẬT</button>
+                    <button onclick="toggleAutoRefresh()" id="autoRefreshBtn" class="green">Tự động: BẬT (300ms)</button>
+                    <button onclick="toggleTurboMode()" id="turboBtn" class="green">🚀 Chế độ Turbo</button>
                 </div>
             </div>
 
@@ -1018,7 +920,7 @@
                 </div>
                 <div class="controls" style="margin-top: 15px;">
                     <button onclick="clearLog()" class="red">Xóa nhật ký</button>
-                    <button onclick="togglePerformanceMonitor()" class="blue">Hiệu suất</button>
+                    <button onclick="exportLog()" class="blue">Xuất nhật ký</button>
                 </div>
             </div>
         </div>
@@ -1026,56 +928,36 @@
         <div class="status-bar">
             <div>
                 <span class="indicator" id="connectionStatus"></span>
-                <span id="statusText">Đang kết nối với Firebase Realtime...</span>
+                <span id="statusText">Đang kết nối với Firebase...</span>
             </div>
             <div>
-                <span id="lastUpdate">Cập nhật: --:--:--</span>
+                <span id="lastUpdate">Cập nhật Firebase lần cuối: --:--:--</span>
             </div>
         </div>
     </div>
 
     <script>
-        // ===========================================
-        // CẤU HÌNH VÀ BIẾN TOÀN CỤC TỐI ƯU
-        // ===========================================
+        // === CẤU HÌNH TỐC ĐỘ CAO ===
+        const FIREBASE_URL = "https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/sensorData.json";
+        const GEMINI_API_KEY = "AIzaSyDdUj2SX83qODeZ1hhru0e9KN1fwDrtUP8";
+        const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent";
         
-        // Cấu hình Firebase Realtime Database
-        const firebaseConfig = {
-            apiKey: "AIzaSyDbPmge2DxS8-_Wgh6XH2LbUZ5nzq79Kkw",
-            authDomain: "gangtay-f1efe.firebaseapp.com",
-            databaseURL: "https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "gangtay-f1efe",
-            storageBucket: "gangtay-f1efe.firebasestorage.app",
-            messagingSenderId: "144511241430",
-            appId: "1:144511241430:web:218bd0e794b23707381a6e"
-        };
-
-        // Biến tối ưu hiệu suất
-        let updateTimeout = null;
-        let lastSensorData = null;
-        let isFetching = false;
-        let frameCount = 0;
-        let lastFrameTime = performance.now();
-        let fps = 0;
-        let updateCount = 0;
-        let lastUpdateCountReset = Date.now();
-        let domCache = {};
-        let updateQueue = [];
-        let isProcessingQueue = false;
-        let performanceMonitorVisible = false;
-        
-        // Firebase instance
-        let firebaseApp;
-        let database;
-        let dataRef;
-        let realtimeConnected = false;
-        let lastRealtimeUpdate = 0;
-        
-        // Biến ứng dụng chính
+        // === BIẾN TỐI ƯU HÓA ===
         let firebaseData = null;
         let lastUpdateTime = 0;
+        let autoRefresh = true;
+        let autoRefreshInterval;
         let logEntries = [];
         const MAX_LOG_ENTRIES = 20;
+        let isFetching = false;
+        let lastFirebaseData = null;
+        let uiUpdateScheduled = false;
+        let lastFrameTime = performance.now();
+        let frameCount = 0;
+        let currentFPS = 60;
+        let pollingInterval = 300; // Giảm từ 2000ms xuống 300ms
+        let turboMode = false;
+        let currentFetchController = null;
         
         // Biến xây dựng câu
         let slot1 = "";
@@ -1093,22 +975,19 @@
         let lastDetectedIndex = -1;
         let holdStartMs = 0;
         let holdFired = false;
-        const DEBOUNCE_COUNT = 2; // Giảm từ 3 xuống 2
-        const HOLD_MS_DEFAULT = 500; // Giảm từ 800 xuống 500
-        const POST_HOLD_COOLDOWN = 300; // Giảm từ 600 xuống 300
+        const DEBOUNCE_COUNT = 3;
+        const HOLD_MS_DEFAULT = 800;
+        const POST_HOLD_COOLDOWN = 600;
         let lastActionMs = 0;
+        let lastStateString = '';
         
-        // Ánh xạ trạng thái MPU
-        const mpuStateMap = {
-            "Up": 0,
-            "Down": 1,
-            "Left": 2,
-            "Right": 3,
-            "Forward": 4,
-            "Backward": 5
-        };
-
-        // Bảng từ ESP32 code (giữ nguyên)
+        // CACHE cho tối ưu hóa
+        const mappingCache = new Map();
+        const vietnameseCache = new Map();
+        const translationCache = {};
+        let audioCache = {};
+        
+        // === BẢNG DỮ LIỆU (giữ nguyên từ file gốc) ===
         const tableA = [
             ["IAY","IC","ICH","IE","IEC","IEM","IEN","IENG","IEO"],
             ["IEP","IET","IEU","IM","IN","ING","INH","IO","IOI"],
@@ -1137,44 +1016,161 @@
             [ ["GH","KH","NG"],["NGH","NH","PH"],["TH","TR","_"] ]
         ];
 
-        // Bảng chuyển đổi Tiếng Việt (rút gọn để tiết kiệm không gian)
+        // Bảng chuyển đổi Tiếng Việt (bảng đầy đủ từ ESP32 code)
         const vietnameseTable = [
-            {key: "A", forms: ["á","à","ả","ã","ạ","a","ấ","ầ","ẩ","ẫ","ậ","â","ắ","ằ","ẳ","ẵ","ặ","ă"]},
-            {key: "AI", forms: ["ái","ài","ải","ãi","ại","ai","ấi","ầi","ẩi","ẫi","ậi","âi","ắi","ằi","ẳi","ẵi","ặi","ăi"]},
-            {key: "AN", forms: ["án","àn","ản","ãn","ạn","an","ấn","ần","ẩn","ẫn","ận","ân","ắn","ằn","ẳn","ẵn","ặn","ăn"]},
-            {key: "ANG", forms: ["áng","àng","ảng","ãng","ạng","ang","ấng","ầng","ẩng","ẫng","ậng","âng","ắng","ằng","ẳng","ẵng","ặng","ăng"]},
-            {key: "ANH", forms: ["ánh","ành","ảnh","ãnh","ạnh","anh","ấnh","ầnh","ẩnh","ẫnh","ậnh","ânh","ắnh","ằnh","ẳnh","ẵnh","ặnh","ănh"]},
-            {key: "AO", forms: ["áo","ào","ảo","ão","ạo","ao","áo","ào","ảo","ão","ạo","ao","áo","ào","ảo","ão","ạo","ao"]},
-            {key: "AU", forms: ["áu","àu","ảu","ãu","ạu","au","ấu","ầu","ẩu","ẫu","ậu","âu","ắu","ằu","ẳu","ẵu","ặu","ău"]},
-            {key: "AY", forms: ["áy","ày","ảy","ãy","ạy","ay","ấy","ầy","ẩy","ẫy","ậy","ây","ắy","ằy","ẳy","ẵy","ặy","ăy"]},
-            {key: "E", forms: ["é","è","ẻ","ẽ","ẹ","e","ế","ề","ể","ễ","ệ","ê","é","è","ẻ","ẽ","ẹ","e"]},
-            {key: "EM", forms: ["ém","èm","ểm","ẽm","ẹm","em","ếm","ềm","ểm","ễm","ệm","êm","ém","èm","ểm","ẽm","ẹm","em"]},
-            {key: "EN", forms: ["én","èn","ển","ễn","ện","en","ến","ền","ển","ễn","ện","ên","én","èn","ển","ễn","ện","en"]},
-            {key: "ENG", forms: ["éng","èng","ẻng","ẽng","ẹng","eng","ếng","ềng","ểng","ễng","ệng","êng","éng","èng","ẻng","ẽng","ẹng","eng"]},
-            {key: "EO", forms: ["éo","èo","ẻo","ẽo","ẹo","eo","éo","èo","ẻo","ẽo","ẹo","eo","éo","èo","ẻo","ẽo","ẹo","eo"]},
-            {key: "I", forms: ["í","ì","ỉ","ĩ","ị","i","í","ì","ỉ","ĩ","ị","i","í","ì","ỉ","ĩ","ị","i"]},
-            {key: "IA", forms: ["ía","ìa","ỉa","ĩa","ịa","ia","ía","ìa","ỉa","ĩa","ịa","ia","ía","ìa","ỉa","ĩa","ịa","ia"]},
-            {key: "IE", forms: ["ié","iè","iẻ","iẽ","iẹ","ie","iế","iề","iể","iễ","iệ","iê","ié","iè","iẻ","iẽ","iẹ","ie"]},
-            {key: "IEM", forms: ["iém","ièm","iểm","iẽm","ịem","iem","iếm","iềm","iểm","iễm","iệm","iêm","iém","ièm","iểm","iẽm","ịem","iem"]},
-            {key: "IEN", forms: ["ien","ièn","iẻn","iẽn","iẹn","ien","iên","iền","iển","iễn","iện","iên","ien","ièn","iẻn","iẽn","iẹn","ien"]},
-            {key: "IN", forms: ["ín","ìn","ỉn","ĩn","ịn","in","ín","ìn","ỉn","ĩn","ịn","in","ín","ìn","ỉn","ĩn","ịn","in"]},
-            {key: "INH", forms: ["ính","ình","ỉnh","ĩnh","ịnh","inh","ính","ình","ỉnh","ĩnh","ịnh","inh","ính","ình","ỉnh","ĩnh","ịnh","inh"]},
-            {key: "IU", forms: ["iú","ìu","ỉu","ĩu","ịu","iu","iú","ìu","ỉu","ĩu","ịu","iu","iú","ìu","ỉu","ĩu","ịu","iu"]},
-            {key: "O", forms: ["ó","ò","ỏ","õ","ọ","o","ố","ồ","ổ","ỗ","ộ","ô","ớ","ờ","ở","ỡ","ợ","ơ"]},
-            {key: "OA", forms: ["óa","òa","ỏa","õa","ọa","oa","óa","òa","ỏa","õa","ọa","oa","óa","òa","ỏa","õa","ọa","oa"]},
-            {key: "OI", forms: ["ói","òi","ỏi","õi","ọi","oi","ối","ồi","ổi","ỗi","ội","ôi","ới","ời","ởi","ỡi","ợi","ơi"]},
-            {key: "OM", forms: ["óm","òm","ỏm","õm","ọm","om","ốm","ồm","ổm","ỗm","ộm","ôm","ớm","ờm","ởm","ỡm","ợm","ơm"]},
-            {key: "ON", forms: ["ón","òn","ỏn","õn","ọn","on","ốn","ồn","ổn","ỗn","ộn","ôn","ớn","ờn","ởn","ỡn","ợn","ơn"]},
-            {key: "ONG", forms: ["óng","òng","ỏng","õng","ọng","ong","ống","ồng","ổng","ỗng","ộng","ông","ớng","ờng","ởng","ỡng","ợng","ơng"]},
-            {key: "U", forms: ["ú","ù","ủ","ũ","ụ","u","ú","ù","ủ","ũ","ụ","u","ứ","ừ","ử","ữ","ự","ư"]},
-            {key: "UA", forms: ["úa","ùa","ủa","ũa","ụa","ua","úa","ùa","ủa","ũa","ụa","ua","úa","ùa","ủa","ũa","ụa","ua"]},
-            {key: "UI", forms: ["úi","ùi","ủi","ũi","ụi","ui","úi","ùi","ủi","ũi","ụi","ui","ứi","ừi","ửi","ữi","ựi","ưi"]},
-            {key: "UN", forms: ["ún","ùn","ủn","ũn","ụn","un","ún","ùn","ủn","ũn","ụn","un","ứn","ừn","ửn","ữn","ựn","ưn"]},
-            {key: "UNG", forms: ["úng","ùng","ủng","ũng","ụng","ung","úng","ùng","ủng","ũng","ụng","ung","ứng","ừng","ửng","ững","ựng","ưng"]},
-            {key: "UO", forms: ["uó","uò","uỏ","uõ","uọ","uo","uố","uồ","uổ","uỗ","uộ","uô","ướ","ườ","ưở","ưỡ","ượ","ươ"]},
-            {key: "UY", forms: ["úy","ùy","ủy","ũy","ụy","uy","úy","ùy","ủy","ũy","ụy","uy","ứy","ừy","ửy","ữy","ựy","ưy"]},
-            {key: "Y", forms: ["ý","ỳ","ỷ","ỹ","ỵ","y","ý","ỳ","ỷ","ỹ","ỵ","y","ý","ỳ","ỷ","ỹ","ỵ","y"]}
+            {key: "IAY", forms: ["iáy", "iày", "iảy", "iãy", "iạy", "iay", "iấy", "iầy", "iẩy", "iẫy", "iậy", "iây", "iắy", "iằy", "iẳy", "iẵy", "iặy", "iăy"]},
+            {key: "IC", forms: ["íc", "ìc", "ỉc", "ĩc", "ịc", "ic", "íc", "ìc", "ỉc", "ĩc", "ịc", "ic", "íc", "ìc", "ỉc", "ĩc", "ịc", "ic"]},
+            {key: "ICH", forms: ["ích", "ìch", "ỉch", "ĩch", "ịch", "ich", "ích", "ìch", "ỉch", "ĩch", "ịch", "ich", "ích", "ìch", "ỉch", "ĩch", "ịch", "ich"]},
+            {key: "IE", forms: ["ié", "iè", "iẻ", "iẽ", "iẹ", "ie", "iế", "iề", "iể", "iễ", "iệ", "iê", "ié", "iè", "iẻ", "iẽ", "iẹ", "ie"]},
+            {key: "IEC", forms: ["iéc", "ièc", "iẻc", "iẽc", "iẹc", "iec", "iếc", "iềc", "iểc", "iễc", "iệc", "iêc", "iéc", "ièc", "iẻc", "iẽc", "iẹc", "iec"]},
+            {key: "IEM", forms: ["iém", "ièm", "iểm", "iẽm", "ịem", "iem", "iếm", "iềm", "iểm", "iễm", "iệm", "iêm", "iém", "ièm", "iểm", "iẽm", "ịem", "iem"]},
+            {key: "IEN", forms: ["ien", "ièn", "iẻn", "iẽn", "iẹn", "ien", "iên", "iền", "iển", "iễn", "iện", "iên", "ien", "ièn", "iẻn", "iẽn", "iẹn", "ien"]},
+            {key: "IENG", forms: ["ieng", "ièng", "iẻng", "iẽng", "iẹng", "ieng", "iêng", "iềng", "iểng", "iễng", "iệng", "iêng", "ieng", "ièng", "iẻng", "iẽng", "iẹng", "ieng"]},
+            {key: "IEO", forms: ["iéo", "ièo", "iẻo", "iẽo", "iẹo", "ieo", "iếo", "iềo", "iểo", "iễo", "iệo", "iêo", "iéo", "ièo", "iẻo", "iẽo", "iẹo", "ieo"]},
+            {key: "IEP", forms: ["iép", "ièp", "iẻp", "iẽp", "iẹp", "iep", "iếp", "iềp", "iểp", "iễp", "iệp", "iêp", "iép", "ièp", "iẻp", "iẽp", "iẹp", "iep"]},
+            {key: "IET", forms: ["iét", "ièt", "iẻt", "iẽt", "iẹt", "iet", "iết", "iềt", "iểt", "iễt", "iệt", "iêt", "iét", "ièt", "iẻt", "iẽt", "iẹt", "iet"]},
+            {key: "IEU", forms: ["iéu", "ièu", "iẻu", "iẽu", "iẹu", "ieu", "iếu", "iều", "iểu", "iễu", "iệu", "iêu", "iéu", "ièu", "iẻu", "iẽu", "iẹu", "ieu"]},
+            {key: "IM", forms: ["ím", "ìm", "ỉm", "ĩm", "ịm", "im", "ím", "ìm", "ỉm", "ĩm", "ịm", "im", "ím", "ìm", "ỉm", "ĩm", "ịm", "im"]},
+            {key: "IN", forms: ["ín", "ìn", "ỉn", "ĩn", "ịn", "in", "ín", "ìn", "ỉn", "ĩn", "ịn", "in", "ín", "ìn", "ỉn", "ĩn", "ịn", "in"]},
+            {key: "ING", forms: ["íng", "ìng", "ỉng", "ĩng", "ịng", "ing", "íng", "ìng", "ỉng", "ĩng", "ịng", "ing", "íng", "ìng", "ỉng", "ĩng", "ịng", "ing"]},
+            {key: "INH", forms: ["ính", "ình", "ỉnh", "ĩnh", "ịnh", "inh", "ính", "ình", "ỉnh", "ĩnh", "ịnh", "inh", "ính", "ình", "ỉnh", "ĩnh", "ịnh", "inh"]},
+            {key: "IO", forms: ["ió", "iò", "iỏ", "iõ", "iọ", "io", "iố", "iồ", "iổ", "iỗ", "iộ", "iô", "iớ", "iờ", "iở", "iỡ", "iợ", "iơ"]},
+            {key: "IOI", forms: ["iói", "iòi", "iỏi", "iõi", "iọi", "ioi", "iối", "iồi", "iổi", "iỗi", "iội", "iôi", "iới", "iời", "iởi", "iỡi", "iợi", "iơi"]},
+            {key: "I", forms: ["í", "ì", "ỉ", "ĩ", "ị", "i", "í", "ì", "ỉ", "ĩ", "ị", "i", "í", "ì", "ỉ", "ĩ", "ị", "i"]},
+            {key: "IA", forms: ["ía", "ìa", "ỉa", "ĩa", "ịa", "ia", "ía", "ìa", "ỉa", "ĩa", "ịa", "ia", "ía", "ìa", "ỉa", "ĩa", "ịa", "ia"]},
+            {key: "IAI", forms: ["iái", "iài", "iải", "iãi", "iại", "iai", "iấi", "iầi", "iẩi", "iẫi", "iậi", "iâi", "iắi", "iằi", "iẳi", "iẵi", "iặi", "iăi"]},
+            {key: "IAM", forms: ["iám", "iàm", "iảm", "iãm", "iạm", "iam", "iấm", "iầm", "iẩm", "iẫm", "iậm", "iâm", "iắm", "iằm", "iẳm", "iẵm", "iặm", "iăm"]},
+            {key: "IAN", forms: ["ián", "iàn", "iản", "iãn", "iạn", "ian", "iấn", "iần", "iẩn", "iẫn", "iận", "iân", "iắn", "iằn", "iẳn", "iẵn", "iặn", "iăn"]},
+            {key: "IANG", forms: ["iáng", "iàng", "iảng", "iãng", "iạng", "iang", "iấng", "iầng", "iẩng", "iẫng", "iậng", "iâng", "iắng", "iằng", "iẳng", "iẵng", "iặng", "iăng"]},
+            {key: "IANH", forms: ["iánh", "iành", "iảnh", "iãnh", "iạnh", "ianh", "iấnh", "iầnh", "iẩnh", "iẫnh", "iậnh", "iânh", "iắnh", "iằnh", "iẳnh", "iẵnh", "iặnh", "iănh"]},
+            {key: "IAO", forms: ["iáo", "iào", "iảo", "ião", "iạo", "iao", "iáo", "iào", "iảo", "ião", "iạo", "iao", "iáo", "iào", "iảo", "ião", "iạo", "iao"]},
+            {key: "IAP", forms: ["iáp", "iàp", "iảp", "iãp", "iạp", "iap", "iấp", "iầp", "iẩp", "iẫp", "iập", "iâp", "iắp", "iằp", "iẳp", "iẵp", "iặp", "iăp"]},
+            {key: "IAT", forms: ["iát", "iàt", "iảt", "iãt", "iạt", "iat", "iất", "iầt", "iẩt", "iẫt", "iật", "iât", "iắt", "iằt", "iẳt", "iẵt", "iặt", "iăt"]},
+            {key: "IAU", forms: ["iáu", "iàu", "iảu", "iãu", "iạu", "iau", "iấu", "iầu", "iẩu", "iẫu", "iậu", "iâu", "iáu", "iàu", "iảu", "iãu", "iạu", "iau"]},
+            {key: "AP", forms: ["áp", "àp", "ảp", "ãp", "ạp", "ap", "ấp", "ầp", "ẩp", "ẫp", "ập", "âp", "ắp", "ằp", "ẳp", "ẵp", "ặp", "ăp"]},
+            {key: "AT", forms: ["át", "àt", "ảt", "ãt", "ạt", "at", "ất", "ầt", "ẩt", "ẫt", "ật", "ât", "ắt", "ằt", "ẳt", "ẵt", "ặt", "ăt"]},
+            {key: "AU", forms: ["áu", "àu", "ảu", "ãu", "ạu", "au", "ấu", "ầu", "ẩu", "ẫu", "ậu", "âu", "ắu", "ằu", "ẳu", "ẵu", "ặu", "ău"]},
+            {key: "AY", forms: ["áy", "ày", "ảy", "ãy", "ạy", "ay", "ấy", "ầy", "ẩy", "ẫy", "ậy", "ây", "ắy", "ằy", "ẳy", "ẵy", "ặy", "ăy"]},
+            {key: "E", forms: ["é", "è", "ẻ", "ẽ", "ẹ", "e", "ế", "ề", "ể", "ễ", "ệ", "ê", "é", "è", "ẻ", "ẽ", "ẹ", "e"]},
+            {key: "EM", forms: ["ém", "èm", "ểm", "ẽm", "ẹm", "em", "ếm", "ềm", "ểm", "ễm", "ệm", "êm", "ém", "èm", "ểm", "ẽm", "ẹm", "em"]},
+            {key: "EN", forms: ["én", "èn", "ển", "ễn", "ện", "en", "ến", "ền", "ển", "ễn", "ện", "ên", "én", "èn", "ển", "ễn", "ện", "en"]},
+            {key: "A", forms: ["á", "à", "ả", "ã", "ạ", "a", "ấ", "ầ", "ẩ", "ẫ", "ậ", "â", "ắ", "ằ", "ẳ", "ẵ", "ặ", "ă"]},
+            {key: "AI", forms: ["ái", "ài", "ải", "ãi", "ại", "ai", "ấi", "ầi", "ẩi", "ẫi", "ậi", "âi", "ắi", "ằi", "ẳi", "ẵi", "ặi", "ăi"]},
+            {key: "AM", forms: ["ám", "àm", "ảm", "ãm", "ạm", "am", "ấm", "ầm", "ẩm", "ẫm", "ậm", "âm", "ắm", "ằm", "ẳm", "ẵm", "ặm", "ăm"]},
+            {key: "AN", forms: ["án", "àn", "ản", "ãn", "ạn", "an", "ấn", "ần", "ẩn", "ẫn", "ận", "ân", "ắn", "ằn", "ẳn", "ẵn", "ặn", "ăn"]},
+            {key: "ANG", forms: ["áng", "àng", "ảng", "ãng", "ạng", "ang", "ấng", "ầng", "ẩng", "ẫng", "ậng", "âng", "ắng", "ằng", "ẳng", "ẵng", "ặng", "ăng"]},
+            {key: "ANH", forms: ["ánh", "ành", "ảnh", "ãnh", "ạnh", "anh", "ấnh", "ầnh", "ẩnh", "ẫnh", "ậnh", "ânh", "ắnh", "ằnh", "ẳnh", "ẵnh", "ặnh", "ănh"]},
+            {key: "AO", forms: ["áo", "ào", "ảo", "ão", "ạo", "ao", "ấo", "ầo", "ẩo", "ẫo", "ậo", "âo", "ắo", "ằo", "ẳo", "ẵo", "ặo", "ăo"]},
+            {key: "UE", forms: ["ué", "uè", "uẻ", "uẽ", "uẹ", "ue", "uế", "uề", "uể", "uễ", "uệ", "uê", "ưé", "ưè", "ưẻ", "ưẽ", "ưẹ", "ưe"]},
+            {key: "UEN", forms: ["uên", "uền", "uển", "uễn", "uện", "uen", "uên", "uền", "uển", "uễn", "uện", "uên", "ưên", "ưền", "ưển", "ưễn", "ưện", "ưen"]},
+            {key: "UI", forms: ["úi", "ùi", "ủi", "ũi", "ụi", "ui", "úi", "ùi", "ủi", "ũi", "ụi", "ui", "ứi", "ừi", "ửi", "ữi", "ựi", "ưi"]},
+            {key: "UM", forms: ["úm", "ùm", "ủm", "ũm", "ụm", "um", "úm", "ùm", "ủm", "ũm", "ụm", "um", "ứm", "ừm", "ửm", "ữm", "ựm", "ưm"]},
+            {key: "UN", forms: ["ún", "ùn", "ủn", "ũn", "ụn", "un", "ún", "ùn", "ủn", "ũn", "ụn", "un", "ứn", "ừn", "ửn", "ữn", "ựn", "ưn"]},
+            {key: "UNG", forms: ["úng", "ùng", "ủng", "ũng", "ụng", "ung", "úng", "ùng", "ủng", "ũng", "ụng", "ung", "ứng", "ừng", "ửng", "ững", "ựng", "ưng"]},
+            {key: "UO", forms: ["uó", "uò", "uỏ", "uõ", "uọ", "uo", "uố", "uồ", "uổ", "uỗ", "uộ", "uô", "ướ", "ườ", "ưở", "ưỡ", "ượ", "ươ"]},
+            {key: "UOC", forms: ["uốc", "uộc", "uổc", "uỗc", "uộc", "uoc", "uốc", "uộc", "uổc", "uỗc", "uộc", "uôc", "ưốc", "ưộc", "ưổc", "ưỗc", "ưộc", "ươc"]},
+            {key: "UOI", forms: ["uối", "uồi", "uổi", "uỗi", "uội", "uoi", "uối", "uồi", "uổi", "uỗi", "uội", "uôi", "ưối", "ưồi", "ưổi", "ưỗi", "ưội", "ươi"]},
+            {key: "UON", forms: ["uón", "uòn", "uỏn", "uõn", "uọn", "uon", "uốn", "uồn", "uổn", "uỗn", "uộn", "uôn", "ướn", "ườn", "ưởn", "ưỡn", "ượn", "ươn"]},
+            {key: "UONG", forms: ["uóng", "uòng", "uỏng", "uõng", "uọng", "uong", "uống", "uồng", "uổng", "uỗng", "uộng", "uông", "ướng", "ường", "ưởng", "ưỡng", "ượng", "ương"]},
+            {key: "ONG", forms: ["óng", "òng", "ỏng", "õng", "ọng", "ong", "ống", "ồng", "ổng", "ỗng", "ộng", "ông", "ớng", "ờng", "ởng", "ỡng", "ợng", "ơng"]},
+            {key: "OP", forms: ["óp", "òp", "ỏp", "õp", "ọp", "op", "ốp", "ồp", "ổp", "ỗp", "ộp", "ôp", "ớp", "ờp", "ởp", "ỡp", "ợp", "ơp"]},
+            {key: "OT", forms: ["ót", "òt", "ỏt", "õt", "ọt", "ot", "ốt", "ồt", "ổt", "ỗt", "ột", "ôt", "ớt", "ờt", "ởt", "ỡt", "ợt", "ơt"]},
+            {key: "U", forms: ["ú", "ù", "ủ", "ũ", "ụ", "u", "ú", "ù", "ủ", "ũ", "ụ", "u", "ứ", "ừ", "ử", "ữ", "ự", "ư"]},
+            {key: "UA", forms: ["úa", "ùa", "ủa", "ũa", "ụa", "ua", "úa", "ùa", "ủa", "ũa", "ụa", "ua", "úa", "ùa", "ủa", "ũa", "ụa", "ua"]},
+            {key: "UAI", forms: ["uái", "uài", "uải", "uãi", "uại", "uai", "uấi", "uầi", "uẩi", "uẫi", "uậi", "uâi", "uái", "uài", "uải", "uãi", "uại", "uai"]},
+            {key: "UAN", forms: ["uán", "uàn", "uản", "uãn", "uạn", "uan", "uấn", "uần", "uẩn", "uẫn", "uận", "uân", "uắn", "uằn", "uẳn", "uẵn", "uặn", "uăn"]},
+            {key: "UANG", forms: ["uáng", "uàng", "uảng", "uãng", "uạng", "uang", "uấng", "uầng", "uẩng", "uẫng", "uậng", "uâng", "uắng", "uằng", "uẳng", "uẵng", "uặng", "uăng"]},
+            {key: "UANH", forms: ["uánh", "uành", "uảnh", "uãnh", "uạnh", "uanh", "uấnh", "uầnh", "uẩnh", "uẫnh", "uậnh", "uânh", "uắnh", "uằnh", "uẳnh", "uẵnh", "uặnh", "uănh"]},
+            {key: "UAY", forms: ["uáy", "uày", "uảy", "uãy", "uạy", "uay", "uấy", "uầy", "uẩy", "uẫy", "uậy", "uây", "uắy", "uằy", "uẳy", "uẵy", "uặy", "uăy"]},
+            {key: "UC", forms: ["úc", "ùc", "ủc", "ũc", "ục", "uc", "úc", "ùc", "ủc", "ũc", "ục", "uc", "ức", "ừc", "ửc", "ữc", "ực", "ưc"]},
+            {key: "OAY", forms: ["oáy", "oày", "oảy", "oãy", "oạy", "oay", "oáy", "oày", "oảy", "oãy", "oạy", "oay", "oáy", "oày", "oảy", "oãy", "oạy", "oay"]},
+            {key: "OC", forms: ["óc", "òc", "ỏc", "õc", "ọc", "oc", "ốc", "ồc", "ổc", "ỗc", "ộc", "ôc", "ớc", "ờc", "ởc", "ỡc", "ợc", "ơc"]},
+            {key: "OE", forms: ["óe", "òe", "ỏe", "õe", "ọe", "oe", "óe", "òe", "ỏe", "õe", "ọe", "oe", "óe", "òe", "ỏe", "õe", "ọe", "oe"]},
+            {key: "OI", forms: ["ói", "òi", "ỏi", "õi", "ọi", "oi", "ối", "ồi", "ổi", "ỗi", "ội", "ôi", "ới", "ời", "ởi", "ỡi", "ợi", "ơi"]},
+            {key: "OM", forms: ["óm", "òm", "ỏm", "õm", "ọm", "om", "ốm", "ồm", "ổm", "ỗm", "ộm", "ôm", "ớm", "ờm", "ởm", "ỡm", "ợm", "ơm"]},
+            {key: "ON", forms: ["ón", "òn", "ỏn", "õn", "ọn", "on", "ốn", "ồn", "ổn", "ỗn", "ộn", "ôn", "ớn", "ờn", "ởn", "ỡn", "ợn", "ơn"]},
+            {key: "OAN", forms: ["oán", "oàn", "oản", "oãn", "oạn", "oan", "oán", "oàn", "oản", "oãn", "oạn", "oan", "oán", "oàn", "oản", "oãn", "oạn", "oan"]},
+            {key: "OANG", forms: ["oáng", "oàng", "oảng", "oãng", "oạng", "oang", "oáng", "oàng", "oảng", "oãng", "oạng", "oang", "oáng", "oàng", "oảng", "oãng", "oạng", "oang"]},
+            {key: "OANH", forms: ["oánh", "oành", "oảnh", "oãnh", "oạnh", "oanh", "oánh", "oành", "oảnh", "oãnh", "oạnh", "oanh", "oánh", "oành", "oảnh", "oãnh", "oạnh", "oanh"]},
+            {key: "OAT", forms: ["oát", "òat", "oảt", "oãt", "oạt", "oat", "oát", "òat", "oảt", "oãt", "oạt", "oat", "oát", "òat", "oảt", "oãt", "oạt", "oat"]},
+            {key: "Y", forms: ["ý", "ỳ", "ỷ", "ỹ", "ỵ", "y", "ý", "ỳ", "ỷ", "ỹ", "ỵ", "y", "ý", "ỳ", "ỷ", "ỹ", "ỵ", "y"]},
+            {key: "YEN", forms: ["yen", "yèn", "yẻn", "yẽn", "yẹn", "yen", "yên", "yền", "yển", "yễn", "yện", "yên", "yen", "yèn", "yẻn", "yẽn", "yẹn", "yen"]},
+            {key: "YET", forms: ["yét", "yèt", "yẻt", "yẽt", "yẹt", "yet", "yết", "yềt", "yểt", "yễt", "yệt", "yêt", "yét", "yèt", "yẻt", "yẽt", "yẹt", "yet"]},
+            {key: "YEU", forms: ["yêu", "yều", "yểu", "yễu", "yệu", "yeu", "yêu", "yều", "yểu", "yễu", "yệu", "yêu", "yêu", "yều", "yểu", "yễu", "yệu", "yeu"]},
+            {key: "UY", forms: ["úy", "ùy", "ủy", "ũy", "ụy", "uy", "úy", "ùy", "ủy", "ũy", "ụy", "uy", "ứy", "ừy", "ửy", "ữy", "ựy", "ưy"]},
+            {key: "UYET", forms: ["uyét", "uyèt", "uyẻt", "uyẽt", "uyẹt", "uyet", "uyết", "uyềt", "uyểt", "uyễt", "uyệt", "uyêt", "uyét", "uyèt", "uyẻt", "uyẽt", "uyẹt", "uyet"]},
+            {key: "AC", forms: ["ác", "àc", "ảc", "ãc", "ạc", "ac", "ấc", "ầc", "ẩc", "ẫc", "ậc", "âc", "ắc", "ằc", "ẳc", "ẵc", "ặc", "ăc"]},
+            {key: "ACH", forms: ["ách", "àch", "ảch", "ãch", "ạch", "ach", "ấch", "ầch", "ẩch", "ẫch", "ậch", "âch", "ắch", "ằch", "ẳch", "ẵch", "ặch", "ăch"]},
+            {key: "EC", forms: ["éc", "èc", "ẻc", "ẽc", "ẹc", "ec", "ếc", "ềc", "ểc", "ễc", "ệc", "êc", "éc", "èc", "ẻc", "ẽc", "ẹc", "ec"]},
+            {key: "ECH", forms: ["éch", "èch", "ẻch", "ẽch", "ẹch", "ech", "ếch", "ềch", "ểch", "ễch", "ệch", "êch", "éch", "èch", "ẻch", "ẽch", "ẹch", "ech"]},
+            {key: "ENG", forms: ["éng", "èng", "ẻng", "ẽng", "ẹng", "eng", "ếng", "ềng", "ểng", "ễng", "ệng", "êng", "éng", "èng", "ẻng", "ẽng", "ẹng", "eng"]},
+            {key: "ENH", forms: ["enh", "ènh", "ẻnh", "ẽnh", "ẹnh", "enh", "ếnh", "ềnh", "ểnh", "ễnh", "ệnh", "ênh", "enh", "ènh", "ẻnh", "ẽnh", "ẹnh", "enh"]},
+            {key: "EO", forms: ["éo", "èo", "ẻo", "ẽo", "ẹo", "eo", "éo", "èo", "ẻo", "ẽo", "ẹo", "eo", "éo", "èo", "ẻo", "ẽo", "ẹo", "eo"]},
+            {key: "EP", forms: ["ép", "èp", "ẻp", "ẽp", "ẹp", "ep", "ếp", "ềp", "ểp", "ễp", "ệp", "êp", "ép", "èp", "ẻp", "ẽp", "ẹp", "ep"]},
+            {key: "ET", forms: ["ét", "èt", "ẻt", "ẽt", "ẹt", "et", "ết", "ềt", "ểt", "ễt", "ệt", "êt", "ét", "èt", "ẻt", "ẽt", "ẹt", "et"]},
+            {key: "EU", forms: ["éu", "èu", "ẻu", "ẽu", "ẹu", "eu", "ếu", "ều", "ểu", "ễu", "ệu", "êu", "éu", "èu", "ẻu", "ẽu", "ẹu", "eu"]},
+            {key: "IAC", forms: ["iác", "iàc", "iảc", "iãc", "iạc", "iac", "iấc", "iầc", "iẩc", "iẫc", "iậc", "iâc", "iắc", "iằc", "iẳc", "iẵc", "iặc", "iăc"]},
+            {key: "ION", forms: ["ión", "ìon", "ỉon", "ĩon", "ịon", "ion", "ión", "ìon", "ỉon", "ĩon", "ịon", "ion", "ión", "ìon", "ỉon", "ĩon", "ịon", "ion"]},
+            {key: "IONG", forms: ["ióng", "ìong", "ỉong", "ĩong", "ịong", "iong", "ióng", "ìong", "ỉong", "ĩong", "ịong", "iong", "ióng", "ìong", "ỉong", "ĩong", "ịong", "iong"]},
+            {key: "IOT", forms: ["iót", "ìot", "ỉot", "ĩot", "ịot", "iot", "iót", "ìot", "ỉot", "ĩot", "ịot", "iot", "iót", "ìot", "ỉot", "ĩot", "ịot", "iot"]},
+            {key: "IP", forms: ["íp", "ìp", "ỉp", "ĩp", "ịp", "ip", "íp", "ìp", "ỉp", "ĩp", "ịp", "ip", "íp", "ìp", "ỉp", "ĩp", "ịp", "ip"]},
+            {key: "IT", forms: ["ít", "ìt", "ỉt", "ĩt", "ịt", "it", "ít", "ìt", "ỉt", "ĩt", "ịt", "it", "ít", "ìt", "ỉt", "ĩt", "ịt", "it"]},
+            {key: "IU", forms: ["iú", "ìu", "ỉu", "ĩu", "ịu", "iu", "iú", "ìu", "ỉu", "ĩu", "ịu", "iu", "iú", "ìu", "ỉu", "ĩu", "ịu", "iu"]},
+            {key: "IUA", forms: ["iúa", "iùa", "iủa", "iũa", "iụa", "iua", "iúa", "iùa", "iủa", "iũa", "iụa", "iua", "iúa", "iùa", "iủa", "iũa", "iụa", "iua"]},
+            {key: "IUC", forms: ["iúc", "iùc", "iủc", "iũc", "iục", "iuc", "iúc", "iùc", "iủc", "iũc", "iục", "iuc", "iúc", "iùc", "iủc", "iũc", "iục", "iuc"]},
+            {key: "IUI", forms: ["íui", "ìui", "ỉui", "ĩui", "ịui", "iui", "íui", "ìui", "ỉui", "ĩui", "ịui", "iui", "íui", "ìui", "ỉui", "ĩui", "ịui", "iui"]},
+            {key: "IUN", forms: ["iún", "iùn", "iủn", "iũn", "iụn", "iun", "iún", "iùn", "iủn", "iũn", "iụn", "iun", "iún", "iùn", "iủn", "iũn", "iụn", "iun"]},
+            {key: "IUONG", forms: ["íuong", "ìuong", "ỉuong", "ĩuong", "ịuong", "iuong", "íuong", "ìuong", "ỉuong", "ĩuong", "ịuong", "iuong", "iướng", "iường", "iưởng", "iưỡng", "iượng", "iương"]},
+            {key: "IUP", forms: ["iúp", "iùp", "iủp", "iũp", "iụp", "iup", "iúp", "iùp", "iủp", "iũp", "iụp", "iup", "íup", "ìup", "ỉup", "iũp", "iụp", "iup"]},
+            {key: "O", forms: ["ó", "ò", "ỏ", "õ", "ọ", "o", "ố", "ồ", "ổ", "ỗ", "ộ", "ô", "ớ", "ờ", "ở", "ỡ", "ợ", "ơ"]},
+            {key: "OA", forms: ["óa", "òa", "ỏa", "õa", "ọa", "oa", "óa", "òa", "ỏa", "õa", "ọa", "oa", "óa", "òa", "ỏa", "õa", "ọa", "oa"]},
+            {key: "OAC", forms: ["oác", "oàc", "oảc", "oãc", "oạc", "oac", "oác", "oàc", "oảc", "oãc", "oạc", "oac", "oắc", "oằc", "oẳc", "oẵc", "oặc", "oăc"]},
+            {key: "OACH", forms: ["oách", "oàch", "oảch", "oãch", "oạch", "oach", "oách", "oàch", "oảch", "oãch", "oạch", "oach", "oách", "oàch", "oảch", "oãch", "oạch", "oach"]},
+            {key: "OAI", forms: ["oái", "oài", "oải", "oãi", "oại", "oai", "oái", "oài", "oải", "oãi", "oại", "oai", "oái", "oài", "oải", "oãi", "oại", "oai"]},
+            {key: "OAM", forms: ["oám", "oàm", "oảm", "oãm", "oạm", "oam", "oám", "oàm", "oảm", "oãm", "oạm", "oam", "oám", "oàm", "oảm", "oãm", "oạm", "oam"]},
+            {key: "OEN", forms: ["oén", "oèn", "oẻn", "oẽn", "oẹn", "oen", "oến", "oền", "oển", "oễn", "oện", "oên", "oén", "oèn", "oẻn", "oẽn", "oẹn", "oen"]},
+            {key: "OEO", forms: ["oéo", "oèo", "oẻo", "oẽo", "oẹo", "oeo", "oếo", "oềo", "oểo", "oễo", "oệo", "oêo", "oéo", "oèo", "oẻo", "oẽo", "oẹo", "oeo"]},
+            {key: "OET", forms: ["oét", "oèt", "oẻt", "oẽt", "oẹt", "oet", "oết", "oềt", "oểt", "oễt", "oệt", "oêt", "oét", "oèt", "oẻt", "oẽt", "oẹt", "oet"]},
+            {key: "OOC", forms: ["oóc", "oòc", "oỏc", "oõc", "oọc", "ooc", "oóc", "oòc", "oỏc", "oõc", "oọc", "ooc", "oóc", "oòc", "oỏc", "oõc", "oọc", "ooc"]},
+            {key: "OONG", forms: ["oóng", "oòng", "oỏng", "oõng", "oọng", "oong", "oóng", "oòng", "oỏng", "oõng", "oọng", "oong", "oóng", "oòng", "oỏng", "oõng", "oọng", "oong"]},
+            {key: "UAC", forms: ["uác", "uàc", "uảc", "uãc", "uạc", "uac", "uấc", "uầc", "uẩc", "uẫc", "uậc", "uâc", "uắc", "uằc", "uẳc", "uẵc", "uặc", "uăc"]},
+            {key: "UACH", forms: ["uách", "uàch", "uảch", "uãch", "uạch", "uach", "uấch", "uầch", "uẩch", "uẫch", "uậch", "uâch", "uắch", "uằch", "uẳch", "uẵch", "uặch", "uăch"]},
+            {key: "UAI", forms: ["uái", "uài", "uải", "uãi", "uại", "uai", "uấi", "uầi", "uẩi", "uẫi", "uậi", "uâi", "uái", "uài", "uải", "uãi", "uại", "uai"]},
+            {key: "UAM", forms: ["uám", "uàm", "uảm", "uãm", "uạm", "uam", "uấm", "uầm", "uẩm", "uẫm", "uậm", "uâm", "uám", "uàm", "uảm", "uãm", "uạm", "uam"]},
+            {key: "UAO", forms: ["uáo", "uào", "uảo", "uão", "uạo", "uao", "uáo", "uào", "uảo", "uão", "uạo", "uao", "uáo", "uào", "uảo", "uão", "uạo", "uao"]},
+            {key: "UAT", forms: ["uát", "uàt", "uảt", "uãt", "uạt", "uat", "uất", "uầt", "uẩt", "uẫt", "uật", "uât", "uắt", "uằt", "uẳt", "uẵt", "uặt", "uăt"]},
+            {key: "UECH", forms: ["uéch", "uèch", "uẻch", "uẽch", "uẹch", "uech", "uếch", "uềch", "uểch", "uễch", "uệch", "uêch", "uéch", "uèch", "uẻch", "uẽch", "uẹch", "uech"]},
+            {key: "UENH", forms: ["uénh", "uènh", "uẻnh", "uẽnh", "uẹnh", "uenh", "uếnh", "uềnh", "uểnh", "uễnh", "uệnh", "uênh", "uénh", "uènh", "uẻnh", "uẽnh", "uẹnh", "uenh"]},
+            {key: "UEO", forms: ["uéo", "uèo", "uẻo", "uẽo", "uẹo", "ueo", "uếo", "uềo", "uểo", "uễo", "uệo", "uêo", "uéo", "uèo", "uẻo", "uẽo", "uẹo", "ueo"]},
+            {key: "UET", forms: ["uét", "uèt", "uẻt", "uẽt", "uẹt", "uet", "uết", "uềt", "uểt", "uễt", "uệt", "uêt", "uét", "uèt", "uẻt", "uẽt", "uẹt", "uet"]},
+            {key: "UOM", forms: ["uóm", "uòm", "uỏm", "uõm", "uọm", "uom", "uốm", "uồm", "uổm", "uỗm", "uộm", "uôm", "ướm", "ườm", "ưởm", "ưỡm", "ượm", "ươm"]},
+            {key: "UOP", forms: ["uóp", "uòp", "uỏp", "uõp", "uọp", "uop", "uốp", "uồp", "uổp", "uỗp", "uộp", "uôp", "ướp", "ườp", "ưởp", "ưỡp", "ượp", "ươp"]},
+            {key: "OUT", forms: ["óut", "òut", "ỏut", "õut", "ọut", "out", "óut", "òut", "ỏut", "õut", "ọut", "out", "óut", "òut", "ỏut", "õut", "ọut", "out"]},
+            {key: "UOU", forms: ["uóu", "uòu", "uỏu", "uõu", "uọu", "uou", "uốu", "uồu", "uổu", "uỗu", "uộu", "uôu", "ướu", "ườu", "ưởu", "ưỡu", "ượu", "ươu"]},
+            {key: "UP", forms: ["úp", "ùp", "ủp", "ũp", "ụp", "up", "úp", "ùp", "ủp", "ũp", "ụp", "up", "ứp", "ừp", "ửp", "ữp", "ựp", "ưp"]},
+            {key: "UT", forms: ["út", "ùt", "ủt", "ũt", "ụt", "ut", "út", "ùt", "ủt", "ũt", "ụt", "ut", "ứt", "ừt", "ửt", "ữt", "ựt", "ưt"]},
+            {key: "UU", forms: ["úu", "ùu", "ủu", "ũu", "ụu", "uu", "úu", "ùu", "ủu", "ũu", "ụu", "uu", "ứu", "ừu", "ửu", "ữu", "ựu", "ưu"]},
+            {key: "UYA", forms: ["uýa", "uỳa", "uỷa", "uỹa", "uỵa", "uya", "uýa", "uỳa", "uỷa", "uỹa", "uỵa", "uya", "uýa", "uỳa", "uỷa", "uỹa", "uỵa", "uya"]},
+            {key: "UYCH", forms: ["uých", "uỳch", "uỷch", "uỹch", "uỵch", "uych", "uých", "uỳch", "uỷch", "uỹch", "uỵch", "uych", "uých", "uỳch", "uỷch", "uỹch", "uỵch", "uych"]},
+            {key: "UYEN", forms: ["uyén", "uyèn", "uyẻn", "uyẽn", "uyẹn", "uyen", "uyến", "uyền", "uyển", "uyễn", "uyện", "uyên", "uyén", "uyèn", "uyẻn", "uyẽn", "uyẹn", "uyen"]},
+            {key: "UYET", forms: ["uyét", "uyèt", "uyẻt", "uyẽt", "uyẹt", "uyet", "uyết", "uyềt", "uyểt", "uyễt", "uyệt", "uyêt", "uyét", "uyèt", "uyẻt", "uyẽt", "uyẹt", "uyet"]},
+            {key: "UYNH", forms: ["uýnh", "uỳnh", "uỷnh", "uỹnh", "uỵnh", "uynh", "uýnh", "uỳnh", "uỷnh", "uỹnh", "uỵnh", "uynh", "uýnh", "uỳnh", "uỷnh", "uỹnh", "uỵnh", "uynh"]},
+            {key: "UYP", forms: ["uýp", "uỳp", "uỷp", "uỹp", "uỵp", "uyp", "uýp", "uỳp", "uỷp", "uỹp", "uỵp", "uyp", "uýp", "uỳp", "uỷp", "uỹp", "uỵp", "uyp"]},
+            {key: "UYT", forms: ["uýt", "uỳt", "uỷt", "uỹt", "uỵt", "uyt", "uýt", "uỳt", "uỷt", "uỹt", "uỵt", "uyt", "uýt", "uỳt", "uỷt", "uỹt", "uỵt", "uyt"]},
+            {key: "UYU", forms: ["uýu", "uỳu", "uỷu", "uỹu", "uỵu", "uyu", "uýu", "uỳu", "uỷu", "uỹu", "uỵu", "uyu", "uýu", "uỳu", "uỷu", "uỹu", "uỵu", "uyu"]},
+            {key: "YEM", forms: ["yém", "yèm", "yẻm", "yẽm", "yẹm", "yem", "yếm", "yềm", "yểm", "yễm", "yệm", "yêm", "yém", "yèm", "yẻm", "yẽm", "yẹm", "yem"]},
+            {key: "OAP", forms: ["oáp", "oàp", "oảp", "oãp", "oạp", "oap", "oáp", "oàp", "oảp", "oãp", "oạp", "oap", "oáp", "oàp", "oảp", "oãp", "oạp", "oap"]}
         ];
+
+        // Ánh xạ trạng thái MPU
+        const mpuStateMap = {
+            "Up": 0,
+            "Down": 1,
+            "Left": 2,
+            "Right": 3,
+            "Forward": 4,
+            "Backward": 5
+        };
 
         // Đề xuất cụm từ
         const commonPhrases = [
@@ -1190,449 +1186,436 @@
             "Tôi không hiểu"
         ];
 
-        // Biến TTS
-        const GEMINI_API_KEY = "AIzaSyDdUj2SX83qODeZ1hhru0e9KN1fwDrtUP8";
-        const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent";
+        // Biến tổng hợp giọng nói
         let isSpeaking = false;
         let currentSpeech = null;
         let audioVisualizerInterval = null;
-        let audioCache = {};
-        let useGeminiTTS = true;
-        let currentVoice = { lang: 'vi-VN', gender: 'male' };
         
-        // Translation cache
-        let translationCache = {};
-        let lastTranslationTime = 0;
-        const TRANSLATION_COOLDOWN = 2000;
+        // Chế độ TTS
+        let useGeminiTTS = true;
+        
+        // Cài đặt giọng nói hiện tại
+        let currentVoice = {
+            lang: 'vi-VN',
+            gender: 'male'
+        };
 
-        // ===========================================
-        // HÀM TỐI ƯU HIỆU SUẤT
-        // ===========================================
+        // Ánh xạ giọng nói cho Gemini TTS
+        const geminiVoiceMap = {
+            'vi-VN': {
+                male: 'Aoede',
+                female: 'Kore'
+            },
+            'en-GB': {
+                male: 'Kore',
+                female: 'Aoede'
+            },
+            'ja-JP': {
+                male: 'Aoede',
+                female: 'Kore'
+            },
+            'ko-KR': {
+                male: 'Kore',
+                female: 'Aoede'
+            },
+            'zh-CN': {
+                male: 'Zubenelgenubi',
+                female: 'Aoede'
+            }
+        };
 
-        // 1. Hệ thống cache DOM
-        function updateElement(id, content, className = '') {
-            const element = document.getElementById(id);
-            if (!element) return;
+        // Ánh xạ giọng nói cho Web Speech API
+        const webSpeechVoiceMap = {
+            'vi-VN': {
+                male: { lang: 'vi-VN', name: 'Vietnamese Male', rate: 0.9, pitch: 0.8 },
+                female: { lang: 'vi-VN', name: 'Vietnamese Female', rate: 0.9, pitch: 1.2 }
+            },
+            'en-GB': {
+                male: { lang: 'en-GB', name: 'Google UK English Male', rate: 0.9, pitch: 0.8 },
+                female: { lang: 'en-GB', name: 'Google UK English Female', rate: 0.9, pitch: 1.2 }
+            },
+            'ja-JP': {
+                male: { lang: 'ja-JP', name: 'Japanese Male', rate: 0.9, pitch: 0.8 },
+                female: { lang: 'ja-JP', name: 'Japanese Female', rate: 0.9, pitch: 1.2 }
+            },
+            'ko-KR': {
+                male: { lang: 'ko-KR', name: 'Korean Male', rate: 0.9, pitch: 0.8 },
+                female: { lang: 'ko-KR', name: 'Korean Female', rate: 0.9, pitch: 1.2 }
+            },
+            'zh-CN': {
+                male: { lang: 'zh-CN', name: 'Chinese Male', rate: 0.9, pitch: 0.8 },
+                female: { lang: 'zh-CN', name: 'Chinese Female', rate: 0.9, pitch: 1.2 }
+            }
+        };
+
+        // === HÀM TỐI ƯU HÓA FIREBASE ===
+        async function fetchFirebaseDataOptimized() {
+            if (isFetching) return null;
             
-            const cacheKey = id;
-            
-            // Kiểm tra cache để tránh cập nhật không cần thiết
-            if (domCache[cacheKey] && 
-                domCache[cacheKey].content === content && 
-                domCache[cacheKey].className === className) {
-                return;
+            // Hủy request trước nếu đang chạy
+            if (currentFetchController) {
+                currentFetchController.abort();
             }
             
-            // Cập nhật text nếu thay đổi
-            if (element.textContent !== content) {
-                element.textContent = content;
-            }
+            isFetching = true;
+            const startTime = performance.now();
+            currentFetchController = new AbortController();
+            const signal = currentFetchController.signal;
             
-            // Cập nhật class nếu thay đổi
-            if (className && element.className !== className) {
-                element.className = className;
-            }
-            
-            // Lưu vào cache
-            domCache[cacheKey] = { content, className };
-        }
-
-        // 2. Hệ thống queue batch updates
-        function queueUpdate(type, data) {
-            updateQueue.push({ type, data, timestamp: performance.now() });
-            updateCount++;
-            
-            if (!isProcessingQueue && updateQueue.length > 0) {
-                processUpdateQueue();
-            }
-        }
-
-        function processUpdateQueue() {
-            if (updateQueue.length === 0) {
-                isProcessingQueue = false;
-                return;
-            }
-            
-            isProcessingQueue = true;
-            
-            // Sử dụng requestAnimationFrame để đồng bộ với refresh rate
-            requestAnimationFrame(() => {
-                const now = performance.now();
-                const batch = [];
-                
-                // Lấy tối đa 10 updates từ queue
-                while (updateQueue.length > 0 && batch.length < 10) {
-                    batch.push(updateQueue.shift());
-                }
-                
-                // Xử lý batch
-                batch.forEach(update => {
-                    const latency = now - update.timestamp;
-                    
-                    switch(update.type) {
-                        case 'MPU':
-                            updateMPUDisplay(update.data);
-                            break;
-                        case 'FLEX':
-                            updateFlexDisplay(update.data);
-                            break;
-                        case 'TIME':
-                            updateTimeDisplay();
-                            break;
-                        case 'WORD':
-                            updateWordConstruction(update.data);
-                            break;
-                        case 'SENSOR_UPDATE':
-                            handleSensorUpdate(update.data);
-                            break;
-                    }
-                    
-                    // Update latency display
-                    if (latency > 100) {
-                        updateElement('latencyCounter', Math.round(latency));
-                        updateConnectionQuality(latency);
-                    }
-                });
-                
-                // Update queue size display
-                updateElement('queueSize', updateQueue.length);
-                
-                // Tiếp tục xử lý nếu còn trong queue
-                if (updateQueue.length > 0) {
-                    setTimeout(processUpdateQueue, 0);
-                } else {
-                    isProcessingQueue = false;
-                }
-            });
-        }
-
-        // 3. Debounced update với RAF
-        function debouncedUpdate(data) {
-            if (updateTimeout) {
-                cancelAnimationFrame(updateTimeout);
-            }
-            
-            updateTimeout = requestAnimationFrame(() => {
-                performFastUpdate(data);
-            });
-        }
-
-        function performFastUpdate(data) {
-            if (!data) return;
-            
-            // So sánh để tránh cập nhật không cần thiết
-            const dataStr = JSON.stringify(data);
-            if (lastSensorData === dataStr) return;
-            lastSensorData = dataStr;
-            
-            firebaseData = data;
-            lastUpdateTime = Date.now();
-            
-            // Queue các updates
-            queueUpdate('SENSOR_UPDATE', data);
-            
-            // Cập nhật hiệu suất
-            updatePerformanceStats();
-        }
-
-        // 4. Cập nhật hiệu suất
-        function updatePerformanceStats() {
-            frameCount++;
-            const now = performance.now();
-            
-            // Cập nhật FPS mỗi giây
-            if (now >= lastFrameTime + 1000) {
-                fps = Math.round((frameCount * 1000) / (now - lastFrameTime));
-                frameCount = 0;
-                lastFrameTime = now;
-                
-                const updatesPerSec = Math.round(updateCount / 1);
-                updateCount = 0;
-                
-                updateElement('fpsCounter', fps);
-                updateElement('updateRate', updatesPerSec);
-            }
-        }
-
-        // 5. Các hàm update cụ thể
-        function updateMPUDisplay(data) {
-            updateElement('mpuOrientation', data.o || 'Không xác định');
-            updateElement('mpuShakeState', data.d || 'Không');
-            
-            const shaking = data.sf === "YES";
-            updateElement('isShaking', shaking ? "CÓ" : "KHÔNG");
-            
-            // Animation shake hiệu quả
-            const shakeElement = document.getElementById('isShaking');
-            if (shaking) {
-                shakeElement.classList.add('shake-active');
-            } else {
-                shakeElement.classList.remove('shake-active');
-            }
-        }
-
-        function updateFlexDisplay(data) {
-            const flexValues = [data.f0 || 0, data.f1 || 0, data.f2 || 0, data.f3 || 0];
-            let needsUpdate = false;
-            
-            // Tính toán trạng thái uốn (tối ưu)
-            for (let i = 0; i < 4; i++) {
-                const newState = calculateFlexState(flexValues[i], i);
-                if (flexStates[i] !== newState) {
-                    flexStates[i] = newState;
-                    needsUpdate = true;
-                }
-            }
-            
-            if (needsUpdate) {
-                // Cập nhật hộp uốn
-                for (let i = 0; i < 4; i++) {
-                    const box = document.getElementById(`flex${i}-box`);
-                    const boxCacheKey = `flex${i}-box`;
-                    const boxClass = `flex-box active-${flexStates[i]}`;
-                    
-                    updateElement(`flex${i}-box`, flexStates[i]);
-                    
-                    if (domCache[boxCacheKey]?.className !== boxClass) {
-                        box.className = boxClass;
-                        domCache[boxCacheKey] = { 
-                            content: flexStates[i], 
-                            className: boxClass 
-                        };
-                    }
-                }
-                
-                updateElement('rawValues', flexValues.join(', '));
-                updateElement('flexFormat', flexStates.join(''));
-            }
-        }
-
-        function updateTimeDisplay() {
-            const now = Date.now();
-            const timeStr = formatTime(now);
-            const latency = now - lastUpdateTime;
-            
-            updateElement('lastUpdate', `Cập nhật: ${timeStr}`);
-            updateElement('lastUpdateTime', timeStr);
-            
-            // Cập nhật chất lượng kết nối
-            updateConnectionQuality(latency);
-        }
-
-        function updateConnectionQuality(latency) {
-            const qualityElement = document.getElementById('connQuality');
-            let qualityClass = 'quality-bad';
-            
-            if (latency < 50) qualityClass = 'quality-excellent';
-            else if (latency < 100) qualityClass = 'quality-good';
-            else if (latency < 200) qualityClass = 'quality-fair';
-            else if (latency < 500) qualityClass = 'quality-poor';
-            
-            qualityElement.className = `connection-quality ${qualityClass}`;
-        }
-
-        function handleSensorUpdate(data) {
-            // Xử lý đồng thời các cảm biến
-            queueUpdate('MPU', data);
-            queueUpdate('FLEX', data);
-            queueUpdate('TIME', null);
-            queueUpdate('WORD', data);
-        }
-
-        // 6. Hàm tính toán flex state tối ưu
-        function calculateFlexState(rawValue, sensorIndex) {
-            // Tối ưu: Pre-calculated thresholds
-            const thresholds = [
-                { straight: 100, bent: 300 },    // sensor 0
-                { straight: 150, bent: 450 },    // sensor 1
-                { straight: 150, bent: 350 },    // sensor 2
-                { straight: 100, bent: 300 }     // sensor 3
-            ];
-            
-            const t = thresholds[sensorIndex];
-            
-            // Fast condition check
-            if (rawValue <= t.straight) return 0;
-            if (rawValue <= t.bent) return 1;
-            return 2;
-        }
-
-        // ===========================================
-        // FIREBASE REALTIME DATABASE
-        // ===========================================
-
-        function initFirebaseRealtime() {
             try {
-                firebaseApp = firebase.initializeApp(firebaseConfig);
-                database = firebase.database();
-                dataRef = database.ref('sensorData');
+                // Thêm timestamp để tránh cache
+                const timestamp = Date.now();
+                const url = `${FIREBASE_URL}?t=${timestamp}`;
                 
-                log('SYSTEM', 'Đã khởi tạo Firebase Realtime Database');
-                
-                // Thiết lập listener với timeout
-                const connectionTimeout = setTimeout(() => {
-                    log('SYSTEM', 'Firebase realtime timeout, switching to REST fallback');
-                    initRestFallback();
-                }, 5000);
-                
-                dataRef.on('value', (snapshot) => {
-                    clearTimeout(connectionTimeout);
-                    
-                    const data = snapshot.val();
-                    if (data) {
-                        realtimeConnected = true;
-                        lastRealtimeUpdate = Date.now();
-                        debouncedUpdate(data);
-                        updateConnectionStatus(true);
-                        
-                        // Update connection status
-                        document.getElementById('autoRefreshBtn').textContent = 'Realtime: BẬT';
-                        document.getElementById('autoRefreshBtn').className = 'green';
-                    }
-                }, (error) => {
-                    clearTimeout(connectionTimeout);
-                    console.error('Firebase error:', error);
-                    updateConnectionStatus(false);
-                    realtimeConnected = false;
-                    initRestFallback();
+                const response = await fetch(url, {
+                    signal,
+                    method: 'GET',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    },
+                    priority: 'high'
                 });
                 
-                // Keep-alive ping
-                setInterval(() => {
-                    if (dataRef && realtimeConnected) {
-                        dataRef.once('value').catch(() => {
-                            realtimeConnected = false;
-                            updateConnectionStatus(false);
-                        });
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                const fetchTime = performance.now() - startTime;
+                
+                // Cập nhật thông tin độ trễ
+                document.getElementById('latency').textContent = Math.round(fetchTime);
+                
+                // Chỉ xử lý nếu dữ liệu thay đổi
+                if (JSON.stringify(data) !== JSON.stringify(lastFirebaseData)) {
+                    lastFirebaseData = data;
+                    firebaseData = data;
+                    lastUpdateTime = Date.now();
+                    
+                    updateConnectionStatus(true);
+                    
+                    // Xử lý nhanh, không chờ UI update
+                    processDataImmediately(data);
+                    
+                    // Lên lịch update UI cho frame tiếp theo
+                    scheduleUIUpdate();
+                    
+                    log('Firebase', `Data updated (${Math.round(fetchTime)}ms)`);
+                    
+                    // Điều chỉnh polling interval dựa trên tốc độ
+                    if (fetchTime < 100) {
+                        pollingInterval = turboMode ? 150 : 250;
+                    } else if (fetchTime > 500) {
+                        pollingInterval = 1000;
                     }
-                }, 30000);
+                    
+                    updatePollingDisplay();
+                } else {
+                    // Chỉ cập nhật thời gian
+                    lastUpdateTime = Date.now();
+                    document.getElementById('lastUpdate').textContent = 
+                        `Cập nhật: ${formatTime(Date.now())}`;
+                }
+                
+                return data;
                 
             } catch (error) {
-                console.error("Firebase initialization error:", error);
-                initRestFallback();
-            }
-        }
-
-        function initRestFallback() {
-            const FIREBASE_URL = "https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/sensorData.json";
-            
-            let pollInterval = 100;
-            let retryCount = 0;
-            
-            async function fastPoll() {
-                if (isFetching) return;
-                
-                try {
-                    isFetching = true;
-                    const startTime = performance.now();
-                    
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 1000);
-                    
-                    const response = await fetch(`${FIREBASE_URL}?t=${Date.now()}`, {
-                        signal: controller.signal,
-                        cache: 'no-store',
-                        headers: {
-                            'Pragma': 'no-cache',
-                            'Cache-Control': 'no-cache, no-store, must-revalidate'
-                        }
-                    });
-                    
-                    clearTimeout(timeoutId);
-                    
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                    
-                    const data = await response.json();
-                    const latency = Math.round(performance.now() - startTime);
-                    
-                    // Adaptive polling
-                    if (latency < 50) pollInterval = 50;
-                    else if (latency < 100) pollInterval = 100;
-                    else if (latency < 200) pollInterval = 200;
-                    else pollInterval = 300;
-                    
-                    retryCount = 0;
-                    updateConnectionStatus(true);
-                    debouncedUpdate(data);
-                    
-                    isFetching = false;
-                    
-                    // Lập lịch poll tiếp theo
-                    setTimeout(fastPoll, pollInterval);
-                    
-                } catch (error) {
-                    isFetching = false;
-                    retryCount++;
-                    
-                    const backoff = Math.min(1000 * Math.pow(2, retryCount), 10000);
-                    
+                if (error.name !== 'AbortError') {
+                    console.warn('Fetch error:', error);
                     updateConnectionStatus(false);
-                    log('SYSTEM', `REST fallback error (retry ${retryCount}): ${error.message}`);
+                    log('Firebase', `Error: ${error.message}`);
                     
-                    setTimeout(fastPoll, backoff);
+                    // Tăng interval khi có lỗi
+                    pollingInterval = Math.min(pollingInterval * 2, 5000);
+                    updatePollingDisplay();
+                }
+                return null;
+            } finally {
+                isFetching = false;
+                const totalTime = performance.now() - startTime;
+                document.getElementById('processingTime').textContent = `${Math.round(totalTime)}ms`;
+            }
+        }
+
+        function processDataImmediately(data) {
+            const startTime = performance.now();
+            
+            // 1. Cập nhật sensor data nhanh
+            if (data.o !== undefined) {
+                const mpuElement = document.getElementById('mpuOrientation');
+                if (mpuElement.textContent !== data.o) {
+                    mpuElement.textContent = data.o || 'N/A';
                 }
             }
             
-            fastPoll();
+            if (data.d !== undefined) {
+                const shakeElement = document.getElementById('mpuShakeState');
+                if (shakeElement.textContent !== data.d) {
+                    shakeElement.textContent = data.d || 'No';
+                }
+            }
             
-            log('SYSTEM', 'Đã kích hoạt REST fallback với adaptive polling');
-            document.getElementById('autoRefreshBtn').textContent = 'Polling: BẬT';
-            document.getElementById('autoRefreshBtn').className = 'blue';
+            if (data.sf !== undefined) {
+                const isShakingElement = document.getElementById('isShaking');
+                if (isShakingElement.textContent !== data.sf) {
+                    isShakingElement.textContent = data.sf || 'NO';
+                }
+            }
+            
+            // 2. Cập nhật flex sensors nhanh
+            if (data.f0 !== undefined) {
+                const flexValues = [data.f0, data.f1 || 0, data.f2 || 0, data.f3 || 0];
+                for (let i = 0; i < 4; i++) {
+                    const newState = calculateFlexState(flexValues[i], i);
+                    if (flexStates[i] !== newState) {
+                        flexStates[i] = newState;
+                    }
+                }
+            }
+            
+            // 3. Xử lý word construction (bất đồng bộ)
+            setTimeout(() => {
+                const mpuState = getMPUState(data.o || "", data.d || "");
+                const a0 = flexStates[0];
+                const a1 = flexStates[1];
+                const a2 = flexStates[2];
+                const a3 = flexStates[3];
+                
+                processWordConstructionFast(mpuState, a0, a1, a2, a3);
+            }, 0);
         }
 
-        // ===========================================
-        // HÀM XÂY DỰNG CÂU VÀ XỬ LÝ TỪ
-        // ===========================================
-
-        function updateWordConstruction(data) {
-            const mpuState = getMPUState(data.o || "Không xác định", data.d || "Không");
-            const a0 = flexStates[0];
-            const a1 = flexStates[1];
-            const a2 = flexStates[2];
-            const a3 = flexStates[3];
+        function processWordConstructionFast(mpu, a0, a1, a2, a3) {
+            const currentState = `${mpu}_${a0}_${a1}_${a2}_${a3}`;
             
-            // Tối ưu stable count detection
-            if (mpuState === lastDetectedIndex && 
-                a0 === lastFlexStates[0] && 
-                a1 === lastFlexStates[1] && 
-                a2 === lastFlexStates[2] && 
-                a3 === lastFlexStates[3]) {
-                stableCount++;
-            } else {
-                stableCount = 1;
-                lastDetectedIndex = mpuState;
-                lastFlexStates = [...flexStates];
-                holdStartMs = performance.now();
+            if (currentState !== lastStateString) {
+                lastStateString = currentState;
+                stableCount = 0;
+                holdStartMs = Date.now();
                 holdFired = false;
+            } else {
+                stableCount++;
             }
             
-            // Kiểm tra hành động với hiệu suất cao
+            lastFlexStates = [a0, a1, a2, a3];
+            
             if (stableCount >= DEBOUNCE_COUNT) {
-                const held = performance.now() - holdStartMs;
-                if (!holdFired && (performance.now() - lastActionMs) > POST_HOLD_COOLDOWN && held >= HOLD_MS_DEFAULT) {
-                    performActionSlotLogic(mpuState, a0, a1, a2, a3);
-                    holdFired = true;
-                    lastActionMs = performance.now();
+                const held = Date.now() - holdStartMs;
+                if (!holdFired && held >= HOLD_MS_DEFAULT) {
+                    if (Date.now() - lastActionMs > POST_HOLD_COOLDOWN) {
+                        performActionSlotLogic(mpu, a0, a1, a2, a3);
+                        holdFired = true;
+                        lastActionMs = Date.now();
+                    }
                 }
             }
         }
 
-        function getMPUState(orientation, shakeState) {
-            if (shakeState === "Shake Left") return 6;
-            if (shakeState === "Shake Right") return 7;
-            
-            switch(orientation) {
-                case "Up": return 0;
-                case "Down": return 1;
-                case "Left": return 2;
-                case "Right": return 3;
-                case "Forward": return 4;
-                case "Backward": return 5;
-                default: return -1;
+        function scheduleUIUpdate() {
+            if (!uiUpdateScheduled) {
+                uiUpdateScheduled = true;
+                requestAnimationFrame(() => {
+                    updateCriticalUI();
+                    uiUpdateScheduled = false;
+                });
             }
         }
 
-        function getMappingForIndices(mpuState, a0, a1, a2, a3) {
+        function updateCriticalUI() {
+            const startTime = performance.now();
+            
+            // Chỉ cập nhật các phần quan trọng
+            updateSensorDisplay();
+            updateWordDisplays();
+            updateSentenceDisplay();
+            
+            // Cập nhật thời gian
+            const updateTime = document.getElementById('lastUpdate');
+            const currentTime = formatTime(Date.now());
+            if (updateTime.textContent !== `Cập nhật: ${currentTime}`) {
+                updateTime.textContent = `Cập nhật: ${currentTime}`;
+                document.getElementById('lastUpdateTime').textContent = currentTime;
+            }
+            
+            const uiTime = performance.now() - startTime;
+            if (uiTime > 16) {
+                console.warn(`UI update slow: ${Math.round(uiTime)}ms`);
+            }
+        }
+
+        function updateSensorDisplay() {
+            // Cập nhật flex boxes nếu cần
+            for (let i = 0; i < 4; i++) {
+                const box = document.getElementById(`flex${i}-box`);
+                if (box && box.textContent !== flexStates[i].toString()) {
+                    box.textContent = flexStates[i];
+                    box.className = `flex-box active-${flexStates[i]}`;
+                }
+            }
+            
+            // Cập nhật raw values
+            if (firebaseData) {
+                const rawValues = [firebaseData.f0 || 0, firebaseData.f1 || 0, firebaseData.f2 || 0, firebaseData.f3 || 0];
+                const rawValuesElement = document.getElementById('rawValues');
+                const newRawText = rawValues.join(', ');
+                if (rawValuesElement.textContent !== newRawText) {
+                    rawValuesElement.textContent = newRawText;
+                }
+                
+                const flexFormatElement = document.getElementById('flexFormat');
+                const newFlexText = flexStates.join('');
+                if (flexFormatElement.textContent !== newFlexText) {
+                    flexFormatElement.textContent = newFlexText;
+                }
+            }
+        }
+
+        function updateWordDisplays() {
+            const displayBufferElement = document.getElementById('displayBuffer');
+            if (displayBufferElement.textContent !== displayBuffer) {
+                displayBufferElement.textContent = displayBuffer || '---';
+            }
+            
+            const slot1Element = document.getElementById('slot1');
+            if (slot1Element.textContent !== slot1) {
+                slot1Element.textContent = slot1 || '---';
+            }
+            
+            const slot2Element = document.getElementById('slot2');
+            if (slot2Element.textContent !== slot2) {
+                slot2Element.textContent = slot2 || '---';
+            }
+            
+            // Cập nhật từ đã convert
+            if (displayBuffer.length > 0) {
+                convertedCurrentWord = convertVietnameseWordCached(displayBuffer);
+            } else {
+                convertedCurrentWord = "";
+            }
+            
+            const convertedWordElement = document.getElementById('convertedCurrentWord');
+            if (convertedWordElement.textContent !== convertedCurrentWord) {
+                convertedWordElement.textContent = convertedCurrentWord || '---';
+            }
+        }
+
+        function updateSentenceDisplay() {
+            const sentenceElement = document.getElementById('sentenceDisplay');
+            const newSentence = sentenceWords.join(' ');
+            
+            if (fullSentence !== newSentence) {
+                fullSentence = newSentence;
+                sentenceElement.textContent = fullSentence || '---';
+                
+                // Convert sentence
+                convertedFullSentence = convertVietnameseTextFast(fullSentence);
+                const convertedElement = document.getElementById('convertedSentenceDisplay');
+                convertedElement.textContent = convertedFullSentence || '---';
+                
+                // Cập nhật word list
+                updateWordList();
+                
+                // Cập nhật word count
+                const wordCountElement = document.getElementById('wordCount');
+                wordCountElement.textContent = sentenceWords.length;
+            }
+        }
+
+        function updateWordList() {
+            const wordListDiv = document.getElementById('wordList');
+            if (sentenceWords.length > 0) {
+                wordListDiv.innerHTML = sentenceWords.map(word => 
+                    `<div class="word-item">${word}</div>`
+                ).join('');
+            } else {
+                wordListDiv.innerHTML = 'Chưa có từ nào';
+            }
+        }
+
+        // === HÀM CACHE VÀ TỐI ƯU ===
+        function convertVietnameseWordCached(encodedWord) {
+            if (!encodedWord || encodedWord.length === 0) return "";
+            
+            if (vietnameseCache.has(encodedWord)) {
+                return vietnameseCache.get(encodedWord);
+            }
+            
+            const result = convertVietnameseWordOriginal(encodedWord);
+            vietnameseCache.set(encodedWord, result);
+            return result;
+        }
+
+        function convertVietnameseWordOriginal(encodedWord) {
+            if (!encodedWord || encodedWord.length === 0) return "";
+            
+            const firstUnderscore = encodedWord.indexOf('_');
+            if (firstUnderscore === -1) return encodedWord;
+            
+            const secondUnderscore = encodedWord.indexOf('_', firstUnderscore + 1);
+            if (secondUnderscore === -1) return encodedWord;
+            
+            const consonant = encodedWord.substring(0, firstUnderscore);
+            const middle = encodedWord.substring(firstUnderscore + 1, secondUnderscore);
+            const vowelTypeStr = encodedWord.substring(secondUnderscore + 1);
+            
+            if (middle.length < 2) return encodedWord;
+            
+            const toneChar = middle[0];
+            if (toneChar < '1' || toneChar > '6') return encodedWord;
+            
+            const tone = parseInt(toneChar);
+            const vowelKey = middle.substring(1);
+            
+            let vowelType = 0;
+            if (vowelTypeStr === "b") {
+                vowelType = 1;
+            } else if (vowelTypeStr === "p") {
+                vowelType = 2;
+            } else if (vowelTypeStr !== "s") {
+                return encodedWord;
+            }
+            
+            const tableIndex = (tone - 1) + (vowelType * 6);
+            
+            if (tableIndex < 0 || tableIndex >= 18) {
+                return encodedWord;
+            }
+            
+            const vowelKeyUpper = vowelKey.toUpperCase();
+            
+            for (let i = 0; i < vietnameseTable.length; i++) {
+                if (vowelKeyUpper === vietnameseTable[i].key) {
+                    const convertedVowel = vietnameseTable[i].forms[tableIndex];
+                    return consonant + convertedVowel;
+                }
+            }
+            
+            return encodedWord;
+        }
+
+        function convertVietnameseTextFast(encodedText) {
+            if (!encodedText || encodedText.length === 0) return "";
+            
+            const words = encodedText.split(' ');
+            const convertedWords = words.map(word => convertVietnameseWordCached(word));
+            return convertedWords.join(' ');
+        }
+
+        function getMappingForIndicesCached(mpuState, a0, a1, a2, a3) {
+            const cacheKey = `${mpuState}_${a0}_${a1}_${a2}_${a3}`;
+            
+            if (mappingCache.has(cacheKey)) {
+                return mappingCache.get(cacheKey);
+            }
+            
+            const result = getMappingForIndicesOriginal(mpuState, a0, a1, a2, a3);
+            mappingCache.set(cacheKey, result);
+            return result;
+        }
+
+        function getMappingForIndicesOriginal(mpuState, a0, a1, a2, a3) {
             if (mpuState < 0 || mpuState > 7) return null;
             
             if (a3 === 2) {
@@ -1654,17 +1637,104 @@
             return null;
         }
 
-        function flexModeCharFromA0(a0) {
-            switch(a0) {
-                case 0: return 's';
-                case 1: return 'b';
-                case 2: return 'p';
-                default: return 'x';
+        // === HÀM HỖ TRỢ ===
+        function log(source, message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = { timestamp, source, message };
+            
+            logEntries.unshift(logEntry);
+            if (logEntries.length > MAX_LOG_ENTRIES) {
+                logEntries.pop();
+            }
+            
+            updateLogDisplay();
+        }
+
+        function updateLogDisplay() {
+            const logContainer = document.getElementById('logContainer');
+            // Chỉ render 5 dòng đầu để tối ưu
+            const visibleEntries = logEntries.slice(0, 5);
+            
+            logContainer.innerHTML = visibleEntries.map(entry => 
+                `<div class="log-entry">
+                    <span style="color: #666; font-size: 0.8rem;">[${entry.timestamp}] ${entry.source}:</span>
+                    <span style="color: #333;"> ${entry.message}</span>
+                </div>`
+            ).join('');
+        }
+
+        function clearLog() {
+            logEntries = [];
+            updateLogDisplay();
+        }
+
+        function exportLog() {
+            const logText = logEntries.map(entry => 
+                `[${entry.timestamp}] ${entry.source}: ${entry.message}`
+            ).join('\n');
+            
+            const blob = new Blob([logText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `log_${new Date().toISOString().slice(0, 10)}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function updateConnectionStatus(connected) {
+            const indicator = document.getElementById('connectionStatus');
+            const statusText = document.getElementById('statusText');
+            const firebaseStatus = document.getElementById('firebaseStatus');
+            
+            if (connected) {
+                indicator.className = 'indicator online';
+                statusText.textContent = 'Đã kết nối với Firebase';
+                firebaseStatus.textContent = 'Đã kết nối với Firebase';
+                firebaseStatus.style.color = '#4CAF50';
+            } else {
+                indicator.className = 'indicator';
+                indicator.style.background = '#F44336';
+                statusText.textContent = 'Mất kết nối với Firebase';
+                firebaseStatus.textContent = 'Mất kết nối với Firebase';
+                firebaseStatus.style.color = '#F44336';
             }
         }
 
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+
+        function calculateFlexState(rawValue, sensorIndex) {
+            const STRAIGHT_THRESHOLD = sensorIndex === 3 ? 100 : 150;
+            const bentThresholds = [300, 450, 350, 300];
+            
+            if (rawValue <= STRAIGHT_THRESHOLD) return 0;
+            if (rawValue <= bentThresholds[sensorIndex]) return 1;
+            return 2;
+        }
+
+        function getMPUState(orientation, shakeState) {
+            if (shakeState === "Shake Left") return 6;
+            if (shakeState === "Shake Right") return 7;
+            
+            switch(orientation) {
+                case "Up": return 0;
+                case "Down": return 1;
+                case "Left": return 2;
+                case "Right": return 3;
+                case "Forward": return 4;
+                case "Backward": return 5;
+                default: return -1;
+            }
+        }
+
+        // === HÀM XÂY DỰNG CÂU ===
         function performActionSlotLogic(mpu, a0, a1, a2, a3) {
-            const mapping = getMappingForIndices(mpu, a0, a1, a2, a3);
+            const mapping = getMappingForIndicesCached(mpu, a0, a1, a2, a3);
             if (!mapping || mapping === "nullptr") return false;
             
             if (mapping === "_") {
@@ -1679,12 +1749,12 @@
             
             if (mapping === "<") {
                 backspaceBuffer();
-                updateDisplayBufferFromSlots();
+                scheduleUIUpdate();
                 return true;
             }
             
             const isSlot1 = (a3 === 2);
-            const held = performance.now() - holdStartMs;
+            const held = Date.now() - holdStartMs;
             
             if (isSlot1 && stableCount >= DEBOUNCE_COUNT && held < HOLD_MS_DEFAULT) {
                 const mode = flexModeCharFromA0(a0);
@@ -1697,144 +1767,54 @@
             }
             
             updateDisplayBufferFromSlots();
-            log('WORD', `Hành động: ${displayBuffer}`);
+            log('WORD', `Action: ${displayBuffer}`);
             return true;
+        }
+
+        function flexModeCharFromA0(a0) {
+            switch(a0) {
+                case 0: return 's';
+                case 1: return 'b';
+                case 2: return 'p';
+                default: return 'x';
+            }
         }
 
         function updateDisplayBufferFromSlots() {
             const oldBuffer = displayBuffer;
             displayBuffer = '';
             
-            if (slot1) {
-                displayBuffer += slot1.toLowerCase();
-            }
-            
-            if (slot2) {
-                displayBuffer += slot2.toLowerCase();
-            }
+            if (slot1) displayBuffer += slot1.toLowerCase();
+            if (slot2) displayBuffer += slot2.toLowerCase();
             
             if (oldBuffer !== displayBuffer) {
-                updateConversions();
+                scheduleUIUpdate();
+                log('WORD', `Updated: ${displayBuffer}`);
             }
-            
-            updateUI();
         }
-
-        // Tối ưu chuyển đổi Tiếng Việt với lookup table
-        const vietnameseLookup = {};
-        function initVietnameseLookup() {
-            vietnameseTable.forEach(item => {
-                vietnameseLookup[item.key] = item.forms;
-            });
-        }
-
-        function convertVietnameseWord(encodedWord) {
-            if (!encodedWord || encodedWord.length === 0) return "";
-            
-            const match = encodedWord.match(/^([^_]*)_([^_]*)_([^_]*)$/);
-            if (!match) return encodedWord;
-            
-            const [, consonant, middle, vowelTypeStr] = match;
-            if (middle.length < 2) return encodedWord;
-            
-            const toneChar = middle[0];
-            if (toneChar < '1' || toneChar > '6') return encodedWord;
-            
-            const tone = parseInt(toneChar);
-            const vowelKey = middle.substring(1).toUpperCase();
-            
-            let vowelType = 0;
-            if (vowelTypeStr === "b") {
-                vowelType = 1;
-            } else if (vowelTypeStr === "p") {
-                vowelType = 2;
-            } else if (vowelTypeStr !== "s") {
-                return encodedWord;
-            }
-            
-            const tableIndex = (tone - 1) + (vowelType * 6);
-            if (tableIndex < 0 || tableIndex >= 18) return encodedWord;
-            
-            const vowelForms = vietnameseLookup[vowelKey];
-            if (!vowelForms) return encodedWord;
-            
-            return consonant + vowelForms[tableIndex];
-        }
-
-        function convertVietnameseText(encodedText) {
-            if (!encodedText || encodedText.length === 0) return "";
-            
-            const words = encodedText.split(' ');
-            const results = [];
-            
-            for (let word of words) {
-                results.push(convertVietnameseWord(word));
-            }
-            
-            return results.join(' ');
-        }
-
-        function updateConversions() {
-            // Cập nhật chuyển đổi từ hiện tại
-            if (displayBuffer.length > 0) {
-                convertedCurrentWord = convertVietnameseWord(displayBuffer);
-            } else {
-                convertedCurrentWord = "";
-            }
-            
-            // Cập nhật chuyển đổi toàn bộ câu
-            if (fullSentence.length > 0) {
-                convertedFullSentence = convertVietnameseText(fullSentence);
-            } else {
-                convertedFullSentence = "";
-            }
-            
-            updateElement('convertedCurrentWord', convertedCurrentWord || '---');
-            updateElement('convertedSentenceDisplay', convertedFullSentence || '---');
-        }
-
-        // ===========================================
-        // HÀM XÂY DỰNG CÂU
-        // ===========================================
 
         function addWordToSentence() {
             if (!displayBuffer) return;
             
             if (sentenceWords.length < 10) {
                 sentenceWords.push(displayBuffer);
-                updateFullSentence();
-                log('SENTENCE', `Đã thêm từ: '${displayBuffer}'`);
+                scheduleUIUpdate();
+                log('SENTENCE', `Added: '${displayBuffer}'`);
                 
-                // Hiển thị đề xuất tự động
-                showAutoSuggestions();
-                
-                // Xóa từ hiện tại
                 slot1 = '';
                 slot2 = '';
                 displayBuffer = '';
                 convertedCurrentWord = '';
                 
-                updateUI();
+                scheduleUIUpdate();
             } else {
-                log('SENTENCE', 'Câu đã đầy! Đạt tối đa 10 từ.');
+                log('SENTENCE', 'Sentence full! Max 10 words.');
             }
-        }
-
-        function updateFullSentence() {
-            fullSentence = sentenceWords.join(' ');
-            convertedFullSentence = convertVietnameseText(fullSentence);
-            
-            updateElement('sentenceDisplay', fullSentence || '---');
-            updateElement('convertedSentenceDisplay', convertedFullSentence || '---');
-            updateElement('wordCount', sentenceWords.length);
-            
-            // Cập nhật textarea dịch thuật
-            document.getElementById('translationInput').value = convertedFullSentence || '';
         }
 
         function commitSentence() {
             if (sentenceWords.length === 0) {
-                log('SENTENCE', 'Không có từ nào để hoàn thành!');
+                log('SENTENCE', 'No words to commit!');
                 return;
             }
             
@@ -1842,11 +1822,10 @@
                 addWordToSentence();
             }
             
-            log('SENTENCE', '=== HOÀN THÀNH CÂU ===');
-            log('SENTENCE', `Câu đầy đủ: ${fullSentence}`);
-            log('CONVERSION', `Câu đã chuyển đổi: ${convertedFullSentence}`);
+            log('SENTENCE', '=== SENTENCE COMMITTED ===');
+            log('SENTENCE', `Full: ${fullSentence}`);
+            log('CONVERSION', `Converted: ${convertedFullSentence}`);
             
-            // Đặt lại câu
             resetSentence();
         }
 
@@ -1859,11 +1838,12 @@
             displayBuffer = '';
             convertedCurrentWord = '';
             
-            // Ẩn đề xuất tự động
             document.getElementById('autoSuggestionsPanel').style.display = 'none';
+            document.getElementById('dynamicSuggestions').innerHTML = '';
+            document.getElementById('dynamicSuggestions').classList.remove('show');
             
-            log('SENTENCE', 'Câu đã được đặt lại');
-            updateUI();
+            log('SENTENCE', 'Sentence reset');
+            scheduleUIUpdate();
         }
 
         function clearCurrentWord() {
@@ -1872,144 +1852,98 @@
             displayBuffer = '';
             convertedCurrentWord = '';
             
-            updateUI();
-            log('WORD', 'Từ hiện tại đã được xóa');
+            document.getElementById('dynamicSuggestions').innerHTML = '';
+            document.getElementById('dynamicSuggestions').classList.remove('show');
+            
+            scheduleUIUpdate();
+            log('WORD', 'Current word cleared');
         }
 
         function backspaceBuffer() {
             if (displayBuffer.length > 0) {
                 displayBuffer = displayBuffer.slice(0, -1);
-                updateConversions();
+                log('WORD', `Backspace - Buffer: ${displayBuffer}`);
             }
         }
 
         function backspace() {
             backspaceBuffer();
-            updateUI();
+            scheduleUIUpdate();
         }
 
-        // ===========================================
-        // HÀM HIỂN THỊ UI
-        // ===========================================
-
-        function updateUI() {
-            // Cập nhật các phần tử hiển thị
-            updateElement('slot1', slot1 || '---');
-            updateElement('slot2', slot2 || '---');
-            updateElement('displayBuffer', displayBuffer || '---');
-            updateElement('sentenceDisplay', fullSentence || '---');
-            
-            // Cập nhật danh sách từ
-            const wordListDiv = document.getElementById('wordList');
-            if (sentenceWords.length > 0) {
-                wordListDiv.innerHTML = sentenceWords.map(word => 
-                    `<div class="word-item">${word}</div>`
-                ).join('');
-            } else {
-                wordListDiv.innerHTML = 'Chưa có từ nào';
-            }
-            
-            // Cập nhật trạng thái nút giọng nói
-            const speakVnBtn = document.getElementById('speakVnBtn');
-            const speakTransBtn = document.getElementById('speakTransBtn');
-            const stopSpeechBtn = document.getElementById('stopSpeechBtn');
-            
-            speakVnBtn.disabled = !convertedFullSentence || isSpeaking;
-            speakTransBtn.disabled = !document.getElementById('translationOutput').textContent || isSpeaking;
-            stopSpeechBtn.disabled = !isSpeaking;
-            
-            if (isSpeaking) {
-                speakVnBtn.classList.add('speaking');
-            } else {
-                speakVnBtn.classList.remove('speaking');
-            }
-            
-            // Cập nhật hiển thị giọng nói
-            const langNames = {
-                'vi-VN': 'Tiếng Việt',
-                'en-GB': 'Tiếng Anh',
-                'ja-JP': 'Tiếng Nhật',
-                'ko-KR': 'Tiếng Hàn',
-                'zh-CN': 'Tiếng Trung'
-            };
-            const genderNames = {
-                'male': 'Nam',
-                'female': 'Nữ'
-            };
-            const ttsMode = useGeminiTTS ? 'Gemini AI' : 'Web Speech';
-            updateElement('currentVoiceDisplay', 
-                `Hiện tại: ${langNames[currentVoice.lang] || currentVoice.lang} ${genderNames[currentVoice.gender] || currentVoice.gender} (${ttsMode})`);
-            
-            // Cập nhật nút chuyển đổi TTS
-            document.getElementById('useGeminiTTS').classList.toggle('active', useGeminiTTS);
-            document.getElementById('useWebSpeech').classList.toggle('active', !useGeminiTTS);
+        // === HÀM ĐIỀU KHIỂN ===
+        function refreshData() {
+            fetchFirebaseDataOptimized();
         }
 
-        // ===========================================
-        // HÀM LOG VÀ TRẠNG THÁI
-        // ===========================================
-
-        function log(source, message) {
-            const timestamp = new Date().toLocaleTimeString();
-            const logEntry = { timestamp, source, message };
+        function toggleAutoRefresh() {
+            autoRefresh = !autoRefresh;
+            const btn = document.getElementById('autoRefreshBtn');
             
-            logEntries.unshift(logEntry);
-            if (logEntries.length > MAX_LOG_ENTRIES) {
-                logEntries.pop();
-            }
-            
-            // Cập nhật log display ngay lập tức
-            const logContainer = document.getElementById('logContainer');
-            if (logContainer) {
-                const newLog = `<div class="log-entry">
-                    <span style="color: #666; font-size: 0.8rem;">[${timestamp}] ${source}:</span>
-                    <span style="color: #333;"> ${message}</span>
-                </div>`;
+            if (autoRefresh) {
+                btn.textContent = `Tự động: BẬT (${pollingInterval}ms)`;
+                btn.className = 'green';
                 
-                // Giữ chỉ 10 entries
-                const currentHtml = logContainer.innerHTML;
-                const logs = currentHtml.split('</div>').filter(l => l.trim());
-                if (logs.length >= 10) {
-                    logs.shift();
+                // Dùng recursive setTimeout thay vì setInterval
+                function scheduleNextRefresh() {
+                    if (!autoRefresh) return;
+                    
+                    setTimeout(() => {
+                        if (autoRefresh) {
+                            fetchFirebaseDataOptimized().then(() => {
+                                if (autoRefresh) {
+                                    scheduleNextRefresh();
+                                }
+                            });
+                        }
+                    }, pollingInterval);
                 }
                 
-                logContainer.innerHTML = [...logs, newLog].join('</div>') + '</div>';
-                logContainer.scrollTop = logContainer.scrollHeight;
-            }
-        }
-
-        function clearLog() {
-            logEntries = [];
-            const logContainer = document.getElementById('logContainer');
-            if (logContainer) {
-                logContainer.innerHTML = '<div class="log-entry">Nhật ký đã được xóa</div>';
-            }
-        }
-
-        function updateConnectionStatus(connected) {
-            const indicator = document.getElementById('connectionStatus');
-            const statusText = document.getElementById('statusText');
-            
-            if (connected) {
-                indicator.className = 'indicator online';
-                statusText.textContent = realtimeConnected ? 'Đã kết nối Firebase Realtime' : 'Đã kết nối Firebase REST';
-                statusText.style.color = '#4CAF50';
+                scheduleNextRefresh();
+                log('SYSTEM', `Bật tự động làm mới ${pollingInterval}ms`);
             } else {
-                indicator.className = 'indicator';
-                statusText.textContent = 'Mất kết nối - Đang thử lại...';
-                statusText.style.color = '#FF5722';
+                btn.textContent = 'Tự động: TẮT';
+                btn.className = 'red';
+                log('SYSTEM', 'Tắt tự động làm mới');
             }
         }
 
-        function formatTime(timestamp) {
-            const date = new Date(timestamp);
-            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        function toggleTurboMode() {
+            turboMode = !turboMode;
+            const btn = document.getElementById('turboBtn');
+            
+            if (turboMode) {
+                pollingInterval = 150;
+                btn.textContent = '🚀 Turbo: BẬT';
+                btn.className = 'red';
+                document.getElementById('fastModeIndicator').style.display = 'block';
+                log('SYSTEM', 'Bật chế độ Turbo (150ms polling)');
+            } else {
+                pollingInterval = 300;
+                btn.textContent = '🚀 Chế độ Turbo';
+                btn.className = 'green';
+                document.getElementById('fastModeIndicator').style.display = 'none';
+                log('SYSTEM', 'Tắt chế độ Turbo');
+            }
+            
+            updatePollingDisplay();
+            
+            // Nếu auto refresh đang bật, cập nhật lại
+            if (autoRefresh) {
+                toggleAutoRefresh();
+                toggleAutoRefresh(); // Bật lại với interval mới
+            }
         }
 
-        // ===========================================
-        // HÀM ĐỀ XUẤT VÀ TTS
-        // ===========================================
+        function updatePollingDisplay() {
+            document.getElementById('pollingRate').textContent = pollingInterval;
+            const btn = document.getElementById('autoRefreshBtn');
+            if (autoRefresh) {
+                btn.textContent = `Tự động: BẬT (${pollingInterval}ms)`;
+            }
+        }
 
+        // === HÀM ĐỀ XUẤT ===
         function loadPhraseSuggestions() {
             const phrasePills = document.getElementById('phrasePills');
             phrasePills.innerHTML = '';
@@ -2020,77 +1954,48 @@
                 pill.textContent = phrase.length > 30 ? phrase.substring(0, 27) + '...' : phrase;
                 pill.onclick = () => {
                     document.getElementById('translationInput').value = phrase;
-                    translateSentence();
-                    log('PHRASE', `Đã chọn cụm từ: "${phrase}"`);
+                    translatePhrase(phrase);
+                    log('PHRASE', `Selected phrase: "${phrase}"`);
                 };
                 pill.title = phrase;
                 phrasePills.appendChild(pill);
             });
         }
 
-        function showAutoSuggestions() {
-            if (sentenceWords.length === 0) {
-                document.getElementById('autoSuggestionsPanel').style.display = 'none';
-                return;
-            }
+        function translatePhrase(phrase) {
+            const textarea = document.getElementById('translationInput');
+            const outputDiv = document.getElementById('translationOutput');
             
-            const currentSentence = convertedFullSentence.toLowerCase();
-            const suggestionsDiv = document.getElementById('autoSuggestionsGrid');
-            const panel = document.getElementById('autoSuggestionsPanel');
-            
-            const relevantPhrases = commonPhrases.filter(phrase => {
-                const phraseLower = phrase.toLowerCase();
-                return phraseLower.includes(currentSentence) && phraseLower !== currentSentence;
-            });
-            
-            const displayPhrases = relevantPhrases.slice(0, 6);
-            
-            if (displayPhrases.length === 0) {
-                panel.style.display = 'none';
-                return;
-            }
-            
-            suggestionsDiv.innerHTML = displayPhrases.map(phrase => `
-                <div class="auto-suggestion-item">
-                    <div class="auto-suggestion-text">${phrase}</div>
-                    <div class="auto-suggestion-actions">
-                        <button class="auto-suggestion-btn speak" onclick="speakSuggestion('${phrase}')">🔊 Đọc</button>
-                        <button class="auto-suggestion-btn use" onclick="useSuggestion('${phrase}')">✓ Dùng</button>
-                        <button class="auto-suggestion-btn translate" onclick="translateSuggestion('${phrase}')">🌐 Dịch</button>
-                    </div>
-                </div>
-            `).join('');
-            
-            panel.style.display = 'block';
-        }
-
-        function speakSuggestion(text) {
-            speakText(text, currentVoice.lang);
-        }
-
-        function useSuggestion(text) {
-            const words = text.split(' ');
-            sentenceWords = [];
-            
-            words.forEach(word => {
-                if (sentenceWords.length < 10) {
-                    sentenceWords.push(word);
-                }
-            });
-            
-            updateFullSentence();
-            updateUI();
-            
-            document.getElementById('autoSuggestionsPanel').style.display = 'none';
-            
-            log('SUGGESTIONS', `Đã dùng đề xuất: "${text}"`);
-        }
-
-        function translateSuggestion(text) {
-            document.getElementById('translationInput').value = text;
+            textarea.value = phrase;
             translateSentence();
         }
 
+        // === HÀM GIỌNG NÓI ===
+        function selectVoice(button) {
+            const lang = button.getAttribute('data-lang');
+            const gender = button.getAttribute('data-gender');
+            
+            currentVoice = {
+                lang: lang,
+                gender: gender
+            };
+            
+            document.querySelectorAll('.voice-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            button.classList.add('active');
+            
+            updateUI();
+            log('VOICE', `Selected voice: ${lang} ${gender}`);
+        }
+
+        function toggleTTSMode(useGemini) {
+            useGeminiTTS = useGemini;
+            updateUI();
+            log('TTS', `Switched to ${useGemini ? 'Gemini AI' : 'Web Speech'} TTS`);
+        }
+
+        // === HÀM DỊCH THUẬT ===
         function handleTranslationInput() {
             const input = document.getElementById('translationInput').value;
             const suggestionsDiv = document.getElementById('translationSuggestions');
@@ -2126,333 +2031,8 @@
             translateSentence();
         }
 
-        // ===========================================
-        // HÀM TTS VÀ GIỌNG NÓI
-        // ===========================================
-
-        function selectVoice(button) {
-            const lang = button.getAttribute('data-lang');
-            const gender = button.getAttribute('data-gender');
-            
-            currentVoice = { lang: lang, gender: gender };
-            
-            document.querySelectorAll('.voice-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            button.classList.add('active');
-            
-            updateUI();
-            log('VOICE', `Đã chọn giọng: ${lang} ${gender}`);
-        }
-
-        function toggleTTSMode(useGemini) {
-            useGeminiTTS = useGemini;
-            updateUI();
-            log('TTS', `Đã chuyển sang ${useGemini ? 'Gemini AI' : 'Web Speech'} TTS`);
-        }
-
-        async function speakVietnameseSentence() {
-            const text = convertedFullSentence || document.getElementById('convertedSentenceDisplay').textContent;
-            if (!text || text === '---') {
-                log('SPEECH', 'Không có văn bản tiếng Việt để đọc');
-                return;
-            }
-            
-            speakText(text, currentVoice.lang);
-        }
-
-        async function speakTranslation() {
-            const text = document.getElementById('translationOutput').textContent;
-            if (!text || text.includes('Đang chờ dịch') || text.includes('Vui lòng nhập')) {
-                log('SPEECH', 'Không có văn bản dịch để đọc');
-                return;
-            }
-            
-            const lang = document.getElementById('voiceLanguage').value;
-            speakText(text, lang);
-        }
-
-        async function speakText(text, langCode) {
-            if (isSpeaking) {
-                stopAllSpeech();
-                return;
-            }
-            
-            if (useGeminiTTS && GEMINI_API_KEY) {
-                document.getElementById('aiSpeechStatus').style.display = 'flex';
-                await speakWithGeminiTTS(text, langCode);
-            } else {
-                speakWithWebSpeech(text, langCode);
-            }
-        }
-
-        // Hàm Gemini TTS (giữ nguyên từ bản gốc)
-        async function speakWithGeminiTTS(text, langCode) {
-            setIsSpeaking(true);
-            startAudioVisualizer();
-            
-            const cacheKey = `${langCode}:${currentVoice.gender}:${text}`;
-            
-            try {
-                if (audioCache[cacheKey]) {
-                    playAudioFromCache(cacheKey, text);
-                    return;
-                }
-                
-                const voiceName = currentVoice.gender === 'male' ? 'Aoede' : 'Kore';
-                const response = await fetch(
-                    `${GEMINI_API_URL}?key=${GEMINI_API_KEY}`,
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            contents: [{ parts: [{ text: text }] }],
-                            generationConfig: {
-                                responseModalities: ["AUDIO"],
-                                speechConfig: {
-                                    voiceConfig: { prebuiltVoiceConfig: { voiceName } },
-                                },
-                            },
-                        }),
-                    }
-                );
-                
-                if (!response.ok) throw new Error(`API error: ${response.status}`);
-                
-                const data = await response.json();
-                const inlineData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData;
-                
-                if (!inlineData || !inlineData.data) {
-                    throw new Error("No audio data");
-                }
-                
-                // Chuyển đổi PCM sang WAV
-                const pcmToWav = (base64PCM, sampleRate = 24000) => {
-                    try {
-                        const binaryString = atob(base64PCM);
-                        const len = binaryString.length;
-                        const bytes = new Uint8Array(len);
-                        for (let i = 0; i < len; i++) {
-                            bytes[i] = binaryString.charCodeAt(i);
-                        }
-
-                        const wavHeader = new ArrayBuffer(44);
-                        const view = new DataView(wavHeader);
-
-                        const writeString = (view, offset, string) => {
-                            for (let i = 0; i < string.length; i++) {
-                                view.setUint8(offset + i, string.charCodeAt(i));
-                            }
-                        };
-
-                        writeString(view, 0, "RIFF");
-                        view.setUint32(4, 36 + len, true);
-                        writeString(view, 8, "WAVE");
-                        writeString(view, 12, "fmt ");
-                        view.setUint32(16, 16, true);
-                        view.setUint16(20, 1, true);
-                        view.setUint16(22, 1, true);
-                        view.setUint32(24, sampleRate, true);
-                        view.setUint32(28, sampleRate * 2, true);
-                        view.setUint16(32, 2, true);
-                        view.setUint16(34, 16, true);
-                        writeString(view, 36, "data");
-                        view.setUint32(40, len, true);
-
-                        return new Blob([wavHeader, bytes], { type: "audio/wav" });
-                    } catch (error) {
-                        console.error("Lỗi chuyển đổi PCM sang WAV:", error);
-                        return null;
-                    }
-                };
-                
-                const wavBlob = pcmToWav(inlineData.data, 24000);
-                
-                if (!wavBlob) throw new Error("Không thể tạo blob âm thanh");
-                
-                const audioUrl = URL.createObjectURL(wavBlob);
-                audioCache[cacheKey] = audioUrl;
-                
-                document.getElementById('aiSpeechStatus').style.display = 'none';
-                playAudio(audioUrl, text);
-                
-                log('SPEECH', `Đang phát Gemini TTS: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
-                
-            } catch (error) {
-                console.error('Lỗi Gemini TTS:', error);
-                document.getElementById('aiSpeechStatus').style.display = 'none';
-                log('SPEECH', `Gemini TTS thất bại: ${error.message}. Fallback về Web Speech.`);
-                speakWithWebSpeech(text, langCode);
-            }
-        }
-
-        function playAudioFromCache(cacheKey, text) {
-            const audioUrl = audioCache[cacheKey];
-            playAudio(audioUrl, text);
-            log('SPEECH', `Đang phát âm thanh từ bộ nhớ đệm`);
-        }
-
-        function playAudio(audioUrl, text) {
-            const audio = new Audio(audioUrl);
-            currentSpeech = audio;
-            
-            audio.onended = function() {
-                setIsSpeaking(false);
-                currentSpeech = null;
-                stopAudioVisualizer();
-                updateUI();
-                log('SPEECH', 'Đã đọc xong');
-            };
-            
-            audio.onerror = function(event) {
-                console.error('Lỗi phát âm thanh:', event);
-                setIsSpeaking(false);
-                currentSpeech = null;
-                stopAudioVisualizer();
-                updateUI();
-                log('SPEECH', `Lỗi âm thanh: ${event.error}`);
-            };
-            
-            audio.onplay = function() {
-                setIsSpeaking(true);
-                startAudioVisualizer();
-                updateUI();
-            };
-            
-            audio.play().catch(error => {
-                console.error('Phát âm thanh thất bại:', error);
-                setIsSpeaking(false);
-                currentSpeech = null;
-                stopAudioVisualizer();
-                updateUI();
-            });
-        }
-
-        function speakWithWebSpeech(text, langCode) {
-            if (isSpeaking) {
-                stopAllSpeech();
-                return;
-            }
-            
-            if (!('speechSynthesis' in window)) {
-                log('SPEECH', 'Tổng hợp giọng nói không được hỗ trợ');
-                return;
-            }
-            
-            window.speechSynthesis.cancel();
-            
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = langCode;
-            utterance.rate = 0.9;
-            utterance.pitch = currentVoice.gender === 'male' ? 0.8 : 1.2;
-            utterance.volume = 1;
-            
-            const voices = speechSynthesis.getVoices();
-            const targetVoice = voices.find(voice => 
-                voice.lang === utterance.lang || 
-                voice.lang.startsWith(utterance.lang.split('-')[0])
-            );
-            
-            if (targetVoice) {
-                utterance.voice = targetVoice;
-            }
-            
-            utterance.onstart = function() {
-                setIsSpeaking(true);
-                updateUI();
-                startAudioVisualizer();
-                log('SPEECH', `Đã bắt đầu Web Speech`);
-            };
-            
-            utterance.onend = function() {
-                setIsSpeaking(false);
-                currentSpeech = null;
-                stopAudioVisualizer();
-                updateUI();
-                log('SPEECH', 'Đã kết thúc Web Speech');
-            };
-            
-            utterance.onerror = function(event) {
-                setIsSpeaking(false);
-                currentSpeech = null;
-                stopAudioVisualizer();
-                updateUI();
-                log('SPEECH', `Lỗi Web Speech: ${event.error}`);
-            };
-            
-            currentSpeech = utterance;
-            window.speechSynthesis.speak(utterance);
-        }
-
-        function setIsSpeaking(speaking) {
-            isSpeaking = speaking;
-            updateUI();
-        }
-
-        function stopAllSpeech() {
-            if (window.speechSynthesis) {
-                window.speechSynthesis.cancel();
-            }
-            
-            if (currentSpeech && currentSpeech.pause) {
-                currentSpeech.pause();
-                currentSpeech.currentTime = 0;
-            }
-            
-            setIsSpeaking(false);
-            currentSpeech = null;
-            stopAudioVisualizer();
-            updateUI();
-            
-            document.getElementById('aiSpeechStatus').style.display = 'none';
-            
-            log('SPEECH', 'Đã dừng đọc');
-        }
-
-        function startAudioVisualizer() {
-            stopAudioVisualizer();
-            
-            const visualizer = document.getElementById('audioVisualizer');
-            visualizer.innerHTML = '';
-            
-            for (let i = 0; i < 20; i++) {
-                const bar = document.createElement('div');
-                bar.className = 'audio-bar';
-                bar.style.height = '5px';
-                visualizer.appendChild(bar);
-            }
-            
-            const bars = visualizer.querySelectorAll('.audio-bar');
-            audioVisualizerInterval = setInterval(() => {
-                bars.forEach(bar => {
-                    const height = 5 + Math.random() * 35;
-                    bar.style.height = `${height}px`;
-                    bar.style.backgroundColor = `hsl(${120 + Math.random() * 60}, 70%, 50%)`;
-                });
-            }, 100);
-        }
-
-        function stopAudioVisualizer() {
-            if (audioVisualizerInterval) {
-                clearInterval(audioVisualizerInterval);
-                audioVisualizerInterval = null;
-            }
-            
-            const visualizer = document.getElementById('audioVisualizer');
-            visualizer.innerHTML = '';
-            
-            for (let i = 0; i < 20; i++) {
-                const bar = document.createElement('div');
-                bar.className = 'audio-bar';
-                bar.style.height = '5px';
-                bar.style.backgroundColor = '#e0e0e0';
-                visualizer.appendChild(bar);
-            }
-        }
-
-        // ===========================================
-        // HÀM DỊCH THUẬT
-        // ===========================================
+        let lastTranslationTime = 0;
+        const TRANSLATION_COOLDOWN = 2000;
 
         async function translateSentence() {
             const textarea = document.getElementById('translationInput');
@@ -2502,12 +2082,12 @@
                     outputDiv.innerHTML = translated;
                     outputDiv.className = 'conversion-display success';
                     lastTranslationTime = Date.now();
-                    log('TRANSLATION', `Đã dịch sang ${targetLang}`);
+                    log('TRANSLATION', `Translated to ${targetLang}: ${translated}`);
                 } else {
-                    throw new Error('Dịch thất bại');
+                    throw new Error('Translation failed');
                 }
             } catch (error) {
-                console.error('Lỗi dịch thuật:', error);
+                console.error('Translation error:', error);
                 outputDiv.innerHTML = '<span style="color: #F44336;">Dịch vụ dịch thuật không khả dụng. Vui lòng thử lại sau.</span>';
                 outputDiv.className = 'conversion-display error';
             }
@@ -2519,84 +2099,438 @@
             translationCache = {};
         }
 
-        // ===========================================
-        // HÀM ĐIỀU KHIỂN
-        // ===========================================
+        // === HÀM TTS ===
+        const pcmToWav = (base64PCM, sampleRate = 24000) => {
+            try {
+                const binaryString = atob(base64PCM);
+                const len = binaryString.length;
+                const bytes = new Uint8Array(len);
+                for (let i = 0; i < len; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
 
-        function refreshData() {
-            if (realtimeConnected && dataRef) {
-                dataRef.once('value').then(snapshot => {
-                    const data = snapshot.val();
-                    if (data) {
-                        debouncedUpdate(data);
-                        log('SYSTEM', 'Đã làm mới dữ liệu thủ công');
+                const wavHeader = new ArrayBuffer(44);
+                const view = new DataView(wavHeader);
+
+                const writeString = (view, offset, string) => {
+                    for (let i = 0; i < string.length; i++) {
+                        view.setUint8(offset + i, string.charCodeAt(i));
                     }
-                });
+                };
+
+                writeString(view, 0, "RIFF");
+                view.setUint32(4, 36 + len, true);
+                writeString(view, 8, "WAVE");
+                writeString(view, 12, "fmt ");
+                view.setUint32(16, 16, true);
+                view.setUint16(20, 1, true);
+                view.setUint16(22, 1, true);
+                view.setUint32(24, sampleRate, true);
+                view.setUint32(28, sampleRate * 2, true);
+                view.setUint16(32, 2, true);
+                view.setUint16(34, 16, true);
+                writeString(view, 36, "data");
+                view.setUint32(40, len, true);
+
+                return new Blob([wavHeader, bytes], { type: "audio/wav" });
+            } catch (error) {
+                console.error("PCM to WAV error:", error);
+                return null;
+            }
+        };
+
+        async function speakWithRetry(text, langCode, retries = 3) {
+            const voiceName = geminiVoiceMap[langCode]?.[currentVoice.gender] || 
+                            (currentVoice.gender === 'male' ? 'Aoede' : 'Kore');
+            
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+                    const response = await fetch(
+                        `${GEMINI_API_URL}?key=${GEMINI_API_KEY}`,
+                        {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            signal: controller.signal,
+                            body: JSON.stringify({
+                                contents: [{ parts: [{ text: text }] }],
+                                generationConfig: {
+                                    responseModalities: ["AUDIO"],
+                                    speechConfig: {
+                                        voiceConfig: { prebuiltVoiceConfig: { voiceName } },
+                                    },
+                                },
+                            }),
+                        }
+                    );
+
+                    clearTimeout(timeoutId);
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(`API_ERROR_${response.status}: ${errorData?.error?.message || response.statusText}`);
+                    }
+
+                    const data = await response.json();
+                    const inlineData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+                    
+                    if (!inlineData || !inlineData.data) {
+                        throw new Error("NO_DATA");
+                    }
+
+                    return inlineData.data;
+                } catch (err) {
+                    if (i === retries - 1) throw err;
+                    const delay = Math.pow(2, i) * 1000;
+                    await new Promise(r => setTimeout(r, delay));
+                }
+            }
+        }
+
+        async function speakVietnameseSentence() {
+            const text = convertedFullSentence || document.getElementById('convertedSentenceDisplay').textContent;
+            if (!text || text === '---') {
+                log('SPEECH', 'No Vietnamese text to speak');
+                return;
+            }
+            
+            speakText(text, currentVoice.lang);
+        }
+
+        async function speakTranslation() {
+            const text = document.getElementById('translationOutput').textContent;
+            if (!text || text.includes('Đang chờ dịch') || text.includes('Vui lòng nhập')) {
+                log('SPEECH', 'No translation text to speak');
+                return;
+            }
+            
+            const lang = document.getElementById('voiceLanguage').value;
+            speakText(text, lang);
+        }
+
+        async function speakText(text, langCode) {
+            if (isSpeaking) {
+                stopAllSpeech();
+                return;
+            }
+            
+            if (useGeminiTTS) {
+                document.getElementById('aiSpeechStatus').style.display = 'flex';
+            }
+            
+            if (useGeminiTTS && GEMINI_API_KEY) {
+                await speakWithGeminiTTS(text, langCode);
             } else {
-                // Nếu đang dùng REST, gọi fetch trực tiếp
-                const FIREBASE_URL = "https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/sensorData.json";
-                fetch(`${FIREBASE_URL}?t=${Date.now()}`)
-                    .then(r => r.json())
-                    .then(data => {
-                        debouncedUpdate(data);
-                        log('SYSTEM', 'Đã làm mới dữ liệu thủ công (REST)');
-                    });
+                speakWithWebSpeech(text, langCode);
             }
         }
 
-        function toggleAutoRefresh() {
-            // Trong phiên bản này, chúng ta không tắt realtime
-            // Nhưng có thể tắt polling nếu đang dùng
-            if (!realtimeConnected) {
-                location.reload(); // Reload để thử kết nối realtime lại
+        async function speakWithGeminiTTS(text, langCode) {
+            setIsSpeaking(true);
+            startAudioVisualizer();
+            
+            const cacheKey = `${langCode}:${currentVoice.gender}:${text}`;
+            
+            try {
+                if (audioCache[cacheKey]) {
+                    playAudioFromCache(cacheKey, text);
+                    return;
+                }
+                
+                const audioDataBase64 = await speakWithRetry(text, langCode);
+                const wavBlob = pcmToWav(audioDataBase64, 24000);
+                
+                if (!wavBlob) {
+                    throw new Error("Cannot create audio blob");
+                }
+                
+                const audioUrl = URL.createObjectURL(wavBlob);
+                audioCache[cacheKey] = audioUrl;
+                
+                document.getElementById('aiSpeechStatus').style.display = 'none';
+                playAudio(audioUrl, text);
+                
+                log('SPEECH', `Playing Gemini TTS: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
+                
+            } catch (error) {
+                console.error('Gemini TTS error:', error);
+                document.getElementById('aiSpeechStatus').style.display = 'none';
+                log('SPEECH', `Gemini TTS failed: ${error.message}. Fallback to Web Speech.`);
+                speakWithWebSpeech(text, langCode);
             }
         }
 
-        function togglePerformanceMonitor() {
-            performanceMonitorVisible = !performanceMonitorVisible;
-            document.getElementById('perfMonitor').classList.toggle('visible', performanceMonitorVisible);
-            log('SYSTEM', `Hiệu suất monitor ${performanceMonitorVisible ? 'bật' : 'tắt'}`);
+        function playAudioFromCache(cacheKey, text) {
+            const audioUrl = audioCache[cacheKey];
+            playAudio(audioUrl, text);
+            log('SPEECH', `Playing cached audio: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
         }
 
-        // ===========================================
-        // KHỞI TẠO ỨNG DỤNG
-        // ===========================================
+        function playAudio(audioUrl, text) {
+            const audio = new Audio(audioUrl);
+            currentSpeech = audio;
+            
+            audio.onended = function() {
+                setIsSpeaking(false);
+                currentSpeech = null;
+                stopAudioVisualizer();
+                updateUI();
+                log('SPEECH', 'Finished speaking');
+            };
+            
+            audio.onerror = function(event) {
+                console.error('Audio play error:', event);
+                setIsSpeaking(false);
+                currentSpeech = null;
+                stopAudioVisualizer();
+                updateUI();
+                log('SPEECH', `Audio error: ${event.error}`);
+            };
+            
+            audio.onplay = function() {
+                setIsSpeaking(true);
+                startAudioVisualizer();
+                updateUI();
+            };
+            
+            audio.play().catch(error => {
+                console.error('Audio play failed:', error);
+                setIsSpeaking(false);
+                currentSpeech = null;
+                stopAudioVisualizer();
+                updateUI();
+            });
+        }
 
+        function speakWithWebSpeech(text, langCode) {
+            if (isSpeaking) {
+                stopAllSpeech();
+                return;
+            }
+            
+            if (!('speechSynthesis' in window)) {
+                log('SPEECH', 'Speech synthesis not supported in this browser');
+                return;
+            }
+            
+            window.speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            
+            let voiceSettings = webSpeechVoiceMap[langCode]?.[currentVoice.gender];
+            
+            if (!voiceSettings && langCode === currentVoice.lang) {
+                voiceSettings = webSpeechVoiceMap[currentVoice.lang]?.[currentVoice.gender];
+            }
+            
+            if (!voiceSettings) {
+                voiceSettings = { lang: langCode, rate: 0.9, pitch: currentVoice.gender === 'male' ? 0.8 : 1.2 };
+            }
+            
+            utterance.lang = voiceSettings.lang || langCode;
+            utterance.rate = voiceSettings.rate || 0.9;
+            utterance.pitch = voiceSettings.pitch || (currentVoice.gender === 'male' ? 0.8 : 1.2);
+            utterance.volume = 1;
+            
+            const voices = speechSynthesis.getVoices();
+            let targetVoice = null;
+            
+            if (voiceSettings.name) {
+                targetVoice = voices.find(voice => voice.name === voiceSettings.name);
+            }
+            
+            if (!targetVoice) {
+                targetVoice = voices.find(voice => 
+                    voice.lang === utterance.lang || 
+                    voice.lang.startsWith(utterance.lang.split('-')[0])
+                );
+            }
+            
+            if (targetVoice) {
+                utterance.voice = targetVoice;
+            }
+            
+            utterance.onstart = function() {
+                setIsSpeaking(true);
+                updateUI();
+                startAudioVisualizer();
+                log('SPEECH', `Started Web Speech: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
+            };
+            
+            utterance.onend = function() {
+                setIsSpeaking(false);
+                currentSpeech = null;
+                stopAudioVisualizer();
+                updateUI();
+                log('SPEECH', 'Ended Web Speech');
+            };
+            
+            utterance.onerror = function(event) {
+                setIsSpeaking(false);
+                currentSpeech = null;
+                stopAudioVisualizer();
+                updateUI();
+                log('SPEECH', `Web Speech error: ${event.error}`);
+            };
+            
+            currentSpeech = utterance;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function setIsSpeaking(speaking) {
+            isSpeaking = speaking;
+            updateUI();
+        }
+
+        function stopAllSpeech() {
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
+            }
+            
+            if (currentSpeech && currentSpeech.pause) {
+                currentSpeech.pause();
+                currentSpeech.currentTime = 0;
+            }
+            
+            setIsSpeaking(false);
+            currentSpeech = null;
+            stopAudioVisualizer();
+            updateUI();
+            
+            document.getElementById('aiSpeechStatus').style.display = 'none';
+            
+            log('SPEECH', 'Stopped all speech');
+        }
+
+        function startAudioVisualizer() {
+            stopAudioVisualizer();
+            
+            const visualizer = document.getElementById('audioVisualizer');
+            visualizer.innerHTML = '';
+            
+            for (let i = 0; i < 20; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'audio-bar';
+                bar.style.height = '5px';
+                visualizer.appendChild(bar);
+            }
+            
+            const bars = visualizer.querySelectorAll('.audio-bar');
+            audioVisualizerInterval = setInterval(() => {
+                bars.forEach(bar => {
+                    const height = 5 + Math.random() * 35;
+                    bar.style.height = `${height}px`;
+                    bar.style.backgroundColor = `hsl(${120 + Math.random() * 60}, 70%, 50%)`;
+                });
+            }, 100);
+        }
+
+        function stopAudioVisualizer() {
+            if (audioVisualizerInterval) {
+                clearInterval(audioVisualizerInterval);
+                audioVisualizerInterval = null;
+            }
+            
+            const visualizer = document.getElementById('audioVisualizer');
+            visualizer.innerHTML = '';
+            
+            for (let i = 0; i < 20; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'audio-bar';
+                bar.style.height = '5px';
+                bar.style.backgroundColor = '#e0e0e0';
+                visualizer.appendChild(bar);
+            }
+        }
+
+        // === HÀM UPDATE UI COMPLETE ===
+        function updateUI() {
+            updateWordDisplays();
+            updateSentenceDisplay();
+            
+            const speakVnBtn = document.getElementById('speakVnBtn');
+            const speakTransBtn = document.getElementById('speakTransBtn');
+            const stopSpeechBtn = document.getElementById('stopSpeechBtn');
+            
+            speakVnBtn.disabled = !convertedFullSentence || isSpeaking;
+            speakTransBtn.disabled = !document.getElementById('translationOutput').textContent || isSpeaking;
+            stopSpeechBtn.disabled = !isSpeaking;
+            
+            if (isSpeaking) {
+                speakVnBtn.classList.add('speaking');
+            } else {
+                speakVnBtn.classList.remove('speaking');
+            }
+            
+            const langNames = {
+                'vi-VN': 'Tiếng Việt',
+                'en-GB': 'Tiếng Anh',
+                'ja-JP': 'Tiếng Nhật',
+                'ko-KR': 'Tiếng Hàn',
+                'zh-CN': 'Tiếng Trung'
+            };
+            const genderNames = {
+                'male': 'Nam',
+                'female': 'Nữ'
+            };
+            const ttsMode = useGeminiTTS ? 'Gemini AI' : 'Web Speech';
+            document.getElementById('currentVoiceDisplay').textContent = 
+                `Hiện tại: ${langNames[currentVoice.lang] || currentVoice.lang} ${genderNames[currentVoice.gender] || currentVoice.gender} (${ttsMode})`;
+            
+            document.getElementById('useGeminiTTS').classList.toggle('active', useGeminiTTS);
+            document.getElementById('useWebSpeech').classList.toggle('active', !useGeminiTTS);
+        }
+
+        // === KHỞI TẠO ===
         document.addEventListener('DOMContentLoaded', function() {
-            log('SYSTEM', 'Ứng dụng đã khởi động (ULTRA FAST MODE)');
+            log('SYSTEM', 'Optimized app started');
             
-            // Khởi tạo lookup table cho chuyển đổi Tiếng Việt
-            initVietnameseLookup();
+            // Khởi tạo FPS counter
+            function updateFPS() {
+                frameCount++;
+                const currentTime = performance.now();
+                if (currentTime - lastFrameTime >= 1000) {
+                    currentFPS = frameCount;
+                    frameCount = 0;
+                    lastFrameTime = currentTime;
+                    
+                    document.getElementById('fps').textContent = currentFPS;
+                    
+                    if (currentFPS < 30 && pollingInterval > 150) {
+                        pollingInterval = Math.min(pollingInterval * 1.5, 1000);
+                        updatePollingDisplay();
+                        log('PERF', `Low FPS (${currentFPS}), increased polling to ${pollingInterval}ms`);
+                    } else if (currentFPS > 50 && pollingInterval < 1000) {
+                        pollingInterval = Math.max(pollingInterval * 0.8, 150);
+                        updatePollingDisplay();
+                    }
+                }
+                requestAnimationFrame(updateFPS);
+            }
             
-            // Load phrase suggestions
+            requestAnimationFrame(updateFPS);
+            
             loadPhraseSuggestions();
             
-            // Khởi tạo Firebase Realtime
-            initFirebaseRealtime();
+            if ('speechSynthesis' in window) {
+                speechSynthesis.getVoices();
+                
+                speechSynthesis.onvoiceschanged = function() {
+                    log('SPEECH', 'Loaded speech synthesis voices');
+                };
+            }
             
-            // Setup keyboard shortcut for performance monitor (Ctrl+Shift+P)
-            document.addEventListener('keydown', (e) => {
-                if (e.ctrlKey && e.shiftKey && e.key === 'P') {
-                    e.preventDefault();
-                    togglePerformanceMonitor();
-                }
-            });
+            setTimeout(() => {
+                fetchFirebaseDataOptimized();
+                toggleAutoRefresh();
+            }, 100);
             
-            // Auto-clear old logs
-            setInterval(() => {
-                const logContainer = document.getElementById('logContainer');
-                if (logContainer) {
-                    const logs = logContainer.innerHTML.split('</div>').filter(l => l.trim());
-                    if (logs.length > 15) {
-                        logContainer.innerHTML = logs.slice(-10).join('</div>') + '</div>';
-                    }
-                }
-            }, 60000); // Mỗi phút dọn dẹp
-            
-            log('SYSTEM', 'Hệ thống tối ưu hiệu suất đã sẵn sàng');
-            
-            // Initial UI update
-            updateUI();
+            if (!GEMINI_API_KEY) {
+                log('SYSTEM', 'Note: Gemini API key not configured. Using Web Speech API.');
+                useGeminiTTS = false;
+            }
         });
     </script>
 </body>
