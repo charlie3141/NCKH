@@ -225,161 +225,7 @@
             font-size: 0.9rem;
             color: #666;
         }
-
-        /* === PHRASE SUGGESTION STYLES === */
-        .phrase-suggestion-panel {
-            margin-top: 15px;
-            padding: 15px;
-            background: linear-gradient(135deg, #f0f7ff 0%, #e6f0ff 100%);
-            border-radius: 10px;
-            border: 2px solid #c2d9ff;
-            animation: slideInUp 0.3s ease;
-        }
-
-        @keyframes slideInUp {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .phrase-suggestion-title {
-            font-size: 0.9rem;
-            font-weight: bold;
-            color: #1a56db;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .phrase-suggestion-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 8px;
-        }
-
-        .phrase-suggestion-item {
-            padding: 10px;
-            background: white;
-            border-radius: 8px;
-            border: 1px solid #dbeafe;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 0.85rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .phrase-suggestion-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(26, 86, 219, 0.1);
-            border-color: #1a56db;
-            background: #f0f7ff;
-        }
-
-        .phrase-suggestion-text {
-            flex: 1;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .phrase-suggestion-icon {
-            color: #1a56db;
-            font-size: 0.8rem;
-        }
-
-        .phrase-suggestion-completion {
-            color: #6b7280;
-            font-style: italic;
-            margin-left: 4px;
-        }
-
-        .current-word-suggestions {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            z-index: 1000;
-            max-height: 200px;
-            overflow-y: auto;
-            display: none;
-        }
-
-        .current-word-suggestions.show {
-            display: block;
-        }
-
-        .current-suggestion-item {
-            padding: 10px 12px;
-            cursor: pointer;
-            border-bottom: 1px solid #f0f0f0;
-            font-size: 0.9rem;
-            transition: background 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .current-suggestion-item:hover {
-            background: #f0f7ff;
-        }
-
-        .current-suggestion-item:last-child {
-            border-bottom: none;
-        }
-
-        .current-suggestion-highlight {
-            color: #1a56db;
-            font-weight: bold;
-        }
-
-        .current-suggestion-rest {
-            color: #6b7280;
-        }
-
-        .current-suggestion-match {
-            background: #f0f7ff;
-            border-left: 3px solid #1a56db;
-        }
-
-        .phrase-building-container {
-            position: relative;
-        }
-
-        .sentence-progress {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin: 10px 0;
-            padding: 8px 12px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            font-size: 0.85rem;
-            color: #666;
-        }
-
-        .sentence-progress-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #ddd;
-        }
-
-        .sentence-progress-dot.active {
-            background: #4CAF50;
-            animation: pulse 1.5s infinite;
-        }
-
-        .sentence-progress-dot.complete {
-            background: #2196F3;
-        }
-
-        /* Giữ nguyên các style cũ */
+        
         .conversion-display {
             font-size: 1.5rem;
             font-weight: bold;
@@ -983,6 +829,104 @@
             font-size: 0.8rem;
             z-index: 1000;
         }
+
+        /* Phrase auto-suggestions styles */
+        .phrase-auto-suggestions {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .phrase-auto-suggestions h5 {
+            font-size: 0.9rem;
+            color: #4A00E0;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .phrase-suggestions-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .phrase-suggestion-item {
+            padding: 4px 8px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .phrase-suggestion-item:hover {
+            background: #e3f2fd;
+            border-color: #2196F3;
+            transform: translateY(-1px);
+        }
+
+        .typing-suggestions {
+            margin-top: 10px;
+            padding: 10px;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-radius: 8px;
+            border: 1px solid #90caf9;
+            animation: slideIn 0.3s ease;
+        }
+
+        .typing-suggestions h5 {
+            font-size: 0.9rem;
+            color: #1565c0;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .typing-suggestions-list {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .typing-suggestion-item {
+            padding: 8px 12px;
+            background: white;
+            border: 1px solid #90caf9;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .typing-suggestion-item:hover {
+            background: #e3f2fd;
+            border-color: #2196F3;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+        }
+
+        .typing-suggestion-text {
+            flex: 1;
+        }
+
+        .typing-suggestion-action {
+            padding: 2px 6px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -1019,32 +963,6 @@
                     <div class="sensor-label">CÂU ĐẦY ĐỦ (Tiếng Việt)</div>
                     <div class="conversion-display" id="convertedSentenceDisplay">---</div>
                     
-                    <!-- Current Word Suggestions -->
-                    <div class="phrase-building-container">
-                        <div class="current-word-suggestions" id="currentWordSuggestions">
-                            <!-- Suggestions for current word will appear here -->
-                        </div>
-                    </div>
-                    
-                    <!-- Phrase Completion Suggestions -->
-                    <div class="phrase-suggestion-panel" id="phraseSuggestionPanel" style="display: none;">
-                        <div class="phrase-suggestion-title">
-                            <span>💡 GỢI Ý HOÀN THÀNH CỤM TỪ</span>
-                        </div>
-                        <div class="phrase-suggestion-grid" id="phraseSuggestionGrid">
-                            <!-- Phrase completion suggestions will appear here -->
-                        </div>
-                    </div>
-                    
-                    <!-- Sentence Progress -->
-                    <div class="sentence-progress">
-                        <div>Tiến độ câu:</div>
-                        <div id="sentenceProgressDots">
-                            <!-- Progress dots will be added by JavaScript -->
-                        </div>
-                        <div id="sentenceProgressText">Bắt đầu xây dựng câu...</div>
-                    </div>
-                    
                     <!-- Chuyển đổi TTS -->
                     <div class="tts-toggle">
                         <button class="tts-toggle-btn active" id="useGeminiTTS" onclick="toggleTTSMode(true)">🎯 Giọng AI Gemini</button>
@@ -1066,6 +984,14 @@
                         <h4>📝 ĐỀ XUẤT CỤM TỪ THÔNG DỤNG</h4>
                         <div class="phrase-pills" id="phrasePills">
                             <!-- Các nút cụm từ sẽ được thêm bởi JavaScript -->
+                        </div>
+                        
+                        <!-- Đề xuất typing suggestions -->
+                        <div class="typing-suggestions" id="typingSuggestions" style="display: none;">
+                            <h5>✨ Đề xuất khi đang gõ:</h5>
+                            <div class="typing-suggestions-list" id="typingSuggestionsList">
+                                <!-- Các đề xuất sẽ được thêm ở đây -->
+                            </div>
                         </div>
                         
                         <!-- Đề xuất động -->
@@ -1605,32 +1531,25 @@
             "Bao nhiêu tiền?",
             "Tôi không hiểu",
             "Bạn có thể giúp tôi không?",
-            "Tên tôi là",
-            "Tôi đến từ",
-            "Rất vui được làm quen",
-            "Bạn nói lại được không?",
-            "Tôi cần giúp đỡ",
-            "Đây là lần đầu tiên tôi đến đây",
-            "Bạn có khỏe không?",
-            "Tạm biệt, hẹn gặp lại",
+            "Tôi muốn mua cái này",
+            "Nhà vệ sinh ở đâu?",
             "Xin lỗi, tôi đến trễ",
-            "Món này rất ngon",
-            "Tôi thích Việt Nam",
-            "Bạn bao nhiêu tuổi?",
-            "Tôi đang học tiếng Việt",
-            "Bạn có thể viết ra được không?"
-        ];
-
-        // Danh sách từ vựng thông dụng cho gợi ý
-        const commonWords = [
-            "xin", "chào", "cảm", "ơn", "bạn", "tôi", "rất", "vui", "được", "gặp",
-            "khỏe", "không", "làm", "ơn", "cho", "hỏi", "đường", "chúc", "một", "ngày",
-            "tốt", "lành", "yêu", "ngôn", "ngữ", "này", "hẹn", "gặp", "lại", "sau",
-            "đói", "bụng", "bao", "nhiêu", "tiền", "hiểu", "có", "thể", "giúp", "tên",
-            "là", "đến", "từ", "quen", "nói", "lại", "cần", "giúp", "đỡ", "đây",
-            "lần", "đầu", "tiên", "tạm", "biệt", "xin", "lỗi", "trễ", "món", "này",
-            "ngon", "thích", "Việt", "Nam", "tuổi", "đang", "học", "tiếng", "Việt",
-            "viết", "ra", "được", "không"
+            "Bạn tên là gì?",
+            "Tôi đến từ Việt Nam",
+            "Bạn nói tiếng Anh được không?",
+            "Tôi cần giúp đỡ",
+            "Mấy giờ rồi?",
+            "Trời hôm nay đẹp quá",
+            "Bạn ăn cơm chưa?",
+            "Tôi thích âm nhạc",
+            "Chúng ta đi đâu?",
+            "Đây là lần đầu tiên tôi đến đây",
+            "Bạn có gia đình chưa?",
+            "Tôi đang học ngôn ngữ ký hiệu",
+            "Công nghệ này thật tuyệt vời",
+            "Tôi muốn uống nước",
+            "Nhà hàng nào ngon?",
+            "Bạn làm nghề gì?"
         ];
 
         // Biến tổng hợp giọng nói
@@ -1646,11 +1565,6 @@
             lang: 'vi-VN',
             gender: 'male'
         };
-
-        // Biến cho đề xuất
-        let currentSuggestions = [];
-        let lastSuggestionUpdate = 0;
-        const SUGGESTION_DEBOUNCE = 300;
 
         // === HÀM CALIBRATION ===
         function startCalibration() {
@@ -2142,9 +2056,6 @@
             if (convertedWordElement.textContent !== convertedCurrentWord) {
                 convertedWordElement.textContent = convertedCurrentWord || '---';
             }
-            
-            // Cập nhật đề xuất cho từ hiện tại
-            updateCurrentWordSuggestions();
         }
 
         function updateSentenceDisplay() {
@@ -2166,13 +2077,10 @@
                 // Cập nhật word count
                 const wordCountElement = document.getElementById('wordCount');
                 wordCountElement.textContent = sentenceWords.length;
-                
-                // Cập nhật progress dots
-                updateSentenceProgress();
-                
-                // Cập nhật đề xuất cụm từ
-                updatePhraseSuggestions();
             }
+            
+            // Cập nhật đề xuất tự động khi đang gõ
+            updateTypingSuggestions();
         }
 
         function updateWordList() {
@@ -2503,16 +2411,10 @@
             displayBuffer = '';
             convertedCurrentWord = '';
             
-            // Ẩn các panel đề xuất
             document.getElementById('autoSuggestionsPanel').style.display = 'none';
-            document.getElementById('phraseSuggestionPanel').style.display = 'none';
             document.getElementById('dynamicSuggestions').innerHTML = '';
             document.getElementById('dynamicSuggestions').classList.remove('show');
-            document.getElementById('currentWordSuggestions').innerHTML = '';
-            document.getElementById('currentWordSuggestions').classList.remove('show');
-            
-            // Reset progress dots
-            updateSentenceProgress();
+            document.getElementById('typingSuggestions').style.display = 'none';
             
             log('SENTENCE', 'Sentence reset');
             scheduleUIUpdate();
@@ -2526,8 +2428,7 @@
             
             document.getElementById('dynamicSuggestions').innerHTML = '';
             document.getElementById('dynamicSuggestions').classList.remove('show');
-            document.getElementById('currentWordSuggestions').innerHTML = '';
-            document.getElementById('currentWordSuggestions').classList.remove('show');
+            document.getElementById('typingSuggestions').style.display = 'none';
             
             scheduleUIUpdate();
             log('WORD', 'Current word cleared');
@@ -2617,185 +2518,107 @@
             }
         }
 
-        // === HÀM ĐỀ XUẤT PHIÊN BẢN MỚI ===
-        function updateCurrentWordSuggestions() {
-            const now = Date.now();
-            if (now - lastSuggestionUpdate < SUGGESTION_DEBOUNCE) {
-                return;
-            }
-            lastSuggestionUpdate = now;
+        // === HÀM ĐỀ XUẤT TỰ ĐỘNG NHƯ GOOGLE ===
+        function updateTypingSuggestions() {
+            const typingSuggestionsDiv = document.getElementById('typingSuggestions');
+            const typingSuggestionsList = document.getElementById('typingSuggestionsList');
             
-            const currentWord = convertedCurrentWord.toLowerCase();
-            const suggestionsDiv = document.getElementById('currentWordSuggestions');
-            
-            // Ẩn nếu không có từ nào
-            if (!currentWord || currentWord.length < 1) {
-                suggestionsDiv.innerHTML = '';
-                suggestionsDiv.classList.remove('show');
+            // Nếu không có từ nào trong câu, ẩn đề xuất
+            if (sentenceWords.length === 0) {
+                typingSuggestionsDiv.style.display = 'none';
                 return;
             }
             
-            // Tìm các từ thông dụng bắt đầu bằng từ hiện tại
-            const matchingWords = commonWords.filter(word => 
-                word.toLowerCase().startsWith(currentWord)
-            ).slice(0, 8); // Giới hạn 8 từ
-            
-            if (matchingWords.length === 0) {
-                suggestionsDiv.innerHTML = '';
-                suggestionsDiv.classList.remove('show');
+            // Lấy câu hiện tại (đã convert sang tiếng Việt)
+            const currentSentence = convertedFullSentence || '';
+            if (!currentSentence || currentSentence === '---') {
+                typingSuggestionsDiv.style.display = 'none';
                 return;
             }
             
-            suggestionsDiv.innerHTML = matchingWords.map(word => {
-                const rest = word.substring(currentWord.length);
-                return `
-                    <div class="current-suggestion-item" onclick="selectCurrentWordSuggestion('${word}')">
-                        <span class="current-suggestion-highlight">${currentWord}</span>
-                        <span class="current-suggestion-rest">${rest}</span>
-                    </div>
-                `;
-            }).join('');
+            // Tìm các cụm từ phù hợp trong commonPhrases
+            const matchedPhrases = findMatchingPhrases(currentSentence);
             
-            suggestionsDiv.classList.add('show');
-        }
-
-        function selectCurrentWordSuggestion(word) {
-            // Tìm mapping cho từ được đề xuất
-            // Đây là phần phức tạp vì cần map từ tiếng Việt sang encoding
-            // Tạm thời, chúng ta sẽ chỉ hiển thị thông báo
-            log('SUGGESTION', `Selected word suggestion: ${word}`);
-            
-            // Ẩn suggestions
-            document.getElementById('currentWordSuggestions').innerHTML = '';
-            document.getElementById('currentWordSuggestions').classList.remove('show');
-            
-            // Hiển thị thông báo
-            alert(`Từ "${word}" đã được chọn. Hệ thống đang học để map từ tiếng Việt sang mã hóa.`);
-        }
-
-        function updatePhraseSuggestions() {
-            const currentSentence = convertedFullSentence.toLowerCase();
-            const panel = document.getElementById('phraseSuggestionPanel');
-            const grid = document.getElementById('phraseSuggestionGrid');
-            
-            // Ẩn nếu không có câu
-            if (!currentSentence || sentenceWords.length === 0) {
-                panel.style.display = 'none';
+            // Nếu không có đề xuất nào, ẩn panel
+            if (matchedPhrases.length === 0) {
+                typingSuggestionsDiv.style.display = 'none';
                 return;
             }
             
-            // Tìm cụm từ phù hợp
-            const matchingPhrases = findMatchingPhrases(currentSentence);
+            // Hiển thị panel và cập nhật đề xuất
+            typingSuggestionsDiv.style.display = 'block';
             
-            if (matchingPhrases.length === 0) {
-                panel.style.display = 'none';
-                return;
-            }
-            
-            grid.innerHTML = matchingPhrases.map(phrase => {
-                const completion = phrase.substring(currentSentence.length).trim();
-                return `
-                    <div class="phrase-suggestion-item" onclick="selectPhraseSuggestion('${phrase}')">
-                        <div class="phrase-suggestion-icon">→</div>
-                        <div class="phrase-suggestion-text">
-                            ${currentSentence}
-                            <span class="phrase-suggestion-completion">${completion}</span>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-            
-            panel.style.display = 'block';
+            // Tạo danh sách đề xuất
+            typingSuggestionsList.innerHTML = matchedPhrases.map(phrase => `
+                <div class="typing-suggestion-item">
+                    <div class="typing-suggestion-text">${phrase}</div>
+                    <button class="typing-suggestion-action" onclick="useTypingSuggestion('${phrase}')">Dùng</button>
+                </div>
+            `).join('');
         }
 
         function findMatchingPhrases(currentSentence) {
-            if (!currentSentence || currentSentence.trim() === '') {
-                return [];
-            }
+            if (!currentSentence || currentSentence.trim() === '') return [];
             
-            const matches = [];
-            const words = currentSentence.split(' ');
-            const lastWord = words[words.length - 1];
+            const sentenceLower = currentSentence.toLowerCase();
+            const words = sentenceLower.split(' ').filter(word => word.length > 0);
             
-            // Tìm cụm từ chứa câu hiện tại
+            if (words.length === 0) return [];
+            
+            // Tìm cụm từ bắt đầu bằng từ/cụm từ hiện tại
+            const matchedPhrases = [];
+            
             for (const phrase of commonPhrases) {
                 const phraseLower = phrase.toLowerCase();
                 
-                // Kiểm tra nếu cụm từ bắt đầu bằng câu hiện tại
-                if (phraseLower.startsWith(currentSentence) && phraseLower.length > currentSentence.length) {
-                    matches.push(phrase);
-                }
-                // Kiểm tra nếu từ cuối cùng trong câu khớp với bắt đầu của một từ trong cụm từ
-                else if (lastWord && phraseLower.includes(lastWord)) {
-                    // Tìm vị trí của từ trong cụm từ
-                    const wordsInPhrase = phraseLower.split(' ');
-                    for (let i = 0; i < wordsInPhrase.length; i++) {
-                        if (wordsInPhrase[i].startsWith(lastWord)) {
-                            // Tạo cụm từ bắt đầu từ từ này
-                            const completion = wordsInPhrase.slice(i).join(' ');
-                            matches.push(phrase);
-                            break;
-                        }
-                    }
+                // Kiểm tra xem cụm từ có chứa tất cả các từ hiện tại không
+                const containsAllWords = words.every(word => phraseLower.includes(word));
+                
+                // Kiểm tra xem cụm từ có bắt đầu bằng câu hiện tại không
+                const startsWithSentence = phraseLower.startsWith(sentenceLower);
+                
+                // Kiểm tra xem cụm từ có chứa câu hiện tại không (ở bất kỳ đâu)
+                const containsSentence = phraseLower.includes(sentenceLower);
+                
+                // Ưu tiên: 1. Bắt đầu bằng câu hiện tại, 2. Chứa câu hiện tại, 3. Chứa tất cả các từ
+                if (startsWithSentence) {
+                    matchedPhrases.push({ phrase, score: 3 });
+                } else if (containsSentence) {
+                    matchedPhrases.push({ phrase, score: 2 });
+                } else if (containsAllWords) {
+                    matchedPhrases.push({ phrase, score: 1 });
                 }
             }
             
-            // Giới hạn số lượng đề xuất
-            return matches.slice(0, 5);
+            // Sắp xếp theo điểm số và giới hạn số lượng
+            return matchedPhrases
+                .sort((a, b) => b.score - a.score)
+                .slice(0, 5)
+                .map(item => item.phrase);
         }
 
-        function selectPhraseSuggestion(phrase) {
-            log('SUGGESTION', `Selected phrase suggestion: ${phrase}`);
-            
-            // Chuyển cụm từ sang input dịch thuật
+        function useTypingSuggestion(phrase) {
+            // Chuyển cụm từ thành các từ mã hóa (giả lập)
+            // Trong thực tế, bạn cần một cơ chế chuyển đổi ngược từ tiếng Việt sang mã hóa
+            // Ở đây chúng ta sẽ chỉ sử dụng cụm phrase cho ô dịch thuật
             document.getElementById('translationInput').value = phrase;
+            translateSentence();
             
-            // Ẩn panel
-            document.getElementById('phraseSuggestionPanel').style.display = 'none';
+            // Đặt lại câu hiện tại để người dùng có thể bắt đầu câu mới
+            resetSentence();
             
-            // Tự động dịch
-            setTimeout(() => {
-                translateSentence();
-            }, 300);
+            log('SUGGESTION', `Using typing suggestion: "${phrase}"`);
         }
 
-        function updateSentenceProgress() {
-            const progressDotsDiv = document.getElementById('sentenceProgressDots');
-            const progressTextDiv = document.getElementById('sentenceProgressText');
-            
-            // Tạo các dot
-            let dotsHtml = '';
-            for (let i = 0; i < 10; i++) {
-                let dotClass = 'sentence-progress-dot';
-                if (i < sentenceWords.length) {
-                    dotClass += ' complete';
-                } else if (i === sentenceWords.length) {
-                    dotClass += ' active';
-                }
-                dotsHtml += `<div class="${dotClass}"></div>`;
-            }
-            
-            progressDotsDiv.innerHTML = dotsHtml;
-            
-            // Cập nhật text
-            if (sentenceWords.length === 0) {
-                progressTextDiv.textContent = 'Bắt đầu xây dựng câu...';
-            } else if (sentenceWords.length < 3) {
-                progressTextDiv.textContent = 'Đang xây dựng câu...';
-            } else if (sentenceWords.length < 6) {
-                progressTextDiv.textContent = 'Câu đang được hình thành...';
-            } else if (sentenceWords.length < 10) {
-                progressTextDiv.textContent = 'Sắp hoàn thành câu...';
-            } else {
-                progressTextDiv.textContent = 'Câu đã đầy! Nhấn "Hoàn thành câu"';
-            }
-        }
-
+        // === HÀM ĐỀ XUẤT CỤM TỪ THÔNG DỤNG ===
         function loadPhraseSuggestions() {
             const phrasePills = document.getElementById('phrasePills');
             phrasePills.innerHTML = '';
             
-            commonPhrases.forEach(phrase => {
+            // Hiển thị tối đa 10 cụm từ đầu tiên
+            const displayPhrases = commonPhrases.slice(0, 10);
+            
+            displayPhrases.forEach(phrase => {
                 const pill = document.createElement('button');
                 pill.className = 'phrase-pill';
                 pill.textContent = phrase.length > 30 ? phrase.substring(0, 27) + '...' : phrase;
@@ -3059,6 +2882,14 @@
             }
         };
 
+        const geminiVoiceMap = {
+            'vi-VN': { male: 'Aoede', female: 'Kore' },
+            'en-GB': { male: 'Aoede', female: 'Kore' },
+            'ja-JP': { male: 'Aoede', female: 'Kore' },
+            'ko-KR': { male: 'Aoede', female: 'Kore' },
+            'zh-CN': { male: 'Aoede', female: 'Kore' }
+        };
+
         async function speakWithRetry(text, langCode, retries = 3) {
             const voiceName = geminiVoiceMap[langCode]?.[currentVoice.gender] || 
                             (currentVoice.gender === 'male' ? 'Aoede' : 'Kore');
@@ -3106,6 +2937,93 @@
                     const delay = Math.pow(2, i) * 1000;
                     await new Promise(r => setTimeout(r, delay));
                 }
+            }
+        }
+
+        async function speakWithGeminiTTS(text, langCode) {
+            if (!GEMINI_API_KEY) {
+                log('TTS', 'Gemini API key not configured, falling back to Web Speech');
+                speakWithWebSpeech(text, langCode);
+                return;
+            }
+            
+            try {
+                const cacheKey = `${text}_${langCode}_${currentVoice.gender}`;
+                
+                if (audioCache[cacheKey]) {
+                    // Play cached audio
+                    const audioBlob = pcmToWav(audioCache[cacheKey]);
+                    if (!audioBlob) throw new Error("Failed to create audio blob");
+                    
+                    const audioUrl = URL.createObjectURL(audioBlob);
+                    const audio = new Audio(audioUrl);
+                    
+                    audio.onended = () => {
+                        setIsSpeaking(false);
+                        URL.revokeObjectURL(audioUrl);
+                        updateUI();
+                        log('SPEECH', 'Finished playing cached audio');
+                    };
+                    
+                    audio.onerror = () => {
+                        setIsSpeaking(false);
+                        URL.revokeObjectURL(audioUrl);
+                        updateUI();
+                        log('SPEECH', 'Error playing cached audio');
+                    };
+                    
+                    currentSpeech = audio;
+                    setIsSpeaking(true);
+                    await audio.play();
+                    startAudioVisualizer();
+                    log('SPEECH', `Playing cached audio: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
+                    return;
+                }
+                
+                // Fetch new audio
+                document.getElementById('aiSpeechStatus').style.display = 'flex';
+                
+                const pcmData = await speakWithRetry(text, langCode);
+                
+                document.getElementById('aiSpeechStatus').style.display = 'none';
+                
+                // Cache the audio
+                audioCache[cacheKey] = pcmData;
+                
+                // Convert and play
+                const audioBlob = pcmToWav(pcmData);
+                if (!audioBlob) throw new Error("Failed to create audio blob");
+                
+                const audioUrl = URL.createObjectURL(audioBlob);
+                const audio = new Audio(audioUrl);
+                
+                audio.onended = () => {
+                    setIsSpeaking(false);
+                    URL.revokeObjectURL(audioUrl);
+                    updateUI();
+                    log('SPEECH', 'Finished playing Gemini TTS');
+                };
+                
+                audio.onerror = () => {
+                    setIsSpeaking(false);
+                    URL.revokeObjectURL(audioUrl);
+                    updateUI();
+                    log('SPEECH', 'Error playing Gemini TTS');
+                };
+                
+                currentSpeech = audio;
+                setIsSpeaking(true);
+                await audio.play();
+                startAudioVisualizer();
+                log('SPEECH', `Started Gemini TTS: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
+                
+            } catch (error) {
+                document.getElementById('aiSpeechStatus').style.display = 'none';
+                console.error('Gemini TTS error:', error);
+                log('SPEECH', `Gemini TTS failed: ${error.message}`);
+                
+                // Fall back to Web Speech
+                speakWithWebSpeech(text, langCode);
             }
         }
 
@@ -3330,9 +3248,6 @@
             loadCalibration();
             
             loadPhraseSuggestions();
-            
-            // Khởi tạo sentence progress
-            updateSentenceProgress();
             
             if ('speechSynthesis' in window) {
                 speechSynthesis.getVoices();
