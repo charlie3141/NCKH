@@ -1,175 +1,83 @@
-// js/firebase.js - REPLACE THE ENTIRE FILE WITH THIS:
-
+// js/firebase-debug.js - TEMPORARY DEBUG FILE
 const FIREBASE_URL = "https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/sensorData.json";
 
-// Persistent connection with keep-alive
-let firebaseConnection = null;
-let reconnectAttempts = 0;
-const MAX_RECONNECT_ATTEMPTS = 5;
-
-async function fetchFirebaseDataOptimized() {
-    const startTime = performance.now();
-    
-    // Use persistent connection if available
-    if (currentFetchController) {
-        currentFetchController.abort();
-    }
+async function fetchFirebaseDataDebug() {
+    console.log("🔄 Fetching Firebase data...");
     
     try {
-        // Use HTTP/2 multiplexing - keep connection alive
-        const headers = {
-            'Accept': 'application/json',
-            'Cache-Control': 'no-cache, max-age=0',
-            'Connection': 'keep-alive',
-            'Keep-Alive': 'timeout=5, max=1000'
-        };
-        
-        // Use a faster approach with native fetch options
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 2000);
-        
-        currentFetchController = controller;
-        
-        const response = await fetch(FIREBASE_URL, {
-            signal: controller.signal,
-            method: 'GET',
-            headers: headers,
-            // Critical: These options improve speed
-            mode: 'cors',
-            cache: 'no-store',
-            referrerPolicy: 'no-referrer',
-            priority: 'high' // Chrome only
-        });
-        
-        clearTimeout(timeoutId);
+        // Test 1: Fetch without any options
+        const response = await fetch(FIREBASE_URL);
+        console.log("Response status:", response.status);
         
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+            console.error("HTTP Error:", response.status, response.statusText);
+            return null;
         }
         
         const data = await response.json();
-        const fetchTime = performance.now() - startTime;
+        console.log("📊 Raw Firebase Data:", data);
         
-        // Update latency display
-        document.getElementById('latency').textContent = Math.round(fetchTime);
+        // Log each field
+        console.log("🔍 Field Analysis:");
+        console.log("f0 (Flex 0):", data.f0);
+        console.log("f1 (Flex 1):", data.f1);
+        console.log("f2 (Flex 2):", data.f2);
+        console.log("f3 (Flex 3):", data.f3);
+        console.log("o (Orientation):", data.o);
+        console.log("d (Shake State):", data.d);
+        console.log("sf (Is Shaking):", data.sf);
         
-        // Process only if data changed
-        if (JSON.stringify(data) !== JSON.stringify(lastFirebaseData)) {
-            firebaseData = data;
-            lastFirebaseData = data;
-            lastUpdateTime = Date.now();
-            
-            updateConnectionStatus(true);
-            
-            // FAST processing - no setTimeout
-            processFirebaseDataImmediately(data);
-            scheduleUIUpdate();
-            
-            // Adaptive polling based on latency
-            adjustPollingInterval(fetchTime);
-            
-            log('Firebase', `Data updated (${Math.round(fetchTime)}ms)`);
-            
-            // Reset reconnect attempts on success
-            reconnectAttempts = 0;
+        // Check if data is all zeros/default
+        const isDefaultData = data.f0 === 0 && data.f1 === 0 && data.f2 === 0 && data.f3 === 0;
+        if (isDefaultData) {
+            console.warn("⚠️ WARNING: All sensor values are 0!");
+            console.warn("This means:");
+            console.warn("1. ESP32 is not connected");
+            console.warn("2. ESP32 code has issues");
+            console.warn("3. Sensors are not working");
+        }
+        
+        // Update UI even with zeros for debugging
+        document.getElementById('mpuOrientation').textContent = data.o || 'N/A';
+        document.getElementById('mpuShakeState').textContent = data.d || 'No';
+        document.getElementById('isShaking').textContent = data.sf || 'NO';
+        
+        document.getElementById('rawValues').textContent = `${data.f0}, ${data.f1}, ${data.f2}, ${data.f3}`;
+        
+        // Update flex boxes
+        for (let i = 0; i < 4; i++) {
+            const box = document.getElementById(`flex${i}-box`);
+            if (box) {
+                box.textContent = data[`f${i}`] || 0;
+                box.className = `flex-box active-0`; // Always green for zeros
+            }
         }
         
         return data;
         
     } catch (error) {
-        if (error.name !== 'AbortError') {
-            console.warn('Fetch error:', error);
-            updateConnectionStatus(false);
-            
-            reconnectAttempts++;
-            if (reconnectAttempts > MAX_RECONNECT_ATTEMPTS) {
-                // Switch to exponential backoff
-                pollingInterval = Math.min(pollingInterval * 1.5, 5000);
-                log('Firebase', `High error rate, slowing to ${pollingInterval}ms`);
-                reconnectAttempts = 0;
-            }
+        console.error("❌ Fetch Error:", error);
+        console.error("Error details:", error.message);
+        
+        // Try alternative URL
+        console.log("🔄 Trying alternative URL...");
+        try {
+            const altResponse = await fetch(FIREBASE_URL.replace('.json', ''));
+            const altData = await altResponse.json();
+            console.log("Alternative data:", altData);
+        } catch (altError) {
+            console.error("Alternative also failed:", altError);
         }
+        
         return null;
-    } finally {
-        currentFetchController = null;
     }
 }
 
-function processFirebaseDataImmediately(data) {
-    // ULTRA-FAST processing - minimize work
+// Test immediately
+setTimeout(() => {
+    console.log("🚀 Starting Firebase debug test...");
+    fetchFirebaseDataDebug();
     
-    // 1. Update MPU orientation (fastest first)
-    if (data.o !== undefined) {
-        const el = document.getElementById('mpuOrientation');
-        el.textContent = data.o || 'N/A';
-    }
-    
-    // 2. Update flex sensors (batch update)
-    if (data.f0 !== undefined) {
-        updateFlexSensors(data);
-    }
-    
-    // 3. Process word construction in microtask
-    queueMicrotask(() => {
-        const mpuState = getMPUState(data.o || "", data.d || "");
-        processWordConstructionFast(mpuState, flexStates[0], flexStates[1], flexStates[2], flexStates[3]);
-    });
-}
-
-function updateFlexSensors(data) {
-    // Batch update all flex sensors at once
-    const flexValues = [
-        data.f0 || 0,
-        data.f1 || 0, 
-        data.f2 || 0,
-        data.f3 || 0
-    ];
-    
-    // Update raw values display
-    const rawEl = document.getElementById('rawValues');
-    if (rawEl) {
-        rawEl.textContent = flexValues.join(', ');
-    }
-    
-    // Update flex boxes
-    for (let i = 0; i < 4; i++) {
-        const newState = calculateFlexState(flexValues[i], i);
-        if (flexStates[i] !== newState) {
-            flexStates[i] = newState;
-            
-            const box = document.getElementById(`flex${i}-box`);
-            if (box) {
-                box.textContent = newState;
-                box.className = `flex-box active-${newState}`;
-            }
-        }
-    }
-    
-    // Update flex format
-    const formatEl = document.getElementById('flexFormat');
-    if (formatEl) {
-        formatEl.textContent = flexStates.join('');
-    }
-}
-
-function adjustPollingInterval(fetchTime) {
-    // Dynamic adjustment based on network conditions
-    if (fetchTime < 50) {
-        // Excellent connection - go faster
-        pollingInterval = turboMode ? 100 : 200;
-    } else if (fetchTime < 100) {
-        // Good connection
-        pollingInterval = turboMode ? 150 : 250;
-    } else if (fetchTime < 200) {
-        // Moderate connection
-        pollingInterval = 350;
-    } else {
-        // Slow connection - back off
-        pollingInterval = 500;
-    }
-    
-    // Cap at reasonable limits
-    pollingInterval = Math.max(100, Math.min(pollingInterval, 1000));
-    
-    updatePollingDisplay();
-}
+    // Test again in 5 seconds
+    setTimeout(fetchFirebaseDataDebug, 5000);
+}, 1000);
