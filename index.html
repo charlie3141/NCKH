@@ -115,7 +115,6 @@
             "zh-CN": { name: "Tiếng Trung", code: "Chinese (Simplified)" },
         };
 
-        // Bảng cấu hình giọng đọc chi tiết để tránh lỗi nhận diện giới tính
         const voiceConfigs = {
             female: { 
                 "vi-VN": "Aoede", 
@@ -258,11 +257,10 @@
             }
         }
 
-        // CHỈNH SỬA QUAN TRỌNG: 10 cải tiến đồng thời cho giọng nói
         async function speak(text, langCode, type) {
             if (!text || !apiKey || isSpeaking) return;
 
-            // 1. Khởi tạo AudioContext thủ công để tránh "silent audio" trên trình duyệt
+            // Kỹ thuật 1: Khởi tạo AudioContext thủ công để 'unlock' âm thanh trình duyệt
             if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
             if (audioContext.state === 'suspended') await audioContext.resume();
 
@@ -270,18 +268,19 @@
             isSpeaking = true;
 
             try {
-                // 2. Chọn VoiceName cực kỳ chính xác từ bảng cấu hình
+                // Kỹ thuật 2: Chọn VoiceName từ danh mục bản ngữ được xác minh
                 const voiceName = voiceConfigs[currentGender][langCode] || "Aoede";
                 const langName = languages[langCode].code;
                 
-                // 3. Sử dụng Prompt "Strongly-Typed" để AI không tự ý dùng giọng mặc định
-                // 4. Thêm tiền tố lệnh "Act as a native [Language] speaker"
+                // Kỹ thuật 3: Prompt "Hard-Code" - Ép AI đóng vai người bản ngữ
+                // Kỹ thuật 4: Sử dụng Caps Lock để tăng trọng số nhận diện lệnh
+                // Kỹ thuật 5: Cấm rõ ràng việc sử dụng giọng Anh (English Accent)
                 const controlPrompt = `ACT AS A NATIVE ${langName.toUpperCase()} SPEAKER. 
-                SAY THE FOLLOWING TEXT IN A ${currentGender.toUpperCase()} VOICE. 
-                DO NOT USE ENGLISH ACCENT. 
+                SAY THE FOLLOWING TEXT IN A CLEAR ${currentGender.toUpperCase()} VOICE. 
+                STRICTLY DO NOT USE ANY ENGLISH OR FOREIGN ACCENT. 
                 TEXT: ${text.substring(0, 500)}`;
 
-                // 5. Sử dụng endpoint gemini-2.5-flash-preview-tts cho độ trễ thấp
+                // Kỹ thuật 6: Sử dụng endpoint chuyên dụng TTS để giảm độ trễ
                 const response = await fetchWithRetry(
                     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`,
                     {
@@ -297,7 +296,7 @@
                                 speechConfig: { 
                                     voiceConfig: { 
                                         prebuiltVoiceConfig: { 
-                                            // 6. Ép AI sử dụng chính xác tên giọng đọc bản ngữ
+                                            // Kỹ thuật 7: Định danh VoiceName cụ thể để bỏ qua auto-detect
                                             voiceName: voiceName 
                                         } 
                                     } 
@@ -307,16 +306,16 @@
                     }
                 );
 
-                // 7. Kiểm tra dữ liệu inlineData một cách nghiêm ngặt
+                // Kỹ thuật 8: Kiểm tra cấu trúc phản hồi đa tầng
                 const base64Data = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
                 if (!base64Data) throw new Error("Empty audio response");
 
-                // 8. Chuyển đổi Base64 sang Buffer chuyên sâu
+                // Kỹ thuật 9: Chuyển đổi nhị phân thủ công để tránh lỗi ký tự đặc biệt
                 const binaryString = atob(base64Data);
                 const bytes = new Uint8Array(binaryString.length);
                 for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
 
-                // 9. Sử dụng decodeAudioData (chuẩn nhất cho Web Audio API) thay vì thẻ <audio>
+                // Kỹ thuật 10: Decode luồng âm thanh trực tiếp bằng Web Audio API (bypass thẻ <audio>)
                 audioContext.decodeAudioData(bytes.buffer, (audioBuffer) => {
                     const source = audioContext.createBufferSource();
                     source.buffer = audioBuffer;
@@ -327,15 +326,14 @@
                         isSpeaking = false;
                     };
                     
-                    // 10. Phát ngay lập tức
                     source.start(0);
                 }, (err) => {
-                    throw new Error("Audio decode failed");
+                    throw new Error("Lỗi giải mã âm thanh");
                 });
 
             } catch (err) {
                 console.error("TTS Error:", err);
-                showStatus("Lỗi giọng đọc: Vui lòng thử lại hoặc đổi ngôn ngữ.", "error");
+                showStatus("Lỗi giọng đọc: Vui lòng thử lại hoặc kiểm tra API Key.", "error");
                 setSpeakingUI(type, false);
                 isSpeaking = false;
             }
