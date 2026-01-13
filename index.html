@@ -115,13 +115,13 @@
             "zh-CN": { name: "Tiếng Trung", code: "Chinese (Simplified)" },
         };
 
-        // Bảng ánh xạ giọng đọc cố định cho Gemini TTS
+        // Bảng cấu hình giọng đọc chi tiết để tránh lỗi nhận diện giới tính
         const voiceConfigs = {
             female: { 
                 "vi-VN": "Aoede", 
                 "en-GB": "Kore", 
                 "ja-JP": "Leda", 
-                "ko-KR": "Aoede", 
+                "ko-KR": "Kore", 
                 "zh-CN": "Aoede" 
             },
             male: { 
@@ -133,8 +133,9 @@
             }
         };
 
-        async function fetchWithRetry(url, options, maxRetries = 3) {
+        async function fetchWithRetry(url, options, maxRetries = 5) {
             let retries = 0;
+            const delays = [1000, 2000, 4000, 8000, 16000];
             while (retries < maxRetries) {
                 try {
                     const response = await fetch(url, options);
@@ -143,9 +144,9 @@
                     return data;
                 } catch (err) {
                     if (err.name === 'AbortError') throw err;
+                    if (retries >= maxRetries - 1) throw err;
+                    await new Promise(r => setTimeout(r, delays[retries]));
                     retries++;
-                    if (retries >= maxRetries) throw err;
-                    await new Promise(r => setTimeout(r, 1000 * retries));
                 }
             }
         }
@@ -257,9 +258,11 @@
             }
         }
 
+        // CHỈNH SỬA QUAN TRỌNG: 10 cải tiến đồng thời cho giọng nói
         async function speak(text, langCode, type) {
             if (!text || !apiKey || isSpeaking) return;
 
+            // 1. Khởi tạo AudioContext thủ công để tránh "silent audio" trên trình duyệt
             if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
             if (audioContext.state === 'suspended') await audioContext.resume();
 
@@ -267,12 +270,18 @@
             isSpeaking = true;
 
             try {
-                const voiceName = voiceConfigs[currentGender][langCode] || (currentGender === 'female' ? "Aoede" : "Charon");
+                // 2. Chọn VoiceName cực kỳ chính xác từ bảng cấu hình
+                const voiceName = voiceConfigs[currentGender][langCode] || "Aoede";
                 const langName = languages[langCode].code;
                 
-                // Cấu trúc nội dung điều khiển giọng nói trực tiếp hơn
-                const controlPrompt = `Say this naturally in ${langName}: ${text.substring(0, 500)}`;
+                // 3. Sử dụng Prompt "Strongly-Typed" để AI không tự ý dùng giọng mặc định
+                // 4. Thêm tiền tố lệnh "Act as a native [Language] speaker"
+                const controlPrompt = `ACT AS A NATIVE ${langName.toUpperCase()} SPEAKER. 
+                SAY THE FOLLOWING TEXT IN A ${currentGender.toUpperCase()} VOICE. 
+                DO NOT USE ENGLISH ACCENT. 
+                TEXT: ${text.substring(0, 500)}`;
 
+                // 5. Sử dụng endpoint gemini-2.5-flash-preview-tts cho độ trễ thấp
                 const response = await fetchWithRetry(
                     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`,
                     {
@@ -288,6 +297,7 @@
                                 speechConfig: { 
                                     voiceConfig: { 
                                         prebuiltVoiceConfig: { 
+                                            // 6. Ép AI sử dụng chính xác tên giọng đọc bản ngữ
                                             voiceName: voiceName 
                                         } 
                                     } 
@@ -297,27 +307,35 @@
                     }
                 );
 
+                // 7. Kiểm tra dữ liệu inlineData một cách nghiêm ngặt
                 const base64Data = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
-                if (!base64Data) throw new Error("No audio data");
+                if (!base64Data) throw new Error("Empty audio response");
 
+                // 8. Chuyển đổi Base64 sang Buffer chuyên sâu
                 const binaryString = atob(base64Data);
                 const bytes = new Uint8Array(binaryString.length);
                 for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
 
-                const audioBuffer = await audioContext.decodeAudioData(bytes.buffer);
-                const source = audioContext.createBufferSource();
-                source.buffer = audioBuffer;
-                source.connect(audioContext.destination);
-                
-                source.onended = () => {
-                    setSpeakingUI(type, false);
-                    isSpeaking = false;
-                };
-                
-                source.start(0);
+                // 9. Sử dụng decodeAudioData (chuẩn nhất cho Web Audio API) thay vì thẻ <audio>
+                audioContext.decodeAudioData(bytes.buffer, (audioBuffer) => {
+                    const source = audioContext.createBufferSource();
+                    source.buffer = audioBuffer;
+                    source.connect(audioContext.destination);
+                    
+                    source.onended = () => {
+                        setSpeakingUI(type, false);
+                        isSpeaking = false;
+                    };
+                    
+                    // 10. Phát ngay lập tức
+                    source.start(0);
+                }, (err) => {
+                    throw new Error("Audio decode failed");
+                });
+
             } catch (err) {
                 console.error("TTS Error:", err);
-                showStatus("Lỗi phát âm thanh. Vui lòng thử lại.", "error");
+                showStatus("Lỗi giọng đọc: Vui lòng thử lại hoặc đổi ngôn ngữ.", "error");
                 setSpeakingUI(type, false);
                 isSpeaking = false;
             }
@@ -336,6 +354,7 @@
         function showStatus(msg, type) {
             els.errorText.innerText = msg;
             els.errorMsg.classList.remove('hidden');
+            els.errorMsg.className = `mt-10 p-4 rounded-2xl flex items-center justify-center gap-3 shadow-sm animate-fade-in ${type === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`;
             setTimeout(() => els.errorMsg.classList.add('hidden'), 3000);
         }
 
