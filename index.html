@@ -101,25 +101,8 @@
     <script>
         let apiKey = localStorage.getItem('GEMINI_API_KEY') || "";
 
-        // Định nghĩa đối tượng chứa các phần tử DOM
-        const els = {
-            sourceLang: document.getElementById('sourceLang'),
-            targetLang: document.getElementById('targetLang'),
-            swapBtn: document.getElementById('swapBtn'),
-            genderFemale: document.getElementById('genderFemale'),
-            genderMale: document.getElementById('genderMale'),
-            inputText: document.getElementById('inputText'),
-            outputText: document.getElementById('outputText'),
-            loader: document.getElementById('loader'),
-            speakSource: document.getElementById('speakSource'),
-            speakTarget: document.getElementById('speakTarget'),
-            errorMsg: document.getElementById('errorMsg'),
-            errorText: document.getElementById('errorText'),
-            errorEmoji: document.getElementById('errorEmoji'),
-            apiKeyInput: document.getElementById('apiKeyInput'),
-            saveKeyBtn: document.getElementById('saveKeyBtn'),
-            apiSetup: document.getElementById('apiSetup')
-        };
+        // Elements references
+        let els = {};
 
         const languages = {
             "vi-VN": { name: "Tiếng Việt", code: "Vietnamese" },
@@ -153,9 +136,9 @@
         let abortController = null;
         let currentAudioURL = null; 
 
-        async function fetchWithRetry(url, options, maxRetries = 3) {
+        async function fetchWithRetry(url, options, maxRetries = 5) {
             let retries = 0;
-            const delays = [800, 1500, 3000];
+            const delays = [1000, 2000, 4000, 8000, 16000];
 
             while (retries < maxRetries) {
                 try {
@@ -163,13 +146,12 @@
                     const data = await response.json();
                     
                     if (!response.ok || data.error) {
-                        throw new Error(data.error?.message || `Lỗi HTTP: ${response.status}`);
+                        throw new Error(data.error?.message || `HTTP ${response.status}`);
                     }
                     
                     return data;
                 } catch (err) {
                     if (err.name === 'AbortError') throw err;
-                    
                     retries++;
                     if (retries >= maxRetries) throw err;
                     await new Promise(res => setTimeout(res, delays[retries - 1]));
@@ -178,6 +160,30 @@
         }
 
         function init() {
+            // Bind all elements
+            els = {
+                sourceLang: document.getElementById('sourceLang'),
+                targetLang: document.getElementById('targetLang'),
+                swapBtn: document.getElementById('swapBtn'),
+                genderFemale: document.getElementById('genderFemale'),
+                genderMale: document.getElementById('genderMale'),
+                inputText: document.getElementById('inputText'),
+                outputText: document.getElementById('outputText'),
+                loader: document.getElementById('loader'),
+                speakSource: document.getElementById('speakSource'),
+                speakTarget: document.getElementById('speakTarget'),
+                errorMsg: document.getElementById('errorMsg'),
+                errorText: document.getElementById('errorText'),
+                errorEmoji: document.getElementById('errorEmoji'),
+                apiKeyInput: document.getElementById('apiKeyInput'),
+                saveKeyBtn: document.getElementById('saveKeyBtn'),
+                apiSetup: document.getElementById('apiSetup'),
+                sourceIcon: document.getElementById('sourceIcon'),
+                targetIcon: document.getElementById('targetIcon'),
+                sourceBtnText: document.getElementById('sourceBtnText'),
+                targetBtnText: document.getElementById('targetBtnText')
+            };
+
             if (apiKey) {
                 els.apiKeyInput.value = apiKey;
                 els.apiSetup.classList.add('opacity-50');
@@ -195,13 +201,13 @@
         function setupEventListeners() {
             els.saveKeyBtn.addEventListener('click', () => {
                 const newKey = els.apiKeyInput.value.trim();
-                if (newKey && newKey.startsWith('AIza')) {
+                if (newKey) {
                     localStorage.setItem('GEMINI_API_KEY', newKey);
                     apiKey = newKey;
                     showStatus("Đã lưu API Key thành công!", "success");
                     els.apiSetup.classList.add('opacity-50');
                 } else {
-                    showStatus("API Key không hợp lệ.", "error");
+                    showStatus("Vui lòng nhập API Key.", "error");
                 }
             });
 
@@ -256,7 +262,7 @@
                         headers: { "Content-Type": "application/json" },
                         signal: abortController.signal,
                         body: JSON.stringify({
-                            contents: [{ parts: [{ text: `Translate precisely to ${languages[els.targetLang.value].name}: "${text}". Only return translated text.` }] }]
+                            contents: [{ parts: [{ text: `Dịch sang ${languages[els.targetLang.value].name}: "${text}". Chỉ trả về văn bản đã dịch.` }] }]
                         })
                     }
                 );
@@ -265,20 +271,25 @@
                 els.outputText.innerText = result;
             } catch (err) {
                 if (err.name === 'AbortError') return;
-                showStatus("Dịch thuật gặp sự cố hoặc quá tải.", "error");
+                showStatus("Dịch thuật gặp sự cố.", "error");
             } finally {
                 els.loader.classList.add('hidden');
-                els.outputText.classList.remove('opacity-40', 'hidden');
+                els.outputText.classList.remove('opacity-40');
             }
         }
 
         async function speak(text, langCode, type) {
             if (!text || !apiKey || text.includes("Kết quả sẽ hiển thị")) return;
             
-            if (isSpeaking && currentAudio) {
+            // Force reset current audio
+            if (currentAudio) {
                 currentAudio.pause();
-                currentAudio.currentTime = 0;
-                stopSpeakingUI();
+                currentAudio.onended = null;
+                currentAudio = null;
+            }
+            if (currentAudioURL) {
+                URL.revokeObjectURL(currentAudioURL);
+                currentAudioURL = null;
             }
 
             setSpeakingUI(type, true);
@@ -288,7 +299,7 @@
                 const voiceName = voiceConfigs[currentGender][langCode] || "Kore";
                 const cleanText = text.replace(/[*_#`~]/g, '').trim();
 
-                const data = await fetchWithRetry(
+                const response = await fetchWithRetry(
                     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`,
                     {
                         method: "POST",
@@ -307,76 +318,69 @@
                     }
                 );
 
-                const audioPart = data.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+                const audioData = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData;
                 
-                if (audioPart && audioPart.inlineData?.data) {
-                    const mimeType = audioPart.inlineData.mimeType || "";
-                    const sampleRateMatch = mimeType.match(/rate=(\d+)/);
-                    const sampleRate = sampleRateMatch ? parseInt(sampleRateMatch[1]) : 24000;
-
-                    const blob = pcmToWav(audioPart.inlineData.data, sampleRate);
+                if (audioData && audioData.data) {
+                    const sampleRate = parseInt(audioData.mimeType.match(/rate=(\d+)/)?.[1] || "24000");
+                    const blob = pcmToWav(audioData.data, sampleRate);
                     
-                    if (currentAudioURL) URL.revokeObjectURL(currentAudioURL);
                     currentAudioURL = URL.createObjectURL(blob);
-                    
                     currentAudio = new Audio(currentAudioURL);
+                    
                     currentAudio.onended = () => {
-                        setSpeakingUI(type, false);
-                        isSpeaking = false;
-                        URL.revokeObjectURL(currentAudioURL);
-                        currentAudioURL = null;
-                        currentAudio = null;
+                        cleanupAudio(type);
                     };
                     
-                    currentAudio.onerror = () => {
-                        console.error("Audio playback error");
-                        handleSpeakError(text, langCode, type);
+                    currentAudio.onerror = (e) => {
+                        console.error("Audio error:", e);
+                        cleanupAudio(type);
+                        showStatus("Lỗi phát âm thanh. Đang thử giọng đọc hệ thống...", "info");
+                        speakFallback(cleanText, langCode, type);
                     };
 
                     await currentAudio.play();
                 } else {
-                    throw new Error("No audio data");
+                    throw new Error("No audio payload");
                 }
             } catch (err) {
                 console.error("TTS Error:", err);
-                handleSpeakError(text, langCode, type);
+                cleanupAudio(type);
+                speakFallback(text, langCode, type);
             }
         }
 
-        function handleSpeakError(text, langCode, type) {
-            showStatus("Đang dùng giọng đọc dự phòng...", "info");
-            speakFallback(text, langCode, type);
+        function cleanupAudio(type) {
+            setSpeakingUI(type, false);
+            isSpeaking = false;
+            if (currentAudioURL) {
+                URL.revokeObjectURL(currentAudioURL);
+                currentAudioURL = null;
+            }
+            currentAudio = null;
         }
 
         function speakFallback(text, langCode, type) {
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = langCode;
-            utterance.onend = () => {
-                setSpeakingUI(type, false);
-                isSpeaking = false;
-            };
-            utterance.onerror = () => {
-                setSpeakingUI(type, false);
-                isSpeaking = false;
-            };
+            utterance.onstart = () => setSpeakingUI(type, true);
+            utterance.onend = () => setSpeakingUI(type, false);
+            utterance.onerror = () => setSpeakingUI(type, false);
             window.speechSynthesis.speak(utterance);
-        }
-
-        function stopSpeakingUI() {
-            setSpeakingUI('source', false);
-            setSpeakingUI('target', false);
         }
 
         function setSpeakingUI(type, active) {
             const btn = type === 'source' ? els.speakSource : els.speakTarget;
-            const icon = type === 'source' ? document.getElementById('sourceIcon') : document.getElementById('targetIcon');
-            const txt = type === 'source' ? document.getElementById('sourceBtnText') : document.getElementById('targetBtnText');
+            const icon = type === 'source' ? els.sourceIcon : els.targetIcon;
+            const txt = type === 'source' ? els.sourceBtnText : els.targetBtnText;
+            
             if (active) {
                 btn.classList.add('bg-indigo-600', 'text-white');
-                icon.innerText = "⏳"; txt.innerText = "Đang phát...";
+                icon.innerText = "⏳";
+                txt.innerText = "Đang phát...";
             } else {
                 btn.classList.remove('bg-indigo-600', 'text-white');
-                icon.innerText = "🔊"; txt.innerText = type === 'source' ? "Nghe bản gốc" : "Nghe bản dịch";
+                icon.innerText = "🔊";
+                txt.innerText = type === 'source' ? "Nghe bản gốc" : "Nghe bản dịch";
             }
         }
 
@@ -407,12 +411,12 @@
             writeString(8, 'WAVE');
             writeString(12, 'fmt ');
             view.setUint32(16, 16, true);
-            view.setUint16(20, 1, true); 
-            view.setUint16(22, 1, true); 
+            view.setUint16(20, 1, true); // PCM format
+            view.setUint16(22, 1, true); // Mono
             view.setUint32(24, sampleRate, true);
-            view.setUint32(28, sampleRate * 2, true); 
-            view.setUint16(32, 2, true); 
-            view.setUint16(34, 16, true); 
+            view.setUint32(28, sampleRate * 2, true); // Byte rate
+            view.setUint16(32, 2, true); // Block align
+            view.setUint16(34, 16, true); // Bits per sample
             writeString(36, 'data');
             view.setUint32(40, len, true);
 
@@ -420,7 +424,6 @@
             return new Blob([buffer], { type: 'audio/wav' });
         }
 
-        // Chờ DOM sẵn sàng trước khi khởi tạo
         document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
