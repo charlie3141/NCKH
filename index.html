@@ -3,153 +3,1242 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dịch Thủ Ngữ - Tối ưu Tốc độ</title>
+    <title>Ứng dụng và cải tiến "Công nghệ dịch thủ ngữ" vào đời sống - Phiên bản tối ưu với Calibration</title>
     <style>
-        /* === COMPRESSED CSS === */
-        *{margin:0;padding:0;box-sizing:border-box}
-        body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#333;min-height:100vh;padding:20px}
-        .container{max-width:1400px;margin:0 auto;background:white;border-radius:15px;box-shadow:0 20px 60px rgba(0,0,0,0.3);overflow:hidden}
-        header{background:linear-gradient(to right,#4A00E0,#8E2DE2);color:white;padding:20px;text-align:center}
-        h1{font-size:2rem;margin-bottom:5px}
-        .dashboard{padding:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(400px,1fr));gap:20px}
-        .card{background:white;border-radius:10px;padding:20px;box-shadow:0 3px 10px rgba(0,0,0,0.1);border:1px solid #eaeaea}
-        .card h3{color:#4A00E0;margin-bottom:15px;padding-bottom:10px;border-bottom:2px solid #f0f0f0}
-        .calibration-card{background:linear-gradient(135deg,#f5f7fa 0%,#e4e8f0 100%);border:2px solid #e0e6ff}
-        .conversion-display,.sentence-display,.current-word-display{font-weight:bold;min-height:60px;display:flex;align-items:center;justify-content:center;border-radius:10px;padding:15px;margin:10px 0;line-height:1.4}
-        .conversion-display{font-size:1.5rem;color:#2196F3;background:#E3F2FD;border:2px solid #2196F3}
-        .sentence-display{font-size:1.8rem;color:#4CAF50;background:#E8F5E9;border:2px solid #4CAF50;min-height:80px}
-        .current-word-display{font-size:2rem;color:#FF5722;background:#FFF8E1;border:2px dashed #FFC107}
-        .sensor-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-        .sensor-item{padding:12px;background:#f8f9fa;border-radius:8px;border-left:4px solid}
-        .sensor-item.mpu{border-left-color:#2196F3}
-        .sensor-item.flex{border-left-color:#4CAF50}
-        .sensor-value{font-size:1.8rem;font-weight:bold;color:#333;margin:5px 0}
-        .sensor-label{font-size:0.8rem;color:#666;text-transform:uppercase;letter-spacing:1px}
-        .flex-box{display:inline-block;width:40px;height:40px;line-height:40px;text-align:center;background:#f8f9fa;border-radius:8px;margin:2px;font-weight:bold}
-        .flex-box.active-0{background:#4CAF50;color:white}
-        .flex-box.active-1{background:#FF9800;color:white}
-        .flex-box.active-2{background:#F44336;color:white}
-        .controls{display:flex;gap:10px;margin-top:20px;justify-content:center;flex-wrap:wrap}
-        button{padding:12px 24px;border:none;border-radius:8px;background:linear-gradient(to right,#4A00E0,#8E2DE2);color:white;font-weight:bold;cursor:pointer;transition:all 0.2s}
-        button:hover{transform:translateY(-2px);box-shadow:0 5px 15px rgba(0,0,0,0.2)}
-        button.red{background:linear-gradient(to right,#FF416C,#FF4B2B)}
-        button.green{background:linear-gradient(to right,#00b09b,#96c93d)}
-        button.blue{background:linear-gradient(to right,#2196F3,#21CBF3)}
-        .status-bar{background:#f8f9fa;padding:15px;border-top:1px solid #eaeaea;display:flex;justify-content:space-between;align-items:center}
-        .indicator{width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:8px}
-        .indicator.online{background:#4CAF50;animation:pulse 1s infinite}
-        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
-        textarea{width:100%;height:120px;font-size:1.5rem;padding:15px;border:2px solid #4CAF50;border-radius:10px;background:#E8F5E9;color:#333;resize:vertical}
-        .calibration-status{margin:15px 0;padding:15px;border-radius:10px;text-align:center;font-weight:bold}
-        .calibrating{background:#FFF3CD;border:2px solid #FFC107;color:#856404;animation:pulse 1s infinite}
-        .calibrated{background:#D4EDDA;border:2px solid #28A745;color:#155724}
-        .calibration-ready{background:#E3F2FD;border:2px solid #2196F3;color:#0d47a1}
-        .calibration-display{display:grid;grid-template-columns:repeat(2,1fr);gap:15px;margin:15px 0}
-        .sensor-calibration{padding:15px;background:white;border-radius:10px;border:1px solid #eaeaea;text-align:center}
-        .performance-info{font-size:0.7rem;color:#888;text-align:center;margin-top:5px}
-        .fast-mode{position:fixed;top:10px;right:10px;background:#4CAF50;color:white;padding:5px 10px;border-radius:20px;font-size:0.8rem;z-index:1000}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(to right, #4A00E0, #8E2DE2);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 5px;
+        }
+
+        .dashboard {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            border: 1px solid #eaeaea;
+            will-change: transform, opacity;
+            contain: content;
+        }
+
+        .card h3 {
+            color: #4A00E0;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        /* Giữ nguyên các style cũ, chỉ thêm style mới cho calibration */
+
+        /* === CARD CALIBRATION === */
+        .calibration-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+            border: 2px solid #e0e6ff;
+        }
+
+        .calibration-status {
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .calibrating {
+            background: #FFF3CD;
+            border: 2px solid #FFC107;
+            color: #856404;
+            animation: pulse 1s infinite;
+        }
+
+        .calibrated {
+            background: #D4EDDA;
+            border: 2px solid #28A745;
+            color: #155724;
+        }
+
+        .calibration-ready {
+            background: #E3F2FD;
+            border: 2px solid #2196F3;
+            color: #0d47a1;
+        }
+
+        .calibration-error {
+            background: #FFEBEE;
+            border: 2px solid #F44336;
+            color: #b71c1c;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes countdown {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .calibration-display {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .sensor-calibration {
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #eaeaea;
+            text-align: center;
+        }
+
+        .sensor-name {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .sensor-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+
+        .sensor-max {
+            font-size: 1.2rem;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .sensor-threshold {
+            font-size: 1rem;
+            color: #2196F3;
+            margin-top: 5px;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 20px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(to right, #4CAF50, #45a049);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+
+        .calibration-countdown {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #FF5722;
+            margin: 10px 0;
+            animation: countdown 1s infinite;
+        }
+
+        .calibration-instructions {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #2196F3;
+        }
+
+        .calibration-step {
+            margin: 8px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .calibration-step:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #2196F3;
+            font-weight: bold;
+        }
+
+        .flex-sensor-legend {
+            display: flex;
+            justify-content: space-around;
+            margin: 15px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        .legend-text {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        /* Thêm các style còn lại giữ nguyên từ bản trước */
+        /* ... (các style cũ giữ nguyên) ... */
+        
+        .conversion-display {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2196F3;
+            margin: 10px 0;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #E3F2FD;
+            border-radius: 10px;
+            padding: 15px;
+            border: 2px solid #2196F3;
+            line-height: 1.4;
+            contain: strict;
+            transform: translateZ(0);
+        }
+
+        .sentence-display {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #4CAF50;
+            margin: 10px 0;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #E8F5E9;
+            border-radius: 10px;
+            padding: 20px;
+            border: 2px solid #4CAF50;
+            line-height: 1.4;
+            contain: strict;
+            transform: translateZ(0);
+        }
+
+        .current-word-display {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #FF5722;
+            margin: 10px 0;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #FFF8E1;
+            border-radius: 10px;
+            padding: 15px;
+            border: 2px dashed #FFC107;
+            contain: strict;
+            transform: translateZ(0);
+        }
+
+        .word-list {
+            margin: 15px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 1px solid #eaeaea;
+        }
+
+        .word-item {
+            display: inline-block;
+            padding: 8px 15px;
+            margin: 5px;
+            background: #e3f2fd;
+            border-radius: 20px;
+            border: 1px solid #bbdefb;
+        }
+
+        .word-count {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .sensor-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .sensor-item {
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+
+        .sensor-item.mpu {
+            border-left-color: #2196F3;
+        }
+
+        .sensor-item.flex {
+            border-left-color: #4CAF50;
+        }
+
+        .sensor-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #333;
+            margin: 5px 0;
+        }
+
+        .sensor-label {
+            font-size: 0.8rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .flex-box {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            line-height: 40px;
+            text-align: center;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 2px;
+            font-weight: bold;
+            border: 2px solid transparent;
+        }
+
+        .flex-box.active-0 { background: #4CAF50; color: white; }
+        .flex-box.active-1 { background: #FF9800; color: white; }
+        .flex-box.active-2 { background: #F44336; color: white; }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(to right, #4A00E0, #8E2DE2);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        button.red {
+            background: linear-gradient(to right, #FF416C, #FF4B2B);
+        }
+
+        button.green {
+            background: linear-gradient(to right, #00b09b, #96c93d);
+        }
+
+        button.blue {
+            background: linear-gradient(to right, #2196F3, #21CBF3);
+        }
+
+        button.orange {
+            background: linear-gradient(to right, #FF9800, #FF5722);
+        }
+
+        button.purple {
+            background: linear-gradient(to right, #9C27B0, #673AB7);
+        }
+
+        .status-bar {
+            background: #f8f9fa;
+            padding: 15px;
+            border-top: 1px solid #eaeaea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .indicator.online {
+            background: #4CAF50;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-2px); }
+            75% { transform: translateX(2px); }
+        }
+
+        .shake-active {
+            color: #FF5722 !important;
+            font-weight: bold !important;
+            animation: shake 0.5s infinite;
+        }
+
+        .language-select {
+            padding: 8px 15px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            background: white;
+            font-size: 1rem;
+        }
+
+        .phrase-btn {
+            padding: 8px 15px;
+            background: linear-gradient(to right, #FF9800, #FF5722);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .phrase-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 3px 10px rgba(255,87,34,0.3);
+        }
+
+        .loading {
+            animation: pulse 1s infinite;
+            color: #2196F3 !important;
+        }
+
+        .error {
+            color: #F44336 !important;
+            border-color: #F44336 !important;
+            background: #FFEBEE !important;
+        }
+
+        .success {
+            color: #4CAF50 !important;
+            border-color: #4CAF50 !important;
+            background: #E8F5E9 !important;
+        }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            font-size: 1.5rem;
+            padding: 15px;
+            border: 2px solid #4CAF50;
+            border-radius: 10px;
+            background: #E8F5E9;
+            color: #333;
+            resize: vertical;
+        }
+
+        select {
+            padding: 8px 15px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            min-width: 150px;
+        }
+
+        .firebase-status {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .last-update {
+            font-size: 0.8rem;
+            color: #999;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+
+        /* New styles for phrase suggestions */
+        .phrase-suggestions {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 1px solid #eaeaea;
+        }
+
+        .phrase-suggestions h4 {
+            margin-bottom: 10px;
+            color: #4A00E0;
+            font-size: 1rem;
+        }
+
+        .phrase-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .phrase-pill {
+            padding: 6px 12px;
+            background: linear-gradient(to right, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .phrase-pill:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 3px 8px rgba(76,175,80,0.3);
+        }
+
+        .phrase-pill.blue {
+            background: linear-gradient(to right, #2196F3, #1976D2);
+        }
+
+        /* Speech controls */
+        .speech-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+
+        .speech-btn {
+            padding: 10px 20px;
+            background: linear-gradient(to right, #9C27B0, #673AB7);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .speech-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(156,39,176,0.3);
+        }
+
+        .speech-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .speech-btn.speaking {
+            background: linear-gradient(to right, #FF5722, #E64A19);
+            animation: pulse 1s infinite;
+        }
+
+        .audio-visualizer {
+            margin-top: 10px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+        }
+
+        .audio-bar {
+            width: 4px;
+            background: #4CAF50;
+            border-radius: 2px;
+            transition: height 0.1s ease;
+        }
+
+        /* Dynamic suggestions styles */
+        .dynamic-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            z-index: 100;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .dynamic-suggestions.show {
+            display: block;
+        }
+
+        .suggestion-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            transition: background 0.2s;
+        }
+
+        .suggestion-item:hover {
+            background: #f0f7ff;
+        }
+
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .text-input-container {
+            position: relative;
+        }
+
+        /* Auto-suggestions panel */
+        .auto-suggestions-panel {
+            margin-top: 15px;
+            padding: 15px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+            border-radius: 10px;
+            border: 2px solid #e0e6ff;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .auto-suggestions-title {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #4A00E0;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .auto-suggestions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 10px;
+        }
+
+        .auto-suggestion-item {
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .auto-suggestion-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-color: #4A00E0;
+        }
+
+        .auto-suggestion-text {
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        .auto-suggestion-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .auto-suggestion-btn {
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            flex: 1;
+            text-align: center;
+        }
+
+        .auto-suggestion-btn.speak {
+            background: linear-gradient(to right, #9C27B0, #673AB7);
+            color: white;
+        }
+
+        .auto-suggestion-btn.use {
+            background: linear-gradient(to right, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .auto-suggestion-btn.translate {
+            background: linear-gradient(to right, #2196F3, #1976D2);
+            color: white;
+        }
+
+        .voice-options {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .voice-btn {
+            padding: 6px 12px;
+            background: linear-gradient(to right, #FF9800, #FF5722);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .voice-btn.active {
+            background: linear-gradient(to right, #4A00E0, #8E2DE2);
+            box-shadow: 0 2px 8px rgba(74,0,224,0.3);
+        }
+
+        .language-voice-display {
+            font-size: 0.8rem;
+            color: #666;
+            text-align: center;
+            margin-top: 5px;
+        }
+
+        .ai-speech-status {
+            margin-top: 5px;
+            font-size: 0.8rem;
+            color: #4CAF50;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .ai-loading {
+            animation: pulse 1s infinite;
+        }
+
+        .tts-toggle {
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .tts-toggle-btn {
+            padding: 6px 12px;
+            background: #f0f0f0;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .tts-toggle-btn.active {
+            background: linear-gradient(to right, #4A00E0, #8E2DE2);
+            color: white;
+            border-color: #4A00E0;
+        }
+
+        /* Performance optimizations */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        .performance-info {
+            font-size: 0.7rem;
+            color: #888;
+            text-align: center;
+            margin-top: 5px;
+        }
+
+        .fast-mode {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #4CAF50;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            z-index: 1000;
+        }
+       .phrase-list-container {
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #eaeaea;
+            border-radius: 10px;
+            background: white;
+        }
+
+        .phrase-list-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .phrase-list-item:hover {
+            background: #f0f7ff;
+            border-left: 3px solid #4A00E0;
+        }
+
+        .phrase-list-item:last-child {
+            border-bottom: none;
+        }
+
+        .accent-selector {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .accent-btn {
+            padding: 8px 15px;
+            background: #f8f9fa;
+            border: 2px solid #ddd;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+        }
+
+        .accent-btn.active {
+            background: linear-gradient(to right, #4A00E0, #8E2DE2);
+            color: white;
+            border-color: #4A00E0;
+        }
+
+        .accent-btn.north {
+            background: #E3F2FD;
+            border-color: #2196F3;
+        }
+
+        .accent-btn.central {
+            background: #E8F5E9;
+            border-color: #4CAF50;
+        }
+
+        .accent-btn.south {
+            background: #FFF3E0;
+            border-color: #FF9800;
+        }
+
+        .voice-gender-selector {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+            justify-content: center;
+        }
+
+        .voice-gender-btn {
+            padding: 8px 20px;
+            background: #f8f9fa;
+            border: 2px solid #ddd;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .voice-gender-btn.active {
+            background: linear-gradient(to right, #FF9800, #FF5722);
+            color: white;
+            border-color: #FF9800;
+        }
+
+        .tts-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 10px 0;
+            padding: 10px;
+            background: #FFF3CD;
+            border-radius: 8px;
+            border: 1px solid #FFC107;
+        }
+
+        .tts-loading span {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #FFEBEE;
+            border: 1px solid #F44336;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+            color: #b71c1c;
+            text-align: center;
+            animation: pulse 1s infinite;
+        }
+
+        .suggestion-header {
+            background: #f8f9fa;
+            padding: 8px 15px;
+            font-size: 0.8rem;
+            color: #666;
+            border-bottom: 1px solid #eaeaea;
+            border-radius: 8px 8px 0 0;
     </style>
 </head>
 <body>
-    <div class="fast-mode" id="fastModeIndicator">⚡ Tốc độ cao</div>
+    <div class="fast-mode" id="fastModeIndicator">🚀 Chế độ tốc độ cao: BẬT</div>
     <div class="container">
         <header>
-            <h1>Dịch Thủ Ngữ - Phiên bản Tối ưu Tốc độ</h1>
-            <div>Giám sát thời gian thực Firebase</div>
+            <h1>Ứng dụng và cải tiến "Công nghệ dịch thủ ngữ" vào đời sống - Phiên bản tối ưu với Calibration</h1>
+            <div>Giám sát thời gian thực từ Cơ sở dữ liệu Firebase</div>
+            <div class="firebase-status" id="firebaseStatus">
+                Đang kết nối với Firebase...
+            </div>
             <div class="performance-info" id="performanceInfo">
-                Độ trễ: <span id="latency">--</span>ms | FPS: <span id="fps">--</span> | Polling: <span id="pollingRate">300</span>ms
+                Độ trễ: <span id="latency">--</span>ms | FPS: <span id="fps">--</span> | Polling: <span id="pollingRate">--</span>ms
             </div>
         </header>
 
         <div class="dashboard">
             <!-- Card Xây dựng Câu -->
-            <div class="card" id="card1">
+            <div class="card">
                 <h3>Xây dựng Câu</h3>
-                <div style="text-align: center; padding: 20px;">
-                    <div class="sensor-label">TỪ HIỆN TẠI</div>
+                <div style="text-align: center; padding: 20px; margin-bottom: 20px;">
+                    <div class="sensor-label">TỪ HIỆN TẠI (Mã hóa)</div>
                     <div class="current-word-display" id="displayBuffer">---</div>
-                    <div class="sensor-label">TIẾNG VIỆT</div>
+                    <div class="sensor-label">TỪ HIỆN TẠI (Tiếng Việt)</div>
                     <div class="conversion-display" id="convertedCurrentWord">---</div>
                     
-                    <div class="sensor-label">CÂU ĐẦY ĐỦ</div>
+                    <div style="margin: 15px 0; color: #666;">
+                        <div><strong>Sử dụng '_' để thêm từ vào câu</strong></div>
+                        <div><strong>Sử dụng 'COMMIT' để hoàn thành câu</strong></div>
+                    </div>
+                    
+                    <div class="sensor-label">CÂU ĐẦY ĐỦ (Mã hóa)</div>
                     <div class="sentence-display" id="sentenceDisplay">---</div>
-                    <div class="sensor-label">CÂU DỊCH</div>
+                    <div class="sensor-label">CÂU ĐẦY ĐỦ (Tiếng Việt)</div>
                     <div class="conversion-display" id="convertedSentenceDisplay">---</div>
                     
+                    <!-- Chuyển đổi TTS -->
+                    <div class="tts-toggle">
+                        <button class="tts-toggle-btn active" id="useGeminiTTS" onclick="toggleTTSMode(true)">🎯 Giọng AI Gemini</button>
+                        <button class="tts-toggle-btn" id="useWebSpeech" onclick="toggleTTSMode(false)">🔊 Web Speech</button>
+                    </div>
+                    
+                    <!-- Bảng đề xuất tự động -->
+                    <div class="auto-suggestions-panel" id="autoSuggestionsPanel" style="display: none;">
+                        <div class="auto-suggestions-title">
+                            <span>💡 ĐỀ XUẤT DỰA TRÊN CÂU CỦA BẠN</span>
+                        </div>
+                        <div class="auto-suggestions-grid" id="autoSuggestionsGrid">
+                            <!-- Đề xuất tự động sẽ được thêm vào đây -->
+                        </div>
+                    </div>
+                    
+                    <!-- Đề xuất cụm từ -->
+                    <div class="phrase-suggestions">
+                        <h4>📝 ĐỀ XUẤT CỤM TỪ THÔNG DỤNG</h4>
+                        <div class="phrase-pills" id="phrasePills">
+                            <!-- Các nút cụm từ sẽ được thêm bởi JavaScript -->
+                        </div>
+                        
+                        <!-- Đề xuất động -->
+                        <div class="dynamic-suggestions" id="dynamicSuggestions">
+                            <!-- Đề xuất động sẽ xuất hiện ở đây -->
+                        </div>
+                    </div>
+                    
+                    <!-- Tùy chọn giọng nói -->
+                    <div class="voice-options">
+                        <div class="voice-btn male active" data-gender="male" data-lang="vi-VN" onclick="selectVoice(this)">
+                            👨 Nam Tiếng Việt
+                        </div>
+                        <div class="voice-btn female" data-gender="female" data-lang="vi-VN" onclick="selectVoice(this)">
+                            👩 Nữ Tiếng Việt
+                        </div>
+                        <div class="voice-btn male" data-gender="male" data-lang="en-GB" onclick="selectVoice(this)">
+                            👨 Nam Tiếng Anh
+                        </div>
+                        <div class="voice-btn female" data-gender="female" data-lang="en-GB" onclick="selectVoice(this)">
+                            👩 Nữ Tiếng Anh
+                        </div>
+                    </div>
+                    
+                    <div class="language-voice-display" id="currentVoiceDisplay">
+                        Hiện tại: Nam Tiếng Việt (Gemini AI)
+                    </div>
+                    
+                    <div class="ai-speech-status" id="aiSpeechStatus" style="display: none;">
+                        <span class="ai-loading">⏳</span> Đang tải giọng AI...
+                    </div>
+                    
+                    <!-- Điều khiển giọng nói -->
+                    <div class="speech-controls">
+                        <button class="speech-btn" onclick="speakVietnameseSentence()" id="speakVnBtn">
+                            🔊 Đọc Tiếng Việt
+                        </button>
+                        <button class="speech-btn blue" onclick="speakTranslation()" id="speakTransBtn">
+                            🔈 Đọc Bản dịch
+                        </button>
+                        <button class="speech-btn red" onclick="stopAllSpeech()" id="stopSpeechBtn">
+                            ⏹ Dừng đọc
+                        </button>
+                    </div>
+                    
+                    <div class="audio-visualizer" id="audioVisualizer">
+                        <!-- Thanh âm thanh sẽ được thêm ở đây -->
+                    </div>
+                    
                     <div class="word-list" id="wordList">Chưa có từ nào</div>
-                    <div class="word-count">Số từ: <span id="wordCount">0</span>/10</div>
+                    <div class="word-count">Số từ trong câu: <span id="wordCount">0</span>/10</div>
+                    
+                    <div style="display: flex; justify-content: space-around; margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                        <div>
+                            <div class="sensor-label">KHE 1</div>
+                            <div class="sensor-value" id="slot1" style="font-size: 1.2rem;">---</div>
+                        </div>
+                        <div>
+                            <div class="sensor-label">KHE 2</div>
+                            <div class="sensor-value" id="slot2" style="font-size: 1.2rem;">---</div>
+                        </div>
+                    </div>
                     
                     <div class="controls">
-                        <button onclick="clearCurrentWord()" class="red">Xóa từ</button>
+                        <button onclick="clearCurrentWord()" class="red">Xóa từ hiện tại</button>
                         <button onclick="backspace()">Xóa ký tự</button>
-                        <button onclick="addWordToSentence()" class="green">Thêm từ</button>
-                        <button onclick="commitSentence()" class="blue">Hoàn thành</button>
+                        <button onclick="addWordToSentence()" class="green">Thêm từ (_)</button>
+                        <button onclick="commitSentence()" class="blue">Hoàn thành câu</button>
+                        <button onclick="resetSentence()" class="red">Đặt lại tất cả</button>
                     </div>
                 </div>
             </div>
 
             <!-- Card Calibration -->
-            <div class="card calibration-card" id="card2">
-                <h3>🎯 Calibration</h3>
+            <div class="card calibration-card">
+                <h3>🎯 Calibration Cảm biến Uốn</h3>
                 
-                <div class="calibration-status" id="calibrationStatus">
-                    <div class="calibration-ready">Sẵn sàng</div>
+                <div class="calibration-instructions">
+                    <h4>📋 Hướng dẫn Calibration:</h4>
+                    <div class="calibration-step">Đặt tay thẳng và thư giãn</div>
+                    <div class="calibration-step">Nhấn "Bắt đầu Calibration"</div>
+                    <div class="calibration-step">Lần lượt uốn từng ngón tay hết mức có thể (10 giây)</div>
+                    <div class="calibration-step">Hệ thống sẽ tự động lưu giá trị bent threshold</div>
+                    <div class="calibration-step">Sau khi hoàn thành, hệ thống sẽ sử dụng giá trị đã calibration</div>
                 </div>
                 
+                <div class="calibration-status" id="calibrationStatus">
+                    <div class="calibration-ready">Sẵn sàng để Calibration</div>
+                </div>
+                
+                <!-- Hiển thị quá trình calibration -->
                 <div id="calibrationProgress" style="display: none;">
+                    <div class="calibration-countdown" id="calibrationCountdown">10</div>
                     <div style="text-align: center; margin: 10px 0; font-weight: bold; color: #4A00E0;">
-                        <div id="calibrationCountdown" style="font-size: 2rem;">10</div>
-                        <div id="calibrationMessage">Đang calibration...</div>
+                        <span id="calibrationMessage">Đang calibration... Vui lòng uốn ngón tay hết mức!</span>
                     </div>
                     
-                    <div class="calibration-display" id="calibrationDisplay"></div>
+                    <div class="calibration-display" id="calibrationDisplay">
+                        <!-- Các sensor sẽ được thêm bằng JavaScript -->
+                    </div>
                     
-                    <div style="width:100%;height:20px;background:#f0f0f0;border-radius:10px;overflow:hidden;margin:10px 0">
-                        <div id="calibrationProgressBar" style="height:100%;background:linear-gradient(to right,#4CAF50,#45a049);width:0%"></div>
+                    <div class="progress-container">
+                        <div class="progress-bar" id="calibrationProgressBar" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <!-- Hiển thị threshold hiện tại -->
+                <div class="sensor-calibration" style="margin-top: 20px;">
+                    <div class="sensor-label">THRESHOLD HIỆN TẠI</div>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px;">
+                        <div>
+                            <div class="sensor-name">Flex 0</div>
+                            <div class="sensor-threshold" id="currentThreshold0">300</div>
+                        </div>
+                        <div>
+                            <div class="sensor-name">Flex 1</div>
+                            <div class="sensor-threshold" id="currentThreshold1">450</div>
+                        </div>
+                        <div>
+                            <div class="sensor-name">Flex 2</div>
+                            <div class="sensor-threshold" id="currentThreshold2">350</div>
+                        </div>
+                        <div>
+                            <div class="sensor-name">Flex 3</div>
+                            <div class="sensor-threshold" id="currentThreshold3">300</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex-sensor-legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #4CAF50;"></div>
+                        <div class="legend-text">Thẳng (0)</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #FF9800;"></div>
+                        <div class="legend-text">Hơi uốn (1)</div>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #F44336;"></div>
+                        <div class="legend-text">Uốn hết (2)</div>
                     </div>
                 </div>
                 
                 <div class="controls">
-                    <button onclick="startCalibration()" class="green" id="calibrateBtn">Bắt đầu Calibration</button>
-                    <button onclick="resetCalibration()" class="red">Reset</button>
+                    <button onclick="startCalibration()" class="orange" id="calibrateBtn">🎯 Bắt đầu Calibration</button>
+                    <button onclick="stopCalibration()" class="red" id="stopCalibrateBtn" style="display: none;">⏹ Dừng Calibration</button>
+                    <button onclick="resetCalibration()" class="purple">🔄 Reset về Mặc định</button>
+                    <button onclick="loadCalibration()" class="blue">💾 Tải Calibration</button>
+                </div>
+                
+                <div class="calibration-info" style="margin-top: 15px; font-size: 0.8rem; color: #666; text-align: center;">
+                    <div>Threshold thẳng cố định: Flex 0-2: 150, Flex 3: 100</div>
+                    <div>Threshold bent sẽ được calibration tự động</div>
                 </div>
             </div>
 
             <!-- Card Dịch thuật -->
-            <div class="card" id="card3">
+            <div class="card">
                 <h3>Dịch thuật</h3>
                 <div style="margin-bottom: 20px;">
-                    <div class="sensor-label">VĂN BẢN TIẾNG VIỆT</div>
-                    <textarea id="translationInput" placeholder="Nhập văn bản tiếng Việt..."></textarea>
+                    <div class="sensor-label">CÂU ĐẦY ĐỦ (Tiếng Việt - Để dịch)</div>
+                    <div class="text-input-container">
+                        <textarea id="translationInput" placeholder="Nhập văn bản tiếng Việt ở đây..." 
+                                  oninput="handleTranslationInput()"></textarea>
+                        <div class="dynamic-suggestions" id="translationSuggestions">
+                            <!-- Đề xuất động cho dịch thuật -->
+                        </div>
+                    </div>
                     
-                    <div style="margin: 15px 0; padding: 10px; background: #f8f9fa; border-radius: 10px;">
-                        <select id="targetLanguage" style="padding: 8px 15px; border-radius: 8px; border: 1px solid #ccc; width: 100%;">
-                            <option value="en-GB">Tiếng Anh</option>
-                            <option value="ja-JP">Tiếng Nhật</option>
-                            <option value="ko-KR">Tiếng Hàn</option>
-                            <option value="zh-CN">Tiếng Trung</option>
-                        </select>
+                    <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                        <div><strong>Tùy chọn dịch thuật:</strong></div>
+                        <div style="display: flex; gap: 15px; margin-top: 10px; flex-wrap: wrap;">
+                            <div>
+                                <div class="sensor-label">Ngôn ngữ đích</div>
+                                <select id="targetLanguage" class="language-select">
+                                    <option value="en-GB">Tiếng Anh</option>
+                                    <option value="ja-JP">Tiếng Nhật</option>
+                                    <option value="ko-KR">Tiếng Hàn</option>
+                                    <option value="zh-CN">Tiếng Trung</option>
+                                </select>
+                            </div>
+                            <div>
+                                <div class="sensor-label">Ngôn ngữ giọng nói</div>
+                                <select id="voiceLanguage" class="language-select">
+                                    <option value="vi-VN">Tiếng Việt</option>
+                                    <option value="en-GB">Tiếng Anh</option>
+                                    <option value="ja-JP">Tiếng Nhật</option>
+                                    <option value="ko-KR">Tiếng Hàn</option>
+                                    <option value="zh-CN">Tiếng Trung</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <div class="sensor-label">KẾT QUẢ DỊCH</div>
-                <div id="translationOutput" class="conversion-display" style="min-height: 80px;">
+                <div id="translationOutput" class="conversion-display" style="min-height: 80px; margin-bottom: 15px;">
                     Đang chờ dịch...
                 </div>
 
                 <div class="controls">
                     <button onclick="translateSentence()" class="blue">Dịch câu</button>
-                    <button onclick="clearTranslation()" class="red">Xóa</button>
+                    <button onclick="clearTranslation()" class="red">Xóa bản dịch</button>
                 </div>
             </div>
 
             <!-- Card Hiển thị Cảm biến -->
-            <div class="card" id="card4">
-                <h3>Dữ liệu Cảm biến</h3>
+            <div class="card">
+                <h3>Dữ liệu Cảm biến từ Firebase</h3>
                 <div class="sensor-grid">
                     <div class="sensor-item mpu">
-                        <div class="sensor-label">MPU6050</div>
-                        <div class="sensor-value" id="mpuOrientation">---</div>
+                        <div class="sensor-label">ĐỊNH HƯỚNG MPU6050</div>
+                        <div class="sensor-value" id="mpuOrientation">Không xác định</div>
+                        <div class="sensor-label">TRẠNG THÁI LẮC</div>
+                        <div class="sensor-value" id="mpuShakeState">Không</div>
                         <div class="sensor-label">ĐANG LẮC?</div>
                         <div class="sensor-value" id="isShaking">KHÔNG</div>
                     </div>
@@ -163,15 +1252,39 @@
                                 <span class="flex-box" id="flex3-box">0</span>
                             </div>
                             <div class="sensor-label" style="margin-top: 10px;">
-                                Giá trị: <span id="rawValues">0,0,0,0</span>
+                                Giá trị thô: <span id="rawValues">0, 0, 0, 0</span>
+                            </div>
+                            <div class="sensor-label">
+                                Trạng thái: <span id="flexFormat">0000</span> (a0,a1,a2,a3)
                             </div>
                         </div>
                     </div>
                 </div>
                 
+                <div class="sensor-item" style="margin-top: 15px;">
+                    <div class="sensor-label">TRẠNG THÁI HỆ THỐNG</div>
+                    <div>Cập nhật lần cuối: <span id="lastUpdateTime" class="last-update">Chưa bao giờ</span></div>
+                    <div>Thời gian xử lý: <span id="processingTime" class="last-update">0ms</span></div>
+                </div>
+                
                 <div class="controls" style="margin-top: 15px;">
-                    <button onclick="refreshData()" class="blue">Làm mới</button>
-                    <button onclick="toggleAutoRefresh()" id="autoRefreshBtn" class="green">Tự động: BẬT</button>
+                    <button onclick="refreshData()" class="blue">Làm mới ngay</button>
+                    <button onclick="toggleAutoRefresh()" id="autoRefreshBtn" class="green">Tự động: BẬT (300ms)</button>
+                    <button onclick="toggleTurboMode()" id="turboBtn" class="green">🚀 Chế độ Turbo</button>
+                </div>
+            </div>
+
+            <!-- Card Hiển thị Nhật ký -->
+            <div class="card">
+                <h3>Nhật ký Hệ thống</h3>
+                <div style="max-height: 300px; overflow-y: auto; background: #f8f9fa; border-radius: 8px; padding: 10px;">
+                    <div id="logContainer">
+                        <div class="log-entry">Hệ thống đã khởi động. Đang chờ dữ liệu Firebase...</div>
+                    </div>
+                </div>
+                <div class="controls" style="margin-top: 15px;">
+                    <button onclick="clearLog()" class="red">Xóa nhật ký</button>
+                    <button onclick="exportLog()" class="blue">Xuất nhật ký</button>
                 </div>
             </div>
         </div>
@@ -179,524 +1292,2426 @@
         <div class="status-bar">
             <div>
                 <span class="indicator" id="connectionStatus"></span>
-                <span id="statusText">Đang kết nối...</span>
+                <span id="statusText">Đang kết nối với Firebase...</span>
             </div>
             <div>
-                <span id="lastUpdate">Cập nhật: --:--:--</span>
+                <span id="lastUpdate">Cập nhật Firebase lần cuối: --:--:--</span>
             </div>
         </div>
     </div>
 
     <script>
         // === CẤU HÌNH TỐC ĐỘ CAO ===
-        (function() {
-            'use strict';
+        const FIREBASE_URL = "https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/sensorData.json";
+        const GEMINI_API_KEY = "AIzaSyDdUj2SX83qODeZ1hhru0e9KN1fwDrtUP8";
+        const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent";
+        
+        // === BIẾN CALIBRATION ===
+        let bentThresholds = [300, 450, 350, 300]; // Giá trị mặc định cho bent threshold
+        const STRAIGHT_THRESHOLDS = [75, 75, 75, 75]; // Giá trị cố định cho straight threshold (Flex 3 khác)
+        
+        let isCalibrating = false;
+        let calibrationTimeout = null;
+        let calibrationInterval = null;
+        let calibrationCountdown = 10;
+        let calibrationStartTime = 0;
+        let calibrationMaxValues = [0, 0, 0, 0];
+        let calibrationCurrentSensor = 0;
+        let calibrationStep = "waiting"; // waiting, calibrating, done
+        
+        // === BIẾN TỐI ƯU HÓA ===
+        let firebaseData = null;
+        let lastUpdateTime = 0;
+        let autoRefresh = true;
+        let autoRefreshInterval;
+        let logEntries = [];
+        const MAX_LOG_ENTRIES = 20;
+        let isFetching = false;
+        let lastFirebaseData = null;
+        let uiUpdateScheduled = false;
+        let lastFrameTime = performance.now();
+        let frameCount = 0;
+        let currentFPS = 60;
+        let pollingInterval = 300;
+        let turboMode = false;
+        let currentFetchController = null;
+        
+        // Biến xây dựng câu
+        let slot1 = "";
+        let slot2 = "";
+        let displayBuffer = "";
+        let convertedCurrentWord = "";
+        let sentenceWords = [];
+        let fullSentence = "";
+        let convertedFullSentence = "";
+        
+        // Trạng thái cảm biến uốn
+        let flexStates = [0, 0, 0, 0];
+        let lastFlexStates = [-1, -1, -1, -1];
+        let stableCount = 0;
+        let lastDetectedIndex = -1;
+        let holdStartMs = 0;
+        let holdFired = false;
+        const DEBOUNCE_COUNT = 3;
+        const HOLD_MS_DEFAULT = 800;
+        const POST_HOLD_COOLDOWN = 600;
+        let lastActionMs = 0;
+        let lastStateString = '';
+        
+        // CACHE cho tối ưu hóa
+        const mappingCache = new Map();
+        const vietnameseCache = new Map();
+        const translationCache = {};
+        let audioCache = {};
+        
+        // === BẢNG DỮ LIỆU (giữ nguyên từ file gốc) ===
+        const tableA = [
+            ["IAY","IC","ICH","IE","IEC","IEM","IEN","IENG","IEO"],
+            ["IEP","IET","IEU","IM","IN","ING","INH","IO","IOI"],
+            ["ENG","ENH","EO","EP","ET","EU","I","IA","IAC"],
+            ["IAI","IAM","IAN","IANG","IANH","IAO","IAP","IAT","IAU"],
+            ["AP","AT","AU","AY","E","EC","ECH","EM","EN"],
+            ["A","AC","ACH","AI","AM","AN","ANG","ANH","AO"],
+            ["IUN","IUONG","IUP","O","OA","OAC","OACH","OAI","OAM"],
+            ["ION","IONG","IOT","IP","IT","IU","IUA","IUC","IUI"]
+        ];
+
+        const tableB = [
+            ["UE","UECH","UEN","UENH","UEO","UET","UI","UM","UN"],
+            ["UNG","UO","UOC","UOI","UOM","UON","UONG","UOP","OUT"],
+            ["ONG","OOC","OONG","OP","OT","U","UA","UAC","UACH"],
+            ["UAI","UAM","UAN","UANG","UANH","UAO","UAT","UAY","UC"],
+            ["OAY","OC","OE","OEN","OEO","OET","OI","OM","ON"],
+            ["COMMIT","_","nullptr","nullptr","OAN","OANG","OANH","OAP","OAT"],
+            ["UYNH","UYP","UYT","UYU","Y","YEM","YEN","YET","YEU"],
+            ["UOU","UP","UT","UU","UY","UYA","UYCH","UYEN","UYET"]
+        ];
+
+        const tableC = [
+            [ ["B","C","D"],["Đ","G","H"],["K","L","M"] ],
+            [ ["N","P","Q"],["R","S","T"],["V","X","CH"] ],
+            [ ["GH","KH","NG"],["NGH","NH","PH"],["TH","TR","_"] ]
+        ];
+
+        // Bảng chuyển đổi Tiếng Việt (bảng đầy đủ từ ESP32 code)
+        const vietnameseTable = [
+            {key: "IAY", forms: ["iáy", "iày", "iảy", "iãy", "iạy", "iay", "iấy", "iầy", "iẩy", "iẫy", "iậy", "iây", "iắy", "iằy", "iẳy", "iẵy", "iặy", "iăy"]},
+            {key: "IC", forms: ["íc", "ìc", "ỉc", "ĩc", "ịc", "ic", "íc", "ìc", "ỉc", "ĩc", "ịc", "ic", "íc", "ìc", "ỉc", "ĩc", "ịc", "ic"]},
+            {key: "ICH", forms: ["ích", "ìch", "ỉch", "ĩch", "ịch", "ich", "ích", "ìch", "ỉch", "ĩch", "ịch", "ich", "ích", "ìch", "ỉch", "ĩch", "ịch", "ich"]},
+            {key: "IE", forms: ["ié", "iè", "iẻ", "iẽ", "iẹ", "ie", "iế", "iề", "iể", "iễ", "iệ", "iê", "ié", "iè", "iẻ", "iẽ", "iẹ", "ie"]},
+            {key: "IEC", forms: ["iéc", "ièc", "iẻc", "iẽc", "iẹc", "iec", "iếc", "iềc", "iểc", "iễc", "iệc", "iêc", "iéc", "ièc", "iẻc", "iẽc", "iẹc", "iec"]},
+            {key: "IEM", forms: ["iém", "ièm", "iểm", "iẽm", "ịem", "iem", "iếm", "iềm", "iểm", "iễm", "iệm", "iêm", "iém", "ièm", "iểm", "iẽm", "ịem", "iem"]},
+            {key: "IEN", forms: ["ien", "ièn", "iẻn", "iẽn", "iẹn", "ien", "iên", "iền", "iển", "iễn", "iện", "iên", "ien", "ièn", "iẻn", "iẽn", "iẹn", "ien"]},
+            {key: "IENG", forms: ["ieng", "ièng", "iẻng", "iẽng", "iẹng", "ieng", "iêng", "iềng", "iểng", "iễng", "iệng", "iêng", "ieng", "ièng", "iẻng", "iẽng", "iẹng", "ieng"]},
+            {key: "IEO", forms: ["iéo", "ièo", "iẻo", "iẽo", "iẹo", "ieo", "iếo", "iềo", "iểo", "iễo", "iệo", "iêo", "iéo", "ièo", "iẻo", "iẽo", "iẹo", "ieo"]},
+            {key: "IEP", forms: ["iép", "ièp", "iẻp", "iẽp", "iẹp", "iep", "iếp", "iềp", "iểp", "iễp", "iệp", "iêp", "iép", "ièp", "iẻp", "iẽp", "iẹp", "iep"]},
+            {key: "IET", forms: ["iét", "ièt", "iẻt", "iẽt", "iẹt", "iet", "iết", "iềt", "iểt", "iễt", "iệt", "iêt", "iét", "ièt", "iẻt", "iẽt", "iẹt", "iet"]},
+            {key: "IEU", forms: ["iéu", "ièu", "iẻu", "iẽu", "iẹu", "ieu", "iếu", "iều", "iểu", "iễu", "iệu", "iêu", "iéu", "ièu", "iẻu", "iẽu", "iẹu", "ieu"]},
+            {key: "IM", forms: ["ím", "ìm", "ỉm", "ĩm", "ịm", "im", "ím", "ìm", "ỉm", "ĩm", "ịm", "im", "ím", "ìm", "ỉm", "ĩm", "ịm", "im"]},
+            {key: "IN", forms: ["ín", "ìn", "ỉn", "ĩn", "ịn", "in", "ín", "ìn", "ỉn", "ĩn", "ịn", "in", "ín", "ìn", "ỉn", "ĩn", "ịn", "in"]},
+            {key: "ING", forms: ["íng", "ìng", "ỉng", "ĩng", "ịng", "ing", "íng", "ìng", "ỉng", "ĩng", "ịng", "ing", "íng", "ìng", "ỉng", "ĩng", "ịng", "ing"]},
+            {key: "INH", forms: ["ính", "ình", "ỉnh", "ĩnh", "ịnh", "inh", "ính", "ình", "ỉnh", "ĩnh", "ịnh", "inh", "ính", "ình", "ỉnh", "ĩnh", "ịnh", "inh"]},
+            {key: "IO", forms: ["ió", "iò", "iỏ", "iõ", "iọ", "io", "iố", "iồ", "iổ", "iỗ", "iộ", "iô", "iớ", "iờ", "iở", "iỡ", "iợ", "iơ"]},
+            {key: "IOI", forms: ["iói", "iòi", "iỏi", "iõi", "iọi", "ioi", "iối", "iồi", "iổi", "iỗi", "iội", "iôi", "iới", "iời", "iởi", "iỡi", "iợi", "iơi"]},
+            {key: "I", forms: ["í", "ì", "ỉ", "ĩ", "ị", "i", "í", "ì", "ỉ", "ĩ", "ị", "i", "í", "ì", "ỉ", "ĩ", "ị", "i"]},
+            {key: "IA", forms: ["ía", "ìa", "ỉa", "ĩa", "ịa", "ia", "ía", "ìa", "ỉa", "ĩa", "ịa", "ia", "ía", "ìa", "ỉa", "ĩa", "ịa", "ia"]},
+            {key: "IAI", forms: ["iái", "iài", "iải", "iãi", "iại", "iai", "iấi", "iầi", "iẩi", "iẫi", "iậi", "iâi", "iắi", "iằi", "iẳi", "iẵi", "iặi", "iăi"]},
+            {key: "IAM", forms: ["iám", "iàm", "iảm", "iãm", "iạm", "iam", "iấm", "iầm", "iẩm", "iẫm", "iậm", "iâm", "iắm", "iằm", "iẳm", "iẵm", "iặm", "iăm"]},
+            {key: "IAN", forms: ["ián", "iàn", "iản", "iãn", "iạn", "ian", "iấn", "iần", "iẩn", "iẫn", "iận", "iân", "iắn", "iằn", "iẳn", "iẵn", "iặn", "iăn"]},
+            {key: "IANG", forms: ["iáng", "iàng", "iảng", "iãng", "iạng", "iang", "iấng", "iầng", "iẩng", "iẫng", "iậng", "iâng", "iắng", "iằng", "iẳng", "iẵng", "iặng", "iăng"]},
+            {key: "IANH", forms: ["iánh", "iành", "iảnh", "iãnh", "iạnh", "ianh", "iấnh", "iầnh", "iẩnh", "iẫnh", "iậnh", "iânh", "iắnh", "iằnh", "iẳnh", "iẵnh", "iặnh", "iănh"]},
+            {key: "IAO", forms: ["iáo", "iào", "iảo", "ião", "iạo", "iao", "iáo", "iào", "iảo", "ião", "iạo", "iao", "iáo", "iào", "iảo", "ião", "iạo", "iao"]},
+            {key: "IAP", forms: ["iáp", "iàp", "iảp", "iãp", "iạp", "iap", "iấp", "iầp", "iẩp", "iẫp", "iập", "iâp", "iắp", "iằp", "iẳp", "iẵp", "iặp", "iăp"]},
+            {key: "IAT", forms: ["iát", "iàt", "iảt", "iãt", "iạt", "iat", "iất", "iầt", "iẩt", "iẫt", "iật", "iât", "iắt", "iằt", "iẳt", "iẵt", "iặt", "iăt"]},
+            {key: "IAU", forms: ["iáu", "iàu", "iảu", "iãu", "iạu", "iau", "iấu", "iầu", "iẩu", "iẫu", "iậu", "iâu", "iáu", "iàu", "iảu", "iãu", "iạu", "iau"]},
+            {key: "AP", forms: ["áp", "àp", "ảp", "ãp", "ạp", "ap", "ấp", "ầp", "ẩp", "ẫp", "ập", "âp", "ắp", "ằp", "ẳp", "ẵp", "ặp", "ăp"]},
+            {key: "AT", forms: ["át", "àt", "ảt", "ãt", "ạt", "at", "ất", "ầt", "ẩt", "ẫt", "ật", "ât", "ắt", "ằt", "ẳt", "ẵt", "ặt", "ăt"]},
+            {key: "AU", forms: ["áu", "àu", "ảu", "ãu", "ạu", "au", "ấu", "ầu", "ẩu", "ẫu", "ậu", "âu", "ắu", "ằu", "ẳu", "ẵu", "ặu", "ău"]},
+            {key: "AY", forms: ["áy", "ày", "ảy", "ãy", "ạy", "ay", "ấy", "ầy", "ẩy", "ẫy", "ậy", "ây", "ắy", "ằy", "ẳy", "ẵy", "ặy", "ăy"]},
+            {key: "E", forms: ["é", "è", "ẻ", "ẽ", "ẹ", "e", "ế", "ề", "ể", "ễ", "ệ", "ê", "é", "è", "ẻ", "ẽ", "ẹ", "e"]},
+            {key: "EM", forms: ["ém", "èm", "ểm", "ẽm", "ẹm", "em", "ếm", "ềm", "ểm", "ễm", "ệm", "êm", "ém", "èm", "ểm", "ẽm", "ẹm", "em"]},
+            {key: "EN", forms: ["én", "èn", "ển", "ễn", "ện", "en", "ến", "ền", "ển", "ễn", "ện", "ên", "én", "èn", "ển", "ễn", "ện", "en"]},
+            {key: "A", forms: ["á", "à", "ả", "ã", "ạ", "a", "ấ", "ầ", "ẩ", "ẫ", "ậ", "â", "ắ", "ằ", "ẳ", "ẵ", "ặ", "ă"]},
+            {key: "AI", forms: ["ái", "ài", "ải", "ãi", "ại", "ai", "ấi", "ầi", "ẩi", "ẫi", "ậi", "âi", "ắi", "ằi", "ẳi", "ẵi", "ặi", "ăi"]},
+            {key: "AM", forms: ["ám", "àm", "ảm", "ãm", "ạm", "am", "ấm", "ầm", "ẩm", "ẫm", "ậm", "âm", "ắm", "ằm", "ẳm", "ẵm", "ặm", "ăm"]},
+            {key: "AN", forms: ["án", "àn", "ản", "ãn", "ạn", "an", "ấn", "ần", "ẩn", "ẫn", "ận", "ân", "ắn", "ằn", "ẳn", "ẵn", "ặn", "ăn"]},
+            {key: "ANG", forms: ["áng", "àng", "ảng", "ãng", "ạng", "ang", "ấng", "ầng", "ẩng", "ẫng", "ậng", "âng", "ắng", "ằng", "ẳng", "ẵng", "ặng", "ăng"]},
+            {key: "ANH", forms: ["ánh", "ành", "ảnh", "ãnh", "ạnh", "anh", "ấnh", "ầnh", "ẩnh", "ẫnh", "ậnh", "ânh", "ắnh", "ằnh", "ẳnh", "ẵnh", "ặnh", "ănh"]},
+            {key: "AO", forms: ["áo", "ào", "ảo", "ão", "ạo", "ao", "ấo", "ầo", "ẩo", "ẫo", "ậo", "âo", "ắo", "ằo", "ẳo", "ẵo", "ặo", "ăo"]},
+            {key: "UE", forms: ["ué", "uè", "uẻ", "uẽ", "uẹ", "ue", "uế", "uề", "uể", "uễ", "uệ", "uê", "ưé", "ưè", "ưẻ", "ưẽ", "ưẹ", "ưe"]},
+            {key: "UEN", forms: ["uên", "uền", "uển", "uễn", "uện", "uen", "uên", "uền", "uển", "uễn", "uện", "uên", "ưên", "ưền", "ưển", "ưễn", "ưện", "ưen"]},
+            {key: "UI", forms: ["úi", "ùi", "ủi", "ũi", "ụi", "ui", "úi", "ùi", "ủi", "ũi", "ụi", "ui", "ứi", "ừi", "ửi", "ữi", "ựi", "ưi"]},
+            {key: "UM", forms: ["úm", "ùm", "ủm", "ũm", "ụm", "um", "úm", "ùm", "ủm", "ũm", "ụm", "um", "ứm", "ừm", "ửm", "ữm", "ựm", "ưm"]},
+            {key: "UN", forms: ["ún", "ùn", "ủn", "ũn", "ụn", "un", "ún", "ùn", "ủn", "ũn", "ụn", "un", "ứn", "ừn", "ửn", "ữn", "ựn", "ưn"]},
+            {key: "UNG", forms: ["úng", "ùng", "ủng", "ũng", "ụng", "ung", "úng", "ùng", "ủng", "ũng", "ụng", "ung", "ứng", "ừng", "ửng", "ững", "ựng", "ưng"]},
+            {key: "UO", forms: ["uó", "uò", "uỏ", "uõ", "uọ", "uo", "uố", "uồ", "uổ", "uỗ", "uộ", "uô", "ướ", "ườ", "ưở", "ưỡ", "ượ", "ươ"]},
+            {key: "UOC", forms: ["uốc", "uộc", "uổc", "uỗc", "uộc", "uoc", "uốc", "uộc", "uổc", "uỗc", "uộc", "uôc", "ưốc", "ưộc", "ưổc", "ưỗc", "ưộc", "ươc"]},
+            {key: "UOI", forms: ["uối", "uồi", "uổi", "uỗi", "uội", "uoi", "uối", "uồi", "uổi", "uỗi", "uội", "uôi", "ưối", "ưồi", "ưổi", "ưỗi", "ưội", "ươi"]},
+            {key: "UON", forms: ["uón", "uòn", "uỏn", "uõn", "uọn", "uon", "uốn", "uồn", "uổn", "uỗn", "uộn", "uôn", "ướn", "ườn", "ưởn", "ưỡn", "ượn", "ươn"]},
+            {key: "UONG", forms: ["uóng", "uòng", "uỏng", "uõng", "uọng", "uong", "uống", "uồng", "uổng", "uỗng", "uộng", "uông", "ướng", "ường", "ưởng", "ưỡng", "ượng", "ương"]},
+            {key: "ONG", forms: ["óng", "òng", "ỏng", "õng", "ọng", "ong", "ống", "ồng", "ổng", "ỗng", "ộng", "ông", "ớng", "ờng", "ởng", "ỡng", "ợng", "ơng"]},
+            {key: "OP", forms: ["óp", "òp", "ỏp", "õp", "ọp", "op", "ốp", "ồp", "ổp", "ỗp", "ộp", "ôp", "ớp", "ờp", "ởp", "ỡp", "ợp", "ơp"]},
+            {key: "OT", forms: ["ót", "òt", "ỏt", "õt", "ọt", "ot", "ốt", "ồt", "ổt", "ỗt", "ột", "ôt", "ớt", "ờt", "ởt", "ỡt", "ợt", "ơt"]},
+            {key: "U", forms: ["ú", "ù", "ủ", "ũ", "ụ", "u", "ú", "ù", "ủ", "ũ", "ụ", "u", "ứ", "ừ", "ử", "ữ", "ự", "ư"]},
+            {key: "UA", forms: ["úa", "ùa", "ủa", "ũa", "ụa", "ua", "úa", "ùa", "ủa", "ũa", "ụa", "ua", "úa", "ùa", "ủa", "ũa", "ụa", "ua"]},
+            {key: "UAI", forms: ["uái", "uài", "uải", "uãi", "uại", "uai", "uấi", "uầi", "uẩi", "uẫi", "uậi", "uâi", "uái", "uài", "uải", "uãi", "uại", "uai"]},
+            {key: "UAN", forms: ["uán", "uàn", "uản", "uãn", "uạn", "uan", "uấn", "uần", "uẩn", "uẫn", "uận", "uân", "uắn", "uằn", "uẳn", "uẵn", "uặn", "uăn"]},
+            {key: "UANG", forms: ["uáng", "uàng", "uảng", "uãng", "uạng", "uang", "uấng", "uầng", "uẩng", "uẫng", "uậng", "uâng", "uắng", "uằng", "uẳng", "uẵng", "uặng", "uăng"]},
+            {key: "UANH", forms: ["uánh", "uành", "uảnh", "uãnh", "uạnh", "uanh", "uấnh", "uầnh", "uẩnh", "uẫnh", "uậnh", "uânh", "uắnh", "uằnh", "uẳnh", "uẵnh", "uặnh", "uănh"]},
+            {key: "UAY", forms: ["uáy", "uày", "uảy", "uãy", "uạy", "uay", "uấy", "uầy", "uẩy", "uẫy", "uậy", "uây", "uắy", "uằy", "uẳy", "uẵy", "uặy", "uăy"]},
+            {key: "UC", forms: ["úc", "ùc", "ủc", "ũc", "ục", "uc", "úc", "ùc", "ủc", "ũc", "ục", "uc", "ức", "ừc", "ửc", "ữc", "ực", "ưc"]},
+            {key: "OAY", forms: ["oáy", "oày", "oảy", "oãy", "oạy", "oay", "oáy", "oày", "oảy", "oãy", "oạy", "oay", "oáy", "oày", "oảy", "oãy", "oạy", "oay"]},
+            {key: "OC", forms: ["óc", "òc", "ỏc", "õc", "ọc", "oc", "ốc", "ồc", "ổc", "ỗc", "ộc", "ôc", "ớc", "ờc", "ởc", "ỡc", "ợc", "ơc"]},
+            {key: "OE", forms: ["óe", "òe", "ỏe", "õe", "ọe", "oe", "óe", "òe", "ỏe", "õe", "ọe", "oe", "óe", "òe", "ỏe", "õe", "ọe", "oe"]},
+            {key: "OI", forms: ["ói", "òi", "ỏi", "õi", "ọi", "oi", "ối", "ồi", "ổi", "ỗi", "ội", "ôi", "ới", "ời", "ởi", "ỡi", "ợi", "ơi"]},
+            {key: "OM", forms: ["óm", "òm", "ỏm", "õm", "ọm", "om", "ốm", "ồm", "ổm", "ỗm", "ộm", "ôm", "ớm", "ờm", "ởm", "ỡm", "ợm", "ơm"]},
+            {key: "ON", forms: ["ón", "òn", "ỏn", "õn", "ọn", "on", "ốn", "ồn", "ổn", "ỗn", "ộn", "ôn", "ớn", "ờn", "ởn", "ỡn", "ợn", "ơn"]},
+            {key: "OAN", forms: ["oán", "oàn", "oản", "oãn", "oạn", "oan", "oán", "oàn", "oản", "oãn", "oạn", "oan", "oán", "oàn", "oản", "oãn", "oạn", "oan"]},
+            {key: "OANG", forms: ["oáng", "oàng", "oảng", "oãng", "oạng", "oang", "oáng", "oàng", "oảng", "oãng", "oạng", "oang", "oáng", "oàng", "oảng", "oãng", "oạng", "oang"]},
+            {key: "OANH", forms: ["oánh", "oành", "oảnh", "oãnh", "oạnh", "oanh", "oánh", "oành", "oảnh", "oãnh", "oạnh", "oanh", "oánh", "oành", "oảnh", "oãnh", "oạnh", "oanh"]},
+            {key: "OAT", forms: ["oát", "òat", "oảt", "oãt", "oạt", "oat", "oát", "òat", "oảt", "oãt", "oạt", "oat", "oát", "òat", "oảt", "oãt", "oạt", "oat"]},
+            {key: "Y", forms: ["ý", "ỳ", "ỷ", "ỹ", "ỵ", "y", "ý", "ỳ", "ỷ", "ỹ", "ỵ", "y", "ý", "ỳ", "ỷ", "ỹ", "ỵ", "y"]},
+            {key: "YEN", forms: ["yen", "yèn", "yẻn", "yẽn", "yẹn", "yen", "yên", "yền", "yển", "yễn", "yện", "yên", "yen", "yèn", "yẻn", "yẽn", "yẹn", "yen"]},
+            {key: "YET", forms: ["yét", "yèt", "yẻt", "yẽt", "yẹt", "yet", "yết", "yềt", "yểt", "yễt", "yệt", "yêt", "yét", "yèt", "yẻt", "yẽt", "yẹt", "yet"]},
+            {key: "YEU", forms: ["yêu", "yều", "yểu", "yễu", "yệu", "yeu", "yêu", "yều", "yểu", "yễu", "yệu", "yêu", "yêu", "yều", "yểu", "yễu", "yệu", "yeu"]},
+            {key: "UY", forms: ["úy", "ùy", "ủy", "ũy", "ụy", "uy", "úy", "ùy", "ủy", "ũy", "ụy", "uy", "ứy", "ừy", "ửy", "ữy", "ựy", "ưy"]},
+            {key: "UYET", forms: ["uyét", "uyèt", "uyẻt", "uyẽt", "uyẹt", "uyet", "uyết", "uyềt", "uyểt", "uyễt", "uyệt", "uyêt", "uyét", "uyèt", "uyẻt", "uyẽt", "uyẹt", "uyet"]},
+            {key: "AC", forms: ["ác", "àc", "ảc", "ãc", "ạc", "ac", "ấc", "ầc", "ẩc", "ẫc", "ậc", "âc", "ắc", "ằc", "ẳc", "ẵc", "ặc", "ăc"]},
+            {key: "ACH", forms: ["ách", "àch", "ảch", "ãch", "ạch", "ach", "ấch", "ầch", "ẩch", "ẫch", "ậch", "âch", "ắch", "ằch", "ẳch", "ẵch", "ặch", "ăch"]},
+            {key: "EC", forms: ["éc", "èc", "ẻc", "ẽc", "ẹc", "ec", "ếc", "ềc", "ểc", "ễc", "ệc", "êc", "éc", "èc", "ẻc", "ẽc", "ẹc", "ec"]},
+            {key: "ECH", forms: ["éch", "èch", "ẻch", "ẽch", "ẹch", "ech", "ếch", "ềch", "ểch", "ễch", "ệch", "êch", "éch", "èch", "ẻch", "ẽch", "ẹch", "ech"]},
+            {key: "ENG", forms: ["éng", "èng", "ẻng", "ẽng", "ẹng", "eng", "ếng", "ềng", "ểng", "ễng", "ệng", "êng", "éng", "èng", "ẻng", "ẽng", "ẹng", "eng"]},
+            {key: "ENH", forms: ["enh", "ènh", "ẻnh", "ẽnh", "ẹnh", "enh", "ếnh", "ềnh", "ểnh", "ễnh", "ệnh", "ênh", "enh", "ènh", "ẻnh", "ẽnh", "ẹnh", "enh"]},
+            {key: "EO", forms: ["éo", "èo", "ẻo", "ẽo", "ẹo", "eo", "éo", "èo", "ẻo", "ẽo", "ẹo", "eo", "éo", "èo", "ẻo", "ẽo", "ẹo", "eo"]},
+            {key: "EP", forms: ["ép", "èp", "ẻp", "ẽp", "ẹp", "ep", "ếp", "ềp", "ểp", "ễp", "ệp", "êp", "ép", "èp", "ẻp", "ẽp", "ẹp", "ep"]},
+            {key: "ET", forms: ["ét", "èt", "ẻt", "ẽt", "ẹt", "et", "ết", "ềt", "ểt", "ễt", "ệt", "êt", "ét", "èt", "ẻt", "ẽt", "ẹt", "et"]},
+            {key: "EU", forms: ["éu", "èu", "ẻu", "ẽu", "ẹu", "eu", "ếu", "ều", "ểu", "ễu", "ệu", "êu", "éu", "èu", "ẻu", "ẽu", "ẹu", "eu"]},
+            {key: "IAC", forms: ["iác", "iàc", "iảc", "iãc", "iạc", "iac", "iấc", "iầc", "iẩc", "iẫc", "iậc", "iâc", "iắc", "iằc", "iẳc", "iẵc", "iặc", "iăc"]},
+            {key: "ION", forms: ["ión", "ìon", "ỉon", "ĩon", "ịon", "ion", "ión", "ìon", "ỉon", "ĩon", "ịon", "ion", "ión", "ìon", "ỉon", "ĩon", "ịon", "ion"]},
+            {key: "IONG", forms: ["ióng", "ìong", "ỉong", "ĩong", "ịong", "iong", "ióng", "ìong", "ỉong", "ĩong", "ịong", "iong", "ióng", "ìong", "ỉong", "ĩong", "ịong", "iong"]},
+            {key: "IOT", forms: ["iót", "ìot", "ỉot", "ĩot", "ịot", "iot", "iót", "ìot", "ỉot", "ĩot", "ịot", "iot", "iót", "ìot", "ỉot", "ĩot", "ịot", "iot"]},
+            {key: "IP", forms: ["íp", "ìp", "ỉp", "ĩp", "ịp", "ip", "íp", "ìp", "ỉp", "ĩp", "ịp", "ip", "íp", "ìp", "ỉp", "ĩp", "ịp", "ip"]},
+            {key: "IT", forms: ["ít", "ìt", "ỉt", "ĩt", "ịt", "it", "ít", "ìt", "ỉt", "ĩt", "ịt", "it", "ít", "ìt", "ỉt", "ĩt", "ịt", "it"]},
+            {key: "IU", forms: ["iú", "ìu", "ỉu", "ĩu", "ịu", "iu", "iú", "ìu", "ỉu", "ĩu", "ịu", "iu", "iú", "ìu", "ỉu", "ĩu", "ịu", "iu"]},
+            {key: "IUA", forms: ["iúa", "iùa", "iủa", "iũa", "iụa", "iua", "iúa", "iùa", "iủa", "iũa", "iụa", "iua", "iúa", "iùa", "iủa", "iũa", "iụa", "iua"]},
+            {key: "IUC", forms: ["iúc", "iùc", "iủc", "iũc", "iục", "iuc", "iúc", "iùc", "iủc", "iũc", "iục", "iuc", "iúc", "iùc", "iủc", "iũc", "iục", "iuc"]},
+            {key: "IUI", forms: ["íui", "ìui", "ỉui", "ĩui", "ịui", "iui", "íui", "ìui", "ỉui", "ĩui", "ịui", "iui", "íui", "ìui", "ỉui", "ĩui", "ịui", "iui"]},
+            {key: "IUN", forms: ["iún", "iùn", "iủn", "iũn", "iụn", "iun", "iún", "iùn", "iủn", "iũn", "iụn", "iun", "iún", "iùn", "iủn", "iũn", "iụn", "iun"]},
+            {key: "IUONG", forms: ["íuong", "ìuong", "ỉuong", "ĩuong", "ịuong", "iuong", "íuong", "ìuong", "ỉuong", "ĩuong", "ịuong", "iuong", "iướng", "iường", "iưởng", "iưỡng", "iượng", "iương"]},
+            {key: "IUP", forms: ["iúp", "iùp", "iủp", "iũp", "iụp", "iup", "iúp", "iùp", "iủp", "iũp", "iụp", "iup", "íup", "ìup", "ỉup", "iũp", "iụp", "iup"]},
+            {key: "O", forms: ["ó", "ò", "ỏ", "õ", "ọ", "o", "ố", "ồ", "ổ", "ỗ", "ộ", "ô", "ớ", "ờ", "ở", "ỡ", "ợ", "ơ"]},
+            {key: "OA", forms: ["óa", "òa", "ỏa", "õa", "ọa", "oa", "óa", "òa", "ỏa", "õa", "ọa", "oa", "óa", "òa", "ỏa", "õa", "ọa", "oa"]},
+            {key: "OAC", forms: ["oác", "oàc", "oảc", "oãc", "oạc", "oac", "oác", "oàc", "oảc", "oãc", "oạc", "oac", "oắc", "oằc", "oẳc", "oẵc", "oặc", "oăc"]},
+            {key: "OACH", forms: ["oách", "oàch", "oảch", "oãch", "oạch", "oach", "oách", "oàch", "oảch", "oãch", "oạch", "oach", "oách", "oàch", "oảch", "oãch", "oạch", "oach"]},
+            {key: "OAI", forms: ["oái", "oài", "oải", "oãi", "oại", "oai", "oái", "oài", "oải", "oãi", "oại", "oai", "oái", "oài", "oải", "oãi", "oại", "oai"]},
+            {key: "OAM", forms: ["oám", "oàm", "oảm", "oãm", "oạm", "oam", "oám", "oàm", "oảm", "oãm", "oạm", "oam", "oám", "oàm", "oảm", "oãm", "oạm", "oam"]},
+            {key: "OEN", forms: ["oén", "oèn", "oẻn", "oẽn", "oẹn", "oen", "oến", "oền", "oển", "oễn", "oện", "oên", "oén", "oèn", "oẻn", "oẽn", "oẹn", "oen"]},
+            {key: "OEO", forms: ["oéo", "oèo", "oẻo", "oẽo", "oẹo", "oeo", "oếo", "oềo", "oểo", "oễo", "oệo", "oêo", "oéo", "oèo", "oẻo", "oẽo", "oẹo", "oeo"]},
+            {key: "OET", forms: ["oét", "oèt", "oẻt", "oẽt", "oẹt", "oet", "oết", "oềt", "oểt", "oễt", "oệt", "oêt", "oét", "oèt", "oẻt", "oẽt", "oẹt", "oet"]},
+            {key: "OOC", forms: ["oóc", "oòc", "oỏc", "oõc", "oọc", "ooc", "oóc", "oòc", "oỏc", "oõc", "oọc", "ooc", "oóc", "oòc", "oỏc", "oõc", "oọc", "ooc"]},
+            {key: "OONG", forms: ["oóng", "oòng", "oỏng", "oõng", "oọng", "oong", "oóng", "oòng", "oỏng", "oõng", "oọng", "oong", "oóng", "oòng", "oỏng", "oõng", "oọng", "oong"]},
+            {key: "UAC", forms: ["uác", "uàc", "uảc", "uãc", "uạc", "uac", "uấc", "uầc", "uẩc", "uẫc", "uậc", "uâc", "uắc", "uằc", "uẳc", "uẵc", "uặc", "uăc"]},
+            {key: "UACH", forms: ["uách", "uàch", "uảch", "uãch", "uạch", "uach", "uấch", "uầch", "uẩch", "uẫch", "uậch", "uâch", "uắch", "uằch", "uẳch", "uẵch", "uặch", "uăch"]},
+            {key: "UAI", forms: ["uái", "uài", "uải", "uãi", "uại", "uai", "uấi", "uầi", "uẩi", "uẫi", "uậi", "uâi", "uái", "uài", "uải", "uãi", "uại", "uai"]},
+            {key: "UAM", forms: ["uám", "uàm", "uảm", "uãm", "uạm", "uam", "uấm", "uầm", "uẩm", "uẫm", "uậm", "uâm", "uám", "uàm", "uảm", "uãm", "uạm", "uam"]},
+            {key: "UAO", forms: ["uáo", "uào", "uảo", "uão", "uạo", "uao", "uáo", "uào", "uảo", "uão", "uạo", "uao", "uáo", "uào", "uảo", "uão", "uạo", "uao"]},
+            {key: "UAT", forms: ["uát", "uàt", "uảt", "uãt", "uạt", "uat", "uất", "uầt", "uẩt", "uẫt", "uật", "uât", "uắt", "uằt", "uẳt", "uẵt", "uặt", "uăt"]},
+            {key: "UECH", forms: ["uéch", "uèch", "uẻch", "uẽch", "uẹch", "uech", "uếch", "uềch", "uểch", "uễch", "uệch", "uêch", "uéch", "uèch", "uẻch", "uẽch", "uẹch", "uech"]},
+            {key: "UENH", forms: ["uénh", "uènh", "uẻnh", "uẽnh", "uẹnh", "uenh", "uếnh", "uềnh", "uểnh", "uễnh", "uệnh", "uênh", "uénh", "uènh", "uẻnh", "uẽnh", "uẹnh", "uenh"]},
+            {key: "UEO", forms: ["uéo", "uèo", "uẻo", "uẽo", "uẹo", "ueo", "uếo", "uềo", "uểo", "uễo", "uệo", "uêo", "uéo", "uèo", "uẻo", "uẽo", "uẹo", "ueo"]},
+            {key: "UET", forms: ["uét", "uèt", "uẻt", "uẽt", "uẹt", "uet", "uết", "uềt", "uểt", "uễt", "uệt", "uêt", "uét", "uèt", "uẻt", "uẽt", "uẹt", "uet"]},
+            {key: "UOM", forms: ["uóm", "uòm", "uỏm", "uõm", "uọm", "uom", "uốm", "uồm", "uổm", "uỗm", "uộm", "uôm", "ướm", "ườm", "ưởm", "ưỡm", "ượm", "ươm"]},
+            {key: "UOP", forms: ["uóp", "uòp", "uỏp", "uõp", "uọp", "uop", "uốp", "uồp", "uổp", "uỗp", "uộp", "uôp", "ướp", "ườp", "ưởp", "ưỡp", "ượp", "ươp"]},
+            {key: "OUT", forms: ["óut", "òut", "ỏut", "õut", "ọut", "out", "óut", "òut", "ỏut", "õut", "ọut", "out", "óut", "òut", "ỏut", "õut", "ọut", "out"]},
+            {key: "UOU", forms: ["uóu", "uòu", "uỏu", "uõu", "uọu", "uou", "uốu", "uồu", "uổu", "uỗu", "uộu", "uôu", "ướu", "ườu", "ưởu", "ưỡu", "ượu", "ươu"]},
+            {key: "UP", forms: ["úp", "ùp", "ủp", "ũp", "ụp", "up", "úp", "ùp", "ủp", "ũp", "ụp", "up", "ứp", "ừp", "ửp", "ữp", "ựp", "ưp"]},
+            {key: "UT", forms: ["út", "ùt", "ủt", "ũt", "ụt", "ut", "út", "ùt", "ủt", "ũt", "ụt", "ut", "ứt", "ừt", "ửt", "ữt", "ựt", "ưt"]},
+            {key: "UU", forms: ["úu", "ùu", "ủu", "ũu", "ụu", "uu", "úu", "ùu", "ủu", "ũu", "ụu", "uu", "ứu", "ừu", "ửu", "ữu", "ựu", "ưu"]},
+            {key: "UYA", forms: ["uýa", "uỳa", "uỷa", "uỹa", "uỵa", "uya", "uýa", "uỳa", "uỷa", "uỹa", "uỵa", "uya", "uýa", "uỳa", "uỷa", "uỹa", "uỵa", "uya"]},
+            {key: "UYCH", forms: ["uých", "uỳch", "uỷch", "uỹch", "uỵch", "uych", "uých", "uỳch", "uỷch", "uỹch", "uỵch", "uych", "uých", "uỳch", "uỷch", "uỹch", "uỵch", "uych"]},
+            {key: "UYEN", forms: ["uyén", "uyèn", "uyẻn", "uyẽn", "uyẹn", "uyen", "uyến", "uyền", "uyển", "uyễn", "uyện", "uyên", "uyén", "uyèn", "uyẻn", "uyẽn", "uyẹn", "uyen"]},
+            {key: "UYET", forms: ["uyét", "uyèt", "uyẻt", "uyẽt", "uyẹt", "uyet", "uyết", "uyềt", "uyểt", "uyễt", "uyệt", "uyêt", "uyét", "uyèt", "uyẻt", "uyẽt", "uyẹt", "uyet"]},
+            {key: "UYNH", forms: ["uýnh", "uỳnh", "uỷnh", "uỹnh", "uỵnh", "uynh", "uýnh", "uỳnh", "uỷnh", "uỹnh", "uỵnh", "uynh", "uýnh", "uỳnh", "uỷnh", "uỹnh", "uỵnh", "uynh"]},
+            {key: "UYP", forms: ["uýp", "uỳp", "uỷp", "uỹp", "uỵp", "uyp", "uýp", "uỳp", "uỷp", "uỹp", "uỵp", "uyp", "uýp", "uỳp", "uỷp", "uỹp", "uỵp", "uyp"]},
+            {key: "UYT", forms: ["uýt", "uỳt", "uỷt", "uỹt", "uỵt", "uyt", "uýt", "uỳt", "uỷt", "uỹt", "uỵt", "uyt", "uýt", "uỳt", "uỷt", "uỹt", "uỵt", "uyt"]},
+            {key: "UYU", forms: ["uýu", "uỳu", "uỷu", "uỹu", "uỵu", "uyu", "uýu", "uỳu", "uỷu", "uỹu", "uỵu", "uyu", "uýu", "uỳu", "uỷu", "uỹu", "uỵu", "uyu"]},
+            {key: "YEM", forms: ["yém", "yèm", "yẻm", "yẽm", "yẹm", "yem", "yếm", "yềm", "yểm", "yễm", "yệm", "yêm", "yém", "yèm", "yẻm", "yẽm", "yẹm", "yem"]},
+            {key: "OAP", forms: ["oáp", "oàp", "oảp", "oãp", "oạp", "oap", "oáp", "oàp", "oảp", "oãp", "oạp", "oap", "oáp", "oàp", "oảp", "oãp", "oạp", "oap"]}
+        ];
+
+        // Ánh xạ trạng thái MPU
+        const mpuStateMap = {
+            "Up": 0,
+            "Down": 1,
+            "Left": 2,
+            "Right": 3,
+            "Forward": 4,
+            "Backward": 5
+        };
+
+        // Đề xuất cụm từ
+        const commonPhrases = [
+            "Xin chào, rất vui được gặp bạn",
+            "Bạn khỏe không?",
+            "Cảm ơn bạn rất nhiều",
+            "Làm ơn cho tôi hỏi đường",
+            "Chúc một ngày tốt lành",
+            "Tôi yêu ngôn ngữ này",
+            "Hẹn gặp lại sau",
+            "Tôi đói bụng",
+            "Bao nhiêu tiền?",
+            "Tôi không hiểu"
+        ];
+
+        // Biến tổng hợp giọng nói
+        let isSpeaking = false;
+        let currentSpeech = null;
+        let audioVisualizerInterval = null;
+        
+        // Chế độ TTS
+        let useGeminiTTS = true;
+        
+        // Cài đặt giọng nói hiện tại
+        let currentVoice = {
+            lang: 'vi-VN',
+            gender: 'male'
+        };
+
+        // === HÀM CALIBRATION ===
+        function startCalibration() {
+            if (isCalibrating) return;
             
-            // === BIẾN TOÀN CỤC TỐI ƯU ===
-            const FIREBASE_URL = "https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/sensorData.json";
+            isCalibrating = true;
+            calibrationCountdown = 10;
+            calibrationStartTime = Date.now();
+            calibrationMaxValues = [0, 0, 0, 0];
+            calibrationCurrentSensor = 0;
+            calibrationStep = "calibrating";
             
-            // Biến state - tối ưu để truy cập nhanh
-            let state = {
-                // Firebase
-                firebaseData: null,
-                lastUpdateTime: 0,
-                autoRefresh: true,
-                pollingInterval: 300,
-                turboMode: false,
-                
-                // Sensor
-                flexStates: [0, 0, 0, 0],
-                bentThresholds: [300, 450, 350, 300],
-                straightThresholds: [150, 150, 150, 100],
-                
-                // Word construction
-                slot1: '',
-                slot2: '',
-                displayBuffer: '',
-                sentenceWords: [],
-                fullSentence: '',
-                convertedFullSentence: '',
-                
-                // Calibration
-                isCalibrating: false,
-                calibrationMaxValues: [0, 0, 0, 0],
-                calibrationCountdown: 10,
-                calibrationInterval: null,
-                
-                // Performance
-                frameCount: 0,
-                lastFrameTime: performance.now(),
-                currentFPS: 60,
-                isFetching: false,
-                uiUpdateScheduled: false,
-                
-                // Cache
-                mappingCache: new Map(),
-                vietnameseCache: new Map()
-            };
+            // Hiển thị giao diện calibration
+            document.getElementById('calibrationProgress').style.display = 'block';
+            document.getElementById('calibrateBtn').style.display = 'none';
+            document.getElementById('stopCalibrateBtn').style.display = 'inline-block';
             
-            // === BẢNG DỮ LIỆU TỐI ƯU ===
-            const tables = {
-                A: ["IAY","IC","ICH","IE","IEC","IEM","IEN","IENG","IEO","IEP","IET","IEU","IM","IN","ING","INH","IO","IOI",
-                    "ENG","ENH","EO","EP","ET","EU","I","IA","IAC","IAI","IAM","IAN","IANG","IANH","IAO","IAP","IAT","IAU",
-                    "AP","AT","AU","AY","E","EC","ECH","EM","EN","A","AC","ACH","AI","AM","AN","ANG","ANH","AO",
-                    "IUN","IUONG","IUP","O","OA","OAC","OACH","OAI","OAM","ION","IONG","IOT","IP","IT","IU","IUA","IUC","IUI"],
-                
-                B: ["UE","UECH","UEN","UENH","UEO","UET","UI","UM","UN","UNG","UO","UOC","UOI","UOM","UON","UONG","UOP","OUT",
-                    "ONG","OOC","OONG","OP","OT","U","UA","UAC","UACH","UAI","UAM","UAN","UANG","UANH","UAO","UAT","UAY","UC",
-                    "OAY","OC","OE","OEN","OEO","OET","OI","OM","ON","COMMIT","_",null,null,"OAN","OANG","OANH","OAP","OAT",
-                    "UYNH","UYP","UYT","UYU","Y","YEM","YEN","YET","YEU","UOU","UP","UT","UU","UY","UYA","UYCH","UYEN","UYET"],
-                    
-                C: [["B","C","D"],["Đ","G","H"],["K","L","M"],["N","P","Q"],["R","S","T"],["V","X","CH"],
-                    ["GH","KH","NG"],["NGH","NH","PH"],["TH","TR","_"]]
-            };
+            // Cập nhật trạng thái
+            updateCalibrationStatus("calibrating", "Đang calibration... Vui lòng uốn tất cả ngón tay hết mức có thể!");
             
-            // === HÀM TỐI ƯU - ĐƯỢC ĐẶT GẦN NHAU ĐỂ TĂNG TỐC ===
+            // Tạo display cho các sensor
+            const display = document.getElementById('calibrationDisplay');
+            display.innerHTML = '';
             
-            // 1. Firebase functions
-            async function fetchFirebaseData() {
-                if (state.isFetching) return;
-                state.isFetching = true;
-                
-                const startTime = performance.now();
-                try {
-                    const response = await fetch(FIREBASE_URL + '?t=' + Date.now(), {
-                        method: 'GET',
-                        headers: {'Cache-Control': 'no-cache'}
-                    });
-                    
-                    if (!response.ok) throw new Error('HTTP ' + response.status);
-                    
-                    const data = await response.json();
-                    const fetchTime = performance.now() - startTime;
-                    
-                    // Update latency
-                    document.getElementById('latency').textContent = Math.round(fetchTime);
-                    
-                    // Process if data changed
-                    if (JSON.stringify(data) !== JSON.stringify(state.firebaseData)) {
-                        state.firebaseData = data;
-                        state.lastUpdateTime = Date.now();
-                        
-                        // Fast processing
-                        processSensorDataFast(data);
-                        scheduleUIUpdate();
-                        
-                        // Adjust polling
-                        if (fetchTime < 100) {
-                            state.pollingInterval = state.turboMode ? 100 : 200;
-                        }
-                    }
-                    
-                    updateConnectionStatus(true);
-                    return data;
-                } catch (error) {
-                    updateConnectionStatus(false);
-                    state.pollingInterval = Math.min(state.pollingInterval * 1.5, 5000);
-                    return null;
-                } finally {
-                    state.isFetching = false;
-                    document.getElementById('lastUpdate').textContent = 
-                        'Cập nhật: ' + formatTime(Date.now());
-                }
+            for (let i = 0; i < 4; i++) {
+                const sensorDiv = document.createElement('div');
+                sensorDiv.className = 'sensor-calibration';
+                sensorDiv.id = `calibrationSensor${i}`;
+                sensorDiv.innerHTML = `
+                    <div class="sensor-name">FLEX ${i}</div>
+                    <div class="sensor-value">0</div>
+                    <div class="sensor-max">Max: 0</div>
+                    <div class="progress-container">
+                        <div class="progress-bar" id="progressBar${i}" style="width: 0%"></div>
+                    </div>
+                `;
+                display.appendChild(sensorDiv);
             }
             
-            function processSensorDataFast(data) {
-                // Update MPU
-                if (data.o) document.getElementById('mpuOrientation').textContent = data.o;
-                if (data.sf) document.getElementById('isShaking').textContent = data.sf;
-                
-                // Update flex sensors
-                if (data.f0 !== undefined) {
-                    const flexValues = [data.f0, data.f1 || 0, data.f2 || 0, data.f3 || 0];
-                    const rawValuesElement = document.getElementById('rawValues');
-                    
-                    // Update states
-                    for (let i = 0; i < 4; i++) {
-                        const newState = calculateFlexState(flexValues[i], i);
-                        if (state.flexStates[i] !== newState) {
-                            state.flexStates[i] = newState;
-                            document.getElementById('flex' + i + '-box').textContent = newState;
-                            document.getElementById('flex' + i + '-box').className = 'flex-box active-' + newState;
-                        }
-                    }
-                    
-                    // Update raw values display
-                    rawValuesElement.textContent = flexValues.join(',');
-                }
-            }
+            // Bắt đầu đếm ngược
+            calibrationInterval = setInterval(updateCalibration, 1000);
             
-            function calculateFlexState(rawValue, sensorIndex) {
-                if (rawValue <= state.straightThresholds[sensorIndex]) return 0;
-                if (rawValue <= state.bentThresholds[sensorIndex]) return 1;
-                return 2;
-            }
+            // Cập nhật thông báo
+            document.getElementById('calibrationMessage').textContent = `Đang calibration... Vui lòng uốn TẤT CẢ ngón tay hết mức!`;
             
-            // 2. Word construction functions
-            function getMapping(mpu, a0, a1, a2, a3) {
-                if (a3 === 2) {
-                    if (a0 < 3 && a1 < 3 && a2 < 3) {
-                        return tables.C[a0 * 3 + a1] ? tables.C[a0 * 3 + a1][a2] : null;
-                    }
-                    return null;
-                }
-                
-                const a3bin = a3 === 1 ? 1 : 0;
-                if (mpu < 0 || mpu > 7 || a1 < 0 || a1 >= 3 || a2 < 0 || a2 >= 3) return null;
-                
-                const flatIndex = mpu * 9 + a1 * 3 + a2;
-                return a3bin === 0 ? tables.A[flatIndex] : tables.B[flatIndex];
-            }
+            log('CALIBRATION', 'Bắt đầu calibration cảm biến uốn');
+        }
+
+        function updateCalibration() {
+            if (!isCalibrating) return;
             
-            function updateDisplayBuffer() {
-                const oldBuffer = state.displayBuffer;
-                state.displayBuffer = (state.slot1 + state.slot2).toLowerCase();
-                
-                if (oldBuffer !== state.displayBuffer) {
-                    document.getElementById('displayBuffer').textContent = state.displayBuffer || '---';
-                    // Simple conversion for demo
-                    document.getElementById('convertedCurrentWord').textContent = 
-                        state.displayBuffer.replace(/_/g, ' ') || '---';
-                }
-            }
+            calibrationCountdown--;
+            document.getElementById('calibrationCountdown').textContent = calibrationCountdown;
             
-            function addWordToSentence() {
-                if (!state.displayBuffer || state.displayBuffer === "---") return;
-                
-                if (state.sentenceWords.length < 10) {
-                    state.sentenceWords.push(state.displayBuffer);
-                    state.fullSentence = state.sentenceWords.join(' ');
-                    state.convertedFullSentence = state.fullSentence.replace(/_/g, ' ');
-                    
-                    // Update UI
-                    document.getElementById('sentenceDisplay').textContent = state.fullSentence || '---';
-                    document.getElementById('convertedSentenceDisplay').textContent = state.convertedFullSentence || '---';
-                    document.getElementById('wordCount').textContent = state.sentenceWords.length;
-                    
-                    // Update word list
-                    const wordListDiv = document.getElementById('wordList');
-                    wordListDiv.innerHTML = state.sentenceWords.map(word => 
-                        `<div style="display:inline-block;padding:5px 10px;margin:3px;background:#e3f2fd;border-radius:15px;">${word}</div>`
-                    ).join('');
-                    
-                    // Clear for next word
-                    state.slot1 = '';
-                    state.slot2 = '';
-                    state.displayBuffer = '';
-                    document.getElementById('displayBuffer').textContent = '---';
-                    document.getElementById('convertedCurrentWord').textContent = '---';
-                }
-            }
+            // Cập nhật thanh tiến trình
+            const progress = ((10 - calibrationCountdown) / 10) * 100;
+            document.getElementById('calibrationProgressBar').style.width = `${progress}%`;
             
-            function commitSentence() {
-                if (state.sentenceWords.length === 0) return;
+            // Cập nhật giá trị cảm biến nếu có dữ liệu
+            if (firebaseData) {
+                const flexValues = [firebaseData.f0 || 0, firebaseData.f1 || 0, firebaseData.f2 || 0, firebaseData.f3 || 0];
                 
-                // Add any pending word
-                if (state.displayBuffer && state.displayBuffer !== "---") {
-                    addWordToSentence();
-                }
-                
-                // Auto-translate
-                document.getElementById('translationInput').value = state.convertedFullSentence;
-                translateSentence();
-                
-                // Reset
-                state.sentenceWords = [];
-                state.fullSentence = '';
-                state.convertedFullSentence = '';
-                document.getElementById('sentenceDisplay').textContent = '---';
-                document.getElementById('convertedSentenceDisplay').textContent = '---';
-                document.getElementById('wordCount').textContent = '0';
-                document.getElementById('wordList').innerHTML = 'Chưa có từ nào';
-            }
-            
-            function clearCurrentWord() {
-                state.slot1 = '';
-                state.slot2 = '';
-                state.displayBuffer = '';
-                document.getElementById('displayBuffer').textContent = '---';
-                document.getElementById('convertedCurrentWord').textContent = '---';
-            }
-            
-            function backspace() {
-                if (state.displayBuffer.length > 0) {
-                    state.displayBuffer = state.displayBuffer.slice(0, -1);
-                    document.getElementById('displayBuffer').textContent = state.displayBuffer || '---';
-                }
-            }
-            
-            // 3. Calibration functions
-            function startCalibration() {
-                if (state.isCalibrating) return;
-                
-                state.isCalibrating = true;
-                state.calibrationCountdown = 10;
-                state.calibrationMaxValues = [0, 0, 0, 0];
-                
-                // Show UI
-                document.getElementById('calibrationProgress').style.display = 'block';
-                document.getElementById('calibrateBtn').style.display = 'none';
-                document.getElementById('calibrationStatus').innerHTML = 
-                    '<div class="calibrating">ĐANG CALIBRATION</div>';
-                
-                // Create sensor displays
-                const display = document.getElementById('calibrationDisplay');
-                display.innerHTML = '';
                 for (let i = 0; i < 4; i++) {
-                    display.innerHTML += `
-                        <div class="sensor-calibration" id="calSensor${i}">
-                            <div>FLEX ${i}</div>
-                            <div style="font-size:1.5rem;font-weight:bold;" id="calValue${i}">0</div>
-                            <div style="font-size:0.9rem;color:#666;" id="calMax${i}">Max: 0</div>
-                        </div>`;
-                }
-                
-                // Start countdown
-                state.calibrationInterval = setInterval(updateCalibration, 1000);
-            }
-            
-            function updateCalibration() {
-                if (!state.isCalibrating) return;
-                
-                state.calibrationCountdown--;
-                document.getElementById('calibrationCountdown').textContent = state.calibrationCountdown;
-                
-                // Update progress
-                const progress = ((10 - state.calibrationCountdown) / 10) * 100;
-                document.getElementById('calibrationProgressBar').style.width = progress + '%';
-                
-                // Update sensor values
-                if (state.firebaseData) {
-                    const flexValues = [
-                        state.firebaseData.f0 || 0,
-                        state.firebaseData.f1 || 0,
-                        state.firebaseData.f2 || 0,
-                        state.firebaseData.f3 || 0
-                    ];
+                    // Cập nhật giá trị hiện tại
+                    const valueElement = document.querySelector(`#calibrationSensor${i} .sensor-value`);
+                    if (valueElement) {
+                        valueElement.textContent = flexValues[i];
+                    }
                     
-                    for (let i = 0; i < 4; i++) {
-                        document.getElementById('calValue' + i).textContent = flexValues[i];
+                    // Cập nhật giá trị lớn nhất
+                    if (flexValues[i] > calibrationMaxValues[i]) {
+                        calibrationMaxValues[i] = flexValues[i];
+                        const maxElement = document.querySelector(`#calibrationSensor${i} .sensor-max`);
+                        if (maxElement) {
+                            maxElement.textContent = `Max: ${flexValues[i]}`;
+                            maxElement.style.color = '#F44336';
+                        }
+                    }
+                    
+                    // Cập nhật thanh tiến trình cho từng sensor
+                    const progressValue = Math.min((flexValues[i] / 1024) * 100, 100);
+                    const progressBar = document.getElementById(`progressBar${i}`);
+                    if (progressBar) {
+                        progressBar.style.width = `${progressValue}%`;
                         
-                        if (flexValues[i] > state.calibrationMaxValues[i]) {
-                            state.calibrationMaxValues[i] = flexValues[i];
-                            document.getElementById('calMax' + i).textContent = 'Max: ' + flexValues[i];
-                            document.getElementById('calMax' + i).style.color = '#F44336';
+                        // Thay đổi màu dựa trên mức độ uốn
+                        if (progressValue < 30) {
+                            progressBar.style.background = '#4CAF50'; // Thẳng
+                        } else if (progressValue < 70) {
+                            progressBar.style.background = '#FF9800'; // Hơi uốn
+                        } else {
+                            progressBar.style.background = '#F44336'; // Uốn hết
                         }
                     }
                 }
-                
-                // Finish
-                if (state.calibrationCountdown <= 0) {
-                    finishCalibration();
+            }
+            
+            // Kiểm tra kết thúc calibration
+            if (calibrationCountdown <= 0) {
+                finishCalibration();
+            }
+        }
+
+        function finishCalibration() {
+            isCalibrating = false;
+            clearInterval(calibrationInterval);
+            calibrationStep = "done";
+            
+            // Cập nhật bentThresholds với giá trị mới
+            let hasValidCalibration = false;
+            for (let i = 0; i < 4; i++) {
+                if (calibrationMaxValues[i] > STRAIGHT_THRESHOLDS[i] + 50) {
+                    bentThresholds[i] = calibrationMaxValues[i];
+                    hasValidCalibration = true;
+                } else {
+                    log('CALIBRATION', `Cảm biến ${i} không có dữ liệu calibration hợp lệ (Max: ${calibrationMaxValues[i]})`);
                 }
             }
             
-            function finishCalibration() {
-                clearInterval(state.calibrationInterval);
-                state.isCalibrating = false;
+            if (hasValidCalibration) {
+                // Lưu calibration vào localStorage
+                localStorage.setItem('bentThresholds', JSON.stringify(bentThresholds));
                 
-                // Update thresholds
-                for (let i = 0; i < 4; i++) {
-                    if (state.calibrationMaxValues[i] > state.straightThresholds[i] + 50) {
-                        state.bentThresholds[i] = state.calibrationMaxValues[i];
-                    }
-                }
+                // Cập nhật giao diện với threshold mới
+                updateThresholdDisplay();
                 
-                // Save to localStorage
-                localStorage.setItem('bentThresholds', JSON.stringify(state.bentThresholds));
+                // Cập nhật trạng thái
+                updateCalibrationStatus("calibrated", `Calibration hoàn thành! Threshold đã được cập nhật.`);
                 
-                // Update UI
+                log('CALIBRATION', `Calibration hoàn thành: ${bentThresholds}`);
+                
+                // Ẩn phần calibration sau 3 giây
+                setTimeout(() => {
+                    document.getElementById('calibrationProgress').style.display = 'none';
+                    document.getElementById('calibrateBtn').style.display = 'inline-block';
+                    document.getElementById('stopCalibrateBtn').style.display = 'none';
+                }, 3000);
+            } else {
+                updateCalibrationStatus("error", "Calibration thất bại! Không có dữ liệu hợp lệ. Vui lòng thử lại.");
+                log('CALIBRATION', 'Calibration thất bại: Không có dữ liệu hợp lệ');
+                
+                setTimeout(() => {
+                    document.getElementById('calibrationProgress').style.display = 'none';
+                    document.getElementById('calibrateBtn').style.display = 'inline-block';
+                    document.getElementById('stopCalibrateBtn').style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        function stopCalibration() {
+            if (isCalibrating) {
+                isCalibrating = false;
+                clearInterval(calibrationInterval);
+                
+                updateCalibrationStatus("ready", "Calibration đã dừng");
+                
                 document.getElementById('calibrationProgress').style.display = 'none';
                 document.getElementById('calibrateBtn').style.display = 'inline-block';
-                document.getElementById('calibrationStatus').innerHTML = 
-                    '<div class="calibrated">ĐÃ CALIBRATION</div>';
+                document.getElementById('stopCalibrateBtn').style.display = 'none';
                 
-                // Hide after 2 seconds
-                setTimeout(() => {
-                    document.getElementById('calibrationStatus').innerHTML = 
-                        '<div class="calibration-ready">Sẵn sàng</div>';
-                }, 2000);
+                log('CALIBRATION', 'Calibration đã dừng bởi người dùng');
             }
+        }
+
+        function resetCalibration() {
+            bentThresholds = [300, 450, 350, 300];
+            localStorage.removeItem('bentThresholds');
             
-            function resetCalibration() {
-                state.bentThresholds = [300, 450, 350, 300];
-                localStorage.removeItem('bentThresholds');
-                document.getElementById('calibrationStatus').innerHTML = 
-                    '<div class="calibration-ready">Đã reset</div>';
-            }
+            updateThresholdDisplay();
+            updateCalibrationStatus("ready", "Đã reset về giá trị mặc định");
             
-            // 4. Translation functions
-            async function translateSentence() {
-                const text = document.getElementById('translationInput').value.trim();
-                if (!text) {
-                    document.getElementById('translationOutput').textContent = 'Vui lòng nhập văn bản';
-                    document.getElementById('translationOutput').style.color = '#F44336';
-                    return;
-                }
-                
-                const targetLang = document.getElementById('targetLanguage').value;
-                const outputDiv = document.getElementById('translationOutput');
-                
-                outputDiv.textContent = 'Đang dịch...';
-                outputDiv.style.color = '#2196F3';
-                
+            log('CALIBRATION', 'Reset calibration về giá trị mặc định');
+        }
+
+        function loadCalibration() {
+            const savedThresholds = localStorage.getItem('bentThresholds');
+            if (savedThresholds) {
                 try {
-                    // Simple mock translation for speed
-                    const translations = {
-                        'en-GB': 'Translated to English: ' + text,
-                        'ja-JP': '日本語訳: ' + text,
-                        'ko-KR': '한국어 번역: ' + text,
-                        'zh-CN': '中文翻译: ' + text
-                    };
+                    bentThresholds = JSON.parse(savedThresholds);
+                    updateThresholdDisplay();
+                    updateCalibrationStatus("calibrated", "Đã tải calibration từ bộ nhớ");
+                    log('CALIBRATION', `Đã tải calibration: ${bentThresholds}`);
+                } catch (e) {
+                    log('CALIBRATION', `Lỗi khi tải calibration: ${e.message}`);
+                }
+            } else {
+                updateCalibrationStatus("ready", "Không tìm thấy calibration đã lưu");
+                log('CALIBRATION', 'Không tìm thấy calibration đã lưu');
+            }
+        }
+
+        function updateThresholdDisplay() {
+            for (let i = 0; i < 4; i++) {
+                document.getElementById(`currentThreshold${i}`).textContent = bentThresholds[i];
+            }
+        }
+
+        function updateCalibrationStatus(status, message) {
+            const statusDiv = document.getElementById('calibrationStatus');
+            statusDiv.innerHTML = '';
+            
+            let statusClass = "";
+            let statusText = "";
+            
+            switch(status) {
+                case "calibrating":
+                    statusClass = "calibrating";
+                    statusText = "ĐANG CALIBRATION";
+                    break;
+                case "calibrated":
+                    statusClass = "calibrated";
+                    statusText = "ĐÃ CALIBRATION";
+                    break;
+                case "error":
+                    statusClass = "calibration-error";
+                    statusText = "LỖI CALIBRATION";
+                    break;
+                default:
+                    statusClass = "calibration-ready";
+                    statusText = "SẴN SÀNG";
+            }
+            
+            const div = document.createElement('div');
+            div.className = statusClass;
+            div.innerHTML = `
+                <div>${statusText}</div>
+                <div style="font-size: 0.9rem; margin-top: 5px;">${message}</div>
+            `;
+            statusDiv.appendChild(div);
+        }
+
+        // === HÀM TỐI ƯU HÓA FIREBASE (giữ nguyên) ===
+        async function fetchFirebaseDataOptimized() {
+            if (isFetching) return null;
+            
+            // Hủy request trước nếu đang chạy
+            if (currentFetchController) {
+                currentFetchController.abort();
+            }
+            
+            isFetching = true;
+            const startTime = performance.now();
+            currentFetchController = new AbortController();
+            const signal = currentFetchController.signal;
+            
+            try {
+                // Thêm timestamp để tránh cache
+                const timestamp = Date.now();
+                const url = `${FIREBASE_URL}?t=${timestamp}`;
+                
+                const response = await fetch(url, {
+                    signal,
+                    method: 'GET',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    },
+                    priority: 'high'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                const fetchTime = performance.now() - startTime;
+                
+                // Cập nhật thông tin độ trễ
+                document.getElementById('latency').textContent = Math.round(fetchTime);
+                
+                // Chỉ xử lý nếu dữ liệu thay đổi
+                if (JSON.stringify(data) !== JSON.stringify(lastFirebaseData)) {
+                    lastFirebaseData = data;
+                    firebaseData = data;
+                    lastUpdateTime = Date.now();
                     
-                    // Simulate network delay
-                    setTimeout(() => {
-                        outputDiv.textContent = translations[targetLang] || 'Translation not available';
-                        outputDiv.style.color = '#4CAF50';
-                    }, 500);
+                    updateConnectionStatus(true);
                     
-                } catch (error) {
-                    outputDiv.textContent = 'Lỗi dịch thuật';
-                    outputDiv.style.color = '#F44336';
-                }
-            }
-            
-            function clearTranslation() {
-                document.getElementById('translationOutput').textContent = 'Đang chờ dịch...';
-                document.getElementById('translationOutput').style.color = '#2196F3';
-                document.getElementById('translationInput').value = '';
-            }
-            
-            // 5. UI and control functions
-            function refreshData() {
-                fetchFirebaseData();
-            }
-            
-            function toggleAutoRefresh() {
-                state.autoRefresh = !state.autoRefresh;
-                const btn = document.getElementById('autoRefreshBtn');
-                
-                if (state.autoRefresh) {
-                    btn.textContent = 'Tự động: BẬT';
-                    btn.className = 'green';
-                    startAutoRefresh();
-                } else {
-                    btn.textContent = 'Tự động: TẮT';
-                    btn.className = 'red';
-                }
-            }
-            
-            function startAutoRefresh() {
-                if (!state.autoRefresh) return;
-                
-                function scheduleNext() {
-                    if (!state.autoRefresh) return;
+                    // Xử lý nhanh, không chờ UI update
+                    processDataImmediately(data);
                     
-                    setTimeout(() => {
-                        fetchFirebaseData().then(() => {
-                            if (state.autoRefresh) scheduleNext();
-                        });
-                    }, state.pollingInterval);
-                }
-                
-                scheduleNext();
-            }
-            
-            function scheduleUIUpdate() {
-                if (!state.uiUpdateScheduled) {
-                    state.uiUpdateScheduled = true;
-                    requestAnimationFrame(() => {
-                        // Just update time for performance
-                        document.getElementById('lastUpdate').textContent = 
-                            'Cập nhật: ' + formatTime(Date.now());
-                        state.uiUpdateScheduled = false;
-                    });
-                }
-            }
-            
-            function updateConnectionStatus(connected) {
-                const indicator = document.getElementById('connectionStatus');
-                const statusText = document.getElementById('statusText');
-                
-                if (connected) {
-                    indicator.className = 'indicator online';
-                    statusText.textContent = 'Đã kết nối Firebase';
-                } else {
-                    indicator.className = 'indicator';
-                    indicator.style.background = '#F44336';
-                    statusText.textContent = 'Mất kết nối';
-                }
-            }
-            
-            function formatTime(timestamp) {
-                const date = new Date(timestamp);
-                return date.getHours().toString().padStart(2, '0') + ':' +
-                       date.getMinutes().toString().padStart(2, '0') + ':' +
-                       date.getSeconds().toString().padStart(2, '0');
-            }
-            
-            // 6. Performance monitoring
-            function startPerformanceMonitoring() {
-                function updateFPS() {
-                    state.frameCount++;
-                    const currentTime = performance.now();
-                    if (currentTime - state.lastFrameTime >= 1000) {
-                        state.currentFPS = state.frameCount;
-                        state.frameCount = 0;
-                        state.lastFrameTime = currentTime;
-                        document.getElementById('fps').textContent = state.currentFPS;
-                        document.getElementById('pollingRate').textContent = state.pollingInterval;
+                    // Lên lịch update UI cho frame tiếp theo
+                    scheduleUIUpdate();
+                    
+                    log('Firebase', `Data updated (${Math.round(fetchTime)}ms)`);
+                    
+                    // Điều chỉnh polling interval dựa trên tốc độ
+                    if (fetchTime < 100) {
+                        pollingInterval = turboMode ? 150 : 250;
+                    } else if (fetchTime > 500) {
+                        pollingInterval = 1000;
                     }
-                    requestAnimationFrame(updateFPS);
+                    
+                    updatePollingDisplay();
+                } else {
+                    // Chỉ cập nhật thời gian
+                    lastUpdateTime = Date.now();
+                    document.getElementById('lastUpdate').textContent = 
+                        `Cập nhật: ${formatTime(Date.now())}`;
+                }
+                
+                return data;
+                
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    console.warn('Fetch error:', error);
+                    updateConnectionStatus(false);
+                    log('Firebase', `Error: ${error.message}`);
+                    
+                    // Tăng interval khi có lỗi
+                    pollingInterval = Math.min(pollingInterval * 2, 5000);
+                    updatePollingDisplay();
+                }
+                return null;
+            } finally {
+                isFetching = false;
+                const totalTime = performance.now() - startTime;
+                document.getElementById('processingTime').textContent = `${Math.round(totalTime)}ms`;
+            }
+        }
+
+        function processDataImmediately(data) {
+            const startTime = performance.now();
+            
+            // 1. Cập nhật sensor data nhanh
+            if (data.o !== undefined) {
+                const mpuElement = document.getElementById('mpuOrientation');
+                if (mpuElement.textContent !== data.o) {
+                    mpuElement.textContent = data.o || 'N/A';
+                }
+            }
+            
+            if (data.d !== undefined) {
+                const shakeElement = document.getElementById('mpuShakeState');
+                if (shakeElement.textContent !== data.d) {
+                    shakeElement.textContent = data.d || 'No';
+                }
+            }
+            
+            if (data.sf !== undefined) {
+                const isShakingElement = document.getElementById('isShaking');
+                if (isShakingElement.textContent !== data.sf) {
+                    isShakingElement.textContent = data.sf || 'NO';
+                }
+            }
+            
+            // 2. Cập nhật flex sensors nhanh
+            if (data.f0 !== undefined) {
+                const flexValues = [data.f0, data.f1 || 0, data.f2 || 0, data.f3 || 0];
+                for (let i = 0; i < 4; i++) {
+                    const newState = calculateFlexState(flexValues[i], i);
+                    if (flexStates[i] !== newState) {
+                        flexStates[i] = newState;
+                    }
+                }
+            }
+            
+            // 3. Xử lý word construction (bất đồng bộ)
+            setTimeout(() => {
+                const mpuState = getMPUState(data.o || "", data.d || "");
+                const a0 = flexStates[0];
+                const a1 = flexStates[1];
+                const a2 = flexStates[2];
+                const a3 = flexStates[3];
+                
+                processWordConstructionFast(mpuState, a0, a1, a2, a3);
+            }, 0);
+        }
+
+        // === HÀM CALCULATE FLEX STATE VỚI CALIBRATION ===
+        function calculateFlexState(rawValue, sensorIndex) {
+            const STRAIGHT_THRESHOLD = STRAIGHT_THRESHOLDS[sensorIndex];
+            
+            if (rawValue <= STRAIGHT_THRESHOLD) return 0;
+            if (rawValue <= bentThresholds[sensorIndex]) return 1;
+            return 2;
+        }
+
+        // === CÁC HÀM CÒN LẠI GIỮ NGUYÊN TỪ BẢN TRƯỚC ===
+        // (giữ nguyên tất cả các hàm khác từ bản trước)
+        // ... (tất cả các hàm khác giữ nguyên) ...
+
+        function processWordConstructionFast(mpu, a0, a1, a2, a3) {
+            const currentState = `${mpu}_${a0}_${a1}_${a2}_${a3}`;
+            
+            if (currentState !== lastStateString) {
+                lastStateString = currentState;
+                stableCount = 0;
+                holdStartMs = Date.now();
+                holdFired = false;
+            } else {
+                stableCount++;
+            }
+            
+            lastFlexStates = [a0, a1, a2, a3];
+            
+            if (stableCount >= DEBOUNCE_COUNT) {
+                const held = Date.now() - holdStartMs;
+                if (!holdFired && held >= HOLD_MS_DEFAULT) {
+                    if (Date.now() - lastActionMs > POST_HOLD_COOLDOWN) {
+                        performActionSlotLogic(mpu, a0, a1, a2, a3);
+                        holdFired = true;
+                        lastActionMs = Date.now();
+                    }
+                }
+            }
+        }
+
+        function scheduleUIUpdate() {
+            if (!uiUpdateScheduled) {
+                uiUpdateScheduled = true;
+                requestAnimationFrame(() => {
+                    updateCriticalUI();
+                    uiUpdateScheduled = false;
+                });
+            }
+        }
+
+        function updateCriticalUI() {
+            const startTime = performance.now();
+            
+            // Chỉ cập nhật các phần quan trọng
+            updateSensorDisplay();
+            updateWordDisplays();
+            updateSentenceDisplay();
+            
+            // Cập nhật thời gian
+            const updateTime = document.getElementById('lastUpdate');
+            const currentTime = formatTime(Date.now());
+            if (updateTime.textContent !== `Cập nhật: ${currentTime}`) {
+                updateTime.textContent = `Cập nhật: ${currentTime}`;
+                document.getElementById('lastUpdateTime').textContent = currentTime;
+            }
+            
+            const uiTime = performance.now() - startTime;
+            if (uiTime > 16) {
+                console.warn(`UI update slow: ${Math.round(uiTime)}ms`);
+            }
+        }
+
+        function updateSensorDisplay() {
+            // Cập nhật flex boxes nếu cần
+            for (let i = 0; i < 4; i++) {
+                const box = document.getElementById(`flex${i}-box`);
+                if (box && box.textContent !== flexStates[i].toString()) {
+                    box.textContent = flexStates[i];
+                    box.className = `flex-box active-${flexStates[i]}`;
+                }
+            }
+            
+            // Cập nhật raw values
+            if (firebaseData) {
+                const rawValues = [firebaseData.f0 || 0, firebaseData.f1 || 0, firebaseData.f2 || 0, firebaseData.f3 || 0];
+                const rawValuesElement = document.getElementById('rawValues');
+                const newRawText = rawValues.join(', ');
+                if (rawValuesElement.textContent !== newRawText) {
+                    rawValuesElement.textContent = newRawText;
+                }
+                
+                const flexFormatElement = document.getElementById('flexFormat');
+                const newFlexText = flexStates.join('');
+                if (flexFormatElement.textContent !== newFlexText) {
+                    flexFormatElement.textContent = newFlexText;
+                }
+            }
+        }
+
+        function updateWordDisplays() {
+            const displayBufferElement = document.getElementById('displayBuffer');
+            if (displayBufferElement.textContent !== displayBuffer) {
+                displayBufferElement.textContent = displayBuffer || '---';
+            }
+            
+            const slot1Element = document.getElementById('slot1');
+            if (slot1Element.textContent !== slot1) {
+                slot1Element.textContent = slot1 || '---';
+            }
+            
+            const slot2Element = document.getElementById('slot2');
+            if (slot2Element.textContent !== slot2) {
+                slot2Element.textContent = slot2 || '---';
+            }
+            
+            // Cập nhật từ đã convert
+            if (displayBuffer.length > 0) {
+                convertedCurrentWord = convertVietnameseWordCached(displayBuffer);
+            } else {
+                convertedCurrentWord = "";
+            }
+            
+            const convertedWordElement = document.getElementById('convertedCurrentWord');
+            if (convertedWordElement.textContent !== convertedCurrentWord) {
+                convertedWordElement.textContent = convertedCurrentWord || '---';
+            }
+        }
+
+        function updateSentenceDisplay() {
+            const sentenceElement = document.getElementById('sentenceDisplay');
+            const newSentence = sentenceWords.join(' ');
+            
+            if (fullSentence !== newSentence) {
+                fullSentence = newSentence;
+                sentenceElement.textContent = fullSentence || '---';
+                
+                // Convert sentence
+                convertedFullSentence = convertVietnameseTextFast(fullSentence);
+                const convertedElement = document.getElementById('convertedSentenceDisplay');
+                convertedElement.textContent = convertedFullSentence || '---';
+                
+                // Cập nhật word list
+                updateWordList();
+                
+                // Cập nhật word count
+                const wordCountElement = document.getElementById('wordCount');
+                wordCountElement.textContent = sentenceWords.length;
+            }
+        }
+
+        function updateWordList() {
+            const wordListDiv = document.getElementById('wordList');
+            if (sentenceWords.length > 0) {
+                wordListDiv.innerHTML = sentenceWords.map(word => 
+                    `<div class="word-item">${word}</div>`
+                ).join('');
+            } else {
+                wordListDiv.innerHTML = 'Chưa có từ nào';
+            }
+        }
+
+        // === HÀM CACHE VÀ TỐI ƯU ===
+        function convertVietnameseWordCached(encodedWord) {
+            if (!encodedWord || encodedWord.length === 0) return "";
+            
+            if (vietnameseCache.has(encodedWord)) {
+                return vietnameseCache.get(encodedWord);
+            }
+            
+            const result = convertVietnameseWordOriginal(encodedWord);
+            vietnameseCache.set(encodedWord, result);
+            return result;
+        }
+
+        function convertVietnameseWordOriginal(encodedWord) {
+            if (!encodedWord || encodedWord.length === 0) return "";
+            
+            const firstUnderscore = encodedWord.indexOf('_');
+            if (firstUnderscore === -1) return encodedWord;
+            
+            const secondUnderscore = encodedWord.indexOf('_', firstUnderscore + 1);
+            if (secondUnderscore === -1) return encodedWord;
+            
+            const consonant = encodedWord.substring(0, firstUnderscore);
+            const middle = encodedWord.substring(firstUnderscore + 1, secondUnderscore);
+            const vowelTypeStr = encodedWord.substring(secondUnderscore + 1);
+            
+            if (middle.length < 2) return encodedWord;
+            
+            const toneChar = middle[0];
+            if (toneChar < '1' || toneChar > '6') return encodedWord;
+            
+            const tone = parseInt(toneChar);
+            const vowelKey = middle.substring(1);
+            
+            let vowelType = 0;
+            if (vowelTypeStr === "b") {
+                vowelType = 1;
+            } else if (vowelTypeStr === "p") {
+                vowelType = 2;
+            } else if (vowelTypeStr !== "s") {
+                return encodedWord;
+            }
+            
+            const tableIndex = (tone - 1) + (vowelType * 6);
+            
+            if (tableIndex < 0 || tableIndex >= 18) {
+                return encodedWord;
+            }
+            
+            const vowelKeyUpper = vowelKey.toUpperCase();
+            
+            for (let i = 0; i < vietnameseTable.length; i++) {
+                if (vowelKeyUpper === vietnameseTable[i].key) {
+                    const convertedVowel = vietnameseTable[i].forms[tableIndex];
+                    return consonant + convertedVowel;
+                }
+            }
+            
+            return encodedWord;
+        }
+
+        function convertVietnameseTextFast(encodedText) {
+            if (!encodedText || encodedText.length === 0) return "";
+            
+            const words = encodedText.split(' ');
+            const convertedWords = words.map(word => convertVietnameseWordCached(word));
+            return convertedWords.join(' ');
+        }
+
+        function getMappingForIndicesCached(mpuState, a0, a1, a2, a3) {
+            const cacheKey = `${mpuState}_${a0}_${a1}_${a2}_${a3}`;
+            
+            if (mappingCache.has(cacheKey)) {
+                return mappingCache.get(cacheKey);
+            }
+            
+            const result = getMappingForIndicesOriginal(mpuState, a0, a1, a2, a3);
+            mappingCache.set(cacheKey, result);
+            return result;
+        }
+
+        function getMappingForIndicesOriginal(mpuState, a0, a1, a2, a3) {
+            if (mpuState < 0 || mpuState > 7) return null;
+            
+            if (a3 === 2) {
+                if (a0 < 3 && a1 < 3 && a2 < 3) {
+                    return tableC[a0][a1][a2];
+                }
+                return null;
+            }
+            
+            const a3bin = a3 === 1 ? 1 : 0;
+            if (a1 < 0 || a1 >= 3 || a2 < 0 || a2 >= 3) return null;
+            
+            const flatIndex = a1 * 3 + a2;
+            
+            if (flatIndex >= 0 && flatIndex < 9) {
+                return a3bin === 0 ? tableA[mpuState][flatIndex] : tableB[mpuState][flatIndex];
+            }
+            
+            return null;
+        }
+
+        // === HÀM HỖ TRỢ ===
+        function log(source, message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = { timestamp, source, message };
+            
+            logEntries.unshift(logEntry);
+            if (logEntries.length > MAX_LOG_ENTRIES) {
+                logEntries.pop();
+            }
+            
+            updateLogDisplay();
+        }
+
+        function updateLogDisplay() {
+            const logContainer = document.getElementById('logContainer');
+            // Chỉ render 5 dòng đầu để tối ưu
+            const visibleEntries = logEntries.slice(0, 5);
+            
+            logContainer.innerHTML = visibleEntries.map(entry => 
+                `<div class="log-entry">
+                    <span style="color: #666; font-size: 0.8rem;">[${entry.timestamp}] ${entry.source}:</span>
+                    <span style="color: #333;"> ${entry.message}</span>
+                </div>`
+            ).join('');
+        }
+
+        function clearLog() {
+            logEntries = [];
+            updateLogDisplay();
+        }
+
+        function exportLog() {
+            const logText = logEntries.map(entry => 
+                `[${entry.timestamp}] ${entry.source}: ${entry.message}`
+            ).join('\n');
+            
+            const blob = new Blob([logText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `log_${new Date().toISOString().slice(0, 10)}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function updateConnectionStatus(connected) {
+            const indicator = document.getElementById('connectionStatus');
+            const statusText = document.getElementById('statusText');
+            const firebaseStatus = document.getElementById('firebaseStatus');
+            
+            if (connected) {
+                indicator.className = 'indicator online';
+                statusText.textContent = 'Đã kết nối với Firebase';
+                firebaseStatus.textContent = 'Đã kết nối với Firebase';
+                firebaseStatus.style.color = '#4CAF50';
+            } else {
+                indicator.className = 'indicator';
+                indicator.style.background = '#F44336';
+                statusText.textContent = 'Mất kết nối với Firebase';
+                firebaseStatus.textContent = 'Mất kết nối với Firebase';
+                firebaseStatus.style.color = '#F44336';
+            }
+        }
+
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+
+        function getMPUState(orientation, shakeState) {
+            if (shakeState === "Shake Left") return 6;
+            if (shakeState === "Shake Right") return 7;
+            
+            switch(orientation) {
+                case "Up": return 0;
+                case "Down": return 1;
+                case "Left": return 2;
+                case "Right": return 3;
+                case "Forward": return 4;
+                case "Backward": return 5;
+                default: return -1;
+            }
+        }
+
+        // === HÀM XÂY DỰNG CÂU ===
+        function performActionSlotLogic(mpu, a0, a1, a2, a3) {
+            const mapping = getMappingForIndicesCached(mpu, a0, a1, a2, a3);
+            if (!mapping || mapping === "nullptr") return false;
+            
+            // FIX: When mapping is "_" (word separator), automatically add word to sentence
+            if (mapping === "_") {
+                // If there's a current word in the buffer, add it to the sentence
+                if (displayBuffer && displayBuffer.length > 0 && displayBuffer !== "---") {
+                    addWordToSentence();
+                } else {
+                    log('WORD', 'Word separator detected, but no word in buffer');
+                }
+                return true;
+            }
+            
+            if (mapping === "COMMIT") {
+                commitSentence();
+                return true;
+            }
+            
+            if (mapping === "<") {
+                backspaceBuffer();
+                scheduleUIUpdate();
+                return true;
+            }
+            
+            const isSlot1 = (a3 === 2);
+            const held = Date.now() - holdStartMs;
+            
+            if (isSlot1 && stableCount >= DEBOUNCE_COUNT && held < HOLD_MS_DEFAULT) {
+                const mode = flexModeCharFromA0(a0);
+                slot2 = `${mapping}_${mode}`;
+            } else if (isSlot1) {
+                slot1 = `${mapping}_${mpu}`;
+            } else {
+                const mode = flexModeCharFromA0(a0);
+                slot2 = `${mapping}_${mode}`;
+            }
+            
+            updateDisplayBufferFromSlots();
+            log('WORD', `Action: ${displayBuffer}`);
+            return true;
+        }
+
+        function flexModeCharFromA0(a0) {
+            switch(a0) {
+                case 0: return 's';
+                case 1: return 'b';
+                case 2: return 'p';
+                default: return 'x';
+            }
+        }
+
+        function updateDisplayBufferFromSlots() {
+            const oldBuffer = displayBuffer;
+            displayBuffer = '';
+            
+            if (slot1) displayBuffer += slot1.toLowerCase();
+            if (slot2) displayBuffer += slot2.toLowerCase();
+            
+            if (oldBuffer !== displayBuffer) {
+                scheduleUIUpdate();
+                log('WORD', `Updated: ${displayBuffer}`);
+            }
+        }
+
+        function addWordToSentence() {
+            if (!displayBuffer || displayBuffer === "---" || displayBuffer.length === 0) {
+                log('SENTENCE', 'Cannot add empty word to sentence');
+                return;
+            }
+            
+            if (sentenceWords.length < 10) {
+                sentenceWords.push(displayBuffer);
+                scheduleUIUpdate();
+                log('SENTENCE', `Added: '${displayBuffer}'`);
+                
+                // Clear for next word
+                slot1 = '';
+                slot2 = '';
+                displayBuffer = '';
+                convertedCurrentWord = '';
+                
+                // Auto-show suggestions after adding a word
+                showAutoSuggestions();
+                
+                scheduleUIUpdate();
+            } else {
+                log('SENTENCE', 'Sentence full! Max 10 words.');
+            }
+        }
+
+        function commitSentence() {
+            if (sentenceWords.length === 0) {
+                log('SENTENCE', 'No words to commit!');
+                return;
+            }
+            
+            // If there's a word in the buffer, add it first
+            if (displayBuffer && displayBuffer.length > 0 && displayBuffer !== "---") {
+                addWordToSentence();
+            }
+            
+            log('SENTENCE', '=== SENTENCE COMMITTED ===');
+            log('SENTENCE', `Full: ${fullSentence}`);
+            log('CONVERSION', `Converted: ${convertedFullSentence}`);
+            
+            // Auto-translate the sentence
+            if (convertedFullSentence && convertedFullSentence !== "---") {
+                document.getElementById('translationInput').value = convertedFullSentence;
+                setTimeout(() => {
+                    translateSentence();
+                }, 500);
+            }
+            
+            resetSentence();
+        }
+
+        function resetSentence() {
+            sentenceWords = [];
+            fullSentence = '';
+            convertedFullSentence = '';
+            slot1 = '';
+            slot2 = '';
+            displayBuffer = '';
+            convertedCurrentWord = '';
+            
+            document.getElementById('autoSuggestionsPanel').style.display = 'none';
+            document.getElementById('dynamicSuggestions').innerHTML = '';
+            document.getElementById('dynamicSuggestions').classList.remove('show');
+            
+            log('SENTENCE', 'Sentence reset');
+            scheduleUIUpdate();
+        }
+
+        function clearCurrentWord() {
+            slot1 = '';
+            slot2 = '';
+            displayBuffer = '';
+            convertedCurrentWord = '';
+            
+            document.getElementById('dynamicSuggestions').innerHTML = '';
+            document.getElementById('dynamicSuggestions').classList.remove('show');
+            
+            scheduleUIUpdate();
+            log('WORD', 'Current word cleared');
+        }
+
+        function backspaceBuffer() {
+            if (displayBuffer.length > 0) {
+                displayBuffer = displayBuffer.slice(0, -1);
+                log('WORD', `Backspace - Buffer: ${displayBuffer}`);
+            }
+        }
+
+        function backspace() {
+            backspaceBuffer();
+            scheduleUIUpdate();
+        }
+
+        // === HÀM ĐIỀU KHIỂN ===
+        function refreshData() {
+            fetchFirebaseDataOptimized();
+        }
+
+        function toggleAutoRefresh() {
+            autoRefresh = !autoRefresh;
+            const btn = document.getElementById('autoRefreshBtn');
+            
+            if (autoRefresh) {
+                btn.textContent = `Tự động: BẬT (${pollingInterval}ms)`;
+                btn.className = 'green';
+                
+                // Dùng recursive setTimeout thay vì setInterval
+                function scheduleNextRefresh() {
+                    if (!autoRefresh) return;
+                    
+                    setTimeout(() => {
+                        if (autoRefresh) {
+                            fetchFirebaseDataOptimized().then(() => {
+                                if (autoRefresh) {
+                                    scheduleNextRefresh();
+                                }
+                            });
+                        }
+                    }, pollingInterval);
+                }
+                
+                scheduleNextRefresh();
+                log('SYSTEM', `Bật tự động làm mới ${pollingInterval}ms`);
+            } else {
+                btn.textContent = 'Tự động: TẮT';
+                btn.className = 'red';
+                log('SYSTEM', 'Tắt tự động làm mới');
+            }
+        }
+
+        function toggleTurboMode() {
+            turboMode = !turboMode;
+            const btn = document.getElementById('turboBtn');
+            
+            if (turboMode) {
+                pollingInterval = 150;
+                btn.textContent = '🚀 Turbo: BẬT';
+                btn.className = 'red';
+                document.getElementById('fastModeIndicator').style.display = 'block';
+                log('SYSTEM', 'Bật chế độ Turbo (150ms polling)');
+            } else {
+                pollingInterval = 300;
+                btn.textContent = '🚀 Chế độ Turbo';
+                btn.className = 'green';
+                document.getElementById('fastModeIndicator').style.display = 'none';
+                log('SYSTEM', 'Tắt chế độ Turbo');
+            }
+            
+            updatePollingDisplay();
+            
+            // Nếu auto refresh đang bật, cập nhật lại
+            if (autoRefresh) {
+                toggleAutoRefresh();
+                toggleAutoRefresh(); // Bật lại với interval mới
+            }
+        }
+
+        function updatePollingDisplay() {
+            document.getElementById('pollingRate').textContent = pollingInterval;
+            const btn = document.getElementById('autoRefreshBtn');
+            if (autoRefresh) {
+                btn.textContent = `Tự động: BẬT (${pollingInterval}ms)`;
+            }
+        }
+
+        // === HÀM ĐỀ XUẤT ===
+        function loadPhraseSuggestions() {
+            const phrasePills = document.getElementById('phrasePills');
+            phrasePills.innerHTML = '';
+            
+            commonPhrases.forEach(phrase => {
+                const pill = document.createElement('button');
+                pill.className = 'phrase-pill';
+                pill.textContent = phrase.length > 30 ? phrase.substring(0, 27) + '...' : phrase;
+                pill.onclick = () => {
+                    document.getElementById('translationInput').value = phrase;
+                    translatePhrase(phrase);
+                    log('PHRASE', `Selected phrase: "${phrase}"`);
+                };
+                pill.title = phrase;
+                phrasePills.appendChild(pill);
+            });
+        }
+
+        function translatePhrase(phrase) {
+            const textarea = document.getElementById('translationInput');
+            const outputDiv = document.getElementById('translationOutput');
+            
+            textarea.value = phrase;
+            translateSentence();
+        }
+
+        function showAutoSuggestions() {
+            if (sentenceWords.length === 0) {
+                document.getElementById('autoSuggestionsPanel').style.display = 'none';
+                return;
+            }
+            
+            const panel = document.getElementById('autoSuggestionsPanel');
+            const grid = document.getElementById('autoSuggestionsGrid');
+            
+            // Create suggestions based on current sentence
+            const currentSentence = convertedFullSentence || '';
+            const suggestions = [];
+            
+            if (currentSentence.includes('xin chào') || currentSentence.includes('chào')) {
+                suggestions.push({
+                    text: 'Xin chào, rất vui được gặp bạn',
+                    type: 'greeting'
+                });
+            }
+            
+            if (currentSentence.includes('cảm ơn')) {
+                suggestions.push({
+                    text: 'Không có gì, rất vui được giúp đỡ',
+                    type: 'response'
+                });
+            }
+            
+            if (currentSentence.includes('tên') || currentSentence.includes('bạn tên')) {
+                suggestions.push({
+                    text: 'Tôi là trợ lý ngôn ngữ, rất vui được giúp bạn',
+                    type: 'introduction'
+                });
+            }
+            
+            // Add some default suggestions if none matched
+            if (suggestions.length === 0) {
+                suggestions.push(
+                    { text: 'Bạn có thể nói chậm hơn được không?', type: 'request' },
+                    { text: 'Tôi không hiểu, bạn có thể giải thích không?', type: 'clarification' },
+                    { text: 'Rất vui được trò chuyện với bạn', type: 'conversation' }
+                );
+            }
+            
+            grid.innerHTML = suggestions.map(suggestion => `
+                <div class="auto-suggestion-item">
+                    <div class="auto-suggestion-text">${suggestion.text}</div>
+                    <div class="auto-suggestion-actions">
+                        <button class="auto-suggestion-btn speak" onclick="speakText('${suggestion.text}', 'vi-VN')">🔊 Đọc</button>
+                        <button class="auto-suggestion-btn use" onclick="useSuggestion('${suggestion.text}')">📝 Dùng</button>
+                        <button class="auto-suggestion-btn translate" onclick="translateSuggestion('${suggestion.text}')">🌐 Dịch</button>
+                    </div>
+                </div>
+            `).join('');
+            
+            panel.style.display = 'block';
+        }
+
+        function useSuggestion(text) {
+            document.getElementById('translationInput').value = text;
+            translateSentence();
+            log('SUGGESTION', `Using suggestion: "${text}"`);
+        }
+
+        function translateSuggestion(text) {
+            document.getElementById('translationInput').value = text;
+            translateSentence();
+            log('SUGGESTION', `Translating suggestion: "${text}"`);
+        }
+
+        // === HÀM GIỌNG NÓI ===
+        function selectVoice(button) {
+            const lang = button.getAttribute('data-lang');
+            const gender = button.getAttribute('data-gender');
+            
+            currentVoice = {
+                lang: lang,
+                gender: gender
+            };
+            
+            document.querySelectorAll('.voice-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            button.classList.add('active');
+            
+            updateUI();
+            log('VOICE', `Selected voice: ${lang} ${gender}`);
+        }
+
+        function toggleTTSMode(useGemini) {
+            useGeminiTTS = useGemini;
+            
+            document.getElementById('useGeminiTTS').classList.toggle('active', useGemini);
+            document.getElementById('useWebSpeech').classList.toggle('active', !useGemini);
+            
+            updateUI();
+            log('TTS', `Switched to ${useGemini ? 'Gemini AI' : 'Web Speech'} TTS`);
+        }
+
+        // === HÀM DỊCH THUẬT ===
+        function handleTranslationInput() {
+            const input = document.getElementById('translationInput').value;
+            const suggestionsDiv = document.getElementById('translationSuggestions');
+            
+            if (!input || input.trim().length === 0) {
+                suggestionsDiv.innerHTML = '';
+                suggestionsDiv.classList.remove('show');
+                return;
+            }
+            
+            const inputLower = input.toLowerCase();
+            const filteredPhrases = commonPhrases.filter(phrase => 
+                phrase.toLowerCase().includes(inputLower)
+            );
+            
+            if (filteredPhrases.length > 0) {
+                suggestionsDiv.innerHTML = filteredPhrases.map(phrase => `
+                    <div class="suggestion-item" onclick="selectTranslationSuggestion('${phrase}')">
+                        ${phrase}
+                    </div>
+                `).join('');
+                suggestionsDiv.classList.add('show');
+            } else {
+                suggestionsDiv.innerHTML = '';
+                suggestionsDiv.classList.remove('show');
+            }
+        }
+
+        function selectTranslationSuggestion(phrase) {
+            document.getElementById('translationInput').value = phrase;
+            document.getElementById('translationSuggestions').innerHTML = '';
+            document.getElementById('translationSuggestions').classList.remove('show');
+            translateSentence();
+        }
+
+        let lastTranslationTime = 0;
+        const TRANSLATION_COOLDOWN = 2000;
+
+        async function translateSentence() {
+            const textarea = document.getElementById('translationInput');
+            const text = textarea.value.trim();
+            const targetLang = document.getElementById('targetLanguage').value;
+            const outputDiv = document.getElementById('translationOutput');
+            
+            if (!text) {
+                outputDiv.innerHTML = '<span style="color: #F44336;">Vui lòng nhập văn bản để dịch!</span>';
+                outputDiv.className = 'conversion-display error';
+                return;
+            }
+            
+            const now = Date.now();
+            if (now - lastTranslationTime < TRANSLATION_COOLDOWN) {
+                outputDiv.innerHTML = '<span style="color: #FF9800;">Vui lòng đợi trước khi dịch lại...</span>';
+                outputDiv.className = 'conversion-display';
+                return;
+            }
+            
+            const cacheKey = text + '|' + targetLang;
+            if (translationCache[cacheKey]) {
+                outputDiv.innerHTML = translationCache[cacheKey];
+                outputDiv.className = 'conversion-display success';
+                lastTranslationTime = now;
+                return;
+            }
+            
+            outputDiv.innerHTML = '<span class="loading">Đang dịch với AI... ⏳</span>';
+            outputDiv.className = 'conversion-display loading';
+            
+            try {
+                const langMap = {
+                    'en-GB': 'en',
+                    'ja-JP': 'ja',
+                    'ko-KR': 'ko',
+                    'zh-CN': 'zh'
+                };
+                
+                const langCode = langMap[targetLang] || 'en';
+                const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=vi|${langCode}`);
+                const data = await response.json();
+                
+                if (data.responseStatus === 200 && data.responseData) {
+                    const translated = data.responseData.translatedText;
+                    translationCache[cacheKey] = translated;
+                    outputDiv.innerHTML = translated;
+                    outputDiv.className = 'conversion-display success';
+                    lastTranslationTime = Date.now();
+                    log('TRANSLATION', `Translated to ${targetLang}: ${translated}`);
+                } else {
+                    throw new Error('Translation failed');
+                }
+            } catch (error) {
+                console.error('Translation error:', error);
+                outputDiv.innerHTML = '<span style="color: #F44336;">Dịch vụ dịch thuật không khả dụng. Vui lòng thử lại sau.</span>';
+                outputDiv.className = 'conversion-display error';
+            }
+        }
+
+        function clearTranslation() {
+            document.getElementById('translationOutput').innerHTML = 'Đang chờ dịch...';
+            document.getElementById('translationOutput').className = 'conversion-display';
+            translationCache = {};
+        }
+
+        // === HÀM TTS ===
+        const pcmToWav = (base64PCM, sampleRate = 24000) => {
+            try {
+                const binaryString = atob(base64PCM);
+                const len = binaryString.length;
+                const bytes = new Uint8Array(len);
+                for (let i = 0; i < len; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+
+                const wavHeader = new ArrayBuffer(44);
+                const view = new DataView(wavHeader);
+
+                const writeString = (view, offset, string) => {
+                    for (let i = 0; i < string.length; i++) {
+                        view.setUint8(offset + i, string.charCodeAt(i));
+                    }
+                };
+
+                writeString(view, 0, "RIFF");
+                view.setUint32(4, 36 + len, true);
+                writeString(view, 8, "WAVE");
+                writeString(view, 12, "fmt ");
+                view.setUint32(16, 16, true);
+                view.setUint16(20, 1, true);
+                view.setUint16(22, 1, true);
+                view.setUint32(24, sampleRate, true);
+                view.setUint32(28, sampleRate * 2, true);
+                view.setUint16(32, 2, true);
+                view.setUint16(34, 16, true);
+                writeString(view, 36, "data");
+                view.setUint32(40, len, true);
+
+                return new Blob([wavHeader, bytes], { type: "audio/wav" });
+            } catch (error) {
+                console.error("PCM to WAV error:", error);
+                return null;
+            }
+        };
+
+        async function speakWithRetry(text, langCode, retries = 3) {
+            const voiceName = geminiVoiceMap[langCode]?.[currentVoice.gender] || 
+                            (currentVoice.gender === 'male' ? 'Aoede' : 'Kore');
+            
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+                    const response = await fetch(
+                        `${GEMINI_API_URL}?key=${GEMINI_API_KEY}`,
+                        {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            signal: controller.signal,
+                            body: JSON.stringify({
+                                contents: [{ parts: [{ text: text }] }],
+                                generationConfig: {
+                                    responseModalities: ["AUDIO"],
+                                    speechConfig: {
+                                        voiceConfig: { prebuiltVoiceConfig: { voiceName } },
+                                    },
+                                },
+                            }),
+                        }
+                    );
+
+                    clearTimeout(timeoutId);
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(`API_ERROR_${response.status}: ${errorData?.error?.message || response.statusText}`);
+                    }
+
+                    const data = await response.json();
+                    const inlineData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+                    
+                    if (!inlineData || !inlineData.data) {
+                        throw new Error("NO_DATA");
+                    }
+
+                    return inlineData.data;
+                } catch (err) {
+                    if (i === retries - 1) throw err;
+                    const delay = Math.pow(2, i) * 1000;
+                    await new Promise(r => setTimeout(r, delay));
+                }
+            }
+        }
+
+        async function speakVietnameseSentence() {
+            const text = convertedFullSentence || document.getElementById('convertedSentenceDisplay').textContent;
+            if (!text || text === '---') {
+                log('SPEECH', 'No Vietnamese text to speak');
+                return;
+            }
+            
+            speakText(text, currentVoice.lang);
+        }
+
+        async function speakTranslation() {
+            const text = document.getElementById('translationOutput').textContent;
+            if (!text || text.includes('Đang chờ dịch') || text.includes('Vui lòng nhập')) {
+                log('SPEECH', 'No translation text to speak');
+                return;
+            }
+            
+            const lang = document.getElementById('voiceLanguage').value;
+            speakText(text, lang);
+        }
+
+        async function speakText(text, langCode) {
+            if (isSpeaking) {
+                stopAllSpeech();
+                return;
+            }
+            
+            if (useGeminiTTS) {
+                document.getElementById('aiSpeechStatus').style.display = 'flex';
+            }
+            
+            if (useGeminiTTS && GEMINI_API_KEY) {
+                await speakWithGeminiTTS(text, langCode);
+            } else {
+                speakWithWebSpeech(text, langCode);
+            }
+        }
+
+        // Giữ nguyên các hàm TTS từ bản trước
+        // ... (các hàm TTS giữ nguyên) ...
+
+        function speakWithWebSpeech(text, langCode) {
+            if (isSpeaking) {
+                stopAllSpeech();
+                return;
+            }
+            
+            if (!('speechSynthesis' in window)) {
+                log('SPEECH', 'Speech synthesis not supported in this browser');
+                return;
+            }
+            
+            window.speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = langCode;
+            utterance.rate = 0.9;
+            utterance.pitch = currentVoice.gender === 'male' ? 0.8 : 1.2;
+            utterance.volume = 1;
+            
+            utterance.onstart = function() {
+                setIsSpeaking(true);
+                updateUI();
+                startAudioVisualizer();
+                log('SPEECH', `Started Web Speech: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
+            };
+            
+            utterance.onend = function() {
+                setIsSpeaking(false);
+                currentSpeech = null;
+                stopAudioVisualizer();
+                updateUI();
+                log('SPEECH', 'Ended Web Speech');
+            };
+            
+            utterance.onerror = function(event) {
+                setIsSpeaking(false);
+                currentSpeech = null;
+                stopAudioVisualizer();
+                updateUI();
+                log('SPEECH', `Web Speech error: ${event.error}`);
+            };
+            
+            currentSpeech = utterance;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function setIsSpeaking(speaking) {
+            isSpeaking = speaking;
+            updateUI();
+        }
+
+        function stopAllSpeech() {
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
+            }
+            
+            if (currentSpeech && currentSpeech.pause) {
+                currentSpeech.pause();
+                currentSpeech.currentTime = 0;
+            }
+            
+            setIsSpeaking(false);
+            currentSpeech = null;
+            stopAudioVisualizer();
+            updateUI();
+            
+            document.getElementById('aiSpeechStatus').style.display = 'none';
+            
+            log('SPEECH', 'Stopped all speech');
+        }
+
+        function startAudioVisualizer() {
+            stopAudioVisualizer();
+            
+            const visualizer = document.getElementById('audioVisualizer');
+            visualizer.innerHTML = '';
+            
+            for (let i = 0; i < 20; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'audio-bar';
+                bar.style.height = '5px';
+                visualizer.appendChild(bar);
+            }
+            
+            const bars = visualizer.querySelectorAll('.audio-bar');
+            audioVisualizerInterval = setInterval(() => {
+                bars.forEach(bar => {
+                    const height = 5 + Math.random() * 35;
+                    bar.style.height = `${height}px`;
+                    bar.style.backgroundColor = `hsl(${120 + Math.random() * 60}, 70%, 50%)`;
+                });
+            }, 100);
+        }
+
+        function stopAudioVisualizer() {
+            if (audioVisualizerInterval) {
+                clearInterval(audioVisualizerInterval);
+                audioVisualizerInterval = null;
+            }
+            
+            const visualizer = document.getElementById('audioVisualizer');
+            visualizer.innerHTML = '';
+            
+            for (let i = 0; i < 20; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'audio-bar';
+                bar.style.height = '5px';
+                bar.style.backgroundColor = '#e0e0e0';
+                visualizer.appendChild(bar);
+            }
+        }
+
+        // === HÀM UPDATE UI COMPLETE ===
+        function updateUI() {
+            updateWordDisplays();
+            updateSentenceDisplay();
+            
+            const speakVnBtn = document.getElementById('speakVnBtn');
+            const speakTransBtn = document.getElementById('speakTransBtn');
+            const stopSpeechBtn = document.getElementById('stopSpeechBtn');
+            
+            speakVnBtn.disabled = !convertedFullSentence || isSpeaking;
+            speakTransBtn.disabled = !document.getElementById('translationOutput').textContent || isSpeaking;
+            stopSpeechBtn.disabled = !isSpeaking;
+            
+            if (isSpeaking) {
+                speakVnBtn.classList.add('speaking');
+            } else {
+                speakVnBtn.classList.remove('speaking');
+            }
+            
+            const langNames = {
+                'vi-VN': 'Tiếng Việt',
+                'en-GB': 'Tiếng Anh',
+                'ja-JP': 'Tiếng Nhật',
+                'ko-KR': 'Tiếng Hàn',
+                'zh-CN': 'Tiếng Trung'
+            };
+            const genderNames = {
+                'male': 'Nam',
+                'female': 'Nữ'
+            };
+            const ttsMode = useGeminiTTS ? 'Gemini AI' : 'Web Speech';
+            document.getElementById('currentVoiceDisplay').textContent = 
+                `Hiện tại: ${langNames[currentVoice.lang] || currentVoice.lang} ${genderNames[currentVoice.gender] || currentVoice.gender} (${ttsMode})`;
+            
+            document.getElementById('useGeminiTTS').classList.toggle('active', useGeminiTTS);
+            document.getElementById('useWebSpeech').classList.toggle('active', !useGeminiTTS);
+        }
+
+        // === KHỞI TẠO ===
+        document.addEventListener('DOMContentLoaded', function() {
+            log('SYSTEM', 'Optimized app started with calibration');
+            
+            // Khởi tạo FPS counter
+            function updateFPS() {
+                frameCount++;
+                const currentTime = performance.now();
+                if (currentTime - lastFrameTime >= 1000) {
+                    currentFPS = frameCount;
+                    frameCount = 0;
+                    lastFrameTime = currentTime;
+                    
+                    document.getElementById('fps').textContent = currentFPS;
+                    
+                    if (currentFPS < 30 && pollingInterval > 150) {
+                        pollingInterval = Math.min(pollingInterval * 1.5, 1000);
+                        updatePollingDisplay();
+                        log('PERF', `Low FPS (${currentFPS}), increased polling to ${pollingInterval}ms`);
+                    } else if (currentFPS > 50 && pollingInterval < 1000) {
+                        pollingInterval = Math.max(pollingInterval * 0.8, 150);
+                        updatePollingDisplay();
+                    }
                 }
                 requestAnimationFrame(updateFPS);
             }
             
-            // 7. Initialization
-            function init() {
-                console.log('⚡ App starting in optimized mode...');
+            requestAnimationFrame(updateFPS);
+            
+            // Tải calibration từ localStorage nếu có
+            loadCalibration();
+            
+            loadPhraseSuggestions();
+            
+            if ('speechSynthesis' in window) {
+                speechSynthesis.getVoices();
                 
-                // Start performance monitor
-                startPerformanceMonitoring();
-                
-                // Load saved calibration
-                const savedThresholds = localStorage.getItem('bentThresholds');
-                if (savedThresholds) {
-                    try {
-                        state.bentThresholds = JSON.parse(savedThresholds);
-                    } catch (e) {
-                        console.warn('Failed to load calibration:', e);
-                    }
-                }
-                
-                // Initial fetch
-                fetchFirebaseData();
-                
-                // Start auto-refresh
-                startAutoRefresh();
-                
-                // Update polling display
-                document.getElementById('pollingRate').textContent = state.pollingInterval;
-                
-                console.log('✅ App initialized successfully');
+                speechSynthesis.onvoiceschanged = function() {
+                    log('SPEECH', 'Loaded speech synthesis voices');
+                };
             }
             
-            // === MAKE FUNCTIONS GLOBALLY AVAILABLE ===
-            window.clearCurrentWord = clearCurrentWord;
-            window.backspace = backspace;
-            window.addWordToSentence = addWordToSentence;
-            window.commitSentence = commitSentence;
-            window.startCalibration = startCalibration;
-            window.resetCalibration = resetCalibration;
-            window.translateSentence = translateSentence;
-            window.clearTranslation = clearTranslation;
-            window.refreshData = refreshData;
-            window.toggleAutoRefresh = toggleAutoRefresh;
+            setTimeout(() => {
+                fetchFirebaseDataOptimized();
+                toggleAutoRefresh();
+            }, 100);
             
-            // === START THE APP ===
-            document.addEventListener('DOMContentLoaded', init);
-            
-        })(); // End of IIFE
+            if (!GEMINI_API_KEY) {
+                log('SYSTEM', 'Note: Gemini API key not configured. Using Web Speech API.');
+                useGeminiTTS = false;
+            }
+        });
     </script>
+
+    <script>
+        // === CẤU HÌNH TỐC ĐỘ CAO ===
+        const FIREBASE_URL = "https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/sensorData.json";
+        const GEMINI_API_KEY = "AIzaSyDdUj2SX83qODeZ1hhru0e9KN1fwDrtUP8";
+        const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent";
+        
+        // === BIẾN CALIBRATION ===
+        let bentThresholds = [300, 450, 350, 300];
+        const STRAIGHT_THRESHOLDS = [75, 75, 75, 75];
+        
+        // === BIẾN TTS MỚI ===
+        const voiceMap = {
+            "vi-VN": { male: "Aoede", female: "Kore" },
+            "en-GB": { male: "Aoede", female: "Kore" },
+            "ja-JP": { male: "Aoede", female: "Kore" },
+            "ko-KR": { male: "Aoede", female: "Kore" },
+            "zh-CN": { male: "Zubenelgenubi", female: "Kore" },
+        };
+
+        const accentMap = {
+            'north': { tone: 1, region: 'Bắc' },
+            'central': { tone: 2, region: 'Trung' },
+            'south': { tone: 3, region: 'Nam' }
+        };
+
+        // === BIẾN TỐI ƯU HÓA (giữ nguyên) ===
+        let firebaseData = null;
+        let lastUpdateTime = 0;
+        let autoRefresh = true;
+        let autoRefreshInterval;
+        let logEntries = [];
+        const MAX_LOG_ENTRIES = 20;
+        let isFetching = false;
+        let lastFirebaseData = null;
+        let uiUpdateScheduled = false;
+        let lastFrameTime = performance.now();
+        let frameCount = 0;
+        let currentFPS = 60;
+        let pollingInterval = 300;
+        let turboMode = false;
+        let currentFetchController = null;
+        
+        // Biến xây dựng câu
+        let slot1 = "";
+        let slot2 = "";
+        let displayBuffer = "";
+        let convertedCurrentWord = "";
+        let sentenceWords = [];
+        let fullSentence = "";
+        let convertedFullSentence = "";
+        
+        // Trạng thái cảm biến uốn
+        let flexStates = [0, 0, 0, 0];
+        let lastFlexStates = [-1, -1, -1, -1];
+        let stableCount = 0;
+        let lastDetectedIndex = -1;
+        let holdStartMs = 0;
+        let holdFired = false;
+        const DEBOUNCE_COUNT = 3;
+        const HOLD_MS_DEFAULT = 800;
+        const POST_HOLD_COOLDOWN = 600;
+        let lastActionMs = 0;
+        let lastStateString = '';
+        
+        // CACHE cho tối ưu hóa
+        const mappingCache = new Map();
+        const vietnameseCache = new Map();
+        let translationCache = {};
+        let audioCache = {};
+        
+        // === BIẾN TTS MỚI ===
+        let currentAccent = 'north';
+        let currentVoiceGender = 'male';
+        let isSpeaking = false;
+        let isConnecting = false;
+        let currentAudioRef = null;
+        let errorMsg = "";
+        let showSuggestions = false;
+
+        // === HÀM PCM TO WAV TỪ REACT ===
+        const pcmToWav = (base64PCM, sampleRate = 24000) => {
+            try {
+                const binaryString = atob(base64PCM);
+                const len = binaryString.length;
+                const bytes = new Uint8Array(len);
+                for (let i = 0; i < len; i++) {
+                    bytes[i] = binaryString.charCodeAt(i);
+                }
+
+                const wavHeader = new ArrayBuffer(44);
+                const view = new DataView(wavHeader);
+
+                const writeString = (view, offset, string) => {
+                    for (let i = 0; i < string.length; i++) {
+                        view.setUint8(offset + i, string.charCodeAt(i));
+                    }
+                };
+
+                writeString(view, 0, "RIFF");
+                view.setUint32(4, 36 + len, true);
+                writeString(view, 8, "WAVE");
+                writeString(view, 12, "fmt ");
+                view.setUint32(16, 16, true);
+                view.setUint16(20, 1, true);
+                view.setUint16(22, 1, true);
+                view.setUint32(24, sampleRate, true);
+                view.setUint32(28, sampleRate * 2, true);
+                view.setUint16(32, 2, true);
+                view.setUint16(34, 16, true);
+                writeString(view, 36, "data");
+                view.setUint32(40, len, true);
+
+                return new Blob([wavHeader, bytes], { type: "audio/wav" });
+            } catch (error) {
+                console.error("PCM to WAV error:", error);
+                return null;
+            }
+        };
+
+        // === HÀM SPEAK WITH RETRY TỪ REACT ===
+        const speakWithRetry = async (text, langCode, retries = 5) => {
+            const voiceName = voiceMap[langCode]?.[currentVoiceGender] || "Aoede";
+            const apiKey = GEMINI_API_KEY;
+
+            if (!apiKey) {
+                throw new Error("API_KEY_MISSING");
+            }
+
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+                    const response = await fetch(
+                        `${GEMINI_API_URL}?key=${apiKey}`,
+                        {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            signal: controller.signal,
+                            body: JSON.stringify({
+                                contents: [{ parts: [{ text: text }] }],
+                                generationConfig: {
+                                    responseModalities: ["AUDIO"],
+                                    speechConfig: {
+                                        voiceConfig: { prebuiltVoiceConfig: { voiceName } },
+                                    },
+                                },
+                            }),
+                        }
+                    );
+
+                    clearTimeout(timeoutId);
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(`API_ERROR_${response.status}: ${errorData?.error?.message || response.statusText}`);
+                    }
+
+                    const data = await response.json();
+                    const inlineData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+                    
+                    if (!inlineData || !inlineData.data) {
+                        throw new Error("NO_DATA");
+                    }
+
+                    return inlineData.data;
+                } catch (err) {
+                    if (i === retries - 1) throw err;
+                    const delay = Math.pow(2, i) * 1000;
+                    await new Promise(r => setTimeout(r, delay));
+                }
+            }
+        };
+
+        // === HÀM SPEAK TEXT MỚI ===
+        async function speakText(text, langCode) {
+            if (!text || isSpeaking) {
+                if (isSpeaking) {
+                    stopAllSpeech();
+                }
+                return;
+            }
+
+            setErrorMsg("");
+
+            if (currentAudioRef) {
+                currentAudioRef.pause();
+                currentAudioRef = null;
+            }
+
+            const cacheKey = `${langCode}:${currentVoiceGender}:${text}`;
+            if (audioCache[cacheKey]) {
+                const audio = new Audio(audioCache[cacheKey]);
+                currentAudioRef = audio;
+                setIsSpeaking(true);
+                audio.onended = () => setIsSpeaking(false);
+                audio.play().catch(() => setIsSpeaking(false));
+                return;
+            }
+
+            setIsSpeaking(true);
+            setIsConnecting(true);
+
+            try {
+                const audioDataBase64 = await speakWithRetry(text, langCode);
+                const wavBlob = pcmToWav(audioDataBase64, 24000);
+                if (!wavBlob) {
+                    throw new Error("WAV_CONVERSION_FAILED");
+                }
+                
+                const audioUrl = URL.createObjectURL(wavBlob);
+                audioCache[cacheKey] = audioUrl;
+
+                setIsConnecting(false);
+                const audio = new Audio(audioUrl);
+                currentAudioRef = audio;
+                audio.onended = () => {
+                    setIsSpeaking(false);
+                    currentAudioRef = null;
+                };
+                
+                audio.play().catch(e => {
+                    console.error("Audio Playback Error:", e);
+                    setIsSpeaking(false);
+                    currentAudioRef = null;
+                });
+            } catch (err) {
+                setIsConnecting(false);
+                setIsSpeaking(false);
+                setErrorMsg("Không thể tải giọng nói AI. Vui lòng thử lại sau.");
+                console.error("TTS Failed after retries", err);
+                
+                // Fallback to Web Speech
+                if (err.message === "API_KEY_MISSING") {
+                    speakWithWebSpeech(text, langCode);
+                }
+            }
+        }
+
+        // === HÀM SET IS SPEAKING ===
+        function setIsSpeaking(speaking) {
+            isSpeaking = speaking;
+            updateUI();
+        }
+
+        // === HÀM SET IS CONNECTING ===
+        function setIsConnecting(connecting) {
+            isConnecting = connecting;
+            updateUI();
+        }
+
+        // === HÀM SET ERROR MESSAGE ===
+        function setErrorMsg(message) {
+            errorMsg = message;
+            updateUI();
+        }
+
+        // === HÀM SELECT ACCENT ===
+        function selectAccent(accent) {
+            currentAccent = accent;
+            document.querySelectorAll('.accent-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Cập nhật bảng chuyển đổi dựa trên accent
+            updateVietnameseTableForAccent(accent);
+            log('ACCENT', `Selected accent: ${accentMap[accent].region}`);
+        }
+
+        // === HÀM SELECT VOICE GENDER ===
+        function selectVoiceGender(gender) {
+            currentVoiceGender = gender;
+            document.querySelectorAll('.voice-gender-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            log('VOICE', `Selected gender: ${gender === 'male' ? 'Nam' : 'Nữ'}`);
+        }
+
+        // === HÀM UPDATE VIETNAMESE TABLE FOR ACCENT ===
+        function updateVietnameseTableForAccent(accent) {
+            // Điều chỉnh bảng chuyển đổi dựa trên accent
+            // Đây là ví dụ đơn giản - thực tế cần bảng phức tạp hơn
+            const accentTone = accentMap[accent].tone;
+            
+            // Có thể điều chỉnh cách phát âm dựa trên vùng miền
+            // Ví dụ: vùng Bắc phát âm "tr" rõ hơn, vùng Nam nói ngọng hơn
+            // Cần bảng mapping chi tiết trong thực tế
+            log('ACCENT', `Updated pronunciation for ${accentMap[accent].region} accent`);
+        }
+
+        // === HÀM LOAD PHRASE SUGGESTIONS MỚI ===
+        function loadPhraseSuggestions() {
+            const phraseList = document.getElementById('phraseList');
+            phraseList.innerHTML = '';
+            
+            commonPhrases.forEach(phrase => {
+                const item = document.createElement('div');
+                item.className = 'phrase-list-item';
+                item.textContent = phrase;
+                item.onclick = () => {
+                    document.getElementById('translationInput').value = phrase;
+                    translatePhrase(phrase);
+                    log('PHRASE', `Selected phrase: "${phrase}"`);
+                };
+                phraseList.appendChild(item);
+            });
+        }
+
+        // === HÀM UPDATE UI MỚI ===
+        function updateUI() {
+            updateWordDisplays();
+            updateSentenceDisplay();
+            
+            const speakVnBtn = document.getElementById('speakVnBtn');
+            const speakTransBtn = document.getElementById('speakTransBtn');
+            const stopSpeechBtn = document.getElementById('stopSpeechBtn');
+            
+            // Cập nhật trạng thái nút
+            speakVnBtn.disabled = !convertedFullSentence || isSpeaking;
+            speakTransBtn.disabled = !document.getElementById('translationOutput').textContent || isSpeaking;
+            stopSpeechBtn.disabled = !isSpeaking;
+            
+            if (isSpeaking) {
+                speakVnBtn.classList.add('speaking');
+                speakVnBtn.innerHTML = isConnecting ? 
+                    '<span class="ai-loading">⏳</span> Đang tải...' : '⏹ Dừng';
+                speakTransBtn.innerHTML = isConnecting ? 
+                    '<span class="ai-loading">⏳</span> Đang tải...' : '⏹ Dừng';
+            } else {
+                speakVnBtn.classList.remove('speaking');
+                speakVnBtn.innerHTML = '🔊 Đọc Tiếng Việt';
+                speakTransBtn.innerHTML = '🔈 Đọc Bản dịch';
+            }
+            
+            // Hiển thị thông báo lỗi
+            const errorDisplay = document.getElementById('errorDisplay');
+            if (errorMsg) {
+                errorDisplay.style.display = 'block';
+                errorDisplay.textContent = errorMsg;
+            } else {
+                errorDisplay.style.display = 'none';
+            }
+            
+            // Cập nhật hiển thị accent và giọng
+            document.getElementById('currentAccentDisplay').textContent = 
+                `Accent: ${accentMap[currentAccent].region}`;
+            document.getElementById('currentVoiceGenderDisplay').textContent = 
+                `Giọng: ${currentVoiceGender === 'male' ? 'Nam' : 'Nữ'}`;
+        }
+
+        // === HÀM STOP ALL SPEECH MỚI ===
+        function stopAllSpeech() {
+            if (currentAudioRef) {
+                currentAudioRef.pause();
+                currentAudioRef.currentTime = 0;
+                currentAudioRef = null;
+            }
+            
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
+            }
+            
+            setIsSpeaking(false);
+            setIsConnecting(false);
+            updateUI();
+            log('SPEECH', 'Stopped all speech');
+        }
+
+        // === HÀM SPEAK VIETNAMESE SENTENCE MỚI ===
+        function speakVietnameseSentence() {
+            const text = convertedFullSentence || document.getElementById('convertedSentenceDisplay').textContent;
+            if (!text || text === '---') {
+                log('SPEECH', 'No Vietnamese text to speak');
+                return;
+            }
+            
+            // Áp dụng accent trước khi nói
+            const accentedText = applyAccentToText(text, currentAccent);
+            speakText(accentedText, 'vi-VN');
+        }
+
+        // === HÀM SPEAK TRANSLATION MỚI ===
+        function speakTranslation() {
+            const text = document.getElementById('translationOutput').textContent;
+            if (!text || text.includes('Đang chờ dịch') || text.includes('Vui lòng nhập')) {
+                log('SPEECH', 'No translation text to speak');
+                return;
+            }
+            
+            const lang = document.getElementById('voiceLanguage').value;
+            speakText(text, lang);
+        }
+
+        // === HÀM APPLY ACCENT TO TEXT ===
+        function applyAccentToText(text, accent) {
+            // Đây là hàm mẫu - thực tế cần bảng chuyển đổi phức tạp
+            // Ví dụ đơn giản: điều chỉnh một số từ theo accent
+            const accentRules = {
+                'north': {
+                    'gi': 'di',
+                    'd': 'z',
+                    // Thêm các quy tắc khác
+                },
+                'south': {
+                    'v': 'y',
+                    'tr': 'ch',
+                    // Thêm các quy tắc khác
+                },
+                'central': {
+                    // Quy tắc cho miền Trung
+                }
+            };
+            
+            let result = text;
+            const rules = accentRules[accent] || {};
+            
+            for (const [from, to] of Object.entries(rules)) {
+                const regex = new RegExp(from, 'gi');
+                result = result.replace(regex, to);
+            }
+            
+            return result;
+        }
+
+        // === BẢNG DỮ LIỆU (giữ nguyên từ file gốc) ===
+        // ... (giữ nguyên toàn bộ bảng tableA, tableB, tableC, vietnameseTable) ...
+
+        // Đề xuất cụm từ
+        const commonPhrases = [
+            "Xin chào, rất vui được gặp bạn",
+            "Bạn khỏe không?",
+            "Cảm ơn bạn rất nhiều",
+            "Làm ơn cho tôi hỏi đường",
+            "Chúc một ngày tốt lành",
+            "Tôi yêu ngôn ngữ này",
+            "Hẹn gặp lại sau",
+            "Tôi đói bụng",
+            "Bao nhiêu tiền?",
+            "Tôi không hiểu"
+        ];
+
+        // === CÁC HÀM CALIBRATION (giữ nguyên) ===
+        // ... (giữ nguyên tất cả hàm calibration) ...
+
+        // === CÁC HÀM TỐI ƯU HÓA FIREBASE (giữ nguyên) ===
+        // ... (giữ nguyên tất cả hàm fetchFirebaseDataOptimized, processDataImmediately, v.v.) ...
+
+        // === CÁC HÀM XÂY DỰNG CÂU (giữ nguyên) ===
+        // ... (giữ nguyên tất cả hàm xây dựng câu) ...
+
+        // === CÁC HÀM CHUYỂN ĐỔI TIẾNG VIỆT (giữ nguyên) ===
+        // ... (giữ nguyên tất cả hàm chuyển đổi) ...
+
+        // === HÀM KHỞI TẠO ===
+        document.addEventListener('DOMContentLoaded', function() {
+            log('SYSTEM', 'Optimized app started with calibration and improved TTS');
+            
+            // Khởi tạo FPS counter
+            function updateFPS() {
+                frameCount++;
+                const currentTime = performance.now();
+                if (currentTime - lastFrameTime >= 1000) {
+                    currentFPS = frameCount;
+                    frameCount = 0;
+                    lastFrameTime = currentTime;
+                    
+                    document.getElementById('fps').textContent = currentFPS;
+                }
+                requestAnimationFrame(updateFPS);
+            }
+            
+            requestAnimationFrame(updateFPS);
+            
+            // Tải calibration từ localStorage nếu có
+            loadCalibration();
+            
+            // Tải phrase suggestions dạng list
+            loadPhraseSuggestions();
+            
+            // Khởi tạo speech synthesis
+            if ('speechSynthesis' in window) {
+                speechSynthesis.getVoices();
+                speechSynthesis.onvoiceschanged = function() {
+                    log('SPEECH', 'Loaded speech synthesis voices');
+                };
+            }
+            
+            // Khởi động hệ thống
+            setTimeout(() => {
+                fetchFirebaseDataOptimized();
+                toggleAutoRefresh();
+            }, 100);
+            
+            if (!GEMINI_API_KEY) {
+                log('SYSTEM', 'Note: Gemini API key not configured. Using Web Speech API as fallback.');
+            }
+        });
+
+        // === THÊM PHẦN HTML MỚI VÀO TRONG CARD XÂY DỰNG CÂU ===
+        // (Cần thêm các phần tử sau vào trong card xây dựng câu)
+    </script>
+
+    <!-- Thêm các phần tử HTML mới vào card xây dựng câu -->
+    <div class="card">
+        <h3>Xây dựng Câu</h3>
+        <div style="text-align: center; padding: 20px; margin-bottom: 20px;">
+            <!-- ... (giữ nguyên phần hiện tại) ... -->
+            
+            <!-- Thêm accent selector -->
+            <div class="accent-selector">
+                <button class="accent-btn north active" onclick="selectAccent('north')">
+                    🗣️ Miền Bắc
+                </button>
+                <button class="accent-btn central" onclick="selectAccent('central')">
+                    🗣️ Miền Trung
+                </button>
+                <button class="accent-btn south" onclick="selectAccent('south')">
+                    🗣️ Miền Nam
+                </button>
+            </div>
+            
+            <!-- Thêm voice gender selector -->
+            <div class="voice-gender-selector">
+                <button class="voice-gender-btn active" onclick="selectVoiceGender('male')">
+                    👨 Nam
+                </button>
+                <button class="voice-gender-btn" onclick="selectVoiceGender('female')">
+                    👩 Nữ
+                </button>
+            </div>
+            
+            <!-- Hiển thị accent và giọng hiện tại -->
+            <div style="margin: 10px 0; font-size: 0.9rem; color: #666;">
+                <div id="currentAccentDisplay">Accent: Miền Bắc</div>
+                <div id="currentVoiceGenderDisplay">Giọng: Nam</div>
+            </div>
+            
+            <!-- Hiển thị lỗi TTS -->
+            <div id="errorDisplay" class="error-message" style="display: none;"></div>
+            
+            <!-- Hiển thị trạng thái loading TTS -->
+            <div id="ttsLoading" class="tts-loading" style="display: none;">
+                <span>⏳</span> Đang tải giọng AI...
+            </div>
+            
+            <!-- Phrase suggestions dạng list -->
+            <div class="phrase-suggestions">
+                <div class="suggestion-header">GỢI Ý CỤM TỪ THÔNG DỤNG</div>
+                <div id="phraseList" class="phrase-list-container">
+                    <!-- Các cụm từ sẽ được thêm vào đây -->
+                </div>
+            </div>
+                        <!-- Voice options (giữ nguyên) -->
+            <div class="voice-options">
+                <div class="voice-btn male active" data-gender="male" data-lang="vi-VN" onclick="selectVoice(this)">
+                    👨 Nam Tiếng Việt
+                </div>
+                <div class="voice-btn female" data-gender="female" data-lang="vi-VN" onclick="selectVoice(this)">
+                    👩 Nữ Tiếng Việt
+                </div>
+                <div class="voice-btn male" data-gender="male" data-lang="en-GB" onclick="selectVoice(this)">
+                    👨 Nam Tiếng Anh
+                </div>
+                <div class="voice-btn female" data-gender="female" data-lang="en-GB" onclick="selectVoice(this)">
+                    👩 Nữ Tiếng Anh
+                </div>
+            </div>
+            
+            <div class="language-voice-display" id="currentVoiceDisplay">
+                Hiện tại: Nam Tiếng Việt (Gemini AI)
+            </div>
+            
+            <div class="ai-speech-status" id="aiSpeechStatus" style="display: none;">
+                <span class="ai-loading">⏳</span> Đang tải giọng AI...
+            </div>
+            
+            <!-- Speech controls (giữ nguyên) -->
+            <div class="speech-controls">
+                <button class="speech-btn" onclick="speakVietnameseSentence()" id="speakVnBtn">
+                    🔊 Đọc Tiếng Việt
+                </button>
+                <button class="speech-btn blue" onclick="speakTranslation()" id="speakTransBtn">
+                    🔈 Đọc Bản dịch
+                </button>
+                <button class="speech-btn red" onclick="stopAllSpeech()" id="stopSpeechBtn">
+                    ⏹ Dừng đọc
+                </button>
+            </div>
+            
+            <div class="audio-visualizer" id="audioVisualizer">
+                <!-- Thanh âm thanh sẽ được thêm ở đây -->
+            </div>
+            
+            <!-- Word list và word count (giữ nguyên) -->
+            <div class="word-list" id="wordList">Chưa có từ nào</div>
+            <div class="word-count">Số từ trong câu: <span id="wordCount">0</span>/10</div>
+            
+            <!-- Slot 1 và Slot 2 (giữ nguyên) -->
+            <div style="display: flex; justify-content: space-around; margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                <div>
+                    <div class="sensor-label">KHE 1</div>
+                    <div class="sensor-value" id="slot1" style="font-size: 1.2rem;">---</div>
+                </div>
+                <div>
+                    <div class="sensor-label">KHE 2</div>
+                    <div class="sensor-value" id="slot2" style="font-size: 1.2rem;">---</div>
+                </div>
+            </div>
+            
+            <!-- Controls (giữ nguyên) -->
+            <div class="controls">
+                <button onclick="clearCurrentWord()" class="red">Xóa từ hiện tại</button>
+                <button onclick="backspace()">Xóa ký tự</button>
+                <button onclick="addWordToSentence()" class="green">Thêm từ (_)</button>
+                <button onclick="commitSentence()" class="blue">Hoàn thành câu</button>
+                <button onclick="resetSentence()" class="red">Đặt lại tất cả</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
