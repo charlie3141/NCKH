@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Multi-Translator Pro</title>
+    <title>AI Multi-Translator Pro - Final Fix</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -11,366 +11,294 @@
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-        .animate-fade-in { animation: fadeIn 0.2s ease-out; }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        .animate-pulse-slow { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen p-4 md:p-10">
 
     <div class="max-w-5xl mx-auto">
-        <!-- Header -->
-        <header class="mb-10 text-center">
+        <header class="mb-8 text-center">
             <h1 class="text-4xl font-extrabold text-indigo-700 mb-2">AI Multi-Translator Pro</h1>
-            <p class="text-slate-500">Dịch thuật & Phát âm chuẩn bản ngữ bằng Gemini AI</p>
+            <p class="text-slate-500">Hệ thống dịch thuật & TTS thế hệ mới</p>
         </header>
 
-        <!-- API Key Setup Section -->
-        <div id="apiSetup" class="mb-8 bg-white p-6 rounded-3xl shadow-xl border border-slate-100 animate-fade-in">
-            <div class="flex flex-col md:flex-row items-center gap-4">
-                <div class="flex-1 w-full">
-                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2 tracking-widest">Cấu hình Gemini API Key</label>
-                    <input type="password" id="apiKeyInput" class="w-full px-4 py-3 border-2 border-slate-100 rounded-xl focus:border-indigo-400 outline-none transition-all" placeholder="Dán API Key của bạn vào đây...">
+        <!-- API Key & Model Config -->
+        <div id="apiSetup" class="mb-6 bg-white p-6 rounded-3xl shadow-xl border border-slate-100">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2 tracking-widest">Gemini API Key</label>
+                    <input type="password" id="apiKeyInput" class="w-full px-4 py-3 border-2 border-slate-100 rounded-xl focus:border-indigo-400 outline-none transition-all" placeholder="Dán API Key từ Google AI Studio...">
                 </div>
-                <button id="saveKeyBtn" class="w-full md:w-auto mt-6 md:mt-0 px-8 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all active:scale-95">Lưu Key</button>
+                <button id="saveKeyBtn" class="w-full px-8 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all active:scale-95 shadow-lg shadow-indigo-200">
+                    Kích hoạt hệ thống
+                </button>
             </div>
-            <p class="mt-3 text-xs text-slate-400 italic">Key được lưu tại trình duyệt. Lấy Key tại <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-indigo-500 underline">Google AI Studio</a>.</p>
+            <div id="keyStatus" class="mt-3 text-xs font-medium"></div>
         </div>
 
-        <!-- Control Bar -->
-        <div class="bg-white p-6 rounded-3xl shadow-xl mb-8 border border-slate-100">
-            <div class="flex flex-wrap items-center justify-between gap-4">
-                <div class="flex items-center gap-3">
-                    <select id="sourceLang" class="px-4 py-2 border-2 border-slate-100 rounded-xl bg-slate-50 font-semibold focus:border-indigo-400 outline-none transition-all cursor-pointer">
-                    </select>
-                    
-                    <button id="swapBtn" title="Đổi chiều" class="w-10 h-10 flex items-center justify-center rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-transform active:scale-90">
-                        ⇄
-                    </button>
-
-                    <select id="targetLang" class="px-4 py-2 border-2 border-slate-100 rounded-xl bg-slate-50 font-semibold focus:border-indigo-400 outline-none transition-all cursor-pointer">
-                    </select>
-                </div>
-
-                <div class="flex bg-slate-100 p-1 rounded-xl">
-                    <button id="genderFemale" class="px-4 py-2 rounded-lg text-sm font-bold transition-all bg-white text-indigo-600 shadow-md">👩 Nữ</button>
-                    <button id="genderMale" class="px-4 py-2 rounded-lg text-sm font-bold transition-all text-slate-500">👨 Nam</button>
-                </div>
+        <!-- Toolbar -->
+        <div class="bg-white p-4 rounded-3xl shadow-lg mb-6 border border-slate-50 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-2">
+                <select id="sourceLang" class="px-3 py-2 border border-slate-200 rounded-lg bg-slate-50 text-sm font-bold outline-none"></select>
+                <button id="swapBtn" class="p-2 hover:bg-indigo-50 rounded-full text-indigo-600 transition-all">⇄</button>
+                <select id="targetLang" class="px-3 py-2 border border-slate-200 rounded-lg bg-slate-50 text-sm font-bold outline-none"></select>
+            </div>
+            <div class="flex bg-slate-100 p-1 rounded-xl">
+                <button id="genderFemale" class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-indigo-600 shadow-sm">NỮ</button>
+                <button id="genderMale" class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-500">NAM</button>
             </div>
         </div>
 
-        <!-- Main Areas -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 relative">
-            
-            <!-- Input Section -->
-            <div class="relative flex flex-col" id="inputContainer">
-                <div class="absolute -top-3 left-6 px-2 bg-white text-xs font-bold text-slate-400 z-10 uppercase tracking-widest">Văn bản gốc</div>
-                <textarea id="inputText" class="w-full h-80 p-6 text-xl border-2 border-slate-100 rounded-3xl focus:border-indigo-500 outline-none shadow-inner bg-white transition-all resize-none" placeholder="Nhập nội dung cần dịch..."></textarea>
-                
-                <button id="speakSource" class="mt-4 w-full py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95 bg-white border-2 border-slate-100 text-slate-600 hover:border-indigo-200 shadow-sm disabled:opacity-50">
-                    <span id="sourceIcon">🔊</span> <span id="sourceBtnText">Nghe bản gốc</span>
+        <!-- Main Interface -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Source -->
+            <div class="flex flex-col">
+                <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+                    <div class="px-6 py-3 bg-slate-50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">Nhập liệu</div>
+                    <textarea id="inputText" class="w-full h-64 p-6 text-lg outline-none resize-none transition-all" placeholder="Gõ văn bản cần dịch tại đây..."></textarea>
+                </div>
+                <button id="speakSource" class="mt-4 flex items-center justify-center gap-2 py-4 bg-white border border-slate-200 rounded-2xl font-bold text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-50">
+                    <span class="icon">🔊</span> <span>Nghe bản gốc</span>
                 </button>
             </div>
 
-            <!-- Output Section -->
-            <div class="relative flex flex-col">
-                <div class="absolute -top-3 left-6 px-2 bg-white text-xs font-bold text-slate-400 z-10 uppercase tracking-widest">Bản dịch AI</div>
-                <div class="w-full h-80 p-6 text-xl border-2 border-slate-100 rounded-3xl bg-slate-50/50 overflow-y-auto shadow-inner relative custom-scrollbar">
-                    <div id="loader" class="hidden flex flex-col items-center justify-center h-full gap-4">
-                        <div class="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                        <span class="text-indigo-600 font-medium animate-pulse text-sm">AI đang xử lý nhanh...</span>
+            <!-- Target -->
+            <div class="flex flex-col">
+                <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden relative">
+                    <div class="px-6 py-3 bg-slate-50 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-widest">Bản dịch AI</div>
+                    <div id="loader" class="hidden absolute inset-0 bg-white/80 z-10 flex items-center justify-center">
+                        <div class="flex flex-col items-center gap-2">
+                            <div class="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                            <span class="text-[10px] font-bold text-indigo-600 tracking-tighter">AI THINKING...</span>
+                        </div>
                     </div>
-                    <div id="outputText" class="text-slate-800 leading-relaxed font-medium whitespace-pre-wrap">
-                        <span class="text-slate-300 italic">Kết quả sẽ hiển thị ở đây...</span>
-                    </div>
+                    <div id="outputText" class="w-full h-64 p-6 text-lg text-slate-800 overflow-y-auto custom-scrollbar whitespace-pre-wrap font-medium"></div>
                 </div>
-                <button id="speakTarget" class="mt-4 w-full py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95 bg-white border-2 border-slate-100 text-slate-600 hover:border-indigo-200 shadow-sm disabled:opacity-50">
-                    <span id="targetIcon">🔊</span> <span id="targetBtnText">Nghe bản dịch</span>
+                <button id="speakTarget" class="mt-4 flex items-center justify-center gap-2 py-4 bg-white border border-slate-200 rounded-2xl font-bold text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-50">
+                    <span class="icon">🔊</span> <span>Nghe bản dịch</span>
                 </button>
             </div>
         </div>
 
-        <!-- Error Toast -->
-        <div id="errorMsg" class="hidden mt-10 p-4 rounded-2xl flex items-center justify-center gap-3 shadow-sm animate-fade-in">
-            <span id="errorEmoji">⚠️</span> <span id="errorText">Lỗi kết nối</span>
-        </div>
+        <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-2xl shadow-2xl text-sm font-bold hidden animate-fade-in z-50"></div>
     </div>
 
     <script>
-        let apiKey = localStorage.getItem('GEMINI_API_KEY') || "";
-        let els = {};
-        let currentGender = 'female';
-        let isSpeaking = false;
-        let translationTimeout;
-        let abortController = null;
-        let audioContext = null;
+        // 1. Cấu hình hằng số & Model Fallback
+        const CONFIG = {
+            TEXT_MODEL: "gemini-1.5-flash", // Dùng bản ổn định thay vì preview nếu cần
+            TTS_MODEL: "gemini-2.5-flash-preview-tts",
+            BASE_URL: "https://generativelanguage.googleapis.com/v1beta",
+            RETRY_DELAYS: [500, 1000, 2000]
+        };
 
         const languages = {
             "vi-VN": { name: "Tiếng Việt", code: "Vietnamese" },
-            "en-GB": { name: "Tiếng Anh", code: "English" },
+            "en-US": { name: "Tiếng Anh", code: "English" },
             "ja-JP": { name: "Tiếng Nhật", code: "Japanese" },
             "ko-KR": { name: "Tiếng Hàn", code: "Korean" },
-            "zh-CN": { name: "Tiếng Trung", code: "Chinese (Simplified)" },
+            "zh-CN": { name: "Tiếng Trung", code: "Chinese" }
         };
 
-        const voiceConfigs = {
-            female: { 
-                "vi-VN": "Aoede", 
-                "en-GB": "Kore", 
-                "ja-JP": "Leda", 
-                "ko-KR": "Kore", 
-                "zh-CN": "Aoede" 
-            },
-            male: { 
-                "vi-VN": "Charon", 
-                "en-GB": "Puck", 
-                "ja-JP": "Fenrir", 
-                "ko-KR": "Puck", 
-                "zh-CN": "Zubenelgenubi" 
-            }
+        const voices = {
+            female: { "vi-VN": "Aoede", "en-US": "Kore", "ja-JP": "Leda", "ko-KR": "Kore", "zh-CN": "Aoede" },
+            male: { "vi-VN": "Charon", "en-US": "Puck", "ja-JP": "Fenrir", "ko-KR": "Puck", "zh-CN": "Zubenelgenubi" }
         };
 
-        // Hàm hỗ trợ retry với exponential backoff cho tất cả API calls
-        async function fetchWithRetry(url, options, maxRetries = 5) {
-            let retries = 0;
-            const delays = [1000, 2000, 4000, 8000, 16000];
-            while (retries < maxRetries) {
-                try {
-                    const response = await fetch(url, options);
-                    const data = await response.json();
-                    if (!response.ok) {
-                        // Nếu lỗi do API Key không hợp lệ
-                        if (response.status === 400 || response.status === 403) {
-                             throw new Error("API Key không hợp lệ hoặc đã hết hạn.");
-                        }
-                        throw new Error(data.error?.message || "Lỗi mạng");
-                    }
-                    return data;
-                } catch (err) {
-                    if (err.name === 'AbortError') throw err;
-                    if (retries >= maxRetries - 1) throw err;
-                    await new Promise(r => setTimeout(r, delays[retries]));
-                    retries++;
-                }
-            }
-        }
+        let apiKey = localStorage.getItem('GEMINI_KEY') || "";
+        let audioCtx = null;
+        let isSpeaking = false;
+        let transTimer = null;
+        let currentGender = 'female';
 
+        // 2. DOM Elements
+        const els = {
+            apiKey: document.getElementById('apiKeyInput'),
+            saveBtn: document.getElementById('saveKeyBtn'),
+            inputText: document.getElementById('inputText'),
+            outputText: document.getElementById('outputText'),
+            sourceLang: document.getElementById('sourceLang'),
+            targetLang: document.getElementById('targetLang'),
+            swapBtn: document.getElementById('swapBtn'),
+            loader: document.getElementById('loader'),
+            toast: document.getElementById('toast'),
+            speakSource: document.getElementById('speakSource'),
+            speakTarget: document.getElementById('speakTarget'),
+            genderF: document.getElementById('genderFemale'),
+            genderM: document.getElementById('genderMale')
+        };
+
+        // 3. Khởi tạo
         function init() {
-            els = {
-                sourceLang: document.getElementById('sourceLang'),
-                targetLang: document.getElementById('targetLang'),
-                swapBtn: document.getElementById('swapBtn'),
-                genderFemale: document.getElementById('genderFemale'),
-                genderMale: document.getElementById('genderMale'),
-                inputText: document.getElementById('inputText'),
-                outputText: document.getElementById('outputText'),
-                loader: document.getElementById('loader'),
-                speakSource: document.getElementById('speakSource'),
-                speakTarget: document.getElementById('speakTarget'),
-                errorMsg: document.getElementById('errorMsg'),
-                errorText: document.getElementById('errorText'),
-                errorEmoji: document.getElementById('errorEmoji'),
-                apiKeyInput: document.getElementById('apiKeyInput'),
-                saveKeyBtn: document.getElementById('saveKeyBtn'),
-                apiSetup: document.getElementById('apiSetup'),
-                sourceIcon: document.getElementById('sourceIcon'),
-                targetIcon: document.getElementById('targetIcon'),
-                sourceBtnText: document.getElementById('sourceBtnText'),
-                targetBtnText: document.getElementById('targetBtnText')
-            };
-
-            if (apiKey) {
-                els.apiKeyInput.value = apiKey;
-                els.apiSetup.classList.add('opacity-75');
-            }
-
             Object.entries(languages).forEach(([code, obj]) => {
                 els.sourceLang.add(new Option(obj.name, code));
                 els.targetLang.add(new Option(obj.name, code));
             });
             els.sourceLang.value = "vi-VN";
-            els.targetLang.value = "en-GB";
-
-            setupEventListeners();
+            els.targetLang.value = "en-US";
+            if (apiKey) {
+                els.apiKey.value = apiKey;
+                updateKeyStatus("Hệ thống sẵn sàng", "text-emerald-500");
+            }
+            bindEvents();
         }
 
-        function setupEventListeners() {
-            els.saveKeyBtn.addEventListener('click', () => {
-                const newKey = els.apiKeyInput.value.trim();
-                if (newKey) {
-                    localStorage.setItem('GEMINI_API_KEY', newKey);
-                    apiKey = newKey;
-                    showStatus("Đã lưu API Key!", "success");
-                    if (els.inputText.value) translate();
-                } else {
-                    showStatus("Vui lòng nhập API Key", "error");
-                }
-            });
+        function bindEvents() {
+            els.saveBtn.onclick = () => {
+                apiKey = els.apiKey.value.trim();
+                if (!apiKey) return notify("Vui lòng nhập Key", "error");
+                localStorage.setItem('GEMINI_KEY', apiKey);
+                notify("Đã kích hoạt API Key", "success");
+                updateKeyStatus("Đã kết nối", "text-emerald-500");
+                if (els.inputText.value) handleTranslate();
+            };
 
-            els.inputText.addEventListener('input', () => {
-                clearTimeout(translationTimeout);
-                translationTimeout = setTimeout(translate, 800);
-            });
+            els.inputText.oninput = () => {
+                clearTimeout(transTimer);
+                transTimer = setTimeout(handleTranslate, 1000);
+            };
 
-            els.swapBtn.addEventListener('click', () => {
-                const s = els.sourceLang.value;
+            els.swapBtn.onclick = () => {
+                const temp = els.sourceLang.value;
                 els.sourceLang.value = els.targetLang.value;
-                els.targetLang.value = s;
-                const i = els.inputText.value;
-                els.inputText.value = els.outputText.innerText === "Kết quả sẽ hiển thị ở đây..." ? "" : els.outputText.innerText;
-                translate();
-            });
+                els.targetLang.value = temp;
+                const txt = els.inputText.value;
+                els.inputText.value = els.outputText.innerText;
+                handleTranslate();
+            };
 
-            els.genderFemale.addEventListener('click', () => setGender('female'));
-            els.genderMale.addEventListener('click', () => setGender('male'));
+            els.genderF.onclick = () => toggleGender('female');
+            els.genderM.onclick = () => toggleGender('male');
 
-            els.speakSource.addEventListener('click', () => speak(els.inputText.value, els.sourceLang.value, 'source'));
-            els.speakTarget.addEventListener('click', () => speak(els.outputText.innerText, els.targetLang.value, 'target'));
+            els.speakSource.onclick = () => handleSpeak(els.inputText.value, els.sourceLang.value, els.speakSource);
+            els.speakTarget.onclick = () => handleSpeak(els.outputText.innerText, els.targetLang.value, els.speakTarget);
         }
 
-        function setGender(g) {
-            currentGender = g;
-            els.genderFemale.classList.toggle('bg-white', g === 'female');
-            els.genderFemale.classList.toggle('text-indigo-600', g === 'female');
-            els.genderMale.classList.toggle('bg-white', g === 'male');
-            els.genderMale.classList.toggle('text-indigo-600', g === 'male');
-        }
-
-        async function translate() {
+        // 4. Logic Xử lý Dịch thuật (Cải tiến Error Handling)
+        async function handleTranslate() {
             const text = els.inputText.value.trim();
-            if (!text) {
-                els.outputText.innerText = "Kết quả sẽ hiển thị ở đây...";
-                return;
-            }
-            if (!apiKey) {
-                showStatus("Vui lòng dán và Lưu API Key trước khi dịch", "error");
-                return;
-            }
-
-            if (abortController) abortController.abort();
-            abortController = new AbortController();
+            if (!text) { els.outputText.innerText = ""; return; }
+            if (!apiKey) return;
 
             els.loader.classList.remove('hidden');
-            els.outputText.classList.add('opacity-40');
-
+            
             try {
-                const data = await fetchWithRetry(
-                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        signal: abortController.signal,
-                        body: JSON.stringify({
-                            contents: [{ parts: [{ text: `Dịch văn bản sau sang ${languages[els.targetLang.value].name}. Chỉ trả về nội dung đã dịch, không thêm chú thích: "${text}"` }] }]
-                        })
-                    }
-                );
-                const result = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
-                els.outputText.innerText = result.replace(/^["']|["']$/g, '');
+                const response = await fetchWithRetry(`${CONFIG.BASE_URL}/models/${CONFIG.TEXT_MODEL}:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: `Translate to ${languages[els.targetLang.value].name} (Natural style). Output ONLY result: "${text}"` }] }]
+                    })
+                });
+
+                const result = response.candidates?.[0]?.content?.parts?.[0]?.text || "";
+                els.outputText.innerText = result.replace(/^["']|["']$/g, '').trim();
             } catch (err) {
-                if (err.name !== 'AbortError') {
-                    console.error(err);
-                    showStatus(err.message || "Lỗi dịch thuật", "error");
-                }
+                notify(err.message, "error");
             } finally {
                 els.loader.classList.add('hidden');
-                els.outputText.classList.remove('opacity-40');
             }
         }
 
-        async function speak(text, langCode, type) {
-            if (!text || text === "Kết quả sẽ hiển thị ở đây..." || isSpeaking) return;
-            if (!apiKey) {
-                showStatus("Vui lòng nhập API Key để sử dụng giọng nói", "error");
-                return;
-            }
+        // 5. Logic Giọng nói (Sửa lỗi giải mã & Unlock AudioContext)
+        async function handleSpeak(text, langCode, btn) {
+            if (!text || isSpeaking || !apiKey) return;
 
-            // Mở khóa âm thanh trình duyệt
-            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            if (audioContext.state === 'suspended') await audioContext.resume();
+            // Unlock AudioContext (Bắt buộc cho Chrome/Safari)
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') await audioCtx.resume();
 
-            setSpeakingUI(type, true);
             isSpeaking = true;
+            btn.disabled = true;
+            const originalBtnHtml = btn.innerHTML;
+            btn.innerHTML = `<div class="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>`;
 
             try {
-                const voiceName = voiceConfigs[currentGender][langCode] || "Aoede";
-                const langName = languages[langCode].code;
-                
-                // Prompt cực mạnh để ép AI không nói giọng Anh
-                const controlPrompt = `STRICT REQUIREMENT: SPEAK AS A NATIVE ${langName.toUpperCase()} PERSON. 
-                VĂN BẢN CẦN ĐỌC: ${text.substring(0, 800)}. 
-                VOICE STYLE: ${currentGender.toUpperCase()}. 
-                NO ENGLISH ACCENT ALLOWED.`;
+                const voiceName = voices[currentGender][langCode] || "Aoede";
+                const response = await fetchWithRetry(`${CONFIG.BASE_URL}/models/${CONFIG.TTS_MODEL}:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: `Say this naturally: ${text}` }] }],
+                        generationConfig: {
+                            responseModalities: ["AUDIO"],
+                            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName } } }
+                        }
+                    })
+                });
 
-                const response = await fetchWithRetry(
-                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`,
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            contents: [{ parts: [{ text: controlPrompt }] }],
-                            generationConfig: {
-                                responseModalities: ["AUDIO"],
-                                speechConfig: { 
-                                    voiceConfig: { 
-                                        prebuiltVoiceConfig: { voiceName: voiceName } 
-                                    } 
-                                }
-                            }
-                        })
-                    }
-                );
+                const base64 = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+                if (!base64) throw new Error("AI không phản hồi âm thanh");
 
-                const base64Data = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
-                if (!base64Data) throw new Error("AI không trả về dữ liệu âm thanh.");
-
-                const binaryString = atob(base64Data);
-                const bytes = new Uint8Array(binaryString.length);
-                for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
-
-                await audioContext.decodeAudioData(bytes.buffer, (audioBuffer) => {
-                    const source = audioContext.createBufferSource();
-                    source.buffer = audioBuffer;
-                    source.connect(audioContext.destination);
-                    source.onended = () => {
-                        setSpeakingUI(type, false);
-                        isSpeaking = false;
-                    };
-                    source.start(0);
-                }, (err) => {
-                    throw new Error("Lỗi giải mã âm thanh");
+                const audioBuffer = await decodeBase64Audio(base64);
+                playBuffer(audioBuffer, () => {
+                    isSpeaking = false;
+                    btn.disabled = false;
+                    btn.innerHTML = originalBtnHtml;
                 });
 
             } catch (err) {
-                console.error("TTS Error:", err);
-                showStatus(err.message || "Lỗi âm thanh", "error");
-                setSpeakingUI(type, false);
+                notify("Lỗi âm thanh: " + err.message, "error");
                 isSpeaking = false;
+                btn.disabled = false;
+                btn.innerHTML = originalBtnHtml;
             }
         }
 
-        function setSpeakingUI(type, active) {
-            const btn = type === 'source' ? els.speakSource : els.speakTarget;
-            const icon = type === 'source' ? els.sourceIcon : els.targetIcon;
-            const txt = type === 'source' ? els.sourceBtnText : els.targetBtnText;
-            btn.classList.toggle('bg-indigo-600', active);
-            btn.classList.toggle('text-white', active);
-            icon.innerText = active ? "⌛" : "🔊";
-            txt.innerText = active ? "Đang xử lý..." : (type === 'source' ? "Nghe bản gốc" : "Nghe bản dịch");
-        }
-
-        function showStatus(msg, type) {
-            els.errorText.innerText = msg;
-            els.errorMsg.classList.remove('hidden');
-            els.errorMsg.className = `mt-10 p-4 rounded-2xl flex items-center justify-center gap-3 shadow-sm animate-fade-in ${type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-red-50 text-red-700 border border-red-100'}`;
-            if (type === 'success') {
-                setTimeout(() => els.errorMsg.classList.add('hidden'), 3000);
+        // 6. Utilities (Fetch Retry, Base64 Decoder)
+        async function fetchWithRetry(url, options) {
+            let lastErr;
+            for (const delay of CONFIG.RETRY_DELAYS) {
+                try {
+                    const res = await fetch(url, options);
+                    const json = await res.json();
+                    if (!res.ok) throw new Error(json.error?.message || "Lỗi API");
+                    return json;
+                } catch (err) {
+                    lastErr = err;
+                    await new Promise(r => setTimeout(r, delay));
+                }
             }
+            throw lastErr;
         }
 
-        document.addEventListener('DOMContentLoaded', init);
+        async function decodeBase64Audio(base64) {
+            const binary = atob(base64);
+            const len = binary.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
+            return await audioCtx.decodeAudioData(bytes.buffer);
+        }
+
+        function playBuffer(buffer, onEnd) {
+            const source = audioCtx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(audioCtx.destination);
+            source.onended = onEnd;
+            source.start(0);
+        }
+
+        function toggleGender(g) {
+            currentGender = g;
+            els.genderF.className = g === 'female' ? "px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-indigo-600 shadow-sm" : "px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-500";
+            els.genderM.className = g === 'male' ? "px-4 py-1.5 rounded-lg text-xs font-bold transition-all bg-white text-indigo-600 shadow-sm" : "px-4 py-1.5 rounded-lg text-xs font-bold transition-all text-slate-500";
+        }
+
+        function notify(msg, type) {
+            els.toast.innerText = msg;
+            els.toast.className = `fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-2xl shadow-2xl text-sm font-bold animate-fade-in z-50 ${type === 'success' ? 'bg-emerald-600 text-white' : 'bg-red-600 text-white'}`;
+            els.toast.classList.remove('hidden');
+            setTimeout(() => els.toast.classList.add('hidden'), 3000);
+        }
+
+        function updateKeyStatus(msg, colorClass) {
+            const status = document.getElementById('keyStatus');
+            status.innerText = "● " + msg;
+            status.className = "mt-3 text-[10px] font-black uppercase tracking-tighter " + colorClass;
+        }
+
+        init();
     </script>
 </body>
 </html>
