@@ -80,7 +80,7 @@
                 <div class="w-full h-80 p-6 text-xl border-2 border-slate-100 rounded-3xl bg-slate-50/50 overflow-y-auto shadow-inner relative custom-scrollbar">
                     <div id="loader" class="hidden flex flex-col items-center justify-center h-full gap-4">
                         <div class="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                        <span class="text-indigo-600 font-medium animate-pulse">Đang dịch thuật...</span>
+                        <span class="text-indigo-600 font-medium animate-pulse text-sm">AI đang xử lý nhanh...</span>
                     </div>
                     <div id="outputText" class="text-slate-800 leading-relaxed font-medium whitespace-pre-wrap">
                         <span class="text-slate-300 italic">Kết quả sẽ hiển thị ở đây...</span>
@@ -130,7 +130,7 @@
         let isSpeaking = false;
         let translationTimeout;
         let currentAudio = null;
-        let abortController = null; // Quản lý việc hủy request cũ
+        let abortController = null;
 
         const els = {
             sourceLang: document.getElementById('sourceLang'),
@@ -151,9 +151,10 @@
             apiSetup: document.getElementById('apiSetup')
         };
 
-        async function fetchWithRetry(url, options, maxRetries = 5) {
+        // Giảm số lần retry xuống 3 lần để tránh treo lâu
+        async function fetchWithRetry(url, options, maxRetries = 3) {
             let retries = 0;
-            const delays = [1000, 2000, 4000, 8000, 16000];
+            const delays = [800, 1500, 3000]; // Giảm độ trễ giữa các lần thử
 
             while (retries < maxRetries) {
                 try {
@@ -161,12 +162,11 @@
                     const data = await response.json();
                     
                     if (!response.ok || data.error) {
-                        throw new Error(data.error?.message || `HTTP error! status: ${response.status}`);
+                        throw new Error(data.error?.message || `Lỗi HTTP: ${response.status}`);
                     }
                     
                     return data;
                 } catch (err) {
-                    // Nếu request bị hủy bởi AbortController, không thử lại
                     if (err.name === 'AbortError') throw err;
                     
                     retries++;
@@ -206,17 +206,16 @@
 
             els.inputText.addEventListener('input', () => {
                 clearTimeout(translationTimeout);
-                // Tăng delay debounce lên 1000ms để mượt hơn khi gõ
-                translationTimeout = setTimeout(translate, 1000);
+                // Giảm debounce xuống 600ms để phản hồi nhanh hơn
+                translationTimeout = setTimeout(translate, 600);
             });
 
             els.swapBtn.addEventListener('click', () => {
                 const s = els.sourceLang.value;
                 els.sourceLang.value = els.targetLang.value;
                 els.targetLang.value = s;
-                const i = els.inputText.value;
                 const o = els.outputText.innerText;
-                if(o !== "Kết quả sẽ hiển thị ở đây...") {
+                if(o && !o.includes("Kết quả sẽ hiển thị")) {
                     els.inputText.value = o;
                 }
                 translate();
@@ -237,14 +236,17 @@
 
         async function translate() {
             const text = els.inputText.value.trim();
-            if (!text || !apiKey) return;
+            if (!text) {
+                els.outputText.innerHTML = '<span class="text-slate-300 italic">Kết quả sẽ hiển thị ở đây...</span>';
+                return;
+            }
+            if (!apiKey) return;
 
-            // Hủy request cũ nếu đang chạy
             if (abortController) abortController.abort();
             abortController = new AbortController();
 
             els.loader.classList.remove('hidden');
-            els.outputText.classList.add('hidden');
+            els.outputText.classList.add('opacity-40'); // Giảm độ mờ để báo hiệu đang tải
 
             try {
                 const data = await fetchWithRetry(
@@ -259,14 +261,14 @@
                     }
                 );
 
-                els.outputText.innerText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
-                els.outputText.classList.remove('hidden');
-                els.loader.classList.add('hidden');
+                const result = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+                els.outputText.innerText = result;
             } catch (err) {
                 if (err.name === 'AbortError') return;
-                showStatus("Dịch thuật gặp sự cố, vui lòng kiểm tra kết nối.", "error");
+                showStatus("Dịch thuật gặp sự cố hoặc quá tải.", "error");
+            } finally {
                 els.loader.classList.add('hidden');
-                els.outputText.classList.remove('hidden');
+                els.outputText.classList.remove('opacity-40', 'hidden');
             }
         }
 
@@ -327,7 +329,7 @@
                 }
             } catch (err) {
                 console.error("TTS Error:", err);
-                showStatus("Đang dùng giọng đọc dự phòng...", "info");
+                showStatus("Đang dùng giọng đọc hệ thống...", "info");
                 speakFallback(text, langCode, type);
             }
         }
