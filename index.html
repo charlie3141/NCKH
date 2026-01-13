@@ -967,20 +967,6 @@
             border-bottom: 1px solid #eaeaea;
             border-radius: 8px 8px 0 0;
         }
-        
-        /* Thêm style cho converted sentence textarea */
-        .conversion-textarea {
-            width: 100%;
-            height: 80px;
-            font-size: 1.2rem;
-            padding: 10px;
-            border: 2px solid #2196F3;
-            border-radius: 10px;
-            background: #E3F2FD;
-            color: #333;
-            resize: vertical;
-            font-family: inherit;
-        }
     </style>
 </head>
 <body>
@@ -1016,8 +1002,7 @@
                     <div class="sensor-label">CÂU ĐẦY ĐỦ (Mã hóa)</div>
                     <div class="sentence-display" id="sentenceDisplay">---</div>
                     <div class="sensor-label">CÂU ĐẦY ĐỦ (Tiếng Việt)</div>
-                    <!-- SỬA: Thay div bằng textarea để có thể nhập từ đề xuất -->
-                    <textarea id="convertedSentenceTextarea" class="conversion-textarea">---</textarea>
+                    <div class="conversion-display" id="convertedSentenceDisplay">---</div>
                     
                     <!-- Chuyển đổi TTS -->
                     <div class="tts-toggle">
@@ -1032,19 +1017,6 @@
                         </div>
                         <div class="auto-suggestions-grid" id="autoSuggestionsGrid">
                             <!-- Đề xuất tự động sẽ được thêm vào đây -->
-                        </div>
-                    </div>
-                    
-                    <!-- Đề xuất cụm từ -->
-                    <div class="phrase-suggestions">
-                        <h4>📝 ĐỀ XUẤT CỤM TỪ THÔNG DỤNG</h4>
-                        <div class="phrase-pills" id="phrasePills">
-                            <!-- Các nút cụm từ sẽ được thêm bởi JavaScript -->
-                        </div>
-                        
-                        <!-- Đề xuất động -->
-                        <div class="dynamic-suggestions" id="dynamicSuggestions">
-                            <!-- Đề xuất động sẽ xuất hiện ở đây -->
                         </div>
                     </div>
                     
@@ -1210,6 +1182,19 @@
                         </div>
                     </div>
                     
+                    <!-- Đề xuất cụm từ từ phiên dịch - ĐÃ DI CHUYỂN -->
+                    <div class="phrase-suggestions">
+                        <h4>📝 ĐỀ XUẤT CỤM TỪ THÔNG DỤNG</h4>
+                        <div class="phrase-pills" id="phrasePills">
+                            <!-- Các nút cụm từ sẽ được thêm bởi JavaScript -->
+                        </div>
+                        
+                        <!-- Đề xuất động -->
+                        <div class="dynamic-suggestions" id="dynamicSuggestions">
+                            <!-- Đề xuất động sẽ xuất hiện ở đây -->
+                        </div>
+                    </div>
+                    
                     <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 10px;">
                         <div><strong>Tùy chọn dịch thuật:</strong></div>
                         <div style="display: flex; gap: 15px; margin-top: 10px; flex-wrap: wrap;">
@@ -1372,8 +1357,8 @@
         let holdStartMs = 0;
         let holdFired = false;
         const DEBOUNCE_COUNT = 3;
-        // SỬA: Thay đổi thời gian giữ từ 800ms xuống 1000ms (1 giây)
-        const HOLD_MS_DEFAULT = 300;
+        // THAY ĐỔI: Đổi thời gian giữ raw value xác nhận xuống 1s (1000ms)
+        const HOLD_MS_DEFAULT = 1000; // Đã đổi từ 800ms xuống 1000ms
         const POST_HOLD_COOLDOWN = 600;
         let lastActionMs = 0;
         let lastStateString = '';
@@ -2102,9 +2087,8 @@
                 
                 // Convert sentence
                 convertedFullSentence = convertVietnameseTextFast(fullSentence);
-                // SỬA: Cập nhật textarea thay vì div
-                const convertedElement = document.getElementById('convertedSentenceTextarea');
-                convertedElement.value = convertedFullSentence || '---';
+                const convertedElement = document.getElementById('convertedSentenceDisplay');
+                convertedElement.textContent = convertedFullSentence || '---';
                 
                 // Cập nhật word list
                 updateWordList();
@@ -2452,9 +2436,6 @@
             displayBuffer = '';
             convertedCurrentWord = '';
             
-            // SỬA: Reset textarea convertedSentenceTextarea
-            document.getElementById('convertedSentenceTextarea').value = '---';
-            
             document.getElementById('autoSuggestionsPanel').style.display = 'none';
             document.getElementById('dynamicSuggestions').innerHTML = '';
             document.getElementById('dynamicSuggestions').classList.remove('show');
@@ -2570,9 +2551,7 @@
                 pill.className = 'phrase-pill';
                 pill.textContent = phrase.length > 30 ? phrase.substring(0, 27) + '...' : phrase;
                 pill.onclick = () => {
-                    // SỬA: Điền vào cả translationInput và convertedSentenceTextarea
                     document.getElementById('translationInput').value = phrase;
-                    document.getElementById('convertedSentenceTextarea').value = phrase;
                     translatePhrase(phrase);
                     log('PHRASE', `Selected phrase: "${phrase}"`);
                 };
@@ -2647,17 +2626,13 @@
         }
 
         function useSuggestion(text) {
-            // SỬA: Điền vào cả translationInput và convertedSentenceTextarea
             document.getElementById('translationInput').value = text;
-            document.getElementById('convertedSentenceTextarea').value = text;
             translateSentence();
             log('SUGGESTION', `Using suggestion: "${text}"`);
         }
 
         function translateSuggestion(text) {
-            // SỬA: Điền vào cả translationInput và convertedSentenceTextarea
             document.getElementById('translationInput').value = text;
-            document.getElementById('convertedSentenceTextarea').value = text;
             translateSentence();
             log('SUGGESTION', `Translating suggestion: "${text}"`);
         }
@@ -2826,9 +2801,7 @@
         }
 
         function selectTranslationSuggestion(phrase) {
-            // SỬA: Điền vào cả translationInput và convertedSentenceTextarea
             document.getElementById('translationInput').value = phrase;
-            document.getElementById('convertedSentenceTextarea').value = phrase;
             document.getElementById('translationSuggestions').innerHTML = '';
             document.getElementById('translationSuggestions').classList.remove('show');
             translateSentence(); // Dịch ngay sau khi chọn
@@ -3030,8 +3003,7 @@
         }
 
         async function speakVietnameseSentence() {
-            // SỬA: Lấy văn bản từ textarea convertedSentenceTextarea
-            const text = document.getElementById('convertedSentenceTextarea').value;
+            const text = convertedFullSentence || document.getElementById('convertedSentenceDisplay').textContent;
             if (!text || text === '---') {
                 log('SPEECH', 'No Vietnamese text to speak');
                 return;
