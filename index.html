@@ -100,9 +100,13 @@
 
     <script>
         let apiKey = localStorage.getItem('GEMINI_API_KEY') || "";
-
-        // Elements references
         let els = {};
+        let currentGender = 'female';
+        let isSpeaking = false;
+        let translationTimeout;
+        let currentAudio = null;
+        let abortController = null;
+        let audioContext = null;
 
         const languages = {
             "vi-VN": { name: "Tiếng Việt", code: "Vietnamese" },
@@ -113,54 +117,28 @@
         };
 
         const voiceConfigs = {
-            female: { 
-                "vi-VN": "Aoede", 
-                "en-GB": "Kore", 
-                "ja-JP": "Leda", 
-                "ko-KR": "Chione", 
-                "zh-CN": "Algieba" 
-            },
-            male: { 
-                "vi-VN": "Charon", 
-                "en-GB": "Puck", 
-                "ja-JP": "Fenrir", 
-                "ko-KR": "Iapetus", 
-                "zh-CN": "Zubenelgenubi" 
-            }
+            female: { "vi-VN": "Aoede", "en-GB": "Kore", "ja-JP": "Leda", "ko-KR": "Chione", "zh-CN": "Algieba" },
+            male: { "vi-VN": "Charon", "en-GB": "Puck", "ja-JP": "Fenrir", "ko-KR": "Iapetus", "zh-CN": "Zubenelgenubi" }
         };
 
-        let currentGender = 'female';
-        let isSpeaking = false;
-        let translationTimeout;
-        let currentAudio = null;
-        let abortController = null;
-        let currentAudioURL = null; 
-
-        async function fetchWithRetry(url, options, maxRetries = 5) {
+        async function fetchWithRetry(url, options, maxRetries = 3) {
             let retries = 0;
-            const delays = [1000, 2000, 4000, 8000, 16000];
-
             while (retries < maxRetries) {
                 try {
                     const response = await fetch(url, options);
                     const data = await response.json();
-                    
-                    if (!response.ok || data.error) {
-                        throw new Error(data.error?.message || `HTTP ${response.status}`);
-                    }
-                    
+                    if (!response.ok) throw new Error(data.error?.message || "Lỗi mạng");
                     return data;
                 } catch (err) {
                     if (err.name === 'AbortError') throw err;
                     retries++;
                     if (retries >= maxRetries) throw err;
-                    await new Promise(res => setTimeout(res, delays[retries - 1]));
+                    await new Promise(r => setTimeout(r, 1000 * retries));
                 }
             }
         }
 
         function init() {
-            // Bind all elements
             els = {
                 sourceLang: document.getElementById('sourceLang'),
                 targetLang: document.getElementById('targetLang'),
@@ -195,6 +173,7 @@
             });
             els.sourceLang.value = "vi-VN";
             els.targetLang.value = "en-GB";
+
             setupEventListeners();
         }
 
@@ -204,10 +183,7 @@
                 if (newKey) {
                     localStorage.setItem('GEMINI_API_KEY', newKey);
                     apiKey = newKey;
-                    showStatus("Đã lưu API Key thành công!", "success");
-                    els.apiSetup.classList.add('opacity-50');
-                } else {
-                    showStatus("Vui lòng nhập API Key.", "error");
+                    showStatus("Đã lưu API Key!", "success");
                 }
             });
 
@@ -220,13 +196,9 @@
                 const s = els.sourceLang.value;
                 els.sourceLang.value = els.targetLang.value;
                 els.targetLang.value = s;
-                const o = els.outputText.innerText;
-                if(o && !o.includes("Kết quả sẽ hiển thị")) {
-                    els.inputText.value = o;
-                }
                 translate();
             });
-            
+
             els.genderFemale.addEventListener('click', () => setGender('female'));
             els.genderMale.addEventListener('click', () => setGender('male'));
 
@@ -236,17 +208,15 @@
 
         function setGender(g) {
             currentGender = g;
-            els.genderFemale.className = g === 'female' ? "px-4 py-2 rounded-lg text-sm font-bold transition-all bg-white text-indigo-600 shadow-md" : "px-4 py-2 rounded-lg text-sm font-bold transition-all text-slate-500";
-            els.genderMale.className = g === 'male' ? "px-4 py-2 rounded-lg text-sm font-bold transition-all bg-white text-indigo-600 shadow-md" : "px-4 py-2 rounded-lg text-sm font-bold transition-all text-slate-500";
+            els.genderFemale.classList.toggle('bg-white', g === 'female');
+            els.genderFemale.classList.toggle('text-indigo-600', g === 'female');
+            els.genderMale.classList.toggle('bg-white', g === 'male');
+            els.genderMale.classList.toggle('text-indigo-600', g === 'male');
         }
 
         async function translate() {
             const text = els.inputText.value.trim();
-            if (!text) {
-                els.outputText.innerHTML = '<span class="text-slate-300 italic">Kết quả sẽ hiển thị ở đây...</span>';
-                return;
-            }
-            if (!apiKey) return;
+            if (!text || !apiKey) return;
 
             if (abortController) abortController.abort();
             abortController = new AbortController();
@@ -262,16 +232,13 @@
                         headers: { "Content-Type": "application/json" },
                         signal: abortController.signal,
                         body: JSON.stringify({
-                            contents: [{ parts: [{ text: `Dịch sang ${languages[els.targetLang.value].name}: "${text}". Chỉ trả về văn bản đã dịch.` }] }]
+                            contents: [{ parts: [{ text: `Dịch sang ${languages[els.targetLang.value].name}: "${text}". Chỉ trả về kết quả.` }] }]
                         })
                     }
                 );
-
-                const result = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
-                els.outputText.innerText = result;
+                els.outputText.innerText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
             } catch (err) {
-                if (err.name === 'AbortError') return;
-                showStatus("Dịch thuật gặp sự cố.", "error");
+                if (err.name !== 'AbortError') showStatus("Lỗi dịch thuật", "error");
             } finally {
                 els.loader.classList.add('hidden');
                 els.outputText.classList.remove('opacity-40');
@@ -279,149 +246,77 @@
         }
 
         async function speak(text, langCode, type) {
-            if (!text || !apiKey || text.includes("Kết quả sẽ hiển thị")) return;
-            
-            // Force reset current audio
-            if (currentAudio) {
-                currentAudio.pause();
-                currentAudio.onended = null;
-                currentAudio = null;
-            }
-            if (currentAudioURL) {
-                URL.revokeObjectURL(currentAudioURL);
-                currentAudioURL = null;
-            }
+            if (!text || !apiKey || isSpeaking) return;
+
+            // Mở khóa AudioContext nếu cần
+            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioContext.state === 'suspended') await audioContext.resume();
 
             setSpeakingUI(type, true);
             isSpeaking = true;
 
             try {
                 const voiceName = voiceConfigs[currentGender][langCode] || "Kore";
-                const cleanText = text.replace(/[*_#`~]/g, '').trim();
-
                 const response = await fetchWithRetry(
                     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`,
                     {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
-                            contents: [{ parts: [{ text: cleanText }] }],
+                            contents: [{ parts: [{ text: text.substring(0, 500) }] }],
                             generationConfig: {
                                 responseModalities: ["AUDIO"],
-                                speechConfig: { 
-                                    voiceConfig: { 
-                                        prebuiltVoiceConfig: { voiceName } 
-                                    } 
-                                }
+                                speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName } } }
                             }
                         })
                     }
                 );
 
-                const audioData = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData;
-                
-                if (audioData && audioData.data) {
-                    const sampleRate = parseInt(audioData.mimeType.match(/rate=(\d+)/)?.[1] || "24000");
-                    const blob = pcmToWav(audioData.data, sampleRate);
-                    
-                    currentAudioURL = URL.createObjectURL(blob);
-                    currentAudio = new Audio(currentAudioURL);
-                    
-                    currentAudio.onended = () => {
-                        cleanupAudio(type);
-                    };
-                    
-                    currentAudio.onerror = (e) => {
-                        console.error("Audio error:", e);
-                        cleanupAudio(type);
-                        showStatus("Lỗi phát âm thanh. Đang thử giọng đọc hệ thống...", "info");
-                        speakFallback(cleanText, langCode, type);
-                    };
+                const base64Data = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+                if (!base64Data) throw new Error("No audio data");
 
-                    await currentAudio.play();
-                } else {
-                    throw new Error("No audio payload");
-                }
+                // Chuyển đổi Base64 -> ArrayBuffer
+                const binaryString = atob(base64Data);
+                const len = binaryString.length;
+                const bytes = new Uint8Array(len);
+                for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
+
+                // Giải mã âm thanh bằng AudioContext (Cực kỳ tin cậy)
+                const audioBuffer = await audioContext.decodeAudioData(bytes.buffer);
+                const source = audioContext.createBufferSource();
+                source.buffer = audioBuffer;
+                source.connect(audioContext.destination);
+                
+                source.onended = () => {
+                    setSpeakingUI(type, false);
+                    isSpeaking = false;
+                };
+                
+                source.start(0);
             } catch (err) {
                 console.error("TTS Error:", err);
-                cleanupAudio(type);
-                speakFallback(text, langCode, type);
+                // Dự phòng cuối cùng bằng trình duyệt
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = langCode;
+                utterance.onend = () => { setSpeakingUI(type, false); isSpeaking = false; };
+                window.speechSynthesis.speak(utterance);
             }
-        }
-
-        function cleanupAudio(type) {
-            setSpeakingUI(type, false);
-            isSpeaking = false;
-            if (currentAudioURL) {
-                URL.revokeObjectURL(currentAudioURL);
-                currentAudioURL = null;
-            }
-            currentAudio = null;
-        }
-
-        function speakFallback(text, langCode, type) {
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = langCode;
-            utterance.onstart = () => setSpeakingUI(type, true);
-            utterance.onend = () => setSpeakingUI(type, false);
-            utterance.onerror = () => setSpeakingUI(type, false);
-            window.speechSynthesis.speak(utterance);
         }
 
         function setSpeakingUI(type, active) {
             const btn = type === 'source' ? els.speakSource : els.speakTarget;
             const icon = type === 'source' ? els.sourceIcon : els.targetIcon;
             const txt = type === 'source' ? els.sourceBtnText : els.targetBtnText;
-            
-            if (active) {
-                btn.classList.add('bg-indigo-600', 'text-white');
-                icon.innerText = "⏳";
-                txt.innerText = "Đang phát...";
-            } else {
-                btn.classList.remove('bg-indigo-600', 'text-white');
-                icon.innerText = "🔊";
-                txt.innerText = type === 'source' ? "Nghe bản gốc" : "Nghe bản dịch";
-            }
+            btn.classList.toggle('bg-indigo-600', active);
+            btn.classList.toggle('text-white', active);
+            icon.innerText = active ? "⏳" : "🔊";
+            txt.innerText = active ? "Đang phát..." : (type === 'source' ? "Nghe bản gốc" : "Nghe bản dịch");
         }
 
         function showStatus(msg, type) {
             els.errorText.innerText = msg;
-            els.errorEmoji.innerText = type === "success" ? "✅" : (type === "info" ? "ℹ️" : "⚠️");
-            els.errorMsg.className = `mt-10 p-4 rounded-2xl flex items-center justify-center gap-3 shadow-sm animate-fade-in ${
-                type === 'success' ? 'bg-green-50 text-green-700' : 
-                (type === 'info' ? 'bg-blue-50 text-blue-700' : 'bg-red-50 text-red-700')
-            }`;
             els.errorMsg.classList.remove('hidden');
-            setTimeout(() => els.errorMsg.classList.add('hidden'), 4000);
-        }
-
-        function pcmToWav(base64, sampleRate) {
-            const binary = atob(base64.replace(/\s/g, ''));
-            const len = binary.length;
-            const bytes = new Uint8Array(len);
-            for (let i = 0; i < len; i++) bytes[i] = binary.charCodeAt(i);
-
-            const buffer = new ArrayBuffer(44 + len);
-            const view = new DataView(buffer);
-
-            const writeString = (off, s) => { for(let i=0; i<s.length; i++) view.setUint8(off+i, s.charCodeAt(i)); };
-
-            writeString(0, 'RIFF');
-            view.setUint32(4, 36 + len, true);
-            writeString(8, 'WAVE');
-            writeString(12, 'fmt ');
-            view.setUint32(16, 16, true);
-            view.setUint16(20, 1, true); // PCM format
-            view.setUint16(22, 1, true); // Mono
-            view.setUint32(24, sampleRate, true);
-            view.setUint32(28, sampleRate * 2, true); // Byte rate
-            view.setUint16(32, 2, true); // Block align
-            view.setUint16(34, 16, true); // Bits per sample
-            writeString(36, 'data');
-            view.setUint32(40, len, true);
-
-            new Uint8Array(buffer, 44).set(bytes);
-            return new Blob([buffer], { type: 'audio/wav' });
+            setTimeout(() => els.errorMsg.classList.add('hidden'), 3000);
         }
 
         document.addEventListener('DOMContentLoaded', init);
