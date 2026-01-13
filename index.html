@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ứng dụng và cải tiến "Công nghệ dịch thủ ngữ" vào đời sống - Phiên bản tối ưu với Calibration</title>
+    <title>Ứng dụng và cải tiến "Công nghệ dịch thủ ngữ" vào đời sống - Phiên bản tối ưu</title>
     <style>
         * {
             margin: 0;
@@ -64,173 +64,6 @@
             border-bottom: 2px solid #f0f0f0;
         }
 
-        /* Giữ nguyên các style cũ, chỉ thêm style mới cho calibration */
-
-        /* === CARD CALIBRATION === */
-        .calibration-card {
-            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
-            border: 2px solid #e0e6ff;
-        }
-
-        .calibration-status {
-            margin: 15px 0;
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center;
-            font-weight: bold;
-        }
-
-        .calibrating {
-            background: #FFF3CD;
-            border: 2px solid #FFC107;
-            color: #856404;
-            animation: pulse 1s infinite;
-        }
-
-        .calibrated {
-            background: #D4EDDA;
-            border: 2px solid #28A745;
-            color: #155724;
-        }
-
-        .calibration-ready {
-            background: #E3F2FD;
-            border: 2px solid #2196F3;
-            color: #0d47a1;
-        }
-
-        .calibration-error {
-            background: #FFEBEE;
-            border: 2px solid #F44336;
-            color: #b71c1c;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.7; }
-            100% { opacity: 1; }
-        }
-
-        @keyframes countdown {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-
-        .calibration-display {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin: 15px 0;
-        }
-
-        .sensor-calibration {
-            padding: 15px;
-            background: white;
-            border-radius: 10px;
-            border: 1px solid #eaeaea;
-            text-align: center;
-        }
-
-        .sensor-name {
-            font-size: 0.9rem;
-            color: #666;
-            margin-bottom: 8px;
-        }
-
-        .sensor-value {
-            font-size: 1.8rem;
-            font-weight: bold;
-            margin: 5px 0;
-        }
-
-        .sensor-max {
-            font-size: 1.2rem;
-            color: #4CAF50;
-            font-weight: bold;
-        }
-
-        .sensor-threshold {
-            font-size: 1rem;
-            color: #2196F3;
-            margin-top: 5px;
-        }
-
-        .progress-container {
-            width: 100%;
-            height: 20px;
-            background: #f0f0f0;
-            border-radius: 10px;
-            overflow: hidden;
-            margin: 10px 0;
-        }
-
-        .progress-bar {
-            height: 100%;
-            background: linear-gradient(to right, #4CAF50, #45a049);
-            border-radius: 10px;
-            transition: width 0.3s ease;
-        }
-
-        .calibration-countdown {
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: #FF5722;
-            margin: 10px 0;
-            animation: countdown 1s infinite;
-        }
-
-        .calibration-instructions {
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            margin: 15px 0;
-            border-left: 4px solid #2196F3;
-        }
-
-        .calibration-step {
-            margin: 8px 0;
-            padding-left: 20px;
-            position: relative;
-        }
-
-        .calibration-step:before {
-            content: "•";
-            position: absolute;
-            left: 0;
-            color: #2196F3;
-            font-weight: bold;
-        }
-
-        .flex-sensor-legend {
-            display: flex;
-            justify-content: space-around;
-            margin: 15px 0;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 10px;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .legend-color {
-            width: 20px;
-            height: 20px;
-            border-radius: 4px;
-        }
-
-        .legend-text {
-            font-size: 0.9rem;
-            color: #666;
-        }
-
-        /* Thêm các style còn lại giữ nguyên từ bản trước */
-        /* ... (các style cũ giữ nguyên) ... */
-        
         .conversion-display {
             font-size: 1.5rem;
             font-weight: bold;
@@ -395,14 +228,6 @@
             background: linear-gradient(to right, #2196F3, #21CBF3);
         }
 
-        button.orange {
-            background: linear-gradient(to right, #FF9800, #FF5722);
-        }
-
-        button.purple {
-            background: linear-gradient(to right, #9C27B0, #673AB7);
-        }
-
         .status-bar {
             background: #f8f9fa;
             padding: 15px;
@@ -428,6 +253,33 @@
         @keyframes blink {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
+        }
+
+        .calibration-status {
+            margin: 15px 0;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .calibrating {
+            background: #FFF3CD;
+            border: 2px solid #FFC107;
+            color: #856404;
+            animation: pulse 1s infinite;
+        }
+
+        .calibrated {
+            background: #D4EDDA;
+            border: 2px solid #28A745;
+            color: #155724;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
         }
 
         @keyframes shake {
@@ -834,145 +686,13 @@
             font-size: 0.8rem;
             z-index: 1000;
         }
-       .phrase-list-container {
-            margin-top: 15px;
-            max-height: 200px;
-            overflow-y: auto;
-            border: 1px solid #eaeaea;
-            border-radius: 10px;
-            background: white;
-        }
-
-        .phrase-list-item {
-            padding: 12px 15px;
-            border-bottom: 1px solid #f0f0f0;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 0.9rem;
-        }
-
-        .phrase-list-item:hover {
-            background: #f0f7ff;
-            border-left: 3px solid #4A00E0;
-        }
-
-        .phrase-list-item:last-child {
-            border-bottom: none;
-        }
-
-        .accent-selector {
-            display: flex;
-            gap: 10px;
-            margin: 15px 0;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .accent-btn {
-            padding: 8px 15px;
-            background: #f8f9fa;
-            border: 2px solid #ddd;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            transition: all 0.2s;
-        }
-
-        .accent-btn.active {
-            background: linear-gradient(to right, #4A00E0, #8E2DE2);
-            color: white;
-            border-color: #4A00E0;
-        }
-
-        .accent-btn.north {
-            background: #E3F2FD;
-            border-color: #2196F3;
-        }
-
-        .accent-btn.central {
-            background: #E8F5E9;
-            border-color: #4CAF50;
-        }
-
-        .accent-btn.south {
-            background: #FFF3E0;
-            border-color: #FF9800;
-        }
-
-        .voice-gender-selector {
-            display: flex;
-            gap: 10px;
-            margin: 10px 0;
-            justify-content: center;
-        }
-
-        .voice-gender-btn {
-            padding: 8px 20px;
-            background: #f8f9fa;
-            border: 2px solid #ddd;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .voice-gender-btn.active {
-            background: linear-gradient(to right, #FF9800, #FF5722);
-            color: white;
-            border-color: #FF9800;
-        }
-
-        .tts-loading {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin: 10px 0;
-            padding: 10px;
-            background: #FFF3CD;
-            border-radius: 8px;
-            border: 1px solid #FFC107;
-        }
-
-        .tts-loading span {
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .error-message {
-            background: #FFEBEE;
-            border: 1px solid #F44336;
-            border-radius: 8px;
-            padding: 10px;
-            margin: 10px 0;
-            color: #b71c1c;
-            text-align: center;
-            animation: pulse 1s infinite;
-        }
-
-        .suggestion-header {
-            background: #f8f9fa;
-            padding: 8px 15px;
-            font-size: 0.8rem;
-            color: #666;
-            border-bottom: 1px solid #eaeaea;
-            border-radius: 8px 8px 0 0;
     </style>
 </head>
 <body>
     <div class="fast-mode" id="fastModeIndicator">🚀 Chế độ tốc độ cao: BẬT</div>
     <div class="container">
         <header>
-            <h1>Ứng dụng và cải tiến "Công nghệ dịch thủ ngữ" vào đời sống - Phiên bản tối ưu với Calibration</h1>
+            <h1>Ứng dụng và cải tiến "Công nghệ dịch thủ ngữ" vào đời sống - Phiên bản tối ưu</h1>
             <div>Giám sát thời gian thực từ Cơ sở dữ liệu Firebase</div>
             <div class="firebase-status" id="firebaseStatus">
                 Đang kết nối với Firebase...
@@ -1093,90 +813,6 @@
                         <button onclick="commitSentence()" class="blue">Hoàn thành câu</button>
                         <button onclick="resetSentence()" class="red">Đặt lại tất cả</button>
                     </div>
-                </div>
-            </div>
-
-            <!-- Card Calibration -->
-            <div class="card calibration-card">
-                <h3>🎯 Calibration Cảm biến Uốn</h3>
-                
-                <div class="calibration-instructions">
-                    <h4>📋 Hướng dẫn Calibration:</h4>
-                    <div class="calibration-step">Đặt tay thẳng và thư giãn</div>
-                    <div class="calibration-step">Nhấn "Bắt đầu Calibration"</div>
-                    <div class="calibration-step">Lần lượt uốn từng ngón tay hết mức có thể (10 giây)</div>
-                    <div class="calibration-step">Hệ thống sẽ tự động lưu giá trị bent threshold</div>
-                    <div class="calibration-step">Sau khi hoàn thành, hệ thống sẽ sử dụng giá trị đã calibration</div>
-                </div>
-                
-                <div class="calibration-status" id="calibrationStatus">
-                    <div class="calibration-ready">Sẵn sàng để Calibration</div>
-                </div>
-                
-                <!-- Hiển thị quá trình calibration -->
-                <div id="calibrationProgress" style="display: none;">
-                    <div class="calibration-countdown" id="calibrationCountdown">10</div>
-                    <div style="text-align: center; margin: 10px 0; font-weight: bold; color: #4A00E0;">
-                        <span id="calibrationMessage">Đang calibration... Vui lòng uốn ngón tay hết mức!</span>
-                    </div>
-                    
-                    <div class="calibration-display" id="calibrationDisplay">
-                        <!-- Các sensor sẽ được thêm bằng JavaScript -->
-                    </div>
-                    
-                    <div class="progress-container">
-                        <div class="progress-bar" id="calibrationProgressBar" style="width: 0%"></div>
-                    </div>
-                </div>
-                
-                <!-- Hiển thị threshold hiện tại -->
-                <div class="sensor-calibration" style="margin-top: 20px;">
-                    <div class="sensor-label">THRESHOLD HIỆN TẠI</div>
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px;">
-                        <div>
-                            <div class="sensor-name">Flex 0</div>
-                            <div class="sensor-threshold" id="currentThreshold0">300</div>
-                        </div>
-                        <div>
-                            <div class="sensor-name">Flex 1</div>
-                            <div class="sensor-threshold" id="currentThreshold1">450</div>
-                        </div>
-                        <div>
-                            <div class="sensor-name">Flex 2</div>
-                            <div class="sensor-threshold" id="currentThreshold2">350</div>
-                        </div>
-                        <div>
-                            <div class="sensor-name">Flex 3</div>
-                            <div class="sensor-threshold" id="currentThreshold3">300</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="flex-sensor-legend">
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #4CAF50;"></div>
-                        <div class="legend-text">Thẳng (0)</div>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #FF9800;"></div>
-                        <div class="legend-text">Hơi uốn (1)</div>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #F44336;"></div>
-                        <div class="legend-text">Uốn hết (2)</div>
-                    </div>
-                </div>
-                
-                <div class="controls">
-                    <button onclick="startCalibration()" class="orange" id="calibrateBtn">🎯 Bắt đầu Calibration</button>
-                    <button onclick="stopCalibration()" class="red" id="stopCalibrateBtn" style="display: none;">⏹ Dừng Calibration</button>
-                    <button onclick="resetCalibration()" class="purple">🔄 Reset về Mặc định</button>
-                    <button onclick="loadCalibration()" class="blue">💾 Tải Calibration</button>
-                </div>
-                
-                <div class="calibration-info" style="margin-top: 15px; font-size: 0.8rem; color: #666; text-align: center;">
-                    <div>Threshold thẳng cố định: Flex 0-2: 150, Flex 3: 100</div>
-                    <div>Threshold bent sẽ được calibration tự động</div>
                 </div>
             </div>
 
@@ -1306,19 +942,6 @@
         const GEMINI_API_KEY = "AIzaSyDdUj2SX83qODeZ1hhru0e9KN1fwDrtUP8";
         const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent";
         
-        // === BIẾN CALIBRATION ===
-        let bentThresholds = [300, 450, 350, 300]; // Giá trị mặc định cho bent threshold
-        const STRAIGHT_THRESHOLDS = [75, 75, 75, 75]; // Giá trị cố định cho straight threshold (Flex 3 khác)
-        
-        let isCalibrating = false;
-        let calibrationTimeout = null;
-        let calibrationInterval = null;
-        let calibrationCountdown = 10;
-        let calibrationStartTime = 0;
-        let calibrationMaxValues = [0, 0, 0, 0];
-        let calibrationCurrentSensor = 0;
-        let calibrationStep = "waiting"; // waiting, calibrating, done
-        
         // === BIẾN TỐI ƯU HÓA ===
         let firebaseData = null;
         let lastUpdateTime = 0;
@@ -1332,7 +955,7 @@
         let lastFrameTime = performance.now();
         let frameCount = 0;
         let currentFPS = 60;
-        let pollingInterval = 300;
+        let pollingInterval = 300; // Giảm từ 2000ms xuống 300ms
         let turboMode = false;
         let currentFetchController = null;
         
@@ -1577,237 +1200,55 @@
             gender: 'male'
         };
 
-        // === HÀM CALIBRATION ===
-        function startCalibration() {
-            if (isCalibrating) return;
-            
-            isCalibrating = true;
-            calibrationCountdown = 10;
-            calibrationStartTime = Date.now();
-            calibrationMaxValues = [0, 0, 0, 0];
-            calibrationCurrentSensor = 0;
-            calibrationStep = "calibrating";
-            
-            // Hiển thị giao diện calibration
-            document.getElementById('calibrationProgress').style.display = 'block';
-            document.getElementById('calibrateBtn').style.display = 'none';
-            document.getElementById('stopCalibrateBtn').style.display = 'inline-block';
-            
-            // Cập nhật trạng thái
-            updateCalibrationStatus("calibrating", "Đang calibration... Vui lòng uốn tất cả ngón tay hết mức có thể!");
-            
-            // Tạo display cho các sensor
-            const display = document.getElementById('calibrationDisplay');
-            display.innerHTML = '';
-            
-            for (let i = 0; i < 4; i++) {
-                const sensorDiv = document.createElement('div');
-                sensorDiv.className = 'sensor-calibration';
-                sensorDiv.id = `calibrationSensor${i}`;
-                sensorDiv.innerHTML = `
-                    <div class="sensor-name">FLEX ${i}</div>
-                    <div class="sensor-value">0</div>
-                    <div class="sensor-max">Max: 0</div>
-                    <div class="progress-container">
-                        <div class="progress-bar" id="progressBar${i}" style="width: 0%"></div>
-                    </div>
-                `;
-                display.appendChild(sensorDiv);
+        // Ánh xạ giọng nói cho Gemini TTS
+        const geminiVoiceMap = {
+            'vi-VN': {
+                male: 'Aoede',
+                female: 'Kore'
+            },
+            'en-GB': {
+                male: 'Kore',
+                female: 'Aoede'
+            },
+            'ja-JP': {
+                male: 'Aoede',
+                female: 'Kore'
+            },
+            'ko-KR': {
+                male: 'Kore',
+                female: 'Aoede'
+            },
+            'zh-CN': {
+                male: 'Zubenelgenubi',
+                female: 'Aoede'
             }
-            
-            // Bắt đầu đếm ngược
-            calibrationInterval = setInterval(updateCalibration, 1000);
-            
-            // Cập nhật thông báo
-            document.getElementById('calibrationMessage').textContent = `Đang calibration... Vui lòng uốn TẤT CẢ ngón tay hết mức!`;
-            
-            log('CALIBRATION', 'Bắt đầu calibration cảm biến uốn');
-        }
+        };
 
-        function updateCalibration() {
-            if (!isCalibrating) return;
-            
-            calibrationCountdown--;
-            document.getElementById('calibrationCountdown').textContent = calibrationCountdown;
-            
-            // Cập nhật thanh tiến trình
-            const progress = ((10 - calibrationCountdown) / 10) * 100;
-            document.getElementById('calibrationProgressBar').style.width = `${progress}%`;
-            
-            // Cập nhật giá trị cảm biến nếu có dữ liệu
-            if (firebaseData) {
-                const flexValues = [firebaseData.f0 || 0, firebaseData.f1 || 0, firebaseData.f2 || 0, firebaseData.f3 || 0];
-                
-                for (let i = 0; i < 4; i++) {
-                    // Cập nhật giá trị hiện tại
-                    const valueElement = document.querySelector(`#calibrationSensor${i} .sensor-value`);
-                    if (valueElement) {
-                        valueElement.textContent = flexValues[i];
-                    }
-                    
-                    // Cập nhật giá trị lớn nhất
-                    if (flexValues[i] > calibrationMaxValues[i]) {
-                        calibrationMaxValues[i] = flexValues[i];
-                        const maxElement = document.querySelector(`#calibrationSensor${i} .sensor-max`);
-                        if (maxElement) {
-                            maxElement.textContent = `Max: ${flexValues[i]}`;
-                            maxElement.style.color = '#F44336';
-                        }
-                    }
-                    
-                    // Cập nhật thanh tiến trình cho từng sensor
-                    const progressValue = Math.min((flexValues[i] / 1024) * 100, 100);
-                    const progressBar = document.getElementById(`progressBar${i}`);
-                    if (progressBar) {
-                        progressBar.style.width = `${progressValue}%`;
-                        
-                        // Thay đổi màu dựa trên mức độ uốn
-                        if (progressValue < 30) {
-                            progressBar.style.background = '#4CAF50'; // Thẳng
-                        } else if (progressValue < 70) {
-                            progressBar.style.background = '#FF9800'; // Hơi uốn
-                        } else {
-                            progressBar.style.background = '#F44336'; // Uốn hết
-                        }
-                    }
-                }
+        // Ánh xạ giọng nói cho Web Speech API
+        const webSpeechVoiceMap = {
+            'vi-VN': {
+                male: { lang: 'vi-VN', name: 'Vietnamese Male', rate: 0.9, pitch: 0.8 },
+                female: { lang: 'vi-VN', name: 'Vietnamese Female', rate: 0.9, pitch: 1.2 }
+            },
+            'en-GB': {
+                male: { lang: 'en-GB', name: 'Google UK English Male', rate: 0.9, pitch: 0.8 },
+                female: { lang: 'en-GB', name: 'Google UK English Female', rate: 0.9, pitch: 1.2 }
+            },
+            'ja-JP': {
+                male: { lang: 'ja-JP', name: 'Japanese Male', rate: 0.9, pitch: 0.8 },
+                female: { lang: 'ja-JP', name: 'Japanese Female', rate: 0.9, pitch: 1.2 }
+            },
+            'ko-KR': {
+                male: { lang: 'ko-KR', name: 'Korean Male', rate: 0.9, pitch: 0.8 },
+                female: { lang: 'ko-KR', name: 'Korean Female', rate: 0.9, pitch: 1.2 }
+            },
+            'zh-CN': {
+                male: { lang: 'zh-CN', name: 'Chinese Male', rate: 0.9, pitch: 0.8 },
+                female: { lang: 'zh-CN', name: 'Chinese Female', rate: 0.9, pitch: 1.2 }
             }
-            
-            // Kiểm tra kết thúc calibration
-            if (calibrationCountdown <= 0) {
-                finishCalibration();
-            }
-        }
+        };
 
-        function finishCalibration() {
-            isCalibrating = false;
-            clearInterval(calibrationInterval);
-            calibrationStep = "done";
-            
-            // Cập nhật bentThresholds với giá trị mới
-            let hasValidCalibration = false;
-            for (let i = 0; i < 4; i++) {
-                if (calibrationMaxValues[i] > STRAIGHT_THRESHOLDS[i] + 50) {
-                    bentThresholds[i] = calibrationMaxValues[i];
-                    hasValidCalibration = true;
-                } else {
-                    log('CALIBRATION', `Cảm biến ${i} không có dữ liệu calibration hợp lệ (Max: ${calibrationMaxValues[i]})`);
-                }
-            }
-            
-            if (hasValidCalibration) {
-                // Lưu calibration vào localStorage
-                localStorage.setItem('bentThresholds', JSON.stringify(bentThresholds));
-                
-                // Cập nhật giao diện với threshold mới
-                updateThresholdDisplay();
-                
-                // Cập nhật trạng thái
-                updateCalibrationStatus("calibrated", `Calibration hoàn thành! Threshold đã được cập nhật.`);
-                
-                log('CALIBRATION', `Calibration hoàn thành: ${bentThresholds}`);
-                
-                // Ẩn phần calibration sau 3 giây
-                setTimeout(() => {
-                    document.getElementById('calibrationProgress').style.display = 'none';
-                    document.getElementById('calibrateBtn').style.display = 'inline-block';
-                    document.getElementById('stopCalibrateBtn').style.display = 'none';
-                }, 3000);
-            } else {
-                updateCalibrationStatus("error", "Calibration thất bại! Không có dữ liệu hợp lệ. Vui lòng thử lại.");
-                log('CALIBRATION', 'Calibration thất bại: Không có dữ liệu hợp lệ');
-                
-                setTimeout(() => {
-                    document.getElementById('calibrationProgress').style.display = 'none';
-                    document.getElementById('calibrateBtn').style.display = 'inline-block';
-                    document.getElementById('stopCalibrateBtn').style.display = 'none';
-                }, 3000);
-            }
-        }
-
-        function stopCalibration() {
-            if (isCalibrating) {
-                isCalibrating = false;
-                clearInterval(calibrationInterval);
-                
-                updateCalibrationStatus("ready", "Calibration đã dừng");
-                
-                document.getElementById('calibrationProgress').style.display = 'none';
-                document.getElementById('calibrateBtn').style.display = 'inline-block';
-                document.getElementById('stopCalibrateBtn').style.display = 'none';
-                
-                log('CALIBRATION', 'Calibration đã dừng bởi người dùng');
-            }
-        }
-
-        function resetCalibration() {
-            bentThresholds = [300, 450, 350, 300];
-            localStorage.removeItem('bentThresholds');
-            
-            updateThresholdDisplay();
-            updateCalibrationStatus("ready", "Đã reset về giá trị mặc định");
-            
-            log('CALIBRATION', 'Reset calibration về giá trị mặc định');
-        }
-
-        function loadCalibration() {
-            const savedThresholds = localStorage.getItem('bentThresholds');
-            if (savedThresholds) {
-                try {
-                    bentThresholds = JSON.parse(savedThresholds);
-                    updateThresholdDisplay();
-                    updateCalibrationStatus("calibrated", "Đã tải calibration từ bộ nhớ");
-                    log('CALIBRATION', `Đã tải calibration: ${bentThresholds}`);
-                } catch (e) {
-                    log('CALIBRATION', `Lỗi khi tải calibration: ${e.message}`);
-                }
-            } else {
-                updateCalibrationStatus("ready", "Không tìm thấy calibration đã lưu");
-                log('CALIBRATION', 'Không tìm thấy calibration đã lưu');
-            }
-        }
-
-        function updateThresholdDisplay() {
-            for (let i = 0; i < 4; i++) {
-                document.getElementById(`currentThreshold${i}`).textContent = bentThresholds[i];
-            }
-        }
-
-        function updateCalibrationStatus(status, message) {
-            const statusDiv = document.getElementById('calibrationStatus');
-            statusDiv.innerHTML = '';
-            
-            let statusClass = "";
-            let statusText = "";
-            
-            switch(status) {
-                case "calibrating":
-                    statusClass = "calibrating";
-                    statusText = "ĐANG CALIBRATION";
-                    break;
-                case "calibrated":
-                    statusClass = "calibrated";
-                    statusText = "ĐÃ CALIBRATION";
-                    break;
-                case "error":
-                    statusClass = "calibration-error";
-                    statusText = "LỖI CALIBRATION";
-                    break;
-                default:
-                    statusClass = "calibration-ready";
-                    statusText = "SẴN SÀNG";
-            }
-            
-            const div = document.createElement('div');
-            div.className = statusClass;
-            div.innerHTML = `
-                <div>${statusText}</div>
-                <div style="font-size: 0.9rem; margin-top: 5px;">${message}</div>
-            `;
-            statusDiv.appendChild(div);
-        }
-
-        // === HÀM TỐI ƯU HÓA FIREBASE (giữ nguyên) ===
+        // === HÀM TỐI ƯU HÓA FIREBASE ===
         async function fetchFirebaseDataOptimized() {
             if (isFetching) return null;
             
@@ -1945,19 +1386,6 @@
                 processWordConstructionFast(mpuState, a0, a1, a2, a3);
             }, 0);
         }
-
-        // === HÀM CALCULATE FLEX STATE VỚI CALIBRATION ===
-        function calculateFlexState(rawValue, sensorIndex) {
-            const STRAIGHT_THRESHOLD = STRAIGHT_THRESHOLDS[sensorIndex];
-            
-            if (rawValue <= STRAIGHT_THRESHOLD) return 0;
-            if (rawValue <= bentThresholds[sensorIndex]) return 1;
-            return 2;
-        }
-
-        // === CÁC HÀM CÒN LẠI GIỮ NGUYÊN TỪ BẢN TRƯỚC ===
-        // (giữ nguyên tất cả các hàm khác từ bản trước)
-        // ... (tất cả các hàm khác giữ nguyên) ...
 
         function processWordConstructionFast(mpu, a0, a1, a2, a3) {
             const currentState = `${mpu}_${a0}_${a1}_${a2}_${a3}`;
@@ -2278,6 +1706,15 @@
         function formatTime(timestamp) {
             const date = new Date(timestamp);
             return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        }
+
+        function calculateFlexState(rawValue, sensorIndex) {
+            const STRAIGHT_THRESHOLD = sensorIndex === 3 ? 100 : 150;
+            const bentThresholds = [300, 450, 350, 300];
+            
+            if (rawValue <= STRAIGHT_THRESHOLD) return 0;
+            if (rawValue <= bentThresholds[sensorIndex]) return 1;
+            return 2;
         }
 
         function getMPUState(orientation, shakeState) {
@@ -2885,8 +2322,82 @@
             }
         }
 
-        // Giữ nguyên các hàm TTS từ bản trước
-        // ... (các hàm TTS giữ nguyên) ...
+        async function speakWithGeminiTTS(text, langCode) {
+            setIsSpeaking(true);
+            startAudioVisualizer();
+            
+            const cacheKey = `${langCode}:${currentVoice.gender}:${text}`;
+            
+            try {
+                if (audioCache[cacheKey]) {
+                    playAudioFromCache(cacheKey, text);
+                    return;
+                }
+                
+                const audioDataBase64 = await speakWithRetry(text, langCode);
+                const wavBlob = pcmToWav(audioDataBase64, 24000);
+                
+                if (!wavBlob) {
+                    throw new Error("Cannot create audio blob");
+                }
+                
+                const audioUrl = URL.createObjectURL(wavBlob);
+                audioCache[cacheKey] = audioUrl;
+                
+                document.getElementById('aiSpeechStatus').style.display = 'none';
+                playAudio(audioUrl, text);
+                
+                log('SPEECH', `Playing Gemini TTS: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
+                
+            } catch (error) {
+                console.error('Gemini TTS error:', error);
+                document.getElementById('aiSpeechStatus').style.display = 'none';
+                log('SPEECH', `Gemini TTS failed: ${error.message}. Fallback to Web Speech.`);
+                speakWithWebSpeech(text, langCode);
+            }
+        }
+
+        function playAudioFromCache(cacheKey, text) {
+            const audioUrl = audioCache[cacheKey];
+            playAudio(audioUrl, text);
+            log('SPEECH', `Playing cached audio: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
+        }
+
+        function playAudio(audioUrl, text) {
+            const audio = new Audio(audioUrl);
+            currentSpeech = audio;
+            
+            audio.onended = function() {
+                setIsSpeaking(false);
+                currentSpeech = null;
+                stopAudioVisualizer();
+                updateUI();
+                log('SPEECH', 'Finished speaking');
+            };
+            
+            audio.onerror = function(event) {
+                console.error('Audio play error:', event);
+                setIsSpeaking(false);
+                currentSpeech = null;
+                stopAudioVisualizer();
+                updateUI();
+                log('SPEECH', `Audio error: ${event.error}`);
+            };
+            
+            audio.onplay = function() {
+                setIsSpeaking(true);
+                startAudioVisualizer();
+                updateUI();
+            };
+            
+            audio.play().catch(error => {
+                console.error('Audio play failed:', error);
+                setIsSpeaking(false);
+                currentSpeech = null;
+                stopAudioVisualizer();
+                updateUI();
+            });
+        }
 
         function speakWithWebSpeech(text, langCode) {
             if (isSpeaking) {
@@ -2902,10 +2413,39 @@
             window.speechSynthesis.cancel();
             
             const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = langCode;
-            utterance.rate = 0.9;
-            utterance.pitch = currentVoice.gender === 'male' ? 0.8 : 1.2;
+            
+            let voiceSettings = webSpeechVoiceMap[langCode]?.[currentVoice.gender];
+            
+            if (!voiceSettings && langCode === currentVoice.lang) {
+                voiceSettings = webSpeechVoiceMap[currentVoice.lang]?.[currentVoice.gender];
+            }
+            
+            if (!voiceSettings) {
+                voiceSettings = { lang: langCode, rate: 0.9, pitch: currentVoice.gender === 'male' ? 0.8 : 1.2 };
+            }
+            
+            utterance.lang = voiceSettings.lang || langCode;
+            utterance.rate = voiceSettings.rate || 0.9;
+            utterance.pitch = voiceSettings.pitch || (currentVoice.gender === 'male' ? 0.8 : 1.2);
             utterance.volume = 1;
+            
+            const voices = speechSynthesis.getVoices();
+            let targetVoice = null;
+            
+            if (voiceSettings.name) {
+                targetVoice = voices.find(voice => voice.name === voiceSettings.name);
+            }
+            
+            if (!targetVoice) {
+                targetVoice = voices.find(voice => 
+                    voice.lang === utterance.lang || 
+                    voice.lang.startsWith(utterance.lang.split('-')[0])
+                );
+            }
+            
+            if (targetVoice) {
+                utterance.voice = targetVoice;
+            }
             
             utterance.onstart = function() {
                 setIsSpeaking(true);
@@ -3040,7 +2580,7 @@
 
         // === KHỞI TẠO ===
         document.addEventListener('DOMContentLoaded', function() {
-            log('SYSTEM', 'Optimized app started with calibration');
+            log('SYSTEM', 'Optimized app started');
             
             // Khởi tạo FPS counter
             function updateFPS() {
@@ -3067,9 +2607,6 @@
             
             requestAnimationFrame(updateFPS);
             
-            // Tải calibration từ localStorage nếu có
-            loadCalibration();
-            
             loadPhraseSuggestions();
             
             if ('speechSynthesis' in window) {
@@ -3091,627 +2628,5 @@
             }
         });
     </script>
-
-    <script>
-        // === CẤU HÌNH TỐC ĐỘ CAO ===
-        const FIREBASE_URL = "https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/sensorData.json";
-        const GEMINI_API_KEY = "AIzaSyDdUj2SX83qODeZ1hhru0e9KN1fwDrtUP8";
-        const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent";
-        
-        // === BIẾN CALIBRATION ===
-        let bentThresholds = [300, 450, 350, 300];
-        const STRAIGHT_THRESHOLDS = [75, 75, 75, 75];
-        
-        // === BIẾN TTS MỚI ===
-        const voiceMap = {
-            "vi-VN": { male: "Aoede", female: "Kore" },
-            "en-GB": { male: "Aoede", female: "Kore" },
-            "ja-JP": { male: "Aoede", female: "Kore" },
-            "ko-KR": { male: "Aoede", female: "Kore" },
-            "zh-CN": { male: "Zubenelgenubi", female: "Kore" },
-        };
-
-        const accentMap = {
-            'north': { tone: 1, region: 'Bắc' },
-            'central': { tone: 2, region: 'Trung' },
-            'south': { tone: 3, region: 'Nam' }
-        };
-
-        // === BIẾN TỐI ƯU HÓA (giữ nguyên) ===
-        let firebaseData = null;
-        let lastUpdateTime = 0;
-        let autoRefresh = true;
-        let autoRefreshInterval;
-        let logEntries = [];
-        const MAX_LOG_ENTRIES = 20;
-        let isFetching = false;
-        let lastFirebaseData = null;
-        let uiUpdateScheduled = false;
-        let lastFrameTime = performance.now();
-        let frameCount = 0;
-        let currentFPS = 60;
-        let pollingInterval = 300;
-        let turboMode = false;
-        let currentFetchController = null;
-        
-        // Biến xây dựng câu
-        let slot1 = "";
-        let slot2 = "";
-        let displayBuffer = "";
-        let convertedCurrentWord = "";
-        let sentenceWords = [];
-        let fullSentence = "";
-        let convertedFullSentence = "";
-        
-        // Trạng thái cảm biến uốn
-        let flexStates = [0, 0, 0, 0];
-        let lastFlexStates = [-1, -1, -1, -1];
-        let stableCount = 0;
-        let lastDetectedIndex = -1;
-        let holdStartMs = 0;
-        let holdFired = false;
-        const DEBOUNCE_COUNT = 3;
-        const HOLD_MS_DEFAULT = 800;
-        const POST_HOLD_COOLDOWN = 600;
-        let lastActionMs = 0;
-        let lastStateString = '';
-        
-        // CACHE cho tối ưu hóa
-        const mappingCache = new Map();
-        const vietnameseCache = new Map();
-        let translationCache = {};
-        let audioCache = {};
-        
-        // === BIẾN TTS MỚI ===
-        let currentAccent = 'north';
-        let currentVoiceGender = 'male';
-        let isSpeaking = false;
-        let isConnecting = false;
-        let currentAudioRef = null;
-        let errorMsg = "";
-        let showSuggestions = false;
-
-        // === HÀM PCM TO WAV TỪ REACT ===
-        const pcmToWav = (base64PCM, sampleRate = 24000) => {
-            try {
-                const binaryString = atob(base64PCM);
-                const len = binaryString.length;
-                const bytes = new Uint8Array(len);
-                for (let i = 0; i < len; i++) {
-                    bytes[i] = binaryString.charCodeAt(i);
-                }
-
-                const wavHeader = new ArrayBuffer(44);
-                const view = new DataView(wavHeader);
-
-                const writeString = (view, offset, string) => {
-                    for (let i = 0; i < string.length; i++) {
-                        view.setUint8(offset + i, string.charCodeAt(i));
-                    }
-                };
-
-                writeString(view, 0, "RIFF");
-                view.setUint32(4, 36 + len, true);
-                writeString(view, 8, "WAVE");
-                writeString(view, 12, "fmt ");
-                view.setUint32(16, 16, true);
-                view.setUint16(20, 1, true);
-                view.setUint16(22, 1, true);
-                view.setUint32(24, sampleRate, true);
-                view.setUint32(28, sampleRate * 2, true);
-                view.setUint16(32, 2, true);
-                view.setUint16(34, 16, true);
-                writeString(view, 36, "data");
-                view.setUint32(40, len, true);
-
-                return new Blob([wavHeader, bytes], { type: "audio/wav" });
-            } catch (error) {
-                console.error("PCM to WAV error:", error);
-                return null;
-            }
-        };
-
-        // === HÀM SPEAK WITH RETRY TỪ REACT ===
-        const speakWithRetry = async (text, langCode, retries = 5) => {
-            const voiceName = voiceMap[langCode]?.[currentVoiceGender] || "Aoede";
-            const apiKey = GEMINI_API_KEY;
-
-            if (!apiKey) {
-                throw new Error("API_KEY_MISSING");
-            }
-
-            for (let i = 0; i < retries; i++) {
-                try {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-                    const response = await fetch(
-                        `${GEMINI_API_URL}?key=${apiKey}`,
-                        {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            signal: controller.signal,
-                            body: JSON.stringify({
-                                contents: [{ parts: [{ text: text }] }],
-                                generationConfig: {
-                                    responseModalities: ["AUDIO"],
-                                    speechConfig: {
-                                        voiceConfig: { prebuiltVoiceConfig: { voiceName } },
-                                    },
-                                },
-                            }),
-                        }
-                    );
-
-                    clearTimeout(timeoutId);
-                    
-                    if (!response.ok) {
-                        const errorData = await response.json().catch(() => ({}));
-                        throw new Error(`API_ERROR_${response.status}: ${errorData?.error?.message || response.statusText}`);
-                    }
-
-                    const data = await response.json();
-                    const inlineData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData;
-                    
-                    if (!inlineData || !inlineData.data) {
-                        throw new Error("NO_DATA");
-                    }
-
-                    return inlineData.data;
-                } catch (err) {
-                    if (i === retries - 1) throw err;
-                    const delay = Math.pow(2, i) * 1000;
-                    await new Promise(r => setTimeout(r, delay));
-                }
-            }
-        };
-
-        // === HÀM SPEAK TEXT MỚI ===
-        async function speakText(text, langCode) {
-            if (!text || isSpeaking) {
-                if (isSpeaking) {
-                    stopAllSpeech();
-                }
-                return;
-            }
-
-            setErrorMsg("");
-
-            if (currentAudioRef) {
-                currentAudioRef.pause();
-                currentAudioRef = null;
-            }
-
-            const cacheKey = `${langCode}:${currentVoiceGender}:${text}`;
-            if (audioCache[cacheKey]) {
-                const audio = new Audio(audioCache[cacheKey]);
-                currentAudioRef = audio;
-                setIsSpeaking(true);
-                audio.onended = () => setIsSpeaking(false);
-                audio.play().catch(() => setIsSpeaking(false));
-                return;
-            }
-
-            setIsSpeaking(true);
-            setIsConnecting(true);
-
-            try {
-                const audioDataBase64 = await speakWithRetry(text, langCode);
-                const wavBlob = pcmToWav(audioDataBase64, 24000);
-                if (!wavBlob) {
-                    throw new Error("WAV_CONVERSION_FAILED");
-                }
-                
-                const audioUrl = URL.createObjectURL(wavBlob);
-                audioCache[cacheKey] = audioUrl;
-
-                setIsConnecting(false);
-                const audio = new Audio(audioUrl);
-                currentAudioRef = audio;
-                audio.onended = () => {
-                    setIsSpeaking(false);
-                    currentAudioRef = null;
-                };
-                
-                audio.play().catch(e => {
-                    console.error("Audio Playback Error:", e);
-                    setIsSpeaking(false);
-                    currentAudioRef = null;
-                });
-            } catch (err) {
-                setIsConnecting(false);
-                setIsSpeaking(false);
-                setErrorMsg("Không thể tải giọng nói AI. Vui lòng thử lại sau.");
-                console.error("TTS Failed after retries", err);
-                
-                // Fallback to Web Speech
-                if (err.message === "API_KEY_MISSING") {
-                    speakWithWebSpeech(text, langCode);
-                }
-            }
-        }
-
-        // === HÀM SET IS SPEAKING ===
-        function setIsSpeaking(speaking) {
-            isSpeaking = speaking;
-            updateUI();
-        }
-
-        // === HÀM SET IS CONNECTING ===
-        function setIsConnecting(connecting) {
-            isConnecting = connecting;
-            updateUI();
-        }
-
-        // === HÀM SET ERROR MESSAGE ===
-        function setErrorMsg(message) {
-            errorMsg = message;
-            updateUI();
-        }
-
-        // === HÀM SELECT ACCENT ===
-        function selectAccent(accent) {
-            currentAccent = accent;
-            document.querySelectorAll('.accent-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            
-            // Cập nhật bảng chuyển đổi dựa trên accent
-            updateVietnameseTableForAccent(accent);
-            log('ACCENT', `Selected accent: ${accentMap[accent].region}`);
-        }
-
-        // === HÀM SELECT VOICE GENDER ===
-        function selectVoiceGender(gender) {
-            currentVoiceGender = gender;
-            document.querySelectorAll('.voice-gender-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            log('VOICE', `Selected gender: ${gender === 'male' ? 'Nam' : 'Nữ'}`);
-        }
-
-        // === HÀM UPDATE VIETNAMESE TABLE FOR ACCENT ===
-        function updateVietnameseTableForAccent(accent) {
-            // Điều chỉnh bảng chuyển đổi dựa trên accent
-            // Đây là ví dụ đơn giản - thực tế cần bảng phức tạp hơn
-            const accentTone = accentMap[accent].tone;
-            
-            // Có thể điều chỉnh cách phát âm dựa trên vùng miền
-            // Ví dụ: vùng Bắc phát âm "tr" rõ hơn, vùng Nam nói ngọng hơn
-            // Cần bảng mapping chi tiết trong thực tế
-            log('ACCENT', `Updated pronunciation for ${accentMap[accent].region} accent`);
-        }
-
-        // === HÀM LOAD PHRASE SUGGESTIONS MỚI ===
-        function loadPhraseSuggestions() {
-            const phraseList = document.getElementById('phraseList');
-            phraseList.innerHTML = '';
-            
-            commonPhrases.forEach(phrase => {
-                const item = document.createElement('div');
-                item.className = 'phrase-list-item';
-                item.textContent = phrase;
-                item.onclick = () => {
-                    document.getElementById('translationInput').value = phrase;
-                    translatePhrase(phrase);
-                    log('PHRASE', `Selected phrase: "${phrase}"`);
-                };
-                phraseList.appendChild(item);
-            });
-        }
-
-        // === HÀM UPDATE UI MỚI ===
-        function updateUI() {
-            updateWordDisplays();
-            updateSentenceDisplay();
-            
-            const speakVnBtn = document.getElementById('speakVnBtn');
-            const speakTransBtn = document.getElementById('speakTransBtn');
-            const stopSpeechBtn = document.getElementById('stopSpeechBtn');
-            
-            // Cập nhật trạng thái nút
-            speakVnBtn.disabled = !convertedFullSentence || isSpeaking;
-            speakTransBtn.disabled = !document.getElementById('translationOutput').textContent || isSpeaking;
-            stopSpeechBtn.disabled = !isSpeaking;
-            
-            if (isSpeaking) {
-                speakVnBtn.classList.add('speaking');
-                speakVnBtn.innerHTML = isConnecting ? 
-                    '<span class="ai-loading">⏳</span> Đang tải...' : '⏹ Dừng';
-                speakTransBtn.innerHTML = isConnecting ? 
-                    '<span class="ai-loading">⏳</span> Đang tải...' : '⏹ Dừng';
-            } else {
-                speakVnBtn.classList.remove('speaking');
-                speakVnBtn.innerHTML = '🔊 Đọc Tiếng Việt';
-                speakTransBtn.innerHTML = '🔈 Đọc Bản dịch';
-            }
-            
-            // Hiển thị thông báo lỗi
-            const errorDisplay = document.getElementById('errorDisplay');
-            if (errorMsg) {
-                errorDisplay.style.display = 'block';
-                errorDisplay.textContent = errorMsg;
-            } else {
-                errorDisplay.style.display = 'none';
-            }
-            
-            // Cập nhật hiển thị accent và giọng
-            document.getElementById('currentAccentDisplay').textContent = 
-                `Accent: ${accentMap[currentAccent].region}`;
-            document.getElementById('currentVoiceGenderDisplay').textContent = 
-                `Giọng: ${currentVoiceGender === 'male' ? 'Nam' : 'Nữ'}`;
-        }
-
-        // === HÀM STOP ALL SPEECH MỚI ===
-        function stopAllSpeech() {
-            if (currentAudioRef) {
-                currentAudioRef.pause();
-                currentAudioRef.currentTime = 0;
-                currentAudioRef = null;
-            }
-            
-            if (window.speechSynthesis) {
-                window.speechSynthesis.cancel();
-            }
-            
-            setIsSpeaking(false);
-            setIsConnecting(false);
-            updateUI();
-            log('SPEECH', 'Stopped all speech');
-        }
-
-        // === HÀM SPEAK VIETNAMESE SENTENCE MỚI ===
-        function speakVietnameseSentence() {
-            const text = convertedFullSentence || document.getElementById('convertedSentenceDisplay').textContent;
-            if (!text || text === '---') {
-                log('SPEECH', 'No Vietnamese text to speak');
-                return;
-            }
-            
-            // Áp dụng accent trước khi nói
-            const accentedText = applyAccentToText(text, currentAccent);
-            speakText(accentedText, 'vi-VN');
-        }
-
-        // === HÀM SPEAK TRANSLATION MỚI ===
-        function speakTranslation() {
-            const text = document.getElementById('translationOutput').textContent;
-            if (!text || text.includes('Đang chờ dịch') || text.includes('Vui lòng nhập')) {
-                log('SPEECH', 'No translation text to speak');
-                return;
-            }
-            
-            const lang = document.getElementById('voiceLanguage').value;
-            speakText(text, lang);
-        }
-
-        // === HÀM APPLY ACCENT TO TEXT ===
-        function applyAccentToText(text, accent) {
-            // Đây là hàm mẫu - thực tế cần bảng chuyển đổi phức tạp
-            // Ví dụ đơn giản: điều chỉnh một số từ theo accent
-            const accentRules = {
-                'north': {
-                    'gi': 'di',
-                    'd': 'z',
-                    // Thêm các quy tắc khác
-                },
-                'south': {
-                    'v': 'y',
-                    'tr': 'ch',
-                    // Thêm các quy tắc khác
-                },
-                'central': {
-                    // Quy tắc cho miền Trung
-                }
-            };
-            
-            let result = text;
-            const rules = accentRules[accent] || {};
-            
-            for (const [from, to] of Object.entries(rules)) {
-                const regex = new RegExp(from, 'gi');
-                result = result.replace(regex, to);
-            }
-            
-            return result;
-        }
-
-        // === BẢNG DỮ LIỆU (giữ nguyên từ file gốc) ===
-        // ... (giữ nguyên toàn bộ bảng tableA, tableB, tableC, vietnameseTable) ...
-
-        // Đề xuất cụm từ
-        const commonPhrases = [
-            "Xin chào, rất vui được gặp bạn",
-            "Bạn khỏe không?",
-            "Cảm ơn bạn rất nhiều",
-            "Làm ơn cho tôi hỏi đường",
-            "Chúc một ngày tốt lành",
-            "Tôi yêu ngôn ngữ này",
-            "Hẹn gặp lại sau",
-            "Tôi đói bụng",
-            "Bao nhiêu tiền?",
-            "Tôi không hiểu"
-        ];
-
-        // === CÁC HÀM CALIBRATION (giữ nguyên) ===
-        // ... (giữ nguyên tất cả hàm calibration) ...
-
-        // === CÁC HÀM TỐI ƯU HÓA FIREBASE (giữ nguyên) ===
-        // ... (giữ nguyên tất cả hàm fetchFirebaseDataOptimized, processDataImmediately, v.v.) ...
-
-        // === CÁC HÀM XÂY DỰNG CÂU (giữ nguyên) ===
-        // ... (giữ nguyên tất cả hàm xây dựng câu) ...
-
-        // === CÁC HÀM CHUYỂN ĐỔI TIẾNG VIỆT (giữ nguyên) ===
-        // ... (giữ nguyên tất cả hàm chuyển đổi) ...
-
-        // === HÀM KHỞI TẠO ===
-        document.addEventListener('DOMContentLoaded', function() {
-            log('SYSTEM', 'Optimized app started with calibration and improved TTS');
-            
-            // Khởi tạo FPS counter
-            function updateFPS() {
-                frameCount++;
-                const currentTime = performance.now();
-                if (currentTime - lastFrameTime >= 1000) {
-                    currentFPS = frameCount;
-                    frameCount = 0;
-                    lastFrameTime = currentTime;
-                    
-                    document.getElementById('fps').textContent = currentFPS;
-                }
-                requestAnimationFrame(updateFPS);
-            }
-            
-            requestAnimationFrame(updateFPS);
-            
-            // Tải calibration từ localStorage nếu có
-            loadCalibration();
-            
-            // Tải phrase suggestions dạng list
-            loadPhraseSuggestions();
-            
-            // Khởi tạo speech synthesis
-            if ('speechSynthesis' in window) {
-                speechSynthesis.getVoices();
-                speechSynthesis.onvoiceschanged = function() {
-                    log('SPEECH', 'Loaded speech synthesis voices');
-                };
-            }
-            
-            // Khởi động hệ thống
-            setTimeout(() => {
-                fetchFirebaseDataOptimized();
-                toggleAutoRefresh();
-            }, 100);
-            
-            if (!GEMINI_API_KEY) {
-                log('SYSTEM', 'Note: Gemini API key not configured. Using Web Speech API as fallback.');
-            }
-        });
-
-        // === THÊM PHẦN HTML MỚI VÀO TRONG CARD XÂY DỰNG CÂU ===
-        // (Cần thêm các phần tử sau vào trong card xây dựng câu)
-    </script>
-
-    <!-- Thêm các phần tử HTML mới vào card xây dựng câu -->
-    <div class="card">
-        <h3>Xây dựng Câu</h3>
-        <div style="text-align: center; padding: 20px; margin-bottom: 20px;">
-            <!-- ... (giữ nguyên phần hiện tại) ... -->
-            
-            <!-- Thêm accent selector -->
-            <div class="accent-selector">
-                <button class="accent-btn north active" onclick="selectAccent('north')">
-                    🗣️ Miền Bắc
-                </button>
-                <button class="accent-btn central" onclick="selectAccent('central')">
-                    🗣️ Miền Trung
-                </button>
-                <button class="accent-btn south" onclick="selectAccent('south')">
-                    🗣️ Miền Nam
-                </button>
-            </div>
-            
-            <!-- Thêm voice gender selector -->
-            <div class="voice-gender-selector">
-                <button class="voice-gender-btn active" onclick="selectVoiceGender('male')">
-                    👨 Nam
-                </button>
-                <button class="voice-gender-btn" onclick="selectVoiceGender('female')">
-                    👩 Nữ
-                </button>
-            </div>
-            
-            <!-- Hiển thị accent và giọng hiện tại -->
-            <div style="margin: 10px 0; font-size: 0.9rem; color: #666;">
-                <div id="currentAccentDisplay">Accent: Miền Bắc</div>
-                <div id="currentVoiceGenderDisplay">Giọng: Nam</div>
-            </div>
-            
-            <!-- Hiển thị lỗi TTS -->
-            <div id="errorDisplay" class="error-message" style="display: none;"></div>
-            
-            <!-- Hiển thị trạng thái loading TTS -->
-            <div id="ttsLoading" class="tts-loading" style="display: none;">
-                <span>⏳</span> Đang tải giọng AI...
-            </div>
-            
-            <!-- Phrase suggestions dạng list -->
-            <div class="phrase-suggestions">
-                <div class="suggestion-header">GỢI Ý CỤM TỪ THÔNG DỤNG</div>
-                <div id="phraseList" class="phrase-list-container">
-                    <!-- Các cụm từ sẽ được thêm vào đây -->
-                </div>
-            </div>
-                        <!-- Voice options (giữ nguyên) -->
-            <div class="voice-options">
-                <div class="voice-btn male active" data-gender="male" data-lang="vi-VN" onclick="selectVoice(this)">
-                    👨 Nam Tiếng Việt
-                </div>
-                <div class="voice-btn female" data-gender="female" data-lang="vi-VN" onclick="selectVoice(this)">
-                    👩 Nữ Tiếng Việt
-                </div>
-                <div class="voice-btn male" data-gender="male" data-lang="en-GB" onclick="selectVoice(this)">
-                    👨 Nam Tiếng Anh
-                </div>
-                <div class="voice-btn female" data-gender="female" data-lang="en-GB" onclick="selectVoice(this)">
-                    👩 Nữ Tiếng Anh
-                </div>
-            </div>
-            
-            <div class="language-voice-display" id="currentVoiceDisplay">
-                Hiện tại: Nam Tiếng Việt (Gemini AI)
-            </div>
-            
-            <div class="ai-speech-status" id="aiSpeechStatus" style="display: none;">
-                <span class="ai-loading">⏳</span> Đang tải giọng AI...
-            </div>
-            
-            <!-- Speech controls (giữ nguyên) -->
-            <div class="speech-controls">
-                <button class="speech-btn" onclick="speakVietnameseSentence()" id="speakVnBtn">
-                    🔊 Đọc Tiếng Việt
-                </button>
-                <button class="speech-btn blue" onclick="speakTranslation()" id="speakTransBtn">
-                    🔈 Đọc Bản dịch
-                </button>
-                <button class="speech-btn red" onclick="stopAllSpeech()" id="stopSpeechBtn">
-                    ⏹ Dừng đọc
-                </button>
-            </div>
-            
-            <div class="audio-visualizer" id="audioVisualizer">
-                <!-- Thanh âm thanh sẽ được thêm ở đây -->
-            </div>
-            
-            <!-- Word list và word count (giữ nguyên) -->
-            <div class="word-list" id="wordList">Chưa có từ nào</div>
-            <div class="word-count">Số từ trong câu: <span id="wordCount">0</span>/10</div>
-            
-            <!-- Slot 1 và Slot 2 (giữ nguyên) -->
-            <div style="display: flex; justify-content: space-around; margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 10px;">
-                <div>
-                    <div class="sensor-label">KHE 1</div>
-                    <div class="sensor-value" id="slot1" style="font-size: 1.2rem;">---</div>
-                </div>
-                <div>
-                    <div class="sensor-label">KHE 2</div>
-                    <div class="sensor-value" id="slot2" style="font-size: 1.2rem;">---</div>
-                </div>
-            </div>
-            
-            <!-- Controls (giữ nguyên) -->
-            <div class="controls">
-                <button onclick="clearCurrentWord()" class="red">Xóa từ hiện tại</button>
-                <button onclick="backspace()">Xóa ký tự</button>
-                <button onclick="addWordToSentence()" class="green">Thêm từ (_)</button>
-                <button onclick="commitSentence()" class="blue">Hoàn thành câu</button>
-                <button onclick="resetSentence()" class="red">Đặt lại tất cả</button>
-            </div>
-        </div>
-    </div>
 </body>
 </html>
