@@ -968,42 +968,18 @@
             border-radius: 8px 8px 0 0;
         }
         
-        /* New style for translation phrases section */
-        .translation-phrases {
-            margin-top: 15px;
-            padding: 15px;
-            background: #f8f9fa;
+        /* Thêm style cho converted sentence textarea */
+        .conversion-textarea {
+            width: 100%;
+            height: 80px;
+            font-size: 1.2rem;
+            padding: 10px;
+            border: 2px solid #2196F3;
             border-radius: 10px;
-            border: 2px solid #e0e6ff;
-        }
-        
-        .translation-phrases h4 {
-            color: #4A00E0;
-            margin-bottom: 10px;
-            font-size: 1rem;
-        }
-        
-        .phrase-list-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 8px;
-        }
-        
-        .phrase-list-btn {
-            padding: 8px 12px;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            text-align: left;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 0.85rem;
-        }
-        
-        .phrase-list-btn:hover {
-            background: #e3f2fd;
-            border-color: #2196F3;
-            transform: translateY(-2px);
+            background: #E3F2FD;
+            color: #333;
+            resize: vertical;
+            font-family: inherit;
         }
     </style>
 </head>
@@ -1040,15 +1016,8 @@
                     <div class="sensor-label">CÂU ĐẦY ĐỦ (Mã hóa)</div>
                     <div class="sentence-display" id="sentenceDisplay">---</div>
                     <div class="sensor-label">CÂU ĐẦY ĐỦ (Tiếng Việt)</div>
-                    <div class="conversion-display" id="convertedSentenceDisplay">---</div>
-                    
-                    <!-- ĐÃ THÊM: Phần đề xuất cụm từ từ phiên dịch -->
-                    <div class="translation-phrases">
-                        <h4>💬 ĐỀ XUẤT CỤM TỪ TỪ DỊCH THUẬT</h4>
-                        <div class="phrase-list-grid" id="translationPhrasesGrid">
-                            <!-- Các cụm từ sẽ được thêm bằng JavaScript -->
-                        </div>
-                    </div>
+                    <!-- SỬA: Thay div bằng textarea để có thể nhập từ đề xuất -->
+                    <textarea id="convertedSentenceTextarea" class="conversion-textarea">---</textarea>
                     
                     <!-- Chuyển đổi TTS -->
                     <div class="tts-toggle">
@@ -1402,10 +1371,10 @@
         let lastDetectedIndex = -1;
         let holdStartMs = 0;
         let holdFired = false;
-        // ĐÃ SỬA: Giảm thời gian xác nhận raw value xuống 1s
-        const DEBOUNCE_COUNT = 2; // Giảm từ 3 xuống 2
-        const HOLD_MS_DEFAULT = 500; // Giảm từ 800 xuống 500ms
-        const POST_HOLD_COOLDOWN = 500; // Giảm từ 600 xuống 500ms
+        const DEBOUNCE_COUNT = 3;
+        // SỬA: Thay đổi thời gian giữ từ 800ms xuống 1000ms (1 giây)
+        const HOLD_MS_DEFAULT = 300;
+        const POST_HOLD_COOLDOWN = 600;
         let lastActionMs = 0;
         let lastStateString = '';
         
@@ -1600,23 +1569,18 @@
             "Backward": 5
         };
 
-        // Đề xuất cụm từ - ĐÃ ĐƯA TỪ PHIÊN DỊCH SANG ĐÂY
-        const translationPhrases = [
-            "xin chào, rất vui được gặp bạn",
-            "làm ơn cho tôi xin hóa đơn",
-            "bạn có khỏe không",
-            "cảm ơn bạn rất nhiều",
-            "tôi muốn hỏi đường",
-            "bạn có thể giúp tôi không",
-            "tôi không hiểu",
-            "xin hãy nói chậm lại",
-            "bao nhiêu tiền",
-            "tôi cần giúp đỡ",
-            "chúc một ngày tốt lành",
-            "tôi xin lỗi",
-            "bạn tên là gì",
-            "tôi đến từ việt nam",
-            "tôi thích món ăn này"
+        // Đề xuất cụm từ
+        const commonPhrases = [
+            "Xin chào, rất vui được gặp bạn",
+            "Bạn khỏe không?",
+            "Cảm ơn bạn rất nhiều",
+            "Làm ơn cho tôi hỏi đường",
+            "Chúc một ngày tốt lành",
+            "Tôi yêu ngôn ngữ này",
+            "Hẹn gặp lại sau",
+            "Tôi đói bụng",
+            "Bao nhiêu tiền?",
+            "Tôi không hiểu"
         ];
 
         // Biến tổng hợp giọng nói
@@ -2138,8 +2102,9 @@
                 
                 // Convert sentence
                 convertedFullSentence = convertVietnameseTextFast(fullSentence);
-                const convertedElement = document.getElementById('convertedSentenceDisplay');
-                convertedElement.textContent = convertedFullSentence || '---';
+                // SỬA: Cập nhật textarea thay vì div
+                const convertedElement = document.getElementById('convertedSentenceTextarea');
+                convertedElement.value = convertedFullSentence || '---';
                 
                 // Cập nhật word list
                 updateWordList();
@@ -2487,6 +2452,9 @@
             displayBuffer = '';
             convertedCurrentWord = '';
             
+            // SỬA: Reset textarea convertedSentenceTextarea
+            document.getElementById('convertedSentenceTextarea').value = '---';
+            
             document.getElementById('autoSuggestionsPanel').style.display = 'none';
             document.getElementById('dynamicSuggestions').innerHTML = '';
             document.getElementById('dynamicSuggestions').classList.remove('show');
@@ -2593,85 +2561,18 @@
         }
 
         // === HÀM ĐỀ XUẤT ===
-        // ĐÃ THÊM: Tải đề xuất cụm từ từ phiên dịch
-        function loadTranslationPhrases() {
-            const grid = document.getElementById('translationPhrasesGrid');
-            grid.innerHTML = '';
-            
-            translationPhrases.forEach(phrase => {
-                const btn = document.createElement('button');
-                btn.className = 'phrase-list-btn';
-                btn.textContent = phrase;
-                btn.onclick = () => {
-                    // Thêm cụm từ vào câu đang xây dựng
-                    const encodedPhrase = encodeVietnamesePhrase(phrase);
-                    if (encodedPhrase) {
-                        // Tách thành các từ và thêm vào câu
-                        const words = encodedPhrase.split(' ');
-                        words.forEach(word => {
-                            if (word && word.trim()) {
-                                sentenceWords.push(word.trim());
-                            }
-                        });
-                        
-                        // Cập nhật hiển thị
-                        scheduleUIUpdate();
-                        log('PHRASE', `Added phrase to sentence: "${phrase}"`);
-                        
-                        // Hiển thị thông báo
-                        const display = document.getElementById('convertedSentenceDisplay');
-                        const originalText = display.textContent;
-                        display.textContent = phrase;
-                        display.style.color = '#4CAF50';
-                        
-                        setTimeout(() => {
-                            display.textContent = originalText;
-                            display.style.color = '';
-                        }, 2000);
-                    }
-                };
-                grid.appendChild(btn);
-            });
-        }
-        
-        // Hàm mã hóa cụm từ tiếng Việt (đơn giản hóa)
-        function encodeVietnamesePhrase(phrase) {
-            // Đây là hàm đơn giản hóa, trong thực tế cần bảng tra đầy đủ
-            const simpleMap = {
-                'xin': 'x_0in_s',
-                'chào': 'ch_0ao_s',
-                'rất': 'r_0at_s',
-                'vui': 'v_0ui_s',
-                'được': 'd_0uoc_s',
-                'gặp': 'g_0ap_s',
-                'bạn': 'b_0an_s',
-                'làm': 'l_0am_s',
-                'ơn': '_0on_s',
-                'cho': 'ch_0o_s',
-                'tôi': 't_0oi_s',
-                'hóa': 'h_0oa_s',
-                'đơn': 'd_0on_s'
-            };
-            
-            const words = phrase.toLowerCase().split(' ');
-            const encodedWords = words.map(word => {
-                return simpleMap[word] || word;
-            });
-            
-            return encodedWords.join(' ');
-        }
-
         function loadPhraseSuggestions() {
             const phrasePills = document.getElementById('phrasePills');
             phrasePills.innerHTML = '';
             
-            // Sử dụng translationPhrases cho đề xuất cụm từ thông dụng
-            translationPhrases.forEach(phrase => {
+            commonPhrases.forEach(phrase => {
                 const pill = document.createElement('button');
                 pill.className = 'phrase-pill';
-                pill.textContent = phrase.length > 20 ? phrase.substring(0, 18) + '...' : phrase;
+                pill.textContent = phrase.length > 30 ? phrase.substring(0, 27) + '...' : phrase;
                 pill.onclick = () => {
+                    // SỬA: Điền vào cả translationInput và convertedSentenceTextarea
                     document.getElementById('translationInput').value = phrase;
+                    document.getElementById('convertedSentenceTextarea').value = phrase;
                     translatePhrase(phrase);
                     log('PHRASE', `Selected phrase: "${phrase}"`);
                 };
@@ -2746,13 +2647,17 @@
         }
 
         function useSuggestion(text) {
+            // SỬA: Điền vào cả translationInput và convertedSentenceTextarea
             document.getElementById('translationInput').value = text;
+            document.getElementById('convertedSentenceTextarea').value = text;
             translateSentence();
             log('SUGGESTION', `Using suggestion: "${text}"`);
         }
 
         function translateSuggestion(text) {
+            // SỬA: Điền vào cả translationInput và convertedSentenceTextarea
             document.getElementById('translationInput').value = text;
+            document.getElementById('convertedSentenceTextarea').value = text;
             translateSentence();
             log('SUGGESTION', `Translating suggestion: "${text}"`);
         }
@@ -2921,7 +2826,9 @@
         }
 
         function selectTranslationSuggestion(phrase) {
+            // SỬA: Điền vào cả translationInput và convertedSentenceTextarea
             document.getElementById('translationInput').value = phrase;
+            document.getElementById('convertedSentenceTextarea').value = phrase;
             document.getElementById('translationSuggestions').innerHTML = '';
             document.getElementById('translationSuggestions').classList.remove('show');
             translateSentence(); // Dịch ngay sau khi chọn
@@ -3123,7 +3030,8 @@
         }
 
         async function speakVietnameseSentence() {
-            const text = convertedFullSentence || document.getElementById('convertedSentenceDisplay').textContent;
+            // SỬA: Lấy văn bản từ textarea convertedSentenceTextarea
+            const text = document.getElementById('convertedSentenceTextarea').value;
             if (!text || text === '---') {
                 log('SPEECH', 'No Vietnamese text to speak');
                 return;
@@ -3342,9 +3250,7 @@
             // Tải calibration từ localStorage nếu có
             loadCalibration();
             
-            // Tải đề xuất cụm từ
             loadPhraseSuggestions();
-            loadTranslationPhrases(); // ĐÃ THÊM: Tải cụm từ từ phiên dịch
             
             if ('speechSynthesis' in window) {
                 speechSynthesis.getVoices();
