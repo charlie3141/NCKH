@@ -267,13 +267,11 @@
             isSpeaking = true;
 
             try {
-                // Chọn chính xác tên giọng đọc dựa trên bảng cấu hình
                 const voiceName = voiceConfigs[currentGender][langCode] || (currentGender === 'female' ? "Aoede" : "Charon");
+                const langName = languages[langCode].code;
                 
-                // Prompt cực kỳ cụ thể để Gemini không dùng giọng mặc định tiếng Anh
-                const promptText = `Voice setting: ${currentGender}, Language: ${languages[langCode].code}. 
-                Action: Speak the following text naturally in ${languages[langCode].name}.
-                Text: "${text.substring(0, 500)}"`;
+                // Cấu trúc nội dung điều khiển giọng nói trực tiếp hơn
+                const controlPrompt = `Say this naturally in ${langName}: ${text.substring(0, 500)}`;
 
                 const response = await fetchWithRetry(
                     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`,
@@ -281,7 +279,10 @@
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
-                            contents: [{ parts: [{ text: promptText }] }],
+                            contents: [{ 
+                                role: "user",
+                                parts: [{ text: controlPrompt }] 
+                            }],
                             generationConfig: {
                                 responseModalities: ["AUDIO"],
                                 speechConfig: { 
@@ -316,7 +317,7 @@
                 source.start(0);
             } catch (err) {
                 console.error("TTS Error:", err);
-                showStatus("Lỗi phát âm thanh. Vui lòng kiểm tra lại kết nối.", "error");
+                showStatus("Lỗi phát âm thanh. Vui lòng thử lại.", "error");
                 setSpeakingUI(type, false);
                 isSpeaking = false;
             }
