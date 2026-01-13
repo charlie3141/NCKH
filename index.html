@@ -1,362 +1,239 @@
-<!DOCTYPE html>
-<html lang="vi">
+<!doctype html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Multi-Translator Pro</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-        .animate-fade-in { animation: fadeIn 0.2s ease-out; }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Translator + Native-accent TTS — Single-file</title>
+  <style>
+    :root{font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
+    body{margin:0;padding:24px;background:#f6f8fb;color:#111}
+    .card{max-width:980px;margin:0 auto;background:#fff;padding:20px;border-radius:12px;box-shadow:0 6px 20px rgba(12,18,30,0.08)}
+    h1{margin:0 0 8px;font-size:20px}
+    p.lead{margin:0 0 18px;color:#445}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    label{font-size:13px;color:#334;margin-bottom:6px;display:block}
+    textarea{width:100%;min-height:120px;padding:10px;font-size:15px;border:1px solid #e2e8f0;border-radius:8px}
+    select,input[type=range]{padding:8px;border-radius:6px;border:1px solid #e2e8f0}
+    .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    button{background:#0b63ff;color:#fff;border:0;padding:10px 14px;border-radius:8px;cursor:pointer}
+    button.ghost{background:#eef2ff;color:#0b63ff;border:1px solid #d6e4ff}
+    small.note{display:block;margin-top:10px;color:#666}
+    .footer{margin-top:14px;color:#556;font-size:13px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    @media(max-width:780px){.grid{grid-template-columns:1fr}}
+  </style>
 </head>
-<body class="bg-slate-50 min-h-screen p-4 md:p-10">
+<body>
+  <div class="card">
+    <h1>Translator + Native-accent Text-to-Speech (single-file)</h1>
+    <p class="lead">Translate text between languages and have the browser speak the original or translated text using a voice whose language tag matches the chosen language (availability depends on the browser/OS).</p>
 
-    <div class="max-w-5xl mx-auto">
-        <!-- Header -->
-        <header class="mb-10 text-center">
-            <h1 class="text-4xl font-extrabold text-indigo-700 mb-2">AI Multi-Translator Pro</h1>
-            <p class="text-slate-500">Dịch thuật & Phát âm chuẩn bản ngữ bằng Gemini AI</p>
-        </header>
-
-        <!-- API Key Setup Section -->
-        <div id="apiSetup" class="mb-8 bg-white p-6 rounded-3xl shadow-xl border border-slate-100 animate-fade-in">
-            <div class="flex flex-col md:flex-row items-center gap-4">
-                <div class="flex-1 w-full">
-                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2 tracking-widest">Cấu hình Gemini API Key</label>
-                    <input type="password" id="apiKeyInput" class="w-full px-4 py-3 border-2 border-slate-100 rounded-xl focus:border-indigo-400 outline-none transition-all" placeholder="Dán API Key của bạn vào đây...">
-                </div>
-                <button id="saveKeyBtn" class="w-full md:w-auto mt-6 md:mt-0 px-8 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all active:scale-95">Lưu Key</button>
-            </div>
-            <p class="mt-3 text-xs text-slate-400 italic">Key được lưu tại trình duyệt. Lấy Key tại <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-indigo-500 underline">Google AI Studio</a>.</p>
-        </div>
-
-        <!-- Control Bar -->
-        <div class="bg-white p-6 rounded-3xl shadow-xl mb-8 border border-slate-100">
-            <div class="flex flex-wrap items-center justify-between gap-4">
-                <div class="flex items-center gap-3">
-                    <select id="sourceLang" class="px-4 py-2 border-2 border-slate-100 rounded-xl bg-slate-50 font-semibold focus:border-indigo-400 outline-none transition-all cursor-pointer">
-                    </select>
-                    
-                    <button id="swapBtn" title="Đổi chiều" class="w-10 h-10 flex items-center justify-center rounded-full bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-transform active:scale-90">
-                        ⇄
-                    </button>
-
-                    <select id="targetLang" class="px-4 py-2 border-2 border-slate-100 rounded-xl bg-slate-50 font-semibold focus:border-indigo-400 outline-none transition-all cursor-pointer">
-                    </select>
-                </div>
-
-                <div class="flex bg-slate-100 p-1 rounded-xl">
-                    <button id="genderFemale" class="px-4 py-2 rounded-lg text-sm font-bold transition-all bg-white text-indigo-600 shadow-md">👩 Nữ</button>
-                    <button id="genderMale" class="px-4 py-2 rounded-lg text-sm font-bold transition-all text-slate-500">👨 Nam</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Main Areas -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 relative">
-            
-            <!-- Input Section -->
-            <div class="relative flex flex-col" id="inputContainer">
-                <div class="absolute -top-3 left-6 px-2 bg-white text-xs font-bold text-slate-400 z-10 uppercase tracking-widest">Văn bản gốc</div>
-                <textarea id="inputText" class="w-full h-80 p-6 text-xl border-2 border-slate-100 rounded-3xl focus:border-indigo-500 outline-none shadow-inner bg-white transition-all resize-none" placeholder="Nhập nội dung cần dịch..."></textarea>
-                
-                <button id="speakSource" class="mt-4 w-full py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95 bg-white border-2 border-slate-100 text-slate-600 hover:border-indigo-200 shadow-sm disabled:opacity-50">
-                    <span id="sourceIcon">🔊</span> <span id="sourceBtnText">Nghe bản gốc</span>
-                </button>
-            </div>
-
-            <!-- Output Section -->
-            <div class="relative flex flex-col">
-                <div class="absolute -top-3 left-6 px-2 bg-white text-xs font-bold text-slate-400 z-10 uppercase tracking-widest">Bản dịch AI</div>
-                <div class="w-full h-80 p-6 text-xl border-2 border-slate-100 rounded-3xl bg-slate-50/50 overflow-y-auto shadow-inner relative custom-scrollbar">
-                    <div id="loader" class="hidden flex flex-col items-center justify-center h-full gap-4">
-                        <div class="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                        <span class="text-indigo-600 font-medium animate-pulse text-sm">AI đang xử lý nhanh...</span>
-                    </div>
-                    <div id="outputText" class="text-slate-800 leading-relaxed font-medium whitespace-pre-wrap">
-                        <span class="text-slate-300 italic">Kết quả sẽ hiển thị ở đây...</span>
-                    </div>
-                </div>
-                <button id="speakTarget" class="mt-4 w-full py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95 bg-white border-2 border-slate-100 text-slate-600 hover:border-indigo-200 shadow-sm disabled:opacity-50">
-                    <span id="targetIcon">🔊</span> <span id="targetBtnText">Nghe bản dịch</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- Error Toast -->
-        <div id="errorMsg" class="hidden mt-10 p-4 rounded-2xl flex items-center justify-center gap-3 shadow-sm animate-fade-in">
-            <span id="errorEmoji">⚠️</span> <span id="errorText">Lỗi kết nối</span>
-        </div>
+    <div class="grid">
+      <div>
+        <label for="sourceLang">Source language</label>
+        <select id="sourceLang"></select>
+      </div>
+      <div>
+        <label for="targetLang">Target language</label>
+        <select id="targetLang"></select>
+      </div>
     </div>
 
-    <script>
-        let apiKey = localStorage.getItem('GEMINI_API_KEY') || "";
-        let els = {};
-        let currentGender = 'female';
-        let isSpeaking = false;
-        let translationTimeout;
-        let abortController = null;
-        let audioContext = null;
+    <div style="margin-top:12px">
+      <label for="inputText">Input text</label>
+      <textarea id="inputText" placeholder="Type or paste text here..."></textarea>
+      <div style="margin-top:8px" class="controls">
+        <button id="translateBtn">Translate</button>
+        <button id="detectBtn" class="ghost">Detect language</button>
+        <button id="speakOrigBtn" class="ghost">Speak original</button>
+        <button id="speakTransBtn" class="ghost">Speak translation</button>
+      </div>
+    </div>
 
-        const languages = {
-            "vi-VN": { name: "Tiếng Việt", code: "Vietnamese" },
-            "en-GB": { name: "Tiếng Anh", code: "English" },
-            "ja-JP": { name: "Tiếng Nhật", code: "Japanese" },
-            "ko-KR": { name: "Tiếng Hàn", code: "Korean" },
-            "zh-CN": { name: "Tiếng Trung", code: "Chinese (Simplified)" },
-        };
+    <div style="margin-top:12px">
+      <label for="outputText">Translated text</label>
+      <textarea id="outputText" readonly placeholder="Translated text appears here..."></textarea>
+    </div>
 
-        const voiceConfigs = {
-            female: { 
-                "vi-VN": "Aoede", 
-                "en-GB": "Kore", 
-                "ja-JP": "Leda", 
-                "ko-KR": "Kore", 
-                "zh-CN": "Aoede" 
-            },
-            male: { 
-                "vi-VN": "Charon", 
-                "en-GB": "Puck", 
-                "ja-JP": "Fenrir", 
-                "ko-KR": "Puck", 
-                "zh-CN": "Zubenelgenubi" 
-            }
-        };
+    <div style="margin-top:12px" class="row">
+      <div style="flex:1 1 320px">
+        <label for="voiceSelect">Select voice (optional)</label>
+        <select id="voiceSelect"></select>
+        <small class="note">If you do not choose a voice, the page will attempt to pick one matching the language tag (e.g., "en", "es", "fr"). Voice availability depends on browser + OS.</small>
+      </div>
+      <div style="flex:0 0 220px">
+        <label for="rate">Rate: <span id="rateVal">1</span></label>
+        <input id="rate" type="range" min="0.5" max="2" step="0.1" value="1">
+        <label for="pitch">Pitch: <span id="pitchVal">1</span></label>
+        <input id="pitch" type="range" min="0.5" max="2" step="0.1" value="1">
+      </div>
+    </div>
 
-        async function fetchWithRetry(url, options, maxRetries = 5) {
-            let retries = 0;
-            const delays = [1000, 2000, 4000, 8000, 16000];
-            while (retries < maxRetries) {
-                try {
-                    const response = await fetch(url, options);
-                    const data = await response.json();
-                    if (!response.ok) throw new Error(data.error?.message || "Lỗi mạng");
-                    return data;
-                } catch (err) {
-                    if (err.name === 'AbortError') throw err;
-                    if (retries >= maxRetries - 1) throw err;
-                    await new Promise(r => setTimeout(r, delays[retries]));
-                    retries++;
-                }
-            }
-        }
+    <div class="footer">
+      <strong>Notes:</strong>
+      <ul>
+        <li>This single-file page uses the public LibreTranslate instance for translations (https://libretranslate.de). Public instances may be rate-limited. For production use, host your own translator or use a paid translation API.</li>
+        <li>Text-to-speech uses the browser <code>SpeechSynthesis</code> voices; "native accent" depends on which voices are installed on your device and the browser's voice list.</li>
+      </ul>
+    </div>
+  </div>
 
-        function init() {
-            els = {
-                sourceLang: document.getElementById('sourceLang'),
-                targetLang: document.getElementById('targetLang'),
-                swapBtn: document.getElementById('swapBtn'),
-                genderFemale: document.getElementById('genderFemale'),
-                genderMale: document.getElementById('genderMale'),
-                inputText: document.getElementById('inputText'),
-                outputText: document.getElementById('outputText'),
-                loader: document.getElementById('loader'),
-                speakSource: document.getElementById('speakSource'),
-                speakTarget: document.getElementById('speakTarget'),
-                errorMsg: document.getElementById('errorMsg'),
-                errorText: document.getElementById('errorText'),
-                errorEmoji: document.getElementById('errorEmoji'),
-                apiKeyInput: document.getElementById('apiKeyInput'),
-                saveKeyBtn: document.getElementById('saveKeyBtn'),
-                apiSetup: document.getElementById('apiSetup'),
-                sourceIcon: document.getElementById('sourceIcon'),
-                targetIcon: document.getElementById('targetIcon'),
-                sourceBtnText: document.getElementById('sourceBtnText'),
-                targetBtnText: document.getElementById('targetBtnText')
-            };
+  <script>
+    // --- language list ---
+    const LANGS = [
+      {code:'auto', name:'Auto-detect'},
+      {code:'en', name:'English'},
+      {code:'es', name:'Spanish'},
+      {code:'fr', name:'French'},
+      {code:'de', name:'German'},
+      {code:'it', name:'Italian'},
+      {code:'pt', name:'Portuguese'},
+      {code:'ru', name:'Russian'},
+      {code:'zh', name:'Chinese (Simplified)'},
+      {code:'ja', name:'Japanese'},
+      {code:'ko', name:'Korean'},
+      {code:'ar', name:'Arabic'},
+      {code:'hi', name:'Hindi'},
+      {code:'vi', name:'Vietnamese'}
+    ];
 
-            if (apiKey) {
-                els.apiKeyInput.value = apiKey;
-                els.apiSetup.classList.add('opacity-50');
-            }
+    const src = document.getElementById('sourceLang');
+    const tgt = document.getElementById('targetLang');
+    LANGS.forEach(l=>{const o=document.createElement('option');o.value=l.code;o.textContent=l.name;src.appendChild(o)});
+    LANGS.filter(l=>l.code!=='auto').forEach(l=>{const o=document.createElement('option');o.value=l.code;o.textContent=l.name;tgt.appendChild(o)});
+    src.value='auto'; tgt.value='en';
 
-            Object.entries(languages).forEach(([code, obj]) => {
-                els.sourceLang.add(new Option(obj.name, code));
-                els.targetLang.add(new Option(obj.name, code));
-            });
-            els.sourceLang.value = "vi-VN";
-            els.targetLang.value = "en-GB";
+    const inputText = document.getElementById('inputText');
+    const outputText = document.getElementById('outputText');
+    const translateBtn = document.getElementById('translateBtn');
+    const detectBtn = document.getElementById('detectBtn');
+    const speakOrigBtn = document.getElementById('speakOrigBtn');
+    const speakTransBtn = document.getElementById('speakTransBtn');
+    const voiceSelect = document.getElementById('voiceSelect');
+    const rate = document.getElementById('rate');
+    const pitch = document.getElementById('pitch');
+    const rateVal = document.getElementById('rateVal');
+    const pitchVal = document.getElementById('pitchVal');
 
-            setupEventListeners();
-        }
+    rate.addEventListener('input', ()=> rateVal.textContent = rate.value);
+    pitch.addEventListener('input', ()=> pitchVal.textContent = pitch.value);
 
-        function setupEventListeners() {
-            els.saveKeyBtn.addEventListener('click', () => {
-                const newKey = els.apiKeyInput.value.trim();
-                if (newKey) {
-                    localStorage.setItem('GEMINI_API_KEY', newKey);
-                    apiKey = newKey;
-                    showStatus("Đã lưu API Key!", "success");
-                }
-            });
+    // --- speech synthesis voices ---
+    let voices = [];
+    function populateVoices(){
+      voices = speechSynthesis.getVoices() || [];
+      voiceSelect.innerHTML='';
+      const empty = document.createElement('option'); empty.value=''; empty.textContent='(auto select best match)'; voiceSelect.appendChild(empty);
+      voices.forEach(v=>{
+        const o=document.createElement('option'); o.value = v.name + '||' + v.lang; o.textContent = v.name + ' — ' + v.lang; voiceSelect.appendChild(o);
+      });
+    }
+    populateVoices();
+    if (typeof speechSynthesis !== 'undefined') {
+      speechSynthesis.onvoiceschanged = populateVoices;
+    }
 
-            els.inputText.addEventListener('input', () => {
-                clearTimeout(translationTimeout);
-                translationTimeout = setTimeout(translate, 600);
-            });
+    // --- helper: pick voice matching language code ---
+    function pickVoiceForLang(langCode){
+      if(!langCode) return null;
+      // Normalize (e.g. zh -> zh, en-US -> en)
+      const primary = langCode.split('-')[0];
+      // prefer exact lang start match
+      let v = voices.find(x=>x.lang && x.lang.toLowerCase().startsWith(langCode.toLowerCase()));
+      if(v) return v;
+      v = voices.find(x=>x.lang && x.lang.toLowerCase().startsWith(primary));
+      if(v) return v;
+      // fallback: try region-free matching using code alone
+      v = voices.find(x=>x.lang && x.lang.toLowerCase().startsWith(primary));
+      return v || null;
+    }
 
-            els.swapBtn.addEventListener('click', () => {
-                const s = els.sourceLang.value;
-                els.sourceLang.value = els.targetLang.value;
-                els.targetLang.value = s;
-                translate();
-            });
+    // --- TTS ---
+    function speak(text, preferLang){
+      if(!text) return;
+      if(typeof speechSynthesis === 'undefined'){
+        alert('This browser does not support SpeechSynthesis API.');
+        return;
+      }
+      const utter = new SpeechSynthesisUtterance(text);
+      // user-selected voice has priority
+      const sel = voiceSelect.value;
+      if(sel){
+        const [name, lang] = sel.split('||');
+        const v = voices.find(x=>x.name===name && x.lang===lang);
+        if(v) utter.voice = v;
+      } else if(preferLang && preferLang!=='auto'){
+        const v = pickVoiceForLang(preferLang);
+        if(v) utter.voice = v;
+      }
+      utter.rate = parseFloat(rate.value);
+      utter.pitch = parseFloat(pitch.value);
+      speechSynthesis.cancel();
+      speechSynthesis.speak(utter);
+    }
 
-            els.genderFemale.addEventListener('click', () => setGender('female'));
-            els.genderMale.addEventListener('click', () => setGender('male'));
+    speakOrigBtn.addEventListener('click', ()=>{
+      const text = inputText.value.trim();
+      // pick voice based on sourceLang (if user chose auto-detect, we won't necessarily know)
+      const sl = src.value;
+      speak(text, sl==='auto'?null:sl);
+    });
+    speakTransBtn.addEventListener('click', ()=>{
+      const text = outputText.value.trim();
+      const tl = tgt.value;
+      speak(text, tl);
+    });
 
-            els.speakSource.addEventListener('click', () => speak(els.inputText.value, els.sourceLang.value, 'source'));
-            els.speakTarget.addEventListener('click', () => speak(els.outputText.innerText, els.targetLang.value, 'target'));
-        }
+    // --- Translation (uses public LibreTranslate instance) ---
+    async function translateText(){
+      const text = inputText.value.trim();
+      if(!text){ alert('Please enter text to translate.'); return; }
+      translateBtn.disabled = true; translateBtn.textContent='Translating...';
+      try{
+        const body = {q:text, source: src.value, target: tgt.value, format:'text'};
+        const res = await fetch('https://libretranslate.de/translate', {
+          method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)
+        });
+        if(!res.ok) throw new Error('Translation failed: ' + res.status + ' ' + res.statusText);
+        const data = await res.json();
+        // API returns { translatedText: '...' }
+        outputText.value = data.translatedText || '';
+      }catch(err){
+        console.error(err); alert('Translation error: ' + err.message + '\n\nIf the public service is down or rate-limited, run your own translator or use a paid API.');
+      } finally { translateBtn.disabled=false; translateBtn.textContent='Translate'; }
+    }
 
-        function setGender(g) {
-            currentGender = g;
-            els.genderFemale.classList.toggle('bg-white', g === 'female');
-            els.genderFemale.classList.toggle('text-indigo-600', g === 'female');
-            els.genderMale.classList.toggle('bg-white', g === 'male');
-            els.genderMale.classList.toggle('text-indigo-600', g === 'male');
-        }
+    translateBtn.addEventListener('click', translateText);
 
-        async function translate() {
-            const text = els.inputText.value.trim();
-            if (!text || !apiKey) return;
+    // --- Detect language using LibreTranslate detect endpoint ---
+    detectBtn.addEventListener('click', async ()=>{
+      const text = inputText.value.trim();
+      if(!text){ alert('Please enter text to detect language.'); return; }
+      detectBtn.disabled = true; detectBtn.textContent='Detecting...';
+      try{
+        const res = await fetch('https://libretranslate.de/detect', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({q:text})});
+        if(!res.ok) throw new Error(res.statusText);
+        const data = await res.json();
+        // data is array of {language: 'en', confidence: 0.61}
+        if(Array.isArray(data) && data.length){
+          const best = data[0].language;
+          // if present in LANGS, set source
+          const exists = LANGS.some(l=>l.code===best);
+          if(exists){ src.value = best; alert('Detected: ' + best); }
+          else { alert('Detected language code: ' + best + '\nIt may not be among the selectable list.'); }
+        } else alert('No detection result.');
+      }catch(err){ console.error(err); alert('Detection error: ' + err.message); }
+      finally { detectBtn.disabled=false; detectBtn.textContent='Detect language'; }
+    });
 
-            if (abortController) abortController.abort();
-            abortController = new AbortController();
+    // --- UX: keyboard shortcut Ctrl+Enter to translate ---
+    inputText.addEventListener('keydown', (e)=>{ if(e.ctrlKey && e.key === 'Enter'){ translateText(); } });
 
-            els.loader.classList.remove('hidden');
-            els.outputText.classList.add('opacity-40');
-
-            try {
-                const data = await fetchWithRetry(
-                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        signal: abortController.signal,
-                        body: JSON.stringify({
-                            contents: [{ parts: [{ text: `Dịch sang ${languages[els.targetLang.value].name}: "${text}". Chỉ trả về kết quả.` }] }]
-                        })
-                    }
-                );
-                els.outputText.innerText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
-            } catch (err) {
-                if (err.name !== 'AbortError') showStatus("Lỗi dịch thuật", "error");
-            } finally {
-                els.loader.classList.add('hidden');
-                els.outputText.classList.remove('opacity-40');
-            }
-        }
-
-        async function speak(text, langCode, type) {
-            if (!text || !apiKey || isSpeaking) return;
-
-            // Kỹ thuật 1: Khởi tạo AudioContext thủ công để 'unlock' âm thanh trình duyệt
-            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            if (audioContext.state === 'suspended') await audioContext.resume();
-
-            setSpeakingUI(type, true);
-            isSpeaking = true;
-
-            try {
-                // Kỹ thuật 2: Chọn VoiceName từ danh mục bản ngữ được xác minh
-                const voiceName = voiceConfigs[currentGender][langCode] || "Aoede";
-                const langName = languages[langCode].code;
-                
-                // Kỹ thuật 3: Prompt "Hard-Code" - Ép AI đóng vai người bản ngữ
-                // Kỹ thuật 4: Sử dụng Caps Lock để tăng trọng số nhận diện lệnh
-                // Kỹ thuật 5: Cấm rõ ràng việc sử dụng giọng Anh (English Accent)
-                const controlPrompt = `ACT AS A NATIVE ${langName.toUpperCase()} SPEAKER. 
-                SAY THE FOLLOWING TEXT IN A CLEAR ${currentGender.toUpperCase()} VOICE. 
-                STRICTLY DO NOT USE ANY ENGLISH OR FOREIGN ACCENT. 
-                TEXT: ${text.substring(0, 500)}`;
-
-                // Kỹ thuật 6: Sử dụng endpoint chuyên dụng TTS để giảm độ trễ
-                const response = await fetchWithRetry(
-                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`,
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            contents: [{ 
-                                role: "user",
-                                parts: [{ text: controlPrompt }] 
-                            }],
-                            generationConfig: {
-                                responseModalities: ["AUDIO"],
-                                speechConfig: { 
-                                    voiceConfig: { 
-                                        prebuiltVoiceConfig: { 
-                                            // Kỹ thuật 7: Định danh VoiceName cụ thể để bỏ qua auto-detect
-                                            voiceName: voiceName 
-                                        } 
-                                    } 
-                                }
-                            }
-                        })
-                    }
-                );
-
-                // Kỹ thuật 8: Kiểm tra cấu trúc phản hồi đa tầng
-                const base64Data = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
-                if (!base64Data) throw new Error("Empty audio response");
-
-                // Kỹ thuật 9: Chuyển đổi nhị phân thủ công để tránh lỗi ký tự đặc biệt
-                const binaryString = atob(base64Data);
-                const bytes = new Uint8Array(binaryString.length);
-                for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
-
-                // Kỹ thuật 10: Decode luồng âm thanh trực tiếp bằng Web Audio API (bypass thẻ <audio>)
-                audioContext.decodeAudioData(bytes.buffer, (audioBuffer) => {
-                    const source = audioContext.createBufferSource();
-                    source.buffer = audioBuffer;
-                    source.connect(audioContext.destination);
-                    
-                    source.onended = () => {
-                        setSpeakingUI(type, false);
-                        isSpeaking = false;
-                    };
-                    
-                    source.start(0);
-                }, (err) => {
-                    throw new Error("Lỗi giải mã âm thanh");
-                });
-
-            } catch (err) {
-                console.error("TTS Error:", err);
-                showStatus("Lỗi giọng đọc: Vui lòng thử lại hoặc kiểm tra API Key.", "error");
-                setSpeakingUI(type, false);
-                isSpeaking = false;
-            }
-        }
-
-        function setSpeakingUI(type, active) {
-            const btn = type === 'source' ? els.speakSource : els.speakTarget;
-            const icon = type === 'source' ? els.sourceIcon : els.targetIcon;
-            const txt = type === 'source' ? els.sourceBtnText : els.targetBtnText;
-            btn.classList.toggle('bg-indigo-600', active);
-            btn.classList.toggle('text-white', active);
-            icon.innerText = active ? "⏳" : "🔊";
-            txt.innerText = active ? "Đang phát..." : (type === 'source' ? "Nghe bản gốc" : "Nghe bản dịch");
-        }
-
-        function showStatus(msg, type) {
-            els.errorText.innerText = msg;
-            els.errorMsg.classList.remove('hidden');
-            els.errorMsg.className = `mt-10 p-4 rounded-2xl flex items-center justify-center gap-3 shadow-sm animate-fade-in ${type === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`;
-            setTimeout(() => els.errorMsg.classList.add('hidden'), 3000);
-        }
-
-        document.addEventListener('DOMContentLoaded', init);
-    </script>
+    // Accessibility hint
+    document.addEventListener('DOMContentLoaded', ()=>{
+      // ensure voices loaded
+      setTimeout(()=>{ populateVoices(); }, 200);
+    });
+  </script>
 </body>
 </html>
