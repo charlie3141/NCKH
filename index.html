@@ -115,19 +115,20 @@
             "zh-CN": { name: "Tiếng Trung", code: "Chinese (Simplified)" },
         };
 
+        // Bảng ánh xạ giọng đọc cố định cho Gemini TTS
         const voiceConfigs = {
             female: { 
                 "vi-VN": "Aoede", 
                 "en-GB": "Kore", 
                 "ja-JP": "Leda", 
-                "ko-KR": "Chione", 
-                "zh-CN": "Algieba" 
+                "ko-KR": "Aoede", 
+                "zh-CN": "Aoede" 
             },
             male: { 
                 "vi-VN": "Charon", 
                 "en-GB": "Puck", 
                 "ja-JP": "Fenrir", 
-                "ko-KR": "Iapetus", 
+                "ko-KR": "Puck", 
                 "zh-CN": "Zubenelgenubi" 
             }
         };
@@ -266,11 +267,13 @@
             isSpeaking = true;
 
             try {
+                // Chọn chính xác tên giọng đọc dựa trên bảng cấu hình
                 const voiceName = voiceConfigs[currentGender][langCode] || (currentGender === 'female' ? "Aoede" : "Charon");
                 
-                // Cải thiện prompt: Chỉ dẫn rõ ràng ngôn ngữ để tránh mô hình tự động fallback về Tiếng Anh (Nam)
-                const promptText = `Please read the following text naturally using a ${currentGender} voice in ${languages[langCode].code}.
-                Text to read: ${text.substring(0, 500)}`;
+                // Prompt cực kỳ cụ thể để Gemini không dùng giọng mặc định tiếng Anh
+                const promptText = `Voice setting: ${currentGender}, Language: ${languages[langCode].code}. 
+                Action: Speak the following text naturally in ${languages[langCode].name}.
+                Text: "${text.substring(0, 500)}"`;
 
                 const response = await fetchWithRetry(
                     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`,
@@ -313,11 +316,9 @@
                 source.start(0);
             } catch (err) {
                 console.error("TTS Error:", err);
-                // Fallback cuối cùng nếu AI gặp lỗi
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = langCode;
-                utterance.onend = () => { setSpeakingUI(type, false); isSpeaking = false; };
-                window.speechSynthesis.speak(utterance);
+                showStatus("Lỗi phát âm thanh. Vui lòng kiểm tra lại kết nối.", "error");
+                setSpeakingUI(type, false);
+                isSpeaking = false;
             }
         }
 
