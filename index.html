@@ -1004,6 +1004,19 @@
                     <div class="sensor-label">CÂU ĐẦY ĐỦ (Tiếng Việt)</div>
                     <div class="conversion-display" id="convertedSentenceDisplay">---</div>
                     
+                    <!-- Đề xuất cụm từ (ĐÃ DI CHUYỂN TỪ PHIÊN DỊCH) -->
+                    <div class="phrase-suggestions">
+                        <h4>📝 ĐỀ XUẤT CỤM TỪ TỪ PHIÊN DỊCH</h4>
+                        <div class="phrase-pills" id="phrasePills">
+                            <!-- Các nút cụm từ sẽ được thêm bởi JavaScript -->
+                        </div>
+                        
+                        <!-- Đề xuất động -->
+                        <div class="dynamic-suggestions" id="dynamicSuggestions">
+                            <!-- Đề xuất động sẽ xuất hiện ở đây -->
+                        </div>
+                    </div>
+                    
                     <!-- Chuyển đổi TTS -->
                     <div class="tts-toggle">
                         <button class="tts-toggle-btn active" id="useGeminiTTS" onclick="toggleTTSMode(true)">🎯 Giọng AI Gemini</button>
@@ -1182,19 +1195,6 @@
                         </div>
                     </div>
                     
-                    <!-- Đề xuất cụm từ từ phiên dịch - ĐÃ DI CHUYỂN -->
-                    <div class="phrase-suggestions">
-                        <h4>📝 ĐỀ XUẤT CỤM TỪ THÔNG DỤNG</h4>
-                        <div class="phrase-pills" id="phrasePills">
-                            <!-- Các nút cụm từ sẽ được thêm bởi JavaScript -->
-                        </div>
-                        
-                        <!-- Đề xuất động -->
-                        <div class="dynamic-suggestions" id="dynamicSuggestions">
-                            <!-- Đề xuất động sẽ xuất hiện ở đây -->
-                        </div>
-                    </div>
-                    
                     <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 10px;">
                         <div><strong>Tùy chọn dịch thuật:</strong></div>
                         <div style="display: flex; gap: 15px; margin-top: 10px; flex-wrap: wrap;">
@@ -1357,8 +1357,7 @@
         let holdStartMs = 0;
         let holdFired = false;
         const DEBOUNCE_COUNT = 3;
-        // THAY ĐỔI: Đổi thời gian giữ raw value xác nhận xuống 1s (1000ms)
-        const HOLD_MS_DEFAULT = 1000; // Đã đổi từ 800ms xuống 1000ms
+        const HOLD_MS_DEFAULT = 1000; // ĐÃ ĐỔI TỪ 800ms XUỐNG 1000ms
         const POST_HOLD_COOLDOWN = 600;
         let lastActionMs = 0;
         let lastStateString = '';
@@ -1554,9 +1553,11 @@
             "Backward": 5
         };
 
-        // Đề xuất cụm từ
+        // Đề xuất cụm từ - ĐÃ THÊM CÁC CỤM TỪ TỪ FILE ẢNH
         const commonPhrases = [
+            "xin",
             "Xin chào, rất vui được gặp bạn",
+            "Làm ơn cho tôi xin hóa đơn",
             "Bạn khỏe không?",
             "Cảm ơn bạn rất nhiều",
             "Làm ơn cho tôi hỏi đường",
@@ -1976,7 +1977,7 @@
             
             if (stableCount >= DEBOUNCE_COUNT) {
                 const held = Date.now() - holdStartMs;
-                if (!holdFired && held >= HOLD_MS_DEFAULT) {
+                if (!holdFired && held >= HOLD_MS_DEFAULT) { // ĐÃ ĐỔI THÀNH 1000ms
                     if (Date.now() - lastActionMs > POST_HOLD_COOLDOWN) {
                         performActionSlotLogic(mpu, a0, a1, a2, a3);
                         holdFired = true;
@@ -2551,8 +2552,18 @@
                 pill.className = 'phrase-pill';
                 pill.textContent = phrase.length > 30 ? phrase.substring(0, 27) + '...' : phrase;
                 pill.onclick = () => {
+                    // Đặt cụm từ vào câu đầy đủ tiếng Việt
+                    document.getElementById('convertedSentenceDisplay').textContent = phrase;
+                    convertedFullSentence = phrase;
+                    
+                    // Cập nhật để dịch
                     document.getElementById('translationInput').value = phrase;
-                    translatePhrase(phrase);
+                    
+                    // Tự động dịch
+                    setTimeout(() => {
+                        translateSentence();
+                    }, 500);
+                    
                     log('PHRASE', `Selected phrase: "${phrase}"`);
                 };
                 pill.title = phrase;
@@ -2626,12 +2637,16 @@
         }
 
         function useSuggestion(text) {
+            document.getElementById('convertedSentenceDisplay').textContent = text;
+            convertedFullSentence = text;
             document.getElementById('translationInput').value = text;
             translateSentence();
             log('SUGGESTION', `Using suggestion: "${text}"`);
         }
 
         function translateSuggestion(text) {
+            document.getElementById('convertedSentenceDisplay').textContent = text;
+            convertedFullSentence = text;
             document.getElementById('translationInput').value = text;
             translateSentence();
             log('SUGGESTION', `Translating suggestion: "${text}"`);
