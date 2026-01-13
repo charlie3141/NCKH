@@ -27,10 +27,16 @@
             <p class="text-slate-500">Dịch thuật & Phát âm chuẩn xác bằng Gemini AI</p>
         </header>
 
-        <!-- API Key Warning (Chỉ hiển thị khi thiếu Key) -->
-        <div id="apiKeyWarning" class="hidden mb-6 p-4 bg-amber-50 border-l-4 border-amber-400 text-amber-800 rounded-r-xl shadow-sm">
-            <p class="font-bold">⚠️ Thiếu API Key!</p>
-            <p class="text-sm">Vui lòng đảm bảo bạn đã cấu hình biến môi trường <code class="bg-amber-100 px-1 rounded">GEMINI_API_KEY</code> hoặc điền trực tiếp vào mã nguồn.</p>
+        <!-- API Key Setup Section -->
+        <div id="apiSetup" class="mb-8 bg-white p-6 rounded-3xl shadow-xl border border-slate-100 animate-fade-in">
+            <div class="flex flex-col md:flex-row items-center gap-4">
+                <div class="flex-1 w-full">
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2 tracking-widest">Cấu hình Gemini API Key</label>
+                    <input type="password" id="apiKeyInput" class="w-full px-4 py-3 border-2 border-slate-100 rounded-xl focus:border-indigo-400 outline-none transition-all" placeholder="Dán API Key của bạn vào đây...">
+                </div>
+                <button id="saveKeyBtn" class="w-full md:w-auto mt-6 md:mt-0 px-8 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all active:scale-95">Lưu Key</button>
+            </div>
+            <p class="mt-3 text-xs text-slate-400 italic">Key của bạn sẽ được lưu an toàn tại trình duyệt (localStorage). Lấy Key miễn phí tại <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-indigo-500 underline">Google AI Studio</a>.</p>
         </div>
 
         <!-- Control Bar -->
@@ -101,10 +107,11 @@
 
     <script>
         /**
-         * Sử dụng biến môi trường GEMINI_API_KEY.
-         * Nếu chạy local/Netlify, hãy đảm bảo biến này đã được định nghĩa.
+         * Lấy API Key từ các nguồn khác nhau:
+         * 1. localStorage (ưu tiên sau khi người dùng nhập)
+         * 2. Biến môi trường hệ thống (nếu có hỗ trợ tiêm trực tiếp)
          */
-        const apiKey = typeof GEMINI_API_KEY !== 'undefined' ? GEMINI_API_KEY : ""; 
+        let apiKey = localStorage.getItem('GEMINI_API_KEY') || (typeof GEMINI_API_KEY !== 'undefined' ? GEMINI_API_KEY : "");
 
         const languages = {
             "vi-VN": { name: "Tiếng Việt", code: "Vietnamese" },
@@ -145,14 +152,17 @@
             speakTarget: document.getElementById('speakTarget'),
             errorMsg: document.getElementById('errorMsg'),
             errorText: document.getElementById('errorText'),
-            apiKeyWarning: document.getElementById('apiKeyWarning')
+            apiKeyInput: document.getElementById('apiKeyInput'),
+            saveKeyBtn: document.getElementById('saveKeyBtn'),
+            apiSetup: document.getElementById('apiSetup')
         };
 
         // --- Khởi tạo ---
         function init() {
-            // Kiểm tra API Key
-            if (!apiKey) {
-                els.apiKeyWarning.classList.remove('hidden');
+            if (apiKey) {
+                els.apiKeyInput.value = apiKey;
+                // Nếu đã có key rồi thì thu nhỏ phần setup để tập trung vào dịch
+                els.apiSetup.classList.add('opacity-50', 'hover:opacity-100', 'transition-opacity');
             }
 
             Object.entries(languages).forEach(([code, obj]) => {
@@ -168,6 +178,18 @@
 
         // --- Xử lý sự kiện ---
         function setupEventListeners() {
+            els.saveKeyBtn.addEventListener('click', () => {
+                const newKey = els.apiKeyInput.value.trim();
+                if (newKey) {
+                    localStorage.setItem('GEMINI_API_KEY', newKey);
+                    apiKey = newKey;
+                    showError("Đã lưu API Key thành công!", true);
+                    els.apiSetup.classList.add('opacity-50');
+                } else {
+                    showError("Vui lòng nhập API Key.");
+                }
+            });
+
             els.inputText.addEventListener('input', () => {
                 handleInput();
                 clearTimeout(translationTimeout);
@@ -238,7 +260,7 @@
         // --- API Logic ---
         async function translate() {
             if (!apiKey) {
-                showError("Vui lòng cấu hình GEMINI_API_KEY để sử dụng.");
+                showError("Vui lòng nhập và lưu API Key trước khi sử dụng.");
                 return;
             }
 
@@ -265,13 +287,14 @@
                     })
                 });
 
-                if (!response.ok) throw new Error("API Error");
+                if (response.status === 401 || response.status === 403) throw new Error("API Key không hợp lệ.");
+                if (!response.ok) throw new Error("Lỗi API Gemini.");
 
                 const data = await response.json();
                 let result = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "Lỗi dịch thuật";
                 els.outputText.innerText = result.replace(/^["']|["']$/g, '');
             } catch (err) {
-                showError("Lỗi kết nối API. Hãy kiểm tra GEMINI_API_KEY của bạn.");
+                showError(err.message);
             } finally {
                 els.loader.classList.add('hidden');
                 els.outputText.classList.remove('hidden');
@@ -280,7 +303,7 @@
 
         async function speak(text, langCode, type) {
             if (!apiKey) {
-                showError("Vui lòng cấu hình GEMINI_API_KEY để sử dụng.");
+                showError("Vui lòng cấu hình API Key để sử dụng.");
                 return;
             }
             if (!text || isSpeaking) return;
@@ -305,12 +328,12 @@
                     })
                 });
 
-                if (!response.ok) throw new Error("TTS API Error");
+                if (!response.ok) throw new Error("Lỗi âm thanh AI.");
 
                 const data = await response.json();
                 const base64Audio = data.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
                 
-                if (!base64Audio) throw new Error("Audio failed");
+                if (!base64Audio) throw new Error("Không nhận được dữ liệu âm thanh.");
 
                 const blob = pcmToWav(base64Audio);
                 const url = URL.createObjectURL(blob);
@@ -325,7 +348,7 @@
                 
                 await audio.play();
             } catch (err) {
-                showError("Lỗi âm thanh AI. Kiểm tra GEMINI_API_KEY hoặc kết nối mạng.");
+                showError(err.message);
                 setSpeakingUI(type, false);
                 isSpeaking = false;
             }
@@ -350,9 +373,16 @@
             }
         }
 
-        function showError(msg) {
+        function showError(msg, isSuccess = false) {
             els.errorText.innerText = msg;
-            els.errorMsg.classList.remove('hidden');
+            els.errorMsg.classList.remove('hidden', 'bg-red-50', 'text-red-700', 'bg-green-50', 'text-green-700');
+            
+            if (isSuccess) {
+                els.errorMsg.classList.add('bg-green-50', 'text-green-700');
+            } else {
+                els.errorMsg.classList.add('bg-red-50', 'text-red-700');
+            }
+            
             setTimeout(() => els.errorMsg.classList.add('hidden'), 5000);
         }
 
