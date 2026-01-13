@@ -130,6 +130,7 @@
         let isSpeaking = false;
         let translationTimeout;
         let currentAudio = null;
+        let abortController = null; // Quản lý việc hủy request cũ
 
         const els = {
             sourceLang: document.getElementById('sourceLang'),
@@ -150,7 +151,6 @@
             apiSetup: document.getElementById('apiSetup')
         };
 
-        // Hàm hỗ trợ Exponential Backoff
         async function fetchWithRetry(url, options, maxRetries = 5) {
             let retries = 0;
             const delays = [1000, 2000, 4000, 8000, 16000];
@@ -166,6 +166,9 @@
                     
                     return data;
                 } catch (err) {
+                    // Nếu request bị hủy bởi AbortController, không thử lại
+                    if (err.name === 'AbortError') throw err;
+                    
                     retries++;
                     if (retries >= maxRetries) throw err;
                     await new Promise(res => setTimeout(res, delays[retries - 1]));
@@ -203,7 +206,8 @@
 
             els.inputText.addEventListener('input', () => {
                 clearTimeout(translationTimeout);
-                translationTimeout = setTimeout(translate, 800);
+                // Tăng delay debounce lên 1000ms để mượt hơn khi gõ
+                translationTimeout = setTimeout(translate, 1000);
             });
 
             els.swapBtn.addEventListener('click', () => {
@@ -235,6 +239,10 @@
             const text = els.inputText.value.trim();
             if (!text || !apiKey) return;
 
+            // Hủy request cũ nếu đang chạy
+            if (abortController) abortController.abort();
+            abortController = new AbortController();
+
             els.loader.classList.remove('hidden');
             els.outputText.classList.add('hidden');
 
@@ -244,6 +252,7 @@
                     {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
+                        signal: abortController.signal,
                         body: JSON.stringify({
                             contents: [{ parts: [{ text: `Translate precisely to ${languages[els.targetLang.value].name}: "${text}". Only return translated text.` }] }]
                         })
@@ -251,9 +260,11 @@
                 );
 
                 els.outputText.innerText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+                els.outputText.classList.remove('hidden');
+                els.loader.classList.add('hidden');
             } catch (err) {
-                showStatus("Dịch thuật thất bại sau nhiều lần thử: " + err.message, "error");
-            } finally {
+                if (err.name === 'AbortError') return;
+                showStatus("Dịch thuật gặp sự cố, vui lòng kiểm tra kết nối.", "error");
                 els.loader.classList.add('hidden');
                 els.outputText.classList.remove('hidden');
             }
@@ -298,20 +309,25 @@
                     const blob = pcmToWav(audioPart.inlineData.data, sampleRate);
                     const url = URL.createObjectURL(blob);
                     
-                    if (currentAudio) currentAudio.pause();
+                    if (currentAudio) {
+                        currentAudio.pause();
+                        currentAudio.onended = null;
+                    }
+
                     currentAudio = new Audio(url);
                     currentAudio.onended = () => {
                         setSpeakingUI(type, false);
                         isSpeaking = false;
                         URL.revokeObjectURL(url);
+                        currentAudio = null;
                     };
                     await currentAudio.play();
                 } else {
-                    throw new Error("Không nhận được dữ liệu âm thanh.");
+                    throw new Error("Dữ liệu âm thanh trống.");
                 }
             } catch (err) {
-                console.error("TTS Gemini Error:", err);
-                showStatus("Lỗi âm thanh, đang dùng giọng đọc dự phòng...", "info");
+                console.error("TTS Error:", err);
+                showStatus("Đang dùng giọng đọc dự phòng...", "info");
                 speakFallback(text, langCode, type);
             }
         }
@@ -324,7 +340,6 @@
                 isSpeaking = false;
             };
             utterance.onerror = () => {
-                showStatus("Giọng đọc hệ thống không khả dụng.", "error");
                 setSpeakingUI(type, false);
                 isSpeaking = false;
             };
