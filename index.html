@@ -104,7 +104,6 @@
         let currentGender = 'female';
         let isSpeaking = false;
         let translationTimeout;
-        let currentAudio = null;
         let abortController = null;
         let audioContext = null;
 
@@ -116,9 +115,22 @@
             "zh-CN": { name: "Tiếng Trung", code: "Chinese (Simplified)" },
         };
 
+        // Cập nhật lại danh sách giọng đọc khớp với mã ngôn ngữ
         const voiceConfigs = {
-            female: { "vi-VN": "Aoede", "en-GB": "Kore", "ja-JP": "Leda", "ko-KR": "Chione", "zh-CN": "Algieba" },
-            male: { "vi-VN": "Charon", "en-GB": "Puck", "ja-JP": "Fenrir", "ko-KR": "Iapetus", "zh-CN": "Zubenelgenubi" }
+            female: { 
+                "vi-VN": "Aoede", 
+                "en-GB": "Kore", 
+                "ja-JP": "Leda", 
+                "ko-KR": "Chione", 
+                "zh-CN": "Algieba" 
+            },
+            male: { 
+                "vi-VN": "Charon", 
+                "en-GB": "Puck", 
+                "ja-JP": "Fenrir", 
+                "ko-KR": "Iapetus", 
+                "zh-CN": "Zubenelgenubi" 
+            }
         };
 
         async function fetchWithRetry(url, options, maxRetries = 3) {
@@ -248,7 +260,6 @@
         async function speak(text, langCode, type) {
             if (!text || !apiKey || isSpeaking) return;
 
-            // Mở khóa AudioContext nếu cần
             if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
             if (audioContext.state === 'suspended') await audioContext.resume();
 
@@ -256,17 +267,28 @@
             isSpeaking = true;
 
             try {
-                const voiceName = voiceConfigs[currentGender][langCode] || "Kore";
+                // Xác định tên giọng đọc chính xác từ bảng cấu hình dựa trên langCode (ví dụ: "vi-VN")
+                const voiceName = voiceConfigs[currentGender][langCode] || (currentGender === 'female' ? "Aoede" : "Charon");
+                
+                // Thêm chỉ dẫn rõ ràng trong text để AI hiểu ngữ cảnh ngôn ngữ
+                const promptText = `Speak this in ${languages[langCode].code}: ${text.substring(0, 500)}`;
+
                 const response = await fetchWithRetry(
                     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`,
                     {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
-                            contents: [{ parts: [{ text: text.substring(0, 500) }] }],
+                            contents: [{ parts: [{ text: promptText }] }],
                             generationConfig: {
                                 responseModalities: ["AUDIO"],
-                                speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName } } }
+                                speechConfig: { 
+                                    voiceConfig: { 
+                                        prebuiltVoiceConfig: { 
+                                            voiceName: voiceName 
+                                        } 
+                                    } 
+                                }
                             }
                         })
                     }
@@ -275,13 +297,10 @@
                 const base64Data = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
                 if (!base64Data) throw new Error("No audio data");
 
-                // Chuyển đổi Base64 -> ArrayBuffer
                 const binaryString = atob(base64Data);
-                const len = binaryString.length;
-                const bytes = new Uint8Array(len);
-                for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
+                const bytes = new Uint8Array(binaryString.length);
+                for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
 
-                // Giải mã âm thanh bằng AudioContext (Cực kỳ tin cậy)
                 const audioBuffer = await audioContext.decodeAudioData(bytes.buffer);
                 const source = audioContext.createBufferSource();
                 source.buffer = audioBuffer;
@@ -295,7 +314,7 @@
                 source.start(0);
             } catch (err) {
                 console.error("TTS Error:", err);
-                // Dự phòng cuối cùng bằng trình duyệt
+                // Dự phòng
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = langCode;
                 utterance.onend = () => { setSpeakingUI(type, false); isSpeaking = false; };
