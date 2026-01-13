@@ -27,6 +27,12 @@
             <p class="text-slate-500">Dịch thuật & Phát âm chuẩn xác bằng Gemini AI</p>
         </header>
 
+        <!-- API Key Warning (Chỉ hiển thị khi thiếu Key) -->
+        <div id="apiKeyWarning" class="hidden mb-6 p-4 bg-amber-50 border-l-4 border-amber-400 text-amber-800 rounded-r-xl shadow-sm">
+            <p class="font-bold">⚠️ Thiếu API Key!</p>
+            <p class="text-sm">Bạn cần dán API Key từ Google AI Studio vào biến <code class="bg-amber-100 px-1 rounded">apiKey</code> trong mã nguồn để ứng dụng hoạt động trên Netlify.</p>
+        </div>
+
         <!-- Control Bar -->
         <div class="bg-white p-6 rounded-3xl shadow-xl mb-8 border border-slate-100">
             <div class="flex flex-wrap items-center justify-between gap-4">
@@ -94,8 +100,12 @@
     </div>
 
     <script>
-        // --- Cấu hình & Dữ liệu ---
-        const apiKey = ""; // API Key sẽ được môi trường tự động nạp
+        /**
+         * QUAN TRỌNG: Để chạy trên Netlify, bạn phải điền API Key của mình vào đây.
+         * Lấy Key miễn phí tại: https://aistudio.google.com/app/apikey
+         */
+        const apiKey = ""; 
+
         const languages = {
             "vi-VN": { name: "Tiếng Việt", code: "Vietnamese" },
             "en-GB": { name: "Tiếng Anh", code: "English" },
@@ -134,11 +144,17 @@
             speakSource: document.getElementById('speakSource'),
             speakTarget: document.getElementById('speakTarget'),
             errorMsg: document.getElementById('errorMsg'),
-            errorText: document.getElementById('errorText')
+            errorText: document.getElementById('errorText'),
+            apiKeyWarning: document.getElementById('apiKeyWarning')
         };
 
         // --- Khởi tạo ---
         function init() {
+            // Kiểm tra API Key
+            if (!apiKey) {
+                els.apiKeyWarning.classList.remove('hidden');
+            }
+
             Object.entries(languages).forEach(([code, obj]) => {
                 const opt1 = new Option(obj.name, code);
                 const opt2 = new Option(obj.name, code);
@@ -221,6 +237,11 @@
 
         // --- API Logic ---
         async function translate() {
+            if (!apiKey) {
+                showError("Vui lòng cấu hình API Key để sử dụng.");
+                return;
+            }
+
             const text = els.inputText.value.trim();
             if (!text) return;
 
@@ -244,11 +265,13 @@
                     })
                 });
 
+                if (!response.ok) throw new Error("API Error");
+
                 const data = await response.json();
                 let result = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "Lỗi dịch thuật";
                 els.outputText.innerText = result.replace(/^["']|["']$/g, '');
             } catch (err) {
-                showError("Không thể kết nối với AI dịch thuật.");
+                showError("Lỗi kết nối API. Hãy kiểm tra API Key của bạn.");
             } finally {
                 els.loader.classList.add('hidden');
                 els.outputText.classList.remove('hidden');
@@ -256,6 +279,10 @@
         }
 
         async function speak(text, langCode, type) {
+            if (!apiKey) {
+                showError("Vui lòng cấu hình API Key để sử dụng.");
+                return;
+            }
             if (!text || isSpeaking) return;
             if (currentAudio) currentAudio.pause();
 
@@ -278,6 +305,8 @@
                     })
                 });
 
+                if (!response.ok) throw new Error("TTS API Error");
+
                 const data = await response.json();
                 const base64Audio = data.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
                 
@@ -296,7 +325,7 @@
                 
                 await audio.play();
             } catch (err) {
-                showError("Lỗi giọng nói AI.");
+                showError("Lỗi âm thanh AI. Kiểm tra API Key hoặc kết nối mạng.");
                 setSpeakingUI(type, false);
                 isSpeaking = false;
             }
