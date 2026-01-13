@@ -1004,9 +1004,9 @@
                     <div class="sensor-label">CÂU ĐẦY ĐỦ (Tiếng Việt)</div>
                     <div class="conversion-display" id="convertedSentenceDisplay">---</div>
                     
-                    <!-- Đề xuất cụm từ (ĐÃ DI CHUYỂN TỪ PHIÊN DỊCH) -->
+                    <!-- ĐÃ SỬA: Đưa phrase suggestions vào đây -->
                     <div class="phrase-suggestions">
-                        <h4>📝 ĐỀ XUẤT CỤM TỪ TỪ PHIÊN DỊCH</h4>
+                        <h4>📝 ĐỀ XUẤT CỤM TỪ THÔNG DỤNG</h4>
                         <div class="phrase-pills" id="phrasePills">
                             <!-- Các nút cụm từ sẽ được thêm bởi JavaScript -->
                         </div>
@@ -1357,8 +1357,8 @@
         let holdStartMs = 0;
         let holdFired = false;
         const DEBOUNCE_COUNT = 3;
-        const HOLD_MS_DEFAULT = 1000; // ĐÃ ĐỔI TỪ 800ms XUỐNG 1000ms
-        const POST_HOLD_COOLDOWN = 600;
+        const HOLD_MS_DEFAULT = 1000; // ĐÃ ĐỔI: Từ 800ms lên 1000ms (1 giây)
+        const POST_HOLD_COOLDOWN = 800; // ĐÃ ĐỔI: Từ 600ms lên 800ms
         let lastActionMs = 0;
         let lastStateString = '';
         
@@ -1553,9 +1553,8 @@
             "Backward": 5
         };
 
-        // Đề xuất cụm từ - ĐÃ THÊM CÁC CỤM TỪ TỪ FILE ẢNH
+        // Đề xuất cụm từ - ĐÃ CẬP NHẬT: Thêm 2 cụm từ từ file hình ảnh
         const commonPhrases = [
-            "xin",
             "Xin chào, rất vui được gặp bạn",
             "Làm ơn cho tôi xin hóa đơn",
             "Bạn khỏe không?",
@@ -1977,7 +1976,7 @@
             
             if (stableCount >= DEBOUNCE_COUNT) {
                 const held = Date.now() - holdStartMs;
-                if (!holdFired && held >= HOLD_MS_DEFAULT) { // ĐÃ ĐỔI THÀNH 1000ms
+                if (!holdFired && held >= HOLD_MS_DEFAULT) {
                     if (Date.now() - lastActionMs > POST_HOLD_COOLDOWN) {
                         performActionSlotLogic(mpu, a0, a1, a2, a3);
                         holdFired = true;
@@ -2552,18 +2551,8 @@
                 pill.className = 'phrase-pill';
                 pill.textContent = phrase.length > 30 ? phrase.substring(0, 27) + '...' : phrase;
                 pill.onclick = () => {
-                    // Đặt cụm từ vào câu đầy đủ tiếng Việt
-                    document.getElementById('convertedSentenceDisplay').textContent = phrase;
-                    convertedFullSentence = phrase;
-                    
-                    // Cập nhật để dịch
                     document.getElementById('translationInput').value = phrase;
-                    
-                    // Tự động dịch
-                    setTimeout(() => {
-                        translateSentence();
-                    }, 500);
-                    
+                    translatePhrase(phrase);
                     log('PHRASE', `Selected phrase: "${phrase}"`);
                 };
                 pill.title = phrase;
@@ -2637,16 +2626,12 @@
         }
 
         function useSuggestion(text) {
-            document.getElementById('convertedSentenceDisplay').textContent = text;
-            convertedFullSentence = text;
             document.getElementById('translationInput').value = text;
             translateSentence();
             log('SUGGESTION', `Using suggestion: "${text}"`);
         }
 
         function translateSuggestion(text) {
-            document.getElementById('convertedSentenceDisplay').textContent = text;
-            convertedFullSentence = text;
             document.getElementById('translationInput').value = text;
             translateSentence();
             log('SUGGESTION', `Translating suggestion: "${text}"`);
