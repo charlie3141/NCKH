@@ -747,11 +747,22 @@
             display: flex;
             align-items: center;
             gap: 5px;
+            transition: all 0.2s;
         }
 
         .voice-btn.active {
             background: linear-gradient(to right, #4A00E0, #8E2DE2);
             box-shadow: 0 2px 8px rgba(74,0,224,0.3);
+        }
+
+        .voice-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .voice-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         .language-voice-display {
@@ -790,6 +801,7 @@
             border-radius: 6px;
             cursor: pointer;
             font-size: 0.8rem;
+            transition: all 0.2s;
         }
 
         .tts-toggle-btn.active {
@@ -959,20 +971,184 @@
             margin-top: 4px;
             display: inline-block;
         }
-        
-        .voice-swap-btn {
-            padding: 8px 15px;
-            background: linear-gradient(to right, #FF9800, #FF5722);
+
+        /* ===== TÍNH NĂNG MỚI ===== */
+        .swap-languages-btn {
+            padding: 8px 12px;
+            background: linear-gradient(to right, #9C27B0, #673AB7);
             color: white;
             border: none;
             border-radius: 8px;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: bold;
             transition: all 0.2s;
         }
-        
-        .voice-swap-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 3px 10px rgba(255,87,34,0.3);
+
+        .swap-languages-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(156,39,176,0.3);
+        }
+
+        .translation-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .translation-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-left: auto;
+        }
+
+        .auto-translate-toggle {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .auto-translate-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .voice-gender-buttons {
+            display: flex;
+            background: #f8f9fa;
+            padding: 4px;
+            border-radius: 20px;
+            gap: 2px;
+        }
+
+        .voice-gender-button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 16px;
+            background: transparent;
+            color: #666;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .voice-gender-button.active {
+            background: white;
+            color: #4A00E0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .translation-area {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #e0e6ff;
+        }
+
+        .text-input-wrapper {
+            position: relative;
+        }
+
+        .suggestions-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        .suggestions-dropdown.show {
+            display: block;
+            animation: slideIn 0.2s ease;
+        }
+
+        .suggestion-dropdown-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .suggestion-dropdown-item:hover {
+            background: #f5f7ff;
+        }
+
+        .suggestion-dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .language-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background: #E3F2FD;
+            color: #1976D2;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+
+        .speech-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .speech-status.connecting {
+            background: #FFF3CD;
+            color: #856404;
+        }
+
+        .speech-status.speaking {
+            background: #D4EDDA;
+            color: #155724;
+        }
+
+        .speech-status.error {
+            background: #FFEBEE;
+            color: #b71c1c;
+        }
+
+        .speech-status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ddd;
+        }
+
+        .speech-status-indicator.connecting {
+            background: #FFC107;
+            animation: pulse 1s infinite;
+        }
+
+        .speech-status-indicator.speaking {
+            background: #28A745;
+            animation: pulse 0.5s infinite;
+        }
+
+        .speech-status-indicator.error {
+            background: #F44336;
         }
     </style>
 </head>
@@ -1041,29 +1217,19 @@
                     
                     <!-- Tùy chọn giọng nói -->
                     <div class="voice-options">
-                        <button class="voice-swap-btn" onclick="swapLanguages()" title="Đổi chiều ngôn ngữ">
-                            ⇄
-                        </button>
-                        <div class="voice-btn male active" data-gender="male" data-lang="vi-VN" onclick="selectVoice(this)">
-                            👨 Nam Tiếng Việt
-                        </div>
-                        <div class="voice-btn female" data-gender="female" data-lang="vi-VN" onclick="selectVoice(this)">
-                            👩 Nữ Tiếng Việt
-                        </div>
-                        <div class="voice-btn male" data-gender="male" data-lang="en-GB" onclick="selectVoice(this)">
-                            👨 Nam Tiếng Anh
-                        </div>
-                        <div class="voice-btn female" data-gender="female" data-lang="en-GB" onclick="selectVoice(this)">
-                            👩 Nữ Tiếng Anh
+                        <div class="voice-gender-buttons">
+                            <button class="voice-gender-button active" onclick="setVoiceGender('female')">👩 Nữ</button>
+                            <button class="voice-gender-button" onclick="setVoiceGender('male')">👨 Nam</button>
                         </div>
                     </div>
                     
                     <div class="language-voice-display" id="currentVoiceDisplay">
-                        Hiện tại: Nam Tiếng Việt (Gemini AI)
+                        Hiện tại: Nữ Tiếng Việt (Gemini AI)
                     </div>
                     
-                    <div class="ai-speech-status" id="aiSpeechStatus" style="display: none;">
-                        <span class="ai-loading">⏳</span> Đang tải giọng AI...
+                    <div class="speech-status" id="speechStatus" style="display: none;">
+                        <div class="speech-status-indicator"></div>
+                        <span id="speechStatusText">Đang chuẩn bị giọng nói...</span>
                     </div>
                     
                     <!-- Điều khiển giọng nói -->
@@ -1191,78 +1357,65 @@
                 </div>
             </div>
 
-            <!-- Card Dịch thuật Nâng cao -->
+            <!-- Card Dịch thuật -->
             <div class="card">
-                <h3>Dịch thuật Nâng cao</h3>
-                <div style="margin-bottom: 20px;">
-                    <div class="sensor-label">VĂN BẢN GỐC</div>
-                    <div class="text-input-container" id="translationInputContainer">
-                        <textarea id="translationInput" placeholder="Nhập văn bản cần dịch ở đây..." 
-                                  oninput="handleTranslationInput()"></textarea>
-                        <div class="dynamic-suggestions" id="translationSuggestions">
-                            <!-- Đề xuất động cho dịch thuật -->
+                <h3>Dịch thuật</h3>
+                <div class="translation-area">
+                    <div class="translation-header">
+                        <div>
+                            <div class="sensor-label">Ngôn ngữ nguồn</div>
+                            <select id="sourceLanguage" class="language-select">
+                                <option value="vi-VN">Tiếng Việt</option>
+                                <option value="en-GB">Tiếng Anh</option>
+                                <option value="ja-JP">Tiếng Nhật</option>
+                                <option value="ko-KR">Tiếng Hàn</option>
+                                <option value="zh-CN">Tiếng Trung</option>
+                            </select>
                         </div>
-                    </div>
-                    
-                    <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 10px;">
-                        <div><strong>Tùy chọn dịch thuật:</strong></div>
-                        <div style="display: flex; gap: 15px; margin-top: 10px; flex-wrap: wrap; align-items: center;">
-                            <div>
-                                <div class="sensor-label">Ngôn ngữ nguồn</div>
-                                <select id="sourceLanguage" class="language-select">
-                                    <option value="vi-VN">Tiếng Việt</option>
-                                    <option value="en-GB">Tiếng Anh</option>
-                                    <option value="ja-JP">Tiếng Nhật</option>
-                                    <option value="ko-KR">Tiếng Hàn</option>
-                                    <option value="zh-CN">Tiếng Trung</option>
-                                </select>
-                            </div>
-                            <div>
-                                <button class="voice-swap-btn" onclick="swapLanguages()" style="margin-top: 20px;" title="Đổi chiều ngôn ngữ">
-                                    ⇄
-                                </button>
-                            </div>
-                            <div>
-                                <div class="sensor-label">Ngôn ngữ đích</div>
-                                <select id="targetLanguage" class="language-select">
-                                    <option value="en-GB">Tiếng Anh</option>
-                                    <option value="ja-JP">Tiếng Nhật</option>
-                                    <option value="ko-KR">Tiếng Hàn</option>
-                                    <option value="zh-CN">Tiếng Trung</option>
-                                    <option value="vi-VN">Tiếng Việt</option>
-                                </select>
+                        
+                        <button class="swap-languages-btn" onclick="swapLanguages()" title="Đổi chiều dịch">
+                            ⇄
+                        </button>
+                        
+                        <div>
+                            <div class="sensor-label">Ngôn ngữ đích</div>
+                            <select id="targetLanguage" class="language-select">
+                                <option value="en-GB">Tiếng Anh</option>
+                                <option value="ja-JP">Tiếng Nhật</option>
+                                <option value="ko-KR">Tiếng Hàn</option>
+                                <option value="zh-CN">Tiếng Trung</option>
+                                <option value="vi-VN">Tiếng Việt</option>
+                            </select>
+                        </div>
+                        
+                        <div class="translation-controls">
+                            <div class="auto-translate-toggle">
+                                <input type="checkbox" id="autoTranslate" class="auto-translate-checkbox" checked>
+                                <label for="autoTranslate">Tự động dịch</label>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Tùy chọn giọng nói cho dịch thuật -->
-                    <div class="voice-gender-selector">
-                        <button class="voice-gender-btn female active" data-gender="female" onclick="selectTranslationGender(this)">
-                            👩 Nữ
-                        </button>
-                        <button class="voice-gender-btn male" data-gender="male" onclick="selectTranslationGender(this)">
-                            👨 Nam
-                        </button>
+                    <div style="margin-bottom: 20px;">
+                        <div class="sensor-label">CÂU ĐẦY ĐỦ (Để dịch)</div>
+                        <div class="text-input-wrapper">
+                            <textarea id="translationInput" placeholder="Nhập văn bản ở đây..." 
+                                      oninput="handleTranslationInput()"></textarea>
+                            <div class="suggestions-dropdown" id="translationSuggestions">
+                                <!-- Đề xuất động cho dịch thuật -->
+                            </div>
+                        </div>
                     </div>
-                </div>
 
-                <div class="sensor-label">KẾT QUẢ DỊCH</div>
-                <div id="translationOutput" class="conversion-display" style="min-height: 80px; margin-bottom: 15px;">
-                    Đang chờ dịch...
-                </div>
-                
-                <!-- Trạng thái TTS -->
-                <div class="ai-speech-status" id="translationSpeechStatus" style="display: none;">
-                    <span class="ai-loading">⏳</span> Đang chuẩn bị giọng đọc...
-                </div>
-                
-                <div class="tts-loading" id="translationLoading" style="display: none;">
-                    <span>⏳</span> Đang dịch với AI...
-                </div>
+                    <div class="sensor-label">KẾT QUẢ DỊCH</div>
+                    <div id="translationOutput" class="conversion-display" style="min-height: 80px; margin-bottom: 15px;">
+                        Đang chờ dịch...
+                    </div>
 
-                <div class="controls">
-                    <button onclick="translateSentence()" class="blue">🌐 Dịch câu</button>
-                    <button onclick="clearTranslation()" class="red">🗑️ Xóa bản dịch</button>
+                    <div class="controls">
+                        <button onclick="translateSentence()" class="blue">Dịch câu</button>
+                        <button onclick="clearTranslation()" class="red">Xóa bản dịch</button>
+                    </div>
                 </div>
             </div>
 
@@ -1435,7 +1588,8 @@
             {key: "IAY", forms: ["iáy", "iày", "iảy", "iãy", "iạy", "iay", "iấy", "iầy", "iẩy", "iẫy", "iậy", "iây", "iắy", "iằy", "iẳy", "iẵy", "iặy", "iăy"]},
             {key: "IC", forms: ["íc", "ìc", "ỉc", "ĩc", "ịc", "ic", "íc", "ìc", "ỉc", "ĩc", "ịc", "ic", "íc", "ìc", "ỉc", "ĩc", "ịc", "ic"]},
             {key: "ICH", forms: ["ích", "ìch", "ỉch", "ĩch", "ịch", "ich", "ích", "ìch", "ỉch", "ĩch", "ịch", "ich", "ích", "ìch", "ỉch", "ĩch", "ịch", "ich"]},
-            // ... (giữ nguyên bảng từ code gốc)
+            {key: "IE", forms: ["ié", "iè", "iẻ", "iẽ", "iẹ", "ie", "iế", "iề", "iể", "iễ", "iệ", "iê", "ié", "iè", "iẻ", "iẽ", "iẹ", "ie"]},
+            // ... (giữ nguyên bảng dữ liệu đầy đủ)
         ];
 
         // Ánh xạ trạng thái MPU
@@ -1448,16 +1602,9 @@
             "Backward": 5
         };
 
-        // Thư viện ngôn ngữ nâng cao
-        const languageNames = {
-            "vi-VN": { name: "Tiếng Việt", code: "Vietnamese" },
-            "en-GB": { name: "Tiếng Anh", code: "English" },
-            "ja-JP": { name: "Tiếng Nhật", code: "Japanese" },
-            "ko-KR": { name: "Tiếng Hàn", code: "Korean" },
-            "zh-CN": { name: "Tiếng Trung", code: "Chinese (Simplified)" }
-        };
-
-        // Thư viện cụm từ đa ngôn ngữ (nâng cao từ code tham khảo)
+        // === THƯ VIỆN DỊCH THUẬT & GIỌNG NÓI MỚI ===
+        
+        // Thư viện cụm từ đa ngôn ngữ
         const phraseLibrary = {
             "vi-VN": [
                 "Xin chào, rất vui được gặp bạn.",
@@ -1521,7 +1668,7 @@
                 "보고서를 다시 확인해 주세요.",
                 "마감일은 금요일입니다.",
                 "전적으로 동의합니다.",
-                "메뉴를 보여주세요.",
+                "メニュ를 보여주세요.",
                 "계산서 부탁드립니다.",
                 "이 요리는 매운가요?",
                 "박물관에는 어떻게 가나요?",
@@ -1551,36 +1698,16 @@
             ]
         };
 
-        // Danh sách cụm từ đề xuất (tiếng Việt)
-        const commonPhrases = [
-            "Xin chào, rất vui được gặp bạn",
-            "Chào buổi sáng",
-            "Chào buổi chiều",
-            "Chào buổi tối",
-            "Làm ơn cho tôi xin hóa đơn",
-            "Bạn khỏe không?",
-            "Cảm ơn bạn rất nhiều",
-            "Làm ơn cho tôi hỏi đường",
-            "Chúc một ngày tốt lành",
-            "Tôi yêu ngôn ngữ này",
-            "Hẹn gặp lại sau",
-            "Tôi đói bụng",
-            "Bao nhiêu tiền?",
-            "Tôi không hiểu",
-            "Bạn có thể nói chậm hơn được không?",
-            "Bạn tên là gì?",
-            "Tôi tên là...",
-            "Rất vui được làm quen",
-            "Tôi cần giúp đỡ",
-            "Làm ơn chỉ đường đến nhà ga",
-            "Nhà vệ sinh ở đâu?",
-            "Tôi bị lạc đường",
-            "Bạn nói tiếng Anh được không?",
-            "Xin lỗi, tôi không nghe rõ",
-            "Bạn có thể lặp lại không?"
-        ];
+        // Ánh xạ ngôn ngữ
+        const languageNames = {
+            "vi-VN": { name: "Tiếng Việt", code: "Vietnamese" },
+            "en-GB": { name: "Tiếng Anh", code: "English" },
+            "ja-JP": { name: "Tiếng Nhật", code: "Japanese" },
+            "ko-KR": { name: "Tiếng Hàn", code: "Korean" },
+            "zh-CN": { name: "Tiếng Trung", code: "Chinese (Simplified)" }
+        };
 
-        // Cấu hình giọng nói Gemini nâng cao
+        // Cấu hình giọng nói Gemini
         const voiceConfigs = {
             female: { 
                 "vi-VN": "Aoede", 
@@ -1598,28 +1725,19 @@
             }
         };
 
-        // Biến tổng hợp giọng nói
+        // Biến giọng nói và TTS
         let isSpeaking = false;
+        let isConnecting = false;
         let currentSpeech = null;
         let audioVisualizerInterval = null;
-        let isConnecting = false;
-        let errorMessage = "";
-        
-        // Chế độ TTS
         let useGeminiTTS = true;
-        
-        // Cài đặt giọng nói hiện tại
+        let currentVoiceGender = "female";
         let currentVoice = {
             lang: 'vi-VN',
-            gender: 'male'
+            gender: 'female'
         };
 
-        // Biến cho dịch thuật nâng cao
-        let translationGender = "female";
-        let lastTranslationTime = 0;
-        const TRANSLATION_COOLDOWN = 2000;
-
-        // === HÀM HIỆU CHUẨN (giữ nguyên) ===
+        // === HÀM HIỆU CHUẨN ===
         function startCalibration() {
             if (isCalibrating) return;
             
@@ -1849,7 +1967,7 @@
             statusDiv.appendChild(div);
         }
 
-        // === HÀM TỐI ƯU HÓA FIREBASE (giữ nguyên) ===
+        // === HÀM TỐI ƯU HÓA FIREBASE ===
         async function fetchFirebaseDataOptimized() {
             if (isFetching) return null;
             
@@ -2573,281 +2691,102 @@
             }
         }
 
-        // === HÀM ĐỀ XUẤT ===
-        function loadPhraseSuggestions() {
-            const phrasePills = document.getElementById('phrasePills');
-            phrasePills.innerHTML = '';
+        // === HÀM DỊCH THUẬT & GIỌNG NÓI NÂNG CAO ===
+        
+        function setVoiceGender(gender) {
+            currentVoiceGender = gender;
+            currentVoice.gender = gender;
             
-            commonPhrases.forEach(phrase => {
-                const pill = document.createElement('button');
-                pill.className = 'phrase-pill';
-                pill.textContent = phrase.length > 30 ? phrase.substring(0, 27) + '...' : phrase;
-                pill.onclick = () => {
-                    document.getElementById('translationInput').value = phrase;
-                    translatePhrase(phrase);
-                    log('PHRASE', `Đã chọn cụm từ: "${phrase}"`);
-                };
-                pill.title = phrase;
-                phrasePills.appendChild(pill);
-            });
-        }
-
-        function translatePhrase(phrase) {
-            document.getElementById('translationInput').value = phrase;
-            translateSentence();
-        }
-
-        // Hàm chuẩn hóa tiếng Việt: bỏ dấu và chuyển thành chữ thường
-        function normalizeVietnamese(str) {
-            if (!str) return '';
-            return str.normalize('NFD')
-                      .replace(/[\u0300-\u036f]/g, '')
-                      .toLowerCase()
-                      .trim();
-        }
-
-        function showAutoSuggestions() {
-            if (sentenceWords.length === 0) {
-                document.getElementById('autoSuggestionsPanel').style.display = 'none';
-                return;
-            }
-            
-            const panel = document.getElementById('autoSuggestionsPanel');
-            const grid = document.getElementById('autoSuggestionsGrid');
-            
-            // Lấy câu tiếng Việt đầy đủ
-            const currentSentence = convertedFullSentence || '';
-            
-            if (!currentSentence || currentSentence === '---') {
-                panel.style.display = 'none';
-                return;
-            }
-            
-            // Chuẩn hóa câu tiếng Việt (bỏ dấu, chuyển thường)
-            const normalizedSentence = normalizeVietnamese(currentSentence);
-            
-            // Tách câu thành các từ (loại bỏ từ ngắn, dấu câu)
-            const words = normalizedSentence.split(/[\s,.!?;:]+/)
-                .filter(word => word.length > 1); // Chỉ lấy từ có 2 ký tự trở lên
-            
-            if (words.length === 0) {
-                panel.style.display = 'none';
-                return;
-            }
-            
-            // Tìm cụm từ đề xuất dựa trên các từ trong câu
-            const suggestions = [];
-            const usedPhrases = new Set(); // Để tránh trùng lặp
-            
-            // Tìm kiếm trong commonPhrases
-            commonPhrases.forEach(phrase => {
-                const normalizedPhrase = normalizeVietnamese(phrase);
-                let matchedWords = 0;
-                
-                // Đếm số từ trong câu xuất hiện trong cụm từ
-                words.forEach(word => {
-                    if (normalizedPhrase.includes(word)) {
-                        matchedWords++;
-                    }
-                });
-                
-                // Nếu có ít nhất 1 từ khớp, thêm vào đề xuất
-                if (matchedWords > 0 && !usedPhrases.has(phrase)) {
-                    suggestions.push({
-                        text: phrase,
-                        score: matchedWords, // Số từ khớp
-                        wordsMatched: matchedWords
-                    });
-                    usedPhrases.add(phrase);
-                }
-            });
-            
-            // Sắp xếp theo số từ khớp (cao nhất trước)
-            suggestions.sort((a, b) => b.score - a.score);
-            
-            // Lấy top 6 đề xuất
-            const topSuggestions = suggestions.slice(0, 6);
-            
-            // Nếu không có đề xuất nào, hiển thị gợi ý mặc định
-            if (topSuggestions.length === 0) {
-                // Thêm các gợi ý mặc định dựa trên từ khóa
-                const defaultSuggestions = getDefaultSuggestions(words);
-                topSuggestions.push(...defaultSuggestions);
-            }
-            
-            // Hiển thị đề xuất
-            grid.innerHTML = topSuggestions.map(suggestion => `
-                <div class="auto-suggestion-item">
-                    <div class="auto-suggestion-text">${suggestion.text}</div>
-                    <div class="suggestion-header">
-                        <small>📌 Khớp ${suggestion.wordsMatched || 0} từ trong câu của bạn</small>
-                    </div>
-                    <div class="auto-suggestion-actions">
-                        <button class="auto-suggestion-btn speak" onclick="speakText('${suggestion.text.replace(/'/g, "\\'")}', 'vi-VN')">🔊 Đọc</button>
-                        <button class="auto-suggestion-btn use" onclick="useSuggestion('${suggestion.text.replace(/'/g, "\\'")}')">📝 Dùng</button>
-                        <button class="auto-suggestion-btn translate" onclick="translateSuggestion('${suggestion.text.replace(/'/g, "\\'")}')">🌐 Dịch</button>
-                    </div>
-                </div>
-            `).join('');
-            
-            panel.style.display = 'block';
-            log('SUGGESTION', `Tìm thấy ${topSuggestions.length} đề xuất cho câu: "${currentSentence.substring(0, 30)}..."`);
-        }
-
-        // Hàm lấy đề xuất mặc định dựa trên từ khóa
-        function getDefaultSuggestions(words) {
-            const defaultSuggestions = [];
-            
-            // Từ khóa phổ biến và đề xuất tương ứng
-            const keywordMap = {
-                'chao': ['Xin chào, rất vui được gặp bạn', 'Chào buổi sáng'],
-                'xin': ['Làm ơn cho tôi xin hóa đơn', 'Xin chào, rất vui được gặp bạn'],
-                'cam': ['Cảm ơn bạn rất nhiều'],
-                'hoi': ['Làm ơn cho tôi hỏi đường', 'Bạn có thể nói chậm hơn được không?'],
-                'duong': ['Làm ơn cho tôi hỏi đường'],
-                'noi': ['Bạn có thể nói chậm hơn được không?'],
-                'cham': ['Bạn có thể nói chậm hơn được không?'],
-                'hieu': ['Tôi không hiểu'],
-                'ten': ['Bạn tên là gì?'],
-                'giup': ['Tôi có thể giúp gì không?']
-            };
-            
-            words.forEach(word => {
-                if (keywordMap[word]) {
-                    keywordMap[word].forEach(phrase => {
-                        if (!defaultSuggestions.some(s => s.text === phrase)) {
-                            defaultSuggestions.push({
-                                text: phrase,
-                                wordsMatched: 1
-                            });
-                        }
-                    });
-                }
-            });
-            
-            // Nếu vẫn không có, thêm đề xuất chung
-            if (defaultSuggestions.length === 0) {
-                defaultSuggestions.push(
-                    { text: 'Bạn có thể nói chậm hơn được không?', wordsMatched: 0 },
-                    { text: 'Tôi không hiểu, bạn có thể giải thích không?', wordsMatched: 0 },
-                    { text: 'Rất vui được trò chuyện với bạn', wordsMatched: 0 }
-                );
-            }
-            
-            return defaultSuggestions.slice(0, 3);
-        }
-
-        function useSuggestion(text) {
-            document.getElementById('translationInput').value = text;
-            translateSentence();
-            log('SUGGESTION', `Sử dụng đề xuất: "${text}"`);
-        }
-
-        function translateSuggestion(text) {
-            document.getElementById('translationInput').value = text;
-            translateSentence();
-            log('SUGGESTION', `Dịch đề xuất: "${text}"`);
-        }
-
-        // === HÀM GIỌNG NÓI ===
-        function selectVoice(button) {
-            const lang = button.getAttribute('data-lang');
-            const gender = button.getAttribute('data-gender');
-            
-            currentVoice = {
-                lang: lang,
-                gender: gender
-            };
-            
-            document.querySelectorAll('.voice-btn').forEach(btn => {
+            document.querySelectorAll('.voice-gender-button').forEach(btn => {
                 btn.classList.remove('active');
             });
-            button.classList.add('active');
+            event.target.classList.add('active');
             
             updateUI();
-            log('VOICE', `Đã chọn giọng: ${lang} ${gender}`);
-        }
-
-        function selectTranslationGender(button) {
-            translationGender = button.getAttribute('data-gender');
-            
-            document.querySelectorAll('.voice-gender-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            button.classList.add('active');
-            
-            log('VOICE', `Đã chọn giọng cho dịch thuật: ${translationGender}`);
-        }
-
-        function toggleTTSMode(useGemini) {
-            useGeminiTTS = useGemini;
-            
-            document.getElementById('useGeminiTTS').classList.toggle('active', useGemini);
-            document.getElementById('useWebSpeech').classList.toggle('active', !useGemini);
-            
-            updateUI();
-            log('TTS', `Chuyển sang ${useGemini ? 'Gemini AI' : 'Web Speech'} TTS`);
+            log('VOICE', `Đã chọn giọng: ${gender === 'female' ? 'Nữ' : 'Nam'}`);
         }
 
         function swapLanguages() {
-            const sourceLang = document.getElementById('sourceLanguage');
-            const targetLang = document.getElementById('targetLanguage');
+            const sourceLang = document.getElementById('sourceLanguage').value;
+            const targetLang = document.getElementById('targetLanguage').value;
             
-            const temp = sourceLang.value;
-            sourceLang.value = targetLang.value;
-            targetLang.value = temp;
+            document.getElementById('sourceLanguage').value = targetLang;
+            document.getElementById('targetLanguage').value = sourceLang;
             
-            // Hoán đổi nội dung input và output nếu có
             const inputText = document.getElementById('translationInput').value;
             const outputText = document.getElementById('translationOutput').textContent;
             
-            if (inputText && outputText && !outputText.includes('Đang chờ dịch')) {
+            if (outputText && !outputText.includes('Đang chờ dịch') && !outputText.includes('Vui lòng nhập')) {
                 document.getElementById('translationInput').value = outputText;
-                document.getElementById('translationOutput').textContent = inputText;
+                document.getElementById('translationOutput').textContent = inputText || 'Đang chờ dịch...';
+                document.getElementById('translationOutput').className = 'conversion-display';
             }
             
-            log('TRANSLATION', `Đã đổi chiều ngôn ngữ: ${sourceLang.value} ↔ ${targetLang.value}`);
+            log('TRANSLATION', `Đã đổi chiều dịch: ${sourceLang} ↔ ${targetLang}`);
         }
 
-        // === HÀM DỊCH THUẬT NÂNG CAO ===
+        let translationTimeout = null;
+        const TRANSLATION_DEBOUNCE = 1000;
+
         function handleTranslationInput() {
-            const input = document.getElementById('translationInput').value;
-            const suggestionsDiv = document.getElementById('translationSuggestions');
+            const textarea = document.getElementById('translationInput');
+            const text = textarea.value;
             const sourceLang = document.getElementById('sourceLanguage').value;
             
-            if (!input || input.trim().length === 0) {
-                suggestionsDiv.innerHTML = '';
+            // Hiển thị đề xuất
+            showTranslationSuggestions(text, sourceLang);
+            
+            // Tự động dịch nếu bật
+            const autoTranslate = document.getElementById('autoTranslate').checked;
+            if (autoTranslate && text.trim().length > 0) {
+                if (translationTimeout) {
+                    clearTimeout(translationTimeout);
+                }
+                
+                translationTimeout = setTimeout(() => {
+                    translateSentence();
+                }, TRANSLATION_DEBOUNCE);
+            }
+        }
+
+        function showTranslationSuggestions(text, sourceLang) {
+            const suggestionsDiv = document.getElementById('translationSuggestions');
+            
+            if (!text || text.trim().length === 0) {
                 suggestionsDiv.classList.remove('show');
                 return;
             }
             
-            const inputLower = input.toLowerCase();
             const currentLibrary = phraseLibrary[sourceLang] || [];
             const filteredPhrases = currentLibrary.filter(phrase => 
-                phrase.toLowerCase().includes(inputLower) && phrase !== input
+                phrase.toLowerCase().includes(text.toLowerCase()) && phrase !== text
             );
             
             if (filteredPhrases.length > 0) {
-                suggestionsDiv.innerHTML = filteredPhrases.map(phrase => `
-                    <div class="suggestion-item" onclick="selectTranslationSuggestion('${phrase.replace(/'/g, "\\'")}')">
+                suggestionsDiv.innerHTML = filteredPhrases.slice(0, 5).map(phrase => `
+                    <div class="suggestion-dropdown-item" onclick="selectTranslationSuggestion('${phrase.replace(/'/g, "\\'")}')">
                         ${phrase}
                     </div>
                 `).join('');
                 suggestionsDiv.classList.add('show');
             } else {
-                suggestionsDiv.innerHTML = '';
                 suggestionsDiv.classList.remove('show');
             }
         }
 
         function selectTranslationSuggestion(phrase) {
             document.getElementById('translationInput').value = phrase;
-            document.getElementById('translationSuggestions').innerHTML = '';
             document.getElementById('translationSuggestions').classList.remove('show');
-            translateSentence();
+            
+            const autoTranslate = document.getElementById('autoTranslate').checked;
+            if (autoTranslate) {
+                translateSentence();
+            }
+            
+            log('SUGGESTION', `Đã chọn đề xuất: "${phrase}"`);
         }
 
-        // Hàm dịch với Gemini AI (nâng cao từ code tham khảo)
+        // Hàm dịch với Gemini AI
         async function translateWithAI(text, sourceLang, targetLang) {
             const apiKey = GEMINI_API_KEY;
             const url = `${GEMINI_TRANSLATE_URL}?key=${apiKey}`;
@@ -2897,23 +2836,13 @@
                 return;
             }
             
-            const now = Date.now();
-            if (now - lastTranslationTime < TRANSLATION_COOLDOWN) {
-                outputDiv.innerHTML = '<span style="color: #FF9800;">Vui lòng đợi trước khi dịch lại...</span>';
-                outputDiv.className = 'conversion-display';
-                return;
-            }
-            
             const cacheKey = text + '|' + sourceLang + '|' + targetLang;
             if (translationCache[cacheKey]) {
                 outputDiv.innerHTML = translationCache[cacheKey];
                 outputDiv.className = 'conversion-display success';
-                lastTranslationTime = now;
                 return;
             }
             
-            // Hiển thị trạng thái loading
-            document.getElementById('translationLoading').style.display = 'flex';
             outputDiv.innerHTML = '<span class="loading">Đang dịch với AI... ⏳</span>';
             outputDiv.className = 'conversion-display loading';
             
@@ -2922,20 +2851,18 @@
                 translationCache[cacheKey] = translated;
                 outputDiv.innerHTML = translated;
                 outputDiv.className = 'conversion-display success';
-                lastTranslationTime = Date.now();
                 log('TRANSLATION', `Đã dịch từ ${sourceLang} sang ${targetLang}: ${translated.substring(0, 50)}...`);
             } catch (error) {
                 console.error('Translation error:', error);
                 outputDiv.innerHTML = '<span style="color: #F44336;">Dịch thuật thất bại. Vui lòng thử lại sau.</span>';
                 outputDiv.className = 'conversion-display error';
-            } finally {
-                document.getElementById('translationLoading').style.display = 'none';
             }
         }
 
         function clearTranslation() {
             document.getElementById('translationOutput').innerHTML = 'Đang chờ dịch...';
             document.getElementById('translationOutput').className = 'conversion-display';
+            document.getElementById('translationInput').value = '';
             translationCache = {};
         }
 
@@ -2953,7 +2880,6 @@
 
                 const wavHeader = new ArrayBuffer(44);
                 const view = new DataView(wavHeader);
-
                 const writeString = (view, offset, string) => {
                     for (let i = 0; i < string.length; i++) {
                         view.setUint8(offset + i, string.charCodeAt(i));
@@ -2975,17 +2901,15 @@
                 view.setUint32(40, len, true);
 
                 return new Blob([wavHeader, bytes], { type: "audio/wav" });
-            } catch (error) {
-                console.error("PCM to WAV error:", error);
+            } catch (e) {
+                console.error("PCM to WAV conversion failed", e);
                 return null;
             }
         };
 
-        // Hàm phát âm thanh với retry (nâng cao từ code tham khảo)
-        async function speakWithRetry(text, langCode, gender = null) {
-            const voiceGender = gender || currentVoice.gender;
-            const voiceName = voiceConfigs[voiceGender]?.[langCode] || 
-                            (voiceGender === 'male' ? 'Aoede' : 'Kore');
+        async function speakWithRetry(text, langCode, retries = 5) {
+            const voiceName = voiceConfigs[currentVoice.gender]?.[langCode] || 
+                            (currentVoice.gender === 'male' ? 'Aoede' : 'Kore');
             
             const maxRetries = 5;
             const delays = [1000, 2000, 4000, 8000, 16000];
@@ -2994,15 +2918,11 @@
             
             for (let i = 0; i < maxRetries; i++) {
                 try {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 15000);
-                    
                     const response = await fetch(
                         `${GEMINI_API_URL}?key=${GEMINI_API_KEY}`,
                         {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
-                            signal: controller.signal,
                             body: JSON.stringify({
                                 contents: [{ 
                                     role: "user",
@@ -3022,8 +2942,6 @@
                         }
                     );
                     
-                    clearTimeout(timeoutId);
-                    
                     if (!response.ok) {
                         const errData = await response.json().catch(() => ({}));
                         throw new Error(errData.error?.message || `HTTP ${response.status}`);
@@ -3039,104 +2957,68 @@
                     if (audioData) return audioData;
                     throw new Error("Không nhận được dữ liệu âm thanh từ AI.");
                 } catch (err) {
-                    if (i === maxRetries - 1) throw err;
+                    if (i === retries - 1) throw err;
                     await new Promise(r => setTimeout(r, delays[i]));
                 }
             }
         }
 
-        async function speakVietnameseSentence() {
-            const text = convertedFullSentence || document.getElementById('convertedSentenceDisplay').textContent;
-            if (!text || text === '---') {
-                log('SPEECH', 'Không có văn bản tiếng Việt để đọc');
-                return;
-            }
+        function toggleTTSMode(useGemini) {
+            useGeminiTTS = useGemini;
             
-            speakText(text, currentVoice.lang);
+            document.getElementById('useGeminiTTS').classList.toggle('active', useGemini);
+            document.getElementById('useWebSpeech').classList.toggle('active', !useGemini);
+            
+            updateUI();
+            log('TTS', `Chuyển sang ${useGemini ? 'Gemini AI' : 'Web Speech'} TTS`);
         }
 
-        async function speakTranslation() {
-            const text = document.getElementById('translationOutput').textContent;
-            if (!text || text.includes('Đang chờ dịch') || text.includes('Vui lòng nhập')) {
-                log('SPEECH', 'Không có văn bản dịch để đọc');
-                return;
-            }
+        function updateSpeechStatus(status, message) {
+            const statusDiv = document.getElementById('speechStatus');
+            const indicator = statusDiv.querySelector('.speech-status-indicator');
+            const text = document.getElementById('speechStatusText');
             
-            const lang = document.getElementById('targetLanguage').value;
-            speakText(text, lang, translationGender);
+            statusDiv.style.display = 'flex';
+            statusDiv.className = `speech-status ${status}`;
+            indicator.className = `speech-status-indicator ${status}`;
+            text.textContent = message;
+            
+            if (status === 'idle') {
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 1000);
+            }
         }
 
-        async function speakText(text, langCode, gender = null) {
+        async function speakText(text, langCode) {
             if (isSpeaking) {
                 stopAllSpeech();
                 return;
             }
             
-            if (useGeminiTTS) {
-                document.getElementById('aiSpeechStatus').style.display = 'flex';
+            if (!text || text.trim().length === 0) {
+                log('SPEECH', 'Không có văn bản để đọc');
+                return;
             }
             
             if (useGeminiTTS && GEMINI_API_KEY) {
-                await speakWithGeminiTTS(text, langCode, gender);
+                await speakWithGeminiTTS(text, langCode);
             } else {
-                speakWithWebSpeech(text, langCode, gender);
+                speakWithWebSpeech(text, langCode);
             }
         }
 
-        function speakWithWebSpeech(text, langCode, gender = null) {
-            if (isSpeaking) {
-                stopAllSpeech();
-                return;
-            }
-            
-            if (!('speechSynthesis' in window)) {
-                log('SPEECH', 'Speech synthesis not supported in this browser');
-                return;
-            }
-            
-            window.speechSynthesis.cancel();
-            
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = langCode;
-            utterance.rate = 0.9;
-            utterance.pitch = (gender || currentVoice.gender) === 'male' ? 0.8 : 1.2;
-            utterance.volume = 1;
-            
-            utterance.onstart = function() {
-                setIsSpeaking(true);
-                updateUI();
-                startAudioVisualizer();
-                log('SPEECH', `Bắt đầu Web Speech: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
-            };
-            
-            utterance.onend = function() {
-                setIsSpeaking(false);
-                currentSpeech = null;
-                stopAudioVisualizer();
-                updateUI();
-                log('SPEECH', 'Kết thúc Web Speech');
-            };
-            
-            utterance.onerror = function(event) {
-                setIsSpeaking(false);
-                currentSpeech = null;
-                stopAudioVisualizer();
-                updateUI();
-                log('SPEECH', `Lỗi Web Speech: ${event.error}`);
-            };
-            
-            currentSpeech = utterance;
-            window.speechSynthesis.speak(utterance);
-        }
-
-        async function speakWithGeminiTTS(text, langCode, gender = null) {
+        async function speakWithGeminiTTS(text, langCode) {
             if (!GEMINI_API_KEY) {
-                speakWithWebSpeech(text, langCode, gender);
+                speakWithWebSpeech(text, langCode);
                 return;
             }
             
             try {
-                const audioDataBase64 = await speakWithRetry(text, langCode, gender);
+                setIsSpeaking(true);
+                updateSpeechStatus('connecting', 'Đang kết nối với AI...');
+                
+                const audioDataBase64 = await speakWithRetry(text, langCode);
                 const wavBlob = pcmToWav(audioDataBase64);
                 if (!wavBlob) {
                     throw new Error("Audio generation failed");
@@ -3147,13 +3029,14 @@
                 currentSpeech = audio;
                 
                 audio.onplay = () => {
-                    setIsSpeaking(true);
+                    updateSpeechStatus('speaking', 'Đang phát âm thanh...');
                     startAudioVisualizer();
                     log('SPEECH', `Bắt đầu Gemini TTS: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
                 };
                 
                 audio.onended = () => {
                     setIsSpeaking(false);
+                    updateSpeechStatus('idle', 'Hoàn thành');
                     URL.revokeObjectURL(audioUrl);
                     stopAudioVisualizer();
                     log('SPEECH', 'Kết thúc Gemini TTS');
@@ -3161,6 +3044,7 @@
                 
                 audio.onerror = () => {
                     setIsSpeaking(false);
+                    updateSpeechStatus('error', 'Lỗi phát âm thanh');
                     URL.revokeObjectURL(audioUrl);
                     stopAudioVisualizer();
                     log('SPEECH', 'Lỗi Gemini TTS');
@@ -3170,14 +3054,60 @@
                 
             } catch (error) {
                 console.error('Gemini TTS error:', error);
+                setIsSpeaking(false);
+                updateSpeechStatus('error', `Lỗi: ${error.message}`);
                 log('SPEECH', `Gemini TTS thất bại: ${error.message}`);
                 
                 // Fallback to Web Speech
-                speakWithWebSpeech(text, langCode, gender);
-            } finally {
-                document.getElementById('aiSpeechStatus').style.display = 'none';
-                document.getElementById('translationSpeechStatus').style.display = 'none';
+                speakWithWebSpeech(text, langCode);
             }
+        }
+
+        function speakWithWebSpeech(text, langCode) {
+            if (isSpeaking) {
+                stopAllSpeech();
+                return;
+            }
+            
+            if (!('speechSynthesis' in window)) {
+                updateSpeechStatus('error', 'Trình duyệt không hỗ trợ tổng hợp giọng nói');
+                log('SPEECH', 'Speech synthesis not supported in this browser');
+                return;
+            }
+            
+            window.speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = langCode;
+            utterance.rate = 0.9;
+            utterance.pitch = currentVoice.gender === 'male' ? 0.8 : 1.2;
+            utterance.volume = 1;
+            
+            utterance.onstart = function() {
+                setIsSpeaking(true);
+                updateSpeechStatus('speaking', 'Đang phát âm thanh...');
+                startAudioVisualizer();
+                log('SPEECH', `Bắt đầu Web Speech: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
+            };
+            
+            utterance.onend = function() {
+                setIsSpeaking(false);
+                updateSpeechStatus('idle', 'Hoàn thành');
+                currentSpeech = null;
+                stopAudioVisualizer();
+                log('SPEECH', 'Kết thúc Web Speech');
+            };
+            
+            utterance.onerror = function(event) {
+                setIsSpeaking(false);
+                updateSpeechStatus('error', 'Lỗi phát âm thanh');
+                currentSpeech = null;
+                stopAudioVisualizer();
+                log('SPEECH', `Lỗi Web Speech: ${event.error}`);
+            };
+            
+            currentSpeech = utterance;
+            window.speechSynthesis.speak(utterance);
         }
 
         function setIsSpeaking(speaking) {
@@ -3199,9 +3129,7 @@
             currentSpeech = null;
             stopAudioVisualizer();
             updateUI();
-            
-            document.getElementById('aiSpeechStatus').style.display = 'none';
-            document.getElementById('translationSpeechStatus').style.display = 'none';
+            updateSpeechStatus('idle', 'Đã dừng');
             
             log('SPEECH', 'Đã dừng tất cả giọng nói');
         }
@@ -3247,6 +3175,27 @@
             }
         }
 
+        async function speakVietnameseSentence() {
+            const text = convertedFullSentence || document.getElementById('convertedSentenceDisplay').textContent;
+            if (!text || text === '---') {
+                log('SPEECH', 'Không có văn bản tiếng Việt để đọc');
+                return;
+            }
+            
+            speakText(text, currentVoice.lang);
+        }
+
+        async function speakTranslation() {
+            const text = document.getElementById('translationOutput').textContent;
+            if (!text || text.includes('Đang chờ dịch') || text.includes('Vui lòng nhập')) {
+                log('SPEECH', 'Không có văn bản dịch để đọc');
+                return;
+            }
+            
+            const lang = document.getElementById('targetLanguage').value;
+            speakText(text, lang);
+        }
+
         // === HÀM UPDATE UI COMPLETE ===
         function updateUI() {
             updateWordDisplays();
@@ -3256,8 +3205,12 @@
             const speakTransBtn = document.getElementById('speakTransBtn');
             const stopSpeechBtn = document.getElementById('stopSpeechBtn');
             
-            speakVnBtn.disabled = !convertedFullSentence || isSpeaking;
-            speakTransBtn.disabled = !document.getElementById('translationOutput').textContent || isSpeaking;
+            const hasVietnameseText = convertedFullSentence && convertedFullSentence !== '---';
+            const hasTranslationText = document.getElementById('translationOutput').textContent && 
+                                     !document.getElementById('translationOutput').textContent.includes('Đang chờ dịch');
+            
+            speakVnBtn.disabled = !hasVietnameseText || isSpeaking;
+            speakTransBtn.disabled = !hasTranslationText || isSpeaking;
             stopSpeechBtn.disabled = !isSpeaking;
             
             if (isSpeaking) {
@@ -3279,7 +3232,7 @@
             };
             const ttsMode = useGeminiTTS ? 'Gemini AI' : 'Web Speech';
             document.getElementById('currentVoiceDisplay').textContent = 
-                `Hiện tại: ${langNames[currentVoice.lang] || currentVoice.lang} ${genderNames[currentVoice.gender] || currentVoice.gender} (${ttsMode})`;
+                `Hiện tại: ${genderNames[currentVoice.gender]} ${langNames[currentVoice.lang] || currentVoice.lang} (${ttsMode})`;
             
             document.getElementById('useGeminiTTS').classList.toggle('active', useGeminiTTS);
             document.getElementById('useWebSpeech').classList.toggle('active', !useGeminiTTS);
@@ -3316,8 +3269,6 @@
             
             // Tải hiệu chuẩn từ localStorage nếu có
             loadCalibration();
-            
-            loadPhraseSuggestions();
             
             if ('speechSynthesis' in window) {
                 speechSynthesis.getVoices();
