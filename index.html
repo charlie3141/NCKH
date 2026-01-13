@@ -131,30 +131,11 @@
         let translationTimeout;
         let currentAudio = null;
         let abortController = null;
+        let currentAudioURL = null; // Theo dõi URL để giải phóng bộ nhớ
 
-        const els = {
-            sourceLang: document.getElementById('sourceLang'),
-            targetLang: document.getElementById('targetLang'),
-            swapBtn: document.getElementById('swapBtn'),
-            genderFemale: document.getElementById('genderFemale'),
-            genderMale: document.getElementById('genderMale'),
-            inputText: document.getElementById('inputText'),
-            outputText: document.getElementById('outputText'),
-            loader: document.getElementById('loader'),
-            speakSource: document.getElementById('speakSource'),
-            speakTarget: document.getElementById('speakTarget'),
-            errorMsg: document.getElementById('errorMsg'),
-            errorText: document.getElementById('errorText'),
-            errorEmoji: document.getElementById('errorEmoji'),
-            apiKeyInput: document.getElementById('apiKeyInput'),
-            saveKeyBtn: document.getElementById('saveKeyBtn'),
-            apiSetup: document.getElementById('apiSetup')
-        };
-
-        // Giảm số lần retry xuống 3 lần để tránh treo lâu
         async function fetchWithRetry(url, options, maxRetries = 3) {
             let retries = 0;
-            const delays = [800, 1500, 3000]; // Giảm độ trễ giữa các lần thử
+            const delays = [800, 1500, 3000];
 
             while (retries < maxRetries) {
                 try {
@@ -206,7 +187,6 @@
 
             els.inputText.addEventListener('input', () => {
                 clearTimeout(translationTimeout);
-                // Giảm debounce xuống 600ms để phản hồi nhanh hơn
                 translationTimeout = setTimeout(translate, 600);
             });
 
@@ -246,7 +226,7 @@
             abortController = new AbortController();
 
             els.loader.classList.remove('hidden');
-            els.outputText.classList.add('opacity-40'); // Giảm độ mờ để báo hiệu đang tải
+            els.outputText.classList.add('opacity-40');
 
             try {
                 const data = await fetchWithRetry(
@@ -273,8 +253,15 @@
         }
 
         async function speak(text, langCode, type) {
-            if (!text || isSpeaking || !apiKey || text.includes("Kết quả sẽ hiển thị")) return;
+            if (!text || !apiKey || text.includes("Kết quả sẽ hiển thị")) return;
             
+            // Nếu đang nói, hãy dừng âm thanh hiện tại trước
+            if (isSpeaking && currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+                stopSpeakingUI();
+            }
+
             setSpeakingUI(type, true);
             isSpeaking = true;
 
@@ -309,29 +296,38 @@
                     const sampleRate = sampleRateMatch ? parseInt(sampleRateMatch[1]) : 24000;
 
                     const blob = pcmToWav(audioPart.inlineData.data, sampleRate);
-                    const url = URL.createObjectURL(blob);
                     
-                    if (currentAudio) {
-                        currentAudio.pause();
-                        currentAudio.onended = null;
-                    }
-
-                    currentAudio = new Audio(url);
+                    // Giải phóng URL cũ nếu có
+                    if (currentAudioURL) URL.revokeObjectURL(currentAudioURL);
+                    currentAudioURL = URL.createObjectURL(blob);
+                    
+                    currentAudio = new Audio(currentAudioURL);
                     currentAudio.onended = () => {
                         setSpeakingUI(type, false);
                         isSpeaking = false;
-                        URL.revokeObjectURL(url);
+                        URL.revokeObjectURL(currentAudioURL);
+                        currentAudioURL = null;
                         currentAudio = null;
                     };
+                    
+                    currentAudio.onerror = () => {
+                        console.error("Audio playback error");
+                        handleSpeakError(text, langCode, type);
+                    };
+
                     await currentAudio.play();
                 } else {
-                    throw new Error("Dữ liệu âm thanh trống.");
+                    throw new Error("No audio data");
                 }
             } catch (err) {
                 console.error("TTS Error:", err);
-                showStatus("Đang dùng giọng đọc hệ thống...", "info");
-                speakFallback(text, langCode, type);
+                handleSpeakError(text, langCode, type);
             }
+        }
+
+        function handleSpeakError(text, langCode, type) {
+            showStatus("Đang dùng giọng đọc dự phòng...", "info");
+            speakFallback(text, langCode, type);
         }
 
         function speakFallback(text, langCode, type) {
@@ -346,6 +342,11 @@
                 isSpeaking = false;
             };
             window.speechSynthesis.speak(utterance);
+        }
+
+        function stopSpeakingUI() {
+            setSpeakingUI('source', false);
+            setSpeakingUI('target', false);
         }
 
         function setSpeakingUI(type, active) {
@@ -388,12 +389,12 @@
             writeString(8, 'WAVE');
             writeString(12, 'fmt ');
             view.setUint32(16, 16, true);
-            view.setUint16(20, 1, true); 
-            view.setUint16(22, 1, true); 
+            view.setUint16(20, 1, true); // PCM
+            view.setUint16(22, 1, true); // Mono
             view.setUint32(24, sampleRate, true);
-            view.setUint32(28, sampleRate * 2, true);
-            view.setUint16(32, 2, true);
-            view.setUint16(34, 16, true);
+            view.setUint32(28, sampleRate * 2, true); // Byte rate
+            view.setUint16(32, 2, true); // Block align
+            view.setUint16(34, 16, true); // Bits per sample
             writeString(36, 'data');
             view.setUint32(40, len, true);
 
