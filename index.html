@@ -2739,13 +2739,14 @@
         }
 
         function toggleTTSMode(useGemini) {
-            useGeminiTTS = useGemini;
+            // LUÔN dùng Web Speech vì Gemini TTS không khả dụng
+            useGeminiTTS = false;
             
-            document.getElementById('useGeminiTTS').classList.toggle('active', useGemini);
-            document.getElementById('useWebSpeech').classList.toggle('active', !useGemini);
+            document.getElementById('useGeminiTTS').classList.remove('active');
+            document.getElementById('useWebSpeech').classList.add('active');
             
             updateUI();
-            log('TTS', `Chuyển sang ${useGemini ? 'Gemini AI' : 'Web Speech'} TTS`);
+            log('TTS', 'Using Web Speech API (Gemini TTS not available)');
         }
 
         // === HÀM DỊCH THUẬT ===
