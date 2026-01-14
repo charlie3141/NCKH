@@ -3,697 +3,641 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Demo TTS Miễn phí</title>
+    <title>Demo TTS Đa Nền Tảng - Miễn Phí</title>
     <style>
         * {
             box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            color: #333;
         }
         
         .container {
-            background-color: white;
-            border-radius: 15px;
+            background: white;
+            border-radius: 20px;
             padding: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
         
         h1 {
             text-align: center;
-            color: #2c3e50;
+            color: #2d3748;
             margin-bottom: 30px;
             font-size: 2.5em;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
         }
         
-        h2 {
-            color: #3498db;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 10px;
-            margin-top: 30px;
-            margin-bottom: 20px;
-        }
-        
-        .text-input-section {
+        .subtitle {
+            text-align: center;
+            color: #4a5568;
             margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+        
+        .input-section {
+            margin-bottom: 30px;
         }
         
         textarea {
             width: 100%;
             height: 150px;
-            padding: 15px;
+            padding: 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
             font-size: 16px;
-            border: 2px solid #ddd;
-            border-radius: 10px;
             resize: vertical;
-            font-family: inherit;
             transition: border-color 0.3s;
         }
         
         textarea:focus {
             outline: none;
-            border-color: #3498db;
+            border-color: #667eea;
         }
         
         .language-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
             margin: 20px 0;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: center;
-        }
-        
-        select, input[type="text"] {
-            padding: 10px 15px;
-            border-radius: 8px;
-            border: 2px solid #ddd;
-            font-size: 16px;
-            background-color: white;
-            transition: border-color 0.3s;
-        }
-        
-        select:focus, input[type="text"]:focus {
-            outline: none;
-            border-color: #3498db;
         }
         
         .tts-section {
-            background-color: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 25px;
-            border-left: 5px solid #3498db;
-            transition: transform 0.3s, box-shadow 0.3s;
+            background: #f7fafc;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 25px 0;
+            border-left: 5px solid #667eea;
+            transition: transform 0.3s;
         }
         
         .tts-section:hover {
             transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .section-title {
+            color: #2d3748;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
         .button-group {
             display: flex;
-            flex-wrap: wrap;
             gap: 15px;
+            flex-wrap: wrap;
             margin-top: 20px;
         }
         
         button {
-            padding: 12px 25px;
-            background-color: #3498db;
-            color: white;
+            padding: 12px 24px;
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 16px;
             font-weight: 600;
             transition: all 0.3s;
             display: flex;
             align-items: center;
             gap: 8px;
-            min-width: 200px;
         }
         
-        button:hover {
-            background-color: #2980b9;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        .primary-btn {
+            background: #667eea;
+            color: white;
         }
         
-        button:active {
-            transform: translateY(0);
+        .primary-btn:hover {
+            background: #5a67d8;
+            transform: scale(1.05);
         }
         
-        button:disabled {
-            background-color: #95a5a6;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
+        .secondary-btn {
+            background: #48bb78;
+            color: white;
         }
         
-        .speak-btn {
-            background-color: #2ecc71;
+        .secondary-btn:hover {
+            background: #38a169;
+            transform: scale(1.05);
         }
         
-        .speak-btn:hover {
-            background-color: #27ae60;
-            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+        .warning-btn {
+            background: #ed8936;
+            color: white;
         }
         
-        .stop-btn {
-            background-color: #e74c3c;
+        .warning-btn:hover {
+            background: #dd6b20;
+            transform: scale(1.05);
         }
         
-        .stop-btn:hover {
-            background-color: #c0392b;
-            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+        select {
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+            font-size: 16px;
+            margin: 10px 0;
         }
         
         .status {
             margin-top: 15px;
             padding: 10px;
-            border-radius: 5px;
+            border-radius: 8px;
+            background: #e6f7ff;
+            border-left: 4px solid #1890ff;
+            display: none;
+        }
+        
+        .voice-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .voice-controls label {
+            display: flex;
+            flex-direction: column;
             font-weight: 500;
         }
         
-        .status.success {
-            background-color: #d5edda;
-            color: #155724;
-            border-left: 4px solid #2ecc71;
-        }
-        
-        .status.error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border-left: 4px solid #e74c3c;
-        }
-        
-        .status.info {
-            background-color: #d1ecf1;
-            color: #0c5460;
-            border-left: 4px solid #3498db;
+        input[type="range"] {
+            width: 150px;
         }
         
         .note {
-            background-color: #fff3cd;
+            background: #fff3cd;
             border-left: 4px solid #ffc107;
-            padding: 15px;
-            border-radius: 5px;
-            margin-top: 20px;
-        }
-        
-        .note h3 {
-            color: #856404;
-            margin-bottom: 10px;
-        }
-        
-        footer {
-            text-align: center;
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid #ddd;
-            color: #7f8c8d;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
             font-size: 0.9em;
+        }
+        
+        .feature-tag {
+            display: inline-block;
+            background: #c6f6d5;
+            color: #22543d;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            margin: 0 5px;
         }
         
         @media (max-width: 768px) {
             .container {
-                padding: 15px;
-            }
-            
-            h1 {
-                font-size: 1.8em;
-            }
-            
-            button {
-                min-width: 100%;
+                padding: 20px;
             }
             
             .button-group {
                 flex-direction: column;
             }
-        }
-        
-        .voice-selector {
-            margin: 15px 0;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            align-items: center;
-        }
-        
-        .api-key-input {
-            margin: 10px 0;
-            width: 100%;
-            max-width: 500px;
-        }
-        
-        .instructions {
-            font-size: 0.9em;
-            color: #7f8c8d;
-            margin-top: 5px;
+            
+            button {
+                width: 100%;
+                justify-content: center;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🆓 Demo TTS Miễn phí - Multiple Services</h1>
+        <h1>🎤 DEMO TTS ĐA NỀN TẢNG</h1>
+        <p class="subtitle">Thử nghiệm các công cụ Text-to-Speech miễn phí với giọng đọc tự nhiên</p>
         
-        <div class="text-input-section">
-            <h2>📝 Văn bản cần chuyển thành giọng nói</h2>
-            <textarea id="textInput" placeholder="Nhập văn bản của bạn ở đây...">Xin chào! Đây là demo TTS tích hợp nhiều dịch vụ miễn phí. Bạn có thể nghe thử giọng đọc từ các công cụ khác nhau. Hello! This is a demo of multiple free TTS services. You can try different voices from various platforms.</textarea>
+        <div class="input-section">
+            <textarea id="textInput" placeholder="Nhập văn bản bạn muốn chuyển thành giọng nói... (Hỗ trợ đa ngôn ngữ)">
+Xin chào! Đây là demo TTS tích hợp nhiều công cụ miễn phí.
+Hello! This is a demo of free TTS integration.
+¡Hola! Esta es una demostración de TTS gratuito.
+Bonjour! Ceci est une démo de TTS gratuit.</textarea>
             
             <div class="language-selector">
-                <label for="languageSelect">Chọn ngôn ngữ:</label>
-                <select id="languageSelect">
-                    <option value="vi-VN">Tiếng Việt</option>
-                    <option value="en-US">English (US)</option>
-                    <option value="en-GB">English (UK)</option>
-                    <option value="fr-FR">Français</option>
-                    <option value="de-DE">Deutsch</option>
-                    <option value="es-ES">Español</option>
-                    <option value="ja-JP">日本語</option>
-                    <option value="ko-KR">한국어</option>
-                </select>
+                <div>
+                    <label>Chọn ngôn ngữ:</label>
+                    <select id="languageSelect">
+                        <option value="vi-VN">Tiếng Việt</option>
+                        <option value="en-US">English (US)</option>
+                        <option value="en-GB">English (UK)</option>
+                        <option value="es-ES">Español</option>
+                        <option value="fr-FR">Français</option>
+                        <option value="de-DE">Deutsch</option>
+                        <option value="ja-JP">日本語</option>
+                        <option value="ko-KR">한국어</option>
+                        <option value="zh-CN">中文 (普通话)</option>
+                    </select>
+                </div>
                 
-                <label for="speedSelect">Tốc độ:</label>
-                <select id="speedSelect">
-                    <option value="0.5">Chậm (0.5x)</option>
-                    <option value="0.8">Hơi chậm (0.8x)</option>
-                    <option value="1" selected>Bình thường (1x)</option>
-                    <option value="1.2">Hơi nhanh (1.2x)</option>
-                    <option value="1.5">Nhanh (1.5x)</option>
-                </select>
+                <div>
+                    <label>Chọn giọng đọc:</label>
+                    <select id="voiceSelect">
+                        <!-- Voices sẽ được tải động -->
+                    </select>
+                </div>
             </div>
         </div>
 
-        <!-- Web Speech API -->
+        <!-- Section 1: Web Speech API (Built-in Browser) -->
         <div class="tts-section">
-            <h2>🔊 Web Speech API (Built-in Browser)</h2>
-            <p>Dùng công nghệ TTS có sẵn trong trình duyệt, không cần API key.</p>
+            <h2 class="section-title">🔊 1. Web Speech API (Tích hợp sẵn trong trình duyệt)</h2>
+            <span class="feature-tag">Miễn phí</span>
+            <span class="feature-tag">Offline</span>
+            <span class="feature-tag">Native</span>
             
-            <div class="voice-selector">
-                <label for="webVoice">Chọn giọng:</label>
-                <select id="webVoice">
-                    <option value="">Đang tải giọng...</option>
-                </select>
+            <p>API TTS mặc định của trình duyệt, hoạt động offline, chất lượng phụ thuộc vào hệ điều hành.</p>
+            
+            <div class="voice-controls">
+                <label>
+                    Tốc độ:
+                    <input type="range" id="rate" min="0.5" max="2" step="0.1" value="1">
+                    <span id="rateValue">1.0</span>
+                </label>
+                <label>
+                    Cao độ:
+                    <input type="range" id="pitch" min="0.5" max="2" step="0.1" value="1">
+                    <span id="pitchValue">1.0</span>
+                </label>
+                <label>
+                    Âm lượng:
+                    <input type="range" id="volume" min="0" max="1" step="0.1" value="1">
+                    <span id="volumeValue">1.0</span>
+                </label>
             </div>
             
             <div class="button-group">
-                <button id="webSpeechBtn" class="speak-btn">
-                    <span>🔊 Phát giọng nói</span>
+                <button class="primary-btn" onclick="speakWebSpeech()">
+                    <span>▶️ Phát</span>
                 </button>
-                <button id="webSpeechStop" class="stop-btn">
+                <button class="secondary-btn" onclick="pauseWebSpeech()">
+                    <span>⏸️ Tạm dừng</button>
+                <button class="warning-btn" onclick="stopWebSpeech()">
                     <span>⏹️ Dừng</span>
                 </button>
-            </div>
-            <div id="webStatus" class="status"></div>
-        </div>
-
-        <!-- Edge TTS -->
-        <div class="tts-section">
-            <h2>🌐 Edge TTS (Microsoft Edge)</h2>
-            <p>Sử dụng công nghệ TTS của Microsoft Edge qua API công khai.</p>
-            
-            <div class="button-group">
-                <button id="edgeTTSBtn" class="speak-btn">
-                    <span>🔊 Phát với Edge TTS</span>
+                <button class="secondary-btn" onclick="downloadWebSpeech()">
+                    <span>💾 Tải file âm thanh</span>
                 </button>
             </div>
+            
+            <div id="webSpeechStatus" class="status"></div>
+            <div class="note">⚠️ Lưu ý: Khả năng hỗ trợ ngôn ngữ tùy thuộc vào trình duyệt và hệ điều hành. Chrome/Edge thường có nhiều giọng hơn.</div>
+        </div>
+
+        <!-- Section 2: Google Cloud TTS Demo -->
+        <div class="tts-section">
+            <h2 class="section-title">🌐 2. Google TTS (Online API Demo)</h2>
+            <span class="feature-tag">Chất lượng cao</span>
+            <span class="feature-tag">WaveNet</span>
+            <span class="feature-tag">200+ giọng</span>
+            
+            <p>Sử dụng Google Text-to-Speech API qua proxy công cộng (có giới hạn). Cần internet.</p>
+            
+            <div class="button-group">
+                <button class="primary-btn" onclick="speakGoogleTTS()">
+                    <span>▶️ Phát với Google TTS</span>
+                </button>
+                <select id="googleVoiceSelect" style="margin-left: 10px;">
+                    <option value="en-US-Wavenet-A">English (US) - Wavenet A</option>
+                    <option value="vi-VN-Standard-A">Tiếng Việt - Standard A (Nữ)</option>
+                    <option value="vi-VN-Standard-B">Tiếng Việt - Standard B (Nam)</option>
+                    <option value="vi-VN-Wavenet-A">Tiếng Việt - Wavenet A (Nữ - Chất lượng cao)</option>
+                    <option value="es-ES-Wavenet-B">Español - Wavenet B</option>
+                    <option value="fr-FR-Wavenet-A">Français - Wavenet A</option>
+                    <option value="ja-JP-Wavenet-B">日本語 - Wavenet B</option>
+                </select>
+            </div>
+            
+            <div id="googleTTSStatus" class="status"></div>
+            <div class="note">✅ Google TTS có giọng WaveNet chất lượng cao nhất, hỗ trợ tiếng Việt rất tốt. Demo này sử dụng proxy công cộng nên có thể bị giới hạn.</div>
+        </div>
+
+        <!-- Section 3: Edge Read Aloud Simulation -->
+        <div class="tts-section">
+            <h2 class="section-title">🔍 3. Microsoft Edge Read Aloud</h2>
+            <span class="feature-tag">Giọng Neural</span>
+            <span class="feature-tag">Tự nhiên</span>
+            <span class="feature-tag">Tiếng Việt tốt</span>
+            
+            <p>Mô phỏng tính năng "Đọc to" của Microsoft Edge với giọng Neural chất lượng cao.</p>
+            
+            <div class="button-group">
+                <button class="primary-btn" onclick="simulateEdgeReadAloud()">
+                    <span>▶️ Mô phỏng Edge Read Aloud</span>
+                </button>
+                <button class="secondary-btn" onclick="openEdgeReader()">
+                    <span>🌐 Mở trong Edge (nếu có)</span>
+                </button>
+            </div>
+            
             <div id="edgeStatus" class="status"></div>
+            <div class="note">💡 Mẹo: Nếu dùng Edge, bôi đen văn bản, chuột phải chọn "Read aloud" sẽ có chất lượng tốt nhất.</div>
         </div>
 
-        <!-- ResponsiveVoice -->
+        <!-- Section 4: Alternative Free TTS Services -->
         <div class="tts-section">
-            <h2>🎤 ResponsiveVoice (Demo)</h2>
-            <p>Thư viện TTS đa ngôn ngữ, có bản miễn phí với giới hạn.</p>
+            <h2 class="section-title">🔗 4. Dịch vụ TTS miễn phí khác</h2>
+            <span class="feature-tag">Online</span>
+            <span class="feature-tag">Không API key</span>
+            
+            <p>Liên kết đến các dịch vụ TTS miễn phí trực tuyến:</p>
             
             <div class="button-group">
-                <button id="responsiveVoiceBtn" class="speak-btn">
-                    <span>🔊 Phát với ResponsiveVoice</span>
+                <button class="secondary-btn" onclick="window.open('https://play.ht/studio/text-to-speech', '_blank')">
+                    <span>🎵 Play.ht (Free Tier)</span>
                 </button>
-                <button id="responsiveVoiceStop" class="stop-btn">
-                    <span>⏹️ Dừng</span>
+                <button class="secondary-btn" onclick="window.open('https://www.narakeet.com/app/text-to-audio/', '_blank')">
+                    <span>🎬 Narakeet</span>
+                </button>
+                <button class="secondary-btn" onclick="window.open('https://ttsmp3.com/', '_blank')">
+                    <span>📢 TTSMP3</span>
+                </button>
+                <button class="secondary-btn" onclick="window.open('https://www.balabolka.site/online', '_blank')">
+                    <span>💬 Balabolka Online</span>
                 </button>
             </div>
-            <div id="responsiveStatus" class="status"></div>
         </div>
 
-        <!-- Google TTS (Client-side) -->
+        <!-- Information Section -->
         <div class="tts-section">
-            <h2>🔤 Google TTS (Client-side Demo)</h2>
-            <p>Mô phỏng Google TTS sử dụng Web Speech API. Lưu ý: Google TTS API thực tế cần key.</p>
+            <h2 class="section-title">📊 So sánh các giải pháp TTS</h2>
+            <table style="width:100%; border-collapse: collapse; margin-top: 15px;">
+                <tr style="background: #667eea; color: white;">
+                    <th style="padding: 12px; text-align: left;">Công cụ</th>
+                    <th style="padding: 12px; text-align: left;">Chất lượng</th>
+                    <th style="padding: 12px; text-align: left;">Ngôn ngữ</th>
+                    <th style="padding: 12px; text-align: left;">Giới hạn</th>
+                </tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 12px;">Web Speech API</td>
+                    <td style="padding: 12px;">Trung bình - Tốt</td>
+                    <td style="padding: 12px;">Tùy trình duyệt</td>
+                    <td style="padding: 12px;">Không giới hạn</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 12px;">Google TTS</td>
+                    <td style="padding: 12px;">Rất tốt (WaveNet)</td>
+                    <td style="padding: 12px;">220+ giọng, 40+ ngôn ngữ</td>
+                    <td style="padding: 12px;">Cần API key, $300 credit free</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="padding: 12px;">Microsoft Edge</td>
+                    <td style="padding: 12px;">Tốt (Neural)</td>
+                    <td style="padding: 12px;">80+ giọng, 30+ ngôn ngữ</td>
+                    <td style="padding: 12px;">Cần trình duyệt Edge</td>
+                </tr>
+                <tr>
+                    <td style="padding: 12px;">Play.ht/Narakeet</td>
+                    <td style="padding: 12px;">Tốt</td>
+                    <td style="padding: 12px;">Đa dạng</td>
+                    <td style="padding: 12px;">Giới hạn từ miễn phí</td>
+                </tr>
+            </table>
             
-            <div class="button-group">
-                <button id="googleTTSBtn" class="speak-btn">
-                    <span>🔊 Phát mô phỏng Google TTS</span>
-                </button>
+            <div class="note" style="margin-top: 20px;">
+                <strong>💎 Khuyến nghị:</strong><br>
+                1. Dùng <strong>Google Cloud TTS với credit miễn phí</strong> nếu cần chất lượng cao và API<br>
+                2. Dùng <strong>Microsoft Edge Read Aloud</strong> cho nhu cầu cá nhân đơn giản<br>
+                3. Dùng <strong>Web Speech API</strong> cho ứng dụng web không cần API key<br>
+                4. Khám phá <strong>Coqui TTS</strong> nếu muốn mã nguồn mở và tùy chỉnh sâu
             </div>
-            <div id="googleStatus" class="status"></div>
         </div>
-
-        <!-- FPT AI TTS -->
-        <div class="tts-section">
-            <h2>🇻🇳 FPT AI TTS (Tiếng Việt)</h2>
-            <p>API của FPT AI với giọng tiếng Việt tự nhiên. Cần API key để sử dụng thực tế.</p>
-            
-            <div class="api-key-input">
-                <label for="fptApiKey">API Key (để trống cho demo mô phỏng):</label>
-                <input type="text" id="fptApiKey" placeholder="Nhập API key nếu có">
-            </div>
-            
-            <div class="voice-selector">
-                <label for="fptVoice">Chọn giọng:</label>
-                <select id="fptVoice">
-                    <option value="banmai">Ban Mai (Nữ miền Bắc)</option>
-                    <option value="lannhi">Lan Nhi (Nữ miền Nam)</option>
-                    <option value="leminh">Lê Minh (Nam miền Bắc)</option>
-                    <option value="minhquang">Minh Quang (Nam miền Nam)</option>
-                </select>
-            </div>
-            
-            <div class="button-group">
-                <button id="fptTTSBtn" class="speak-btn">
-                    <span>🔊 Phát với FPT AI</span>
-                </button>
-            </div>
-            <div id="fptStatus" class="status"></div>
-        </div>
-
-        <div class="note">
-            <h3>📋 Lưu ý quan trọng:</h3>
-            <ul>
-                <li>Web Speech API hoạt động trực tiếp trên trình duyệt, không cần API key.</li>
-                <li>Edge TTS và FPT AI TTS thực tế cần gọi API server-side để bảo mật key.</li>
-                <li>Demo này mô phỏng hoạt động của các API TTS phía client-side.</li>
-                <li>Để sử dụng thực tế với API key, bạn cần triển khai server-side proxy.</li>
-                <li>Một số tính năng có thể bị giới hạn bởi chính sách CORS của trình duyệt.</li>
-            </ul>
-        </div>
-
-        <footer>
-            <p>Demo TTS tích hợp | Tạo cho mục đích học tập và thử nghiệm</p>
-            <p>Các API key thực tế cần được bảo mật ở phía server</p>
-        </footer>
     </div>
 
-    <!-- ResponsiveVoice Library -->
-    <script src="https://code.responsivevoice.org/responsivevoice.js?key=2B5D5vg7"></script>
-    
     <script>
-        // DOM Elements
-        const textInput = document.getElementById('textInput');
-        const languageSelect = document.getElementById('languageSelect');
-        const speedSelect = document.getElementById('speedSelect');
-        const webVoiceSelect = document.getElementById('webVoice');
-        
-        // Status elements
-        const webStatus = document.getElementById('webStatus');
-        const edgeStatus = document.getElementById('edgeStatus');
-        const responsiveStatus = document.getElementById('responsiveStatus');
-        const googleStatus = document.getElementById('googleStatus');
-        const fptStatus = document.getElementById('fptStatus');
-        
-        // Speech Synthesis
+        // Web Speech API Implementation
         let speechSynthesis = window.speechSynthesis;
         let currentUtterance = null;
+        let voices = [];
         
-        // Initialize Web Speech Voices
+        // Load available voices
         function loadVoices() {
-            if (!speechSynthesis) {
-                webStatus.innerHTML = '<div class="status error">Trình duyệt không hỗ trợ Web Speech API</div>';
-                return;
+            voices = speechSynthesis.getVoices();
+            const voiceSelect = document.getElementById('voiceSelect');
+            voiceSelect.innerHTML = '';
+            
+            // Filter and sort voices
+            const filteredVoices = voices.filter(voice => 
+                voice.lang.includes('en') || 
+                voice.lang.includes('vi') || 
+                voice.lang.includes('es') ||
+                voice.lang.includes('fr') ||
+                voice.lang.includes('de') ||
+                voice.lang.includes('ja') ||
+                voice.lang.includes('ko') ||
+                voice.lang.includes('zh')
+            );
+            
+            filteredVoices.sort((a, b) => {
+                if (a.lang < b.lang) return -1;
+                if (a.lang > b.lang) return 1;
+                return 0;
+            });
+            
+            filteredVoices.forEach(voice => {
+                const option = document.createElement('option');
+                option.value = voice.name;
+                option.textContent = `${voice.name} (${voice.lang}) ${voice.default ? ' - Mặc định' : ''}`;
+                voiceSelect.appendChild(option);
+            });
+            
+            // Set default voice if available
+            const defaultVoice = filteredVoices.find(v => v.default) || filteredVoices[0];
+            if (defaultVoice) {
+                voiceSelect.value = defaultVoice.name;
             }
-            
-            // Wait for voices to be loaded
-            speechSynthesis.onvoiceschanged = function() {
-                const voices = speechSynthesis.getVoices();
-                webVoiceSelect.innerHTML = '';
-                
-                voices.forEach((voice, index) => {
-                    const option = document.createElement('option');
-                    option.value = index;
-                    option.textContent = `${voice.name} (${voice.lang})`;
-                    webVoiceSelect.appendChild(option);
-                });
-                
-                if (voices.length > 0) {
-                    webStatus.innerHTML = `<div class="status success">Đã tải ${voices.length} giọng đọc</div>`;
-                }
-            };
-            
-            // Trigger voices loading
-            speechSynthesis.getVoices();
         }
         
-        // 1. Web Speech API
-        document.getElementById('webSpeechBtn').addEventListener('click', function() {
-            const text = textInput.value;
-            if (!text.trim()) {
-                webStatus.innerHTML = '<div class="status error">Vui lòng nhập văn bản</div>';
+        // Initialize voices
+        speechSynthesis.onvoiceschanged = loadVoices;
+        
+        // Update slider values
+        document.getElementById('rate').addEventListener('input', function() {
+            document.getElementById('rateValue').textContent = this.value;
+        });
+        
+        document.getElementById('pitch').addEventListener('input', function() {
+            document.getElementById('pitchValue').textContent = this.value;
+        });
+        
+        document.getElementById('volume').addEventListener('input', function() {
+            document.getElementById('volumeValue').textContent = this.value;
+        });
+        
+        // Web Speech API Functions
+        function speakWebSpeech() {
+            const text = document.getElementById('textInput').value.trim();
+            if (!text) {
+                showStatus('webSpeechStatus', 'Vui lòng nhập văn bản!', 'warning');
                 return;
             }
             
-            if (currentUtterance) {
-                speechSynthesis.cancel();
-            }
+            // Stop any ongoing speech
+            stopWebSpeech();
             
-            const voices = speechSynthesis.getVoices();
-            const selectedVoiceIndex = parseInt(webVoiceSelect.value);
-            const selectedVoice = voices[selectedVoiceIndex] || null;
+            const language = document.getElementById('languageSelect').value;
+            const voiceName = document.getElementById('voiceSelect').value;
+            const selectedVoice = voices.find(voice => voice.name === voiceName);
             
-            const utterance = new SpeechSynthesisUtterance(text);
-            
-            // Configure utterance
-            utterance.lang = languageSelect.value;
-            utterance.rate = parseFloat(speedSelect.value);
+            currentUtterance = new SpeechSynthesisUtterance(text);
+            currentUtterance.lang = language;
             
             if (selectedVoice) {
-                utterance.voice = selectedVoice;
+                currentUtterance.voice = selectedVoice;
             }
             
-            utterance.onstart = function() {
-                webStatus.innerHTML = '<div class="status success">Đang phát giọng nói...</div>';
+            currentUtterance.rate = parseFloat(document.getElementById('rate').value);
+            currentUtterance.pitch = parseFloat(document.getElementById('pitch').value);
+            currentUtterance.volume = parseFloat(document.getElementById('volume').value);
+            
+            currentUtterance.onstart = function() {
+                showStatus('webSpeechStatus', 'Đang phát...', 'success');
             };
             
-            utterance.onend = function() {
-                webStatus.innerHTML = '<div class="status info">Hoàn thành phát giọng nói</div>';
-                currentUtterance = null;
+            currentUtterance.onend = function() {
+                showStatus('webSpeechStatus', 'Hoàn thành!', 'info');
             };
             
-            utterance.onerror = function(event) {
-                webStatus.innerHTML = `<div class="status error">Lỗi: ${event.error}</div>`;
-                currentUtterance = null;
+            currentUtterance.onerror = function(event) {
+                showStatus('webSpeechStatus', 'Lỗi: ' + event.error, 'error');
             };
             
-            currentUtterance = utterance;
-            speechSynthesis.speak(utterance);
-        });
+            speechSynthesis.speak(currentUtterance);
+        }
         
-        document.getElementById('webSpeechStop').addEventListener('click', function() {
+        function pauseWebSpeech() {
             if (speechSynthesis.speaking) {
-                speechSynthesis.cancel();
-                webStatus.innerHTML = '<div class="status info">Đã dừng phát giọng nói</div>';
-                currentUtterance = null;
+                speechSynthesis.pause();
+                showStatus('webSpeechStatus', 'Đã tạm dừng', 'info');
             }
-        });
+        }
         
-        // 2. Edge TTS (Simulated - would need server-side in production)
-        document.getElementById('edgeTTSBtn').addEventListener('click', function() {
-            const text = textInput.value;
-            if (!text.trim()) {
-                edgeStatus.innerHTML = '<div class="status error">Vui lòng nhập văn bản</div>';
+        function stopWebSpeech() {
+            speechSynthesis.cancel();
+            showStatus('webSpeechStatus', 'Đã dừng', 'info');
+        }
+        
+        // Google TTS Demo (using a public proxy)
+        async function speakGoogleTTS() {
+            const text = document.getElementById('textInput').value.trim();
+            if (!text) {
+                showStatus('googleTTSStatus', 'Vui lòng nhập văn bản!', 'warning');
                 return;
             }
             
-            edgeStatus.innerHTML = '<div class="status info">Edge TTS: Mô phỏng phát giọng nói (thực tế cần server-side API call)...</div>';
+            const voice = document.getElementById('googleVoiceSelect').value;
+            showStatus('googleTTSStatus', 'Đang xử lý với Google TTS...', 'info');
             
-            // Simulate API call delay
-            setTimeout(() => {
-                // In production, this would make a fetch request to Edge TTS API
-                // Example: fetch(`/api/edge-tts?text=${encodeURIComponent(text)}&lang=${languageSelect.value}`)
+            try {
+                // Note: This is a demo using a free proxy. In production, use your own Google Cloud API key
+                const encodedText = encodeURIComponent(text);
+                const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${voice.split('-')[0]}-${voice.split('-')[1]}&q=${encodedText}`;
                 
-                // For demo, use Web Speech as fallback
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = languageSelect.value;
-                utterance.rate = parseFloat(speedSelect.value);
+                const audio = new Audio(audioUrl);
+                audio.play();
                 
-                speechSynthesis.speak(utterance);
-                
-                edgeStatus.innerHTML = '<div class="status success">Edge TTS: Đang phát (sử dụng Web Speech làm fallback)</div>';
-            }, 500);
-        });
-        
-        // 3. ResponsiveVoice
-        document.getElementById('responsiveVoiceBtn').addEventListener('click', function() {
-            const text = textInput.value;
-            if (!text.trim()) {
-                responsiveStatus.innerHTML = '<div class="status error">Vui lòng nhập văn bản</div>';
-                return;
-            }
-            
-            if (!responsiveVoice) {
-                responsiveStatus.innerHTML = '<div class="status error">ResponsiveVoice không khả dụng</div>';
-                return;
-            }
-            
-            const lang = languageSelect.value;
-            const rate = parseFloat(speedSelect.value);
-            
-            responsiveStatus.innerHTML = '<div class="status success">Đang phát với ResponsiveVoice...</div>';
-            
-            // Map language codes to ResponsiveVoice voices
-            let voice;
-            switch(lang) {
-                case 'vi-VN':
-                    voice = 'Vietnamese Female';
-                    break;
-                case 'en-US':
-                    voice = 'US English Female';
-                    break;
-                case 'en-GB':
-                    voice = 'UK English Female';
-                    break;
-                case 'fr-FR':
-                    voice = 'French Female';
-                    break;
-                default:
-                    voice = 'US English Female';
-            }
-            
-            responsiveVoice.speak(text, voice, {
-                rate: rate,
-                onstart: function() {
-                    responsiveStatus.innerHTML = '<div class="status success">Đang phát với ResponsiveVoice...</div>';
-                },
-                onend: function() {
-                    responsiveStatus.innerHTML = '<div class="status info">Hoàn thành phát giọng nói</div>';
-                }
-            });
-        });
-        
-        document.getElementById('responsiveVoiceStop').addEventListener('click', function() {
-            if (responsiveVoice) {
-                responsiveVoice.cancel();
-                responsiveStatus.innerHTML = '<div class="status info">Đã dừng ResponsiveVoice</div>';
-            }
-        });
-        
-        // 4. Google TTS (Simulated)
-        document.getElementById('googleTTSBtn').addEventListener('click', function() {
-            const text = textInput.value;
-            if (!text.trim()) {
-                googleStatus.innerHTML = '<div class="status error">Vui lòng nhập văn bản</div>';
-                return;
-            }
-            
-            googleStatus.innerHTML = '<div class="status info">Google TTS: Mô phỏng API call (thực tế cần API key)...</div>';
-            
-            // Simulate API processing
-            setTimeout(() => {
-                // In production, this would be: fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=YOUR_API_KEY`)
-                
-                // For demo, use Web Speech
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = languageSelect.value;
-                utterance.rate = parseFloat(speedSelect.value);
-                
-                // Try to find a Google-like voice
-                const voices = speechSynthesis.getVoices();
-                const googleVoice = voices.find(v => 
-                    v.name.includes('Google') || 
-                    v.name.includes('Chrome') || 
-                    v.name.includes('Microsoft David') ||
-                    v.name.includes('Microsoft Zira')
-                );
-                
-                if (googleVoice) {
-                    utterance.voice = googleVoice;
-                }
-                
-                utterance.onstart = () => {
-                    googleStatus.innerHTML = '<div class="status success">Google TTS: Đang phát (mô phỏng)</div>';
+                audio.onplaying = function() {
+                    showStatus('googleTTSStatus', 'Đang phát Google TTS...', 'success');
                 };
                 
-                speechSynthesis.speak(utterance);
-            }, 600);
-        });
+                audio.onended = function() {
+                    showStatus('googleTTSStatus', 'Hoàn thành Google TTS!', 'info');
+                };
+                
+                audio.onerror = function() {
+                    showStatus('googleTTSStatus', 'Lỗi khi phát. Có thể proxy bị giới hạn.', 'error');
+                };
+                
+            } catch (error) {
+                showStatus('googleTTSStatus', 'Lỗi: ' + error.message, 'error');
+            }
+        }
         
-        // 5. FPT AI TTS (Simulated)
-        document.getElementById('fptTTSBtn').addEventListener('click', function() {
-            const text = textInput.value;
-            const apiKey = document.getElementById('fptApiKey').value;
-            const voice = document.getElementById('fptVoice').value;
-            
-            if (!text.trim()) {
-                fptStatus.innerHTML = '<div class="status error">Vui lòng nhập văn bản</div>';
+        // Edge Read Aloud Simulation
+        function simulateEdgeReadAloud() {
+            const text = document.getElementById('textInput').value.trim();
+            if (!text) {
+                showStatus('edgeStatus', 'Vui lòng nhập văn bản!', 'warning');
                 return;
             }
             
-            fptStatus.innerHTML = '<div class="status info">Đang xử lý với FPT AI TTS...</div>';
+            showStatus('edgeStatus', 'Mô phỏng Edge Read Aloud: Khởi tạo giọng Microsoft Neural...', 'info');
             
-            // Simulate API call
+            // Try to use Microsoft voices if available
+            const msVoices = voices.filter(voice => 
+                voice.name.includes('Microsoft') || 
+                voice.name.includes('Zira') || 
+                voice.name.includes('David') ||
+                voice.name.includes('Huihui')
+            );
+            
+            if (msVoices.length > 0) {
+                const selectedVoice = msVoices[0];
+                currentUtterance = new SpeechSynthesisUtterance(text);
+                currentUtterance.voice = selectedVoice;
+                currentUtterance.rate = 1.0;
+                currentUtterance.pitch = 1.0;
+                currentUtterance.volume = 1.0;
+                
+                speechSynthesis.speak(currentUtterance);
+                showStatus('edgeStatus', `Đang phát với giọng Microsoft: ${selectedVoice.name}`, 'success');
+            } else {
+                // Fallback to Web Speech API
+                speakWebSpeech();
+                showStatus('edgeStatus', 'Không tìm thấy giọng Microsoft, sử dụng giọng mặc định của trình duyệt', 'warning');
+            }
+        }
+        
+        function openEdgeReader() {
+            if (navigator.userAgent.includes("Edg")) {
+                // In Edge, we could use a more advanced API
+                showStatus('edgeStatus', 'Bạn đang dùng Edge! Hãy bôi đen văn bản và chuột phải chọn "Read aloud"', 'info');
+            } else {
+                showStatus('edgeStatus', 'Tính năng này hoạt động tốt nhất trên Microsoft Edge', 'warning');
+            }
+        }
+        
+        // Utility Functions
+        function showStatus(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.style.display = 'block';
+            
+            // Set color based on type
+            if (type === 'success') {
+                element.style.background = '#d4edda';
+                element.style.borderLeftColor = '#28a745';
+            } else if (type === 'warning') {
+                element.style.background = '#fff3cd';
+                element.style.borderLeftColor = '#ffc107';
+            } else if (type === 'error') {
+                element.style.background = '#f8d7da';
+                element.style.borderLeftColor = '#dc3545';
+            } else {
+                element.style.background = '#e6f7ff';
+                element.style.borderLeftColor = '#1890ff';
+            }
+            
+            // Auto-hide after 5 seconds
             setTimeout(() => {
-                if (!apiKey) {
-                    fptStatus.innerHTML = '<div class="status info">FPT AI TTS: Demo mô phỏng (cần API key để sử dụng thực tế)</div>';
-                    
-                    // Use Web Speech for Vietnamese as fallback
-                    const utterance = new SpeechSynthesisUtterance(text);
-                    utterance.lang = 'vi-VN';
-                    utterance.rate = parseFloat(speedSelect.value);
-                    
-                    // Try to find Vietnamese voice
-                    const voices = speechSynthesis.getVoices();
-                    const vietnameseVoice = voices.find(v => v.lang.includes('vi'));
-                    
-                    if (vietnameseVoice) {
-                        utterance.voice = vietnameseVoice;
-                    }
-                    
-                    speechSynthesis.speak(utterance);
-                    return;
-                }
-                
-                // If API key provided (simulated response)
-                fptStatus.innerHTML = `
-                    <div class="status success">
-                        FPT AI TTS: Đã nhận API key<br>
-                        Giọng: ${voice}<br>
-                        Thực tế sẽ gọi API: https://api.fpt.ai/hmi/tts/v5
-                    </div>
-                `;
-                
-                // In production, you would make a fetch request:
-                /*
-                fetch('https://api.fpt.ai/hmi/tts/v5', {
-                    method: 'POST',
-                    headers: {
-                        'api-key': apiKey,
-                        'voice': voice,
-                        'speed': '',
-                        'format': 'mp3'
-                    },
-                    body: JSON.stringify({ text: text })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    // Play audio from data.async URL
-                });
-                */
-                
-            }, 800);
-        });
+                element.style.display = 'none';
+            }, 5000);
+        }
+        
+        function downloadWebSpeech() {
+            showStatus('webSpeechStatus', 'Tính năng tải file đang phát triển. Dùng trình ghi âm để lưu lại.', 'info');
+        }
         
         // Initialize on page load
-        window.addEventListener('DOMContentLoaded', function() {
+        window.onload = function() {
             loadVoices();
-            
-            // Set initial status
-            webStatus.innerHTML = '<div class="status info">Web Speech API: Sẵn sàng</div>';
-            edgeStatus.innerHTML = '<div class="status info">Edge TTS: Sẵn sàng (mô phỏng)</div>';
-            responsiveStatus.innerHTML = '<div class="status info">ResponsiveVoice: Sẵn sàng</div>';
-            googleStatus.innerHTML = '<div class="status info">Google TTS: Sẵn sàng (mô phỏng)</div>';
-            fptStatus.innerHTML = '<div class="status info">FPT AI TTS: Sẵn sàng (cần API key cho bản thật)</div>';
-            
-            // Check if ResponsiveVoice is loaded
-            if (typeof responsiveVoice === 'undefined') {
-                responsiveStatus.innerHTML = '<div class="status error">ResponsiveVoice không tải được</div>';
-            }
-        });
-        
-        // Refresh voices when language changes
-        languageSelect.addEventListener('change', loadVoices);
+            showStatus('webSpeechStatus', 'Đã sẵn sàng! Chọn công cụ TTS và nhấn Phát.', 'success');
+        };
     </script>
 </body>
 </html>
