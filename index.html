@@ -1295,9 +1295,23 @@
     </div>
 
     <script>
-        // === CẤU HÌNH TỐC ĐỘ CAO ===
-        const FIREBASE_URL = "https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/sensorData.json";
-        const GEMINI_API_KEY = "AIzaSyBdqg7VscC6X0XC5LWshIdgmK38Z6NXR2g";
+            const getSafeEnv = (key) => {
+          try {
+            if (typeof import.meta !== 'undefined' && import.meta.env?.[key]) {
+              return import.meta.env[key];
+            }
+            if (typeof process !== 'undefined' && process.env?.[key]) {
+              return process.env[key];
+            }
+          } catch (e) {
+            return "";
+          }
+          return "";
+        }
+        
+        // === CẤU HÌNH BẢO MẬT QUA NETLIFY ===
+        const GEMINI_API_KEY = getSafeEnv('VITE_GEMINI_API_KEY');
+        const FIREBASE_URL = getSafeEnv('VITE_FIREBASE_URL');
         const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent";
         const GEMINI_TRANSLATE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent";
         
