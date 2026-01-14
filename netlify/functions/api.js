@@ -1,41 +1,43 @@
+// netlify/functions/api.js
 const fetch = require('node-fetch');
 
 exports.handler = async (event, context) => {
+  // Get environment variables
+  const GEMINI_API_KEY = process.env.VITE_GEMINI_API_KEY;
+  const FIREBASE_URL = process.env.VITE_FIREBASE_URL;
+  
+  // Check if environment variables are configured
+  if (!GEMINI_API_KEY || !FIREBASE_URL) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: "Server configuration error" }),
+    };
+  }
+  
   // CORS headers
   const headers = {
+    'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Content-Type': 'application/json'
   };
-
-  // Handle preflight requests
+  
+  // Handle CORS preflight
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
       headers,
-      body: ''
+      body: '',
     };
   }
-
-  // Lấy biến môi trường
-  const GEMINI_API_KEY = process.env.VITE_GEMINI_API_KEY;
-  const FIREBASE_URL = process.env.VITE_FIREBASE_URL;
-
-  if (!FIREBASE_URL) {
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: "Chưa cấu hình Firebase URL trên Netlify" })
-    };
-  }
-
-  // Xử lý các endpoint khác nhau
-  const { path } = event;
   
-  // GET: Lấy dữ liệu từ Firebase
-  if (event.httpMethod === 'GET' && path.includes('/api/get-data')) {
-    try {
+  // Parse the path
+  const path = event.path.replace('/.netlify/functions/api', '');
+  
+  try {
+    // Route based on path
+    if (event.httpMethod === 'GET' && path === '/firebase') {
+      // Get data from Firebase
       const response = await fetch(`${FIREBASE_URL}/sensorData.json`);
       const data = await response.json();
       
@@ -44,211 +46,135 @@ exports.handler = async (event, context) => {
         headers,
         body: JSON.stringify({ 
           success: true, 
-          data,
-          timestamp: new Date().toISOString()
-        })
+          data: data,
+        }),
       };
-    } catch (error) {
-      return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({ error: error.message })
-      };
-    }
-  }
-  
-  // POST: Ghi log vào Firebase
-  if (event.httpMethod === 'POST' && path.includes('/api/log')) {
-    try {
+      
+    } else if (event.httpMethod === 'POST' && path === '/firebase/log') {
+      // Write log to Firebase
       const body = JSON.parse(event.body);
-      const { action, data } = body;
+      const timestamp = Date.now();
       
-      if (!action) {
-        return {
-          statusCode: 400,
-          headers,
-          body: JSON.stringify({ error: "Action là bắt buộc" })
-        };
-      }
-      
-      // Tạo log entry
-      const logEntry = {
-        action,
-        data,
-        timestamp: new Date().toISOString(),
-        userAgent: event.headers['user-agent'],
-        ip: event.headers['x-forwarded-for'] || 'unknown'
-      };
-      
-      // Gửi log lên Firebase
-      const logResponse = await fetch(`${FIREBASE_URL}/logs.json`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(logEntry)
+      const logResponse = await fetch(`${FIREBASE_URL}/logs/${timestamp}.json`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...body,
+          timestamp: timestamp,
+          userAgent: event.headers['user-agent'],
+          ip: event.headers['client-ip'] || 'unknown',
+        }),
       });
       
-      const result = await logResponse.json();
+      const logData = await logResponse.json();
       
       return {
         statusCode: 200,
         headers,
         body: JSON.stringify({ 
           success: true, 
-          message: "Đã ghi log",
-          logId: result.name 
-        })
+          message: "Log saved",
+          logId: timestamp,
+        }),
       };
-    } catch (error) {
-      return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({ error: error.message })
-      };
-    }
-  }
-  
-  // POST: Dịch với Gemini
-  if (event.httpMethod === 'POST' && path.includes('/api/translate')) {
-    if (!GEMINI_API_KEY) {
-      return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({ error: "Chưa cấu hình Gemini API Key" })
-      };
-    }
-    
-    try {
+      
+    } else if (event.httpMethod === 'POST' && path === '/gemini/translate') {
+      // Translate with Gemini
       const body = JSON.parse(event.body);
-      const { text, sourceLang, targetLang } = body;
       
-      const GEMINI_TRANSLATE_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`;
-      
-      const sourceName = getLanguageName(sourceLang);
-      const targetName = getLanguageName(targetLang);
-      
-      const response = await fetch(GEMINI_TRANSLATE_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: `Translate from ${sourceName} to ${targetName}. 
-              Maintain natural and formal tone. Output ONLY the translated text, no quotes, no extra notes.
-              Text: "${text}"`
+      const geminiResponse = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{
+                text: body.prompt
+              }]
             }]
-          }]
-        })
-      });
+          }),
+        }
+      );
       
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      let translated = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
-      translated = translated.replace(/^["']|["']$/g, '');
+      const geminiData = await geminiResponse.json();
       
       return {
         statusCode: 200,
         headers,
         body: JSON.stringify({ 
-          success: true,
-          translated,
-          sourceLang,
-          targetLang
-        })
+          success: true, 
+          data: geminiData,
+        }),
       };
-    } catch (error) {
-      return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({ error: error.message })
-      };
-    }
-  }
-  
-  // POST: TTS với Gemini
-  if (event.httpMethod === 'POST' && path.includes('/api/tts')) {
-    if (!GEMINI_API_KEY) {
-      return {
-        statusCode: 500,
-        headers,
-        body: JSON.stringify({ error: "Chưa cấu hình Gemini API Key" })
-      };
-    }
-    
-    try {
+      
+    } else if (event.httpMethod === 'POST' && path === '/gemini/tts') {
+      // TTS with Gemini
       const body = JSON.parse(event.body);
-      const { text, voiceName } = body;
       
-      const GEMINI_TTS_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${GEMINI_API_KEY}`;
-      
-      const response = await fetch(GEMINI_TTS_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ 
-            role: "user",
-            parts: [{ text: `Say this naturally in a clear voice: ${text}` }] 
-          }],
-          generationConfig: {
-            responseModalities: ["AUDIO"],
-            speechConfig: {
-              voiceConfig: { 
-                prebuiltVoiceConfig: { 
-                  voiceName: voiceName || "Aoede"
-                } 
+      const geminiResponse = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            contents: [{
+              role: "user",
+              parts: [{ text: body.text }]
+            }],
+            generationConfig: {
+              responseModalities: ["AUDIO"],
+              audioConfig: {
+                audioEncoding: "MP3",
+                speakingRate: 1.0,
+                pitch: 0.0,
+                volumeGainDb: 0.0,
+                effectsProfileId: ["headphone-class-device"],
+                voiceConfig: {
+                  prebuiltVoiceConfig: {
+                    voiceName: body.voiceName || "Aoede"
+                  }
+                }
               }
             }
-          }
-        })
-      });
+          }),
+        }
+      );
       
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      const candidate = data.candidates?.[0];
-      const part = candidate.content?.parts?.find(p => p.inlineData && p.inlineData.data);
-      const audioData = part?.inlineData?.data;
-      
-      if (!audioData) {
-        throw new Error("Không nhận được dữ liệu âm thanh");
-      }
+      const geminiData = await geminiResponse.json();
       
       return {
         statusCode: 200,
         headers,
         body: JSON.stringify({ 
-          success: true,
-          audioData
-        })
+          success: true, 
+          data: geminiData,
+        }),
       };
-    } catch (error) {
+      
+    } else {
       return {
-        statusCode: 500,
+        statusCode: 404,
         headers,
-        body: JSON.stringify({ error: error.message })
+        body: JSON.stringify({ error: "Endpoint not found" }),
       };
     }
+    
+  } catch (error) {
+    console.error("API Error:", error);
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ 
+        error: error.message,
+        success: false,
+      }),
+    };
   }
-  
-  return {
-    statusCode: 404,
-    headers,
-    body: JSON.stringify({ error: "Endpoint không tồn tại" })
-  };
 };
-
-// Helper function
-function getLanguageName(langCode) {
-  const langMap = {
-    "vi-VN": "Vietnamese",
-    "en-GB": "English",
-    "ja-JP": "Japanese", 
-    "ko-KR": "Korean",
-    "zh-CN": "Chinese"
-  };
-  return langMap[langCode] || langCode;
-}
