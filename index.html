@@ -5,12 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ứng dụng và cải tiến "Công nghệ dịch thủ ngữ" vào đời sống - Phiên bản tối ưu với Hiệu chuẩn</title>
     <style>
+        /* Toàn bộ CSS giữ nguyên như bạn đã cung cấp */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
+    
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -1295,11 +1296,12 @@
     </div>
 
     <script>
-        // === CẤU HÌNH TỐC ĐỘ CAO ===
-        const FIREBASE_URL = "https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/sensorData.json";
-        const GEMINI_API_KEY = "AIzaSyBg-iriMCRPZPUApNSY2BhTbV6KHBlZ0zQ";
-        const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent";
-        const GEMINI_TRANSLATE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent";
+    // === CẤU HÌNH TỐC ĐỘ CAO ===
+    const FIREBASE_URL = "https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/sensorData.json";
+    
+    // Netlify Functions endpoints
+    const GEMINI_TRANSLATE_URL = "/.netlify/functions/translate";
+    const GEMINI_TTS_URL = "/.netlify/functions/tts";
         
         // === BIẾN HIỆU CHUẨN ===
         let bentThresholds = [300, 450, 350, 300]; // Giá trị mặc định cho ngưỡng uốn
@@ -2811,7 +2813,7 @@
                 "보고서를 다시 확인해 주세요.",
                 "마감일은 금요일입니다.",
                 "전적으로 동의합니다.",
-                "メニュ를 보여주세요.",
+                "메뉴를 보여주세요.",
                 "계산서 부탁드립니다.",
                 "이 요리는 매운가요?",
                 "박물관에는 어떻게 가나요?",
@@ -2890,92 +2892,36 @@
         let lastTranslationTime = 0;
         const TRANSLATION_COOLDOWN = 2000;
 
-        // Hàm dịch với Gemini AI - ĐÃ SỬA LỖI
+        // Hàm dịch với Gemini AI - Sử dụng Netlify Function
         async function translateWithAI(text, sourceLang, targetLang) {
-            const apiKey = GEMINI_API_KEY;
-            const url = `${GEMINI_TRANSLATE_URL}?key=${apiKey}`;
-            
             const sourceName = languageNames[sourceLang]?.code || sourceLang;
             const targetName = languageNames[targetLang]?.code || targetLang;
-            
+
             try {
-                // Đơn giản hóa prompt để tránh lỗi
-                const prompt = `Dịch văn bản sau từ ${sourceName} sang ${targetName}:\n"${text}"\n\nChỉ trả về bản dịch, không thêm bất kỳ giải thích nào.`;
-                
-                const response = await fetch(url, {
+                const response = await fetch(GEMINI_TRANSLATE_URL, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: { 
+                        "Content-Type": "application/json"
+                    },
                     body: JSON.stringify({
-                        contents: [{
-                            parts: [{ text: prompt }]
-                        }]
+                        text: text,
+                        sourceLang: sourceName,
+                        targetLang: targetName
                     })
                 });
-                
+
                 if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`API error ${response.status}: ${errorText}`);
+                    throw new Error(`API error: ${response.status}`);
                 }
                 
                 const data = await response.json();
-                
-                // Xử lý phản hồi từ Gemini
-                if (data.candidates && data.candidates.length > 0) {
-                    const candidate = data.candidates[0];
-                    if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
-                        let translated = candidate.content.parts[0].text || "";
-                        
-                        // Loại bỏ dấu ngoặc kép nếu có
-                        translated = translated.replace(/^["']|["']$/g, '');
-                        translated = translated.trim();
-                        
-                        return translated;
-                    }
-                }
-                
-                throw new Error("Không nhận được bản dịch hợp lệ từ API.");
-                
+                let translated = data.translated || "";
+                translated = translated.replace(/^["']|["']$/g, '');
+                return translated;
             } catch (error) {
                 console.error("AI Translation Error:", error);
-                
-                // Fallback: Dùng Google Translate đơn giản nếu có lỗi
-                const fallbackTranslation = getFallbackTranslation(text, sourceLang, targetLang);
-                if (fallbackTranslation) {
-                    log('TRANSLATION', `Dùng bản dịch dự phòng: ${fallbackTranslation}`);
-                    return fallbackTranslation;
-                }
-                
                 throw error;
             }
-        }
-
-        // Hàm dịch dự phòng đơn giản
-        function getFallbackTranslation(text, sourceLang, targetLang) {
-            // Một số bản dịch cơ bản
-            const fallbackDict = {
-                "vi-VN_to_en-GB": {
-                    "xin chào": "hello",
-                    "cảm ơn": "thank you",
-                    "tạm biệt": "goodbye",
-                    "tôi yêu bạn": "i love you"
-                },
-                "en-GB_to_vi-VN": {
-                    "hello": "xin chào",
-                    "thank you": "cảm ơn",
-                    "goodbye": "tạm biệt",
-                    "i love you": "tôi yêu bạn"
-                }
-            };
-            
-            const key = `${sourceLang}_to_${targetLang}`;
-            const dict = fallbackDict[key];
-            
-            if (dict) {
-                const lowerText = text.toLowerCase();
-                return dict[lowerText] || null;
-            }
-            
-            return null;
         }
 
         async function translateSentence() {
@@ -3018,7 +2964,7 @@
                 log('TRANSLATION', `Đã dịch từ ${sourceLang} sang ${targetLang}: ${translated}`);
             } catch (error) {
                 console.error('Translation error:', error);
-                outputDiv.innerHTML = `<span style="color: #F44336;">Dịch thuật thất bại: ${error.message}</span>`;
+                outputDiv.innerHTML = '<span style="color: #F44336;">Dịch thuật thất bại. Vui lòng thử lại sau.</span>';
                 outputDiv.className = 'conversion-display error';
             }
         }
@@ -3069,63 +3015,33 @@
             }
         };
 
-        // Cấu hình giọng nói Gemini - ĐÃ SỬA LẠI
+        // Cấu hình giọng nói Gemini
         const voiceConfigs = {
-            female: { 
-                "vi-VN": "Aoede", 
-                "en-GB": "Kore", 
-                "ja-JP": "Leda", 
-                "ko-KR": "Kore", 
-                "zh-CN": "Aoede" 
-            },
-            male: { 
-                "vi-VN": "Charon", 
-                "en-GB": "Puck", 
-                "ja-JP": "Fenrir", 
-                "ko-KR": "Puck", 
-                "zh-CN": "Zubenelgenubi" 
-            }
+            female: { "vi-VN": "Aoede", "en-GB": "Kore", "ja-JP": "Leda", "ko-KR": "Kore", "zh-CN": "Aoede" },
+            male: { "vi-VN": "Charon", "en-GB": "Puck", "ja-JP": "Fenrir", "ko-KR": "Puck", "zh-CN": "Zubenelgenubi" }
         };
 
-        async function speakWithRetry(text, langCode, retries = 2) {
+        async function speakWithRetry(text, langCode, retries = 3) {
             const voiceName = voiceConfigs[currentVoice.gender]?.[langCode] || 
-                            (currentVoice.gender === 'male' ? 'Puck' : 'Kore');
+                            (currentVoice.gender === 'male' ? 'Aoede' : 'Kore');
             
             for (let i = 0; i < retries; i++) {
                 try {
                     const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 10000);
+                    const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-                    // Tạo prompt đơn giản
-                    const prompt = `Hãy đọc văn bản này một cách tự nhiên: "${text}"`;
-                    
+                    // Gọi Netlify Function cho TTS
                     const response = await fetch(
-                        `${GEMINI_API_URL}?key=${GEMINI_API_KEY}`,
+                        GEMINI_TTS_URL,
                         {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             signal: controller.signal,
                             body: JSON.stringify({
-                                contents: [{ 
-                                    parts: [{ text: prompt }] 
-                                }],
-                                generationConfig: {
-                                    responseModalities: ["AUDIO"],
-                                    audioConfig: {
-                                        audioEncoding: "LINEAR16",
-                                        speakingRate: 1.0,
-                                        pitch: 0.0,
-                                        volumeGainDb: 0.0,
-                                        sampleRateHertz: 24000,
-                                        effectsProfileId: ["small-bluetooth-speaker-class-device"]
-                                    },
-                                    voiceConfig: { 
-                                        prebuiltVoiceConfig: { 
-                                            voiceName: voiceName 
-                                        } 
-                                    }
-                                }
-                            }),
+                                text: text,
+                                voiceName: voiceName,
+                                langCode: langCode
+                            })
                         }
                     );
 
@@ -3137,25 +3053,13 @@
                     }
 
                     const data = await response.json();
-                    
-                    // Lấy dữ liệu âm thanh từ response
-                    let audioData = null;
-                    
-                    // Thử các cấu trúc response khác nhau
-                    if (data.audioContent) {
-                        audioData = data.audioContent;
-                    } else if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
-                        const part = data.candidates[0].content.parts.find(p => p.inlineData && p.inlineData.data);
-                        if (part && part.inlineData && part.inlineData.data) {
-                            audioData = part.inlineData.data;
-                        }
-                    }
+                    const audioData = data.audioData;
                     
                     if (audioData) return audioData;
                     throw new Error("Không nhận được dữ liệu âm thanh từ AI.");
                 } catch (err) {
                     if (i === retries - 1) throw err;
-                    const delay = Math.pow(2, i) * 500;
+                    const delay = Math.pow(2, i) * 1000;
                     await new Promise(r => setTimeout(r, delay));
                 }
             }
@@ -3192,7 +3096,7 @@
                 document.getElementById('aiSpeechStatus').style.display = 'flex';
             }
             
-            if (useGeminiTTS && GEMINI_API_KEY) {
+            if (useGeminiTTS) {
                 await speakWithGeminiTTS(text, langCode);
             } else {
                 speakWithWebSpeech(text, langCode);
@@ -3311,70 +3215,6 @@
             }
         }
 
-        // HÀM TTS VỚI GEMINI - ĐÃ SỬA LẠI
-        async function speakWithGeminiTTS(text, langCode) {
-            if (!GEMINI_API_KEY) {
-                speakWithWebSpeech(text, langCode);
-                return;
-            }
-            
-            try {
-                const audioDataBase64 = await speakWithRetry(text, langCode);
-                
-                if (!audioDataBase64) {
-                    throw new Error("Không nhận được dữ liệu âm thanh từ AI.");
-                }
-                
-                // Chuyển đổi base64 thành blob âm thanh
-                const audioBlob = base64ToBlob(audioDataBase64, 'audio/wav');
-                const audioUrl = URL.createObjectURL(audioBlob);
-                const audio = new Audio(audioUrl);
-                currentSpeech = audio;
-                
-                audio.onplay = () => {
-                    setIsSpeaking(true);
-                    startAudioVisualizer();
-                    log('SPEECH', `Bắt đầu Gemini TTS: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
-                };
-                
-                audio.onended = () => {
-                    setIsSpeaking(false);
-                    URL.revokeObjectURL(audioUrl);
-                    stopAudioVisualizer();
-                    log('SPEECH', 'Kết thúc Gemini TTS');
-                };
-                
-                audio.onerror = (e) => {
-                    setIsSpeaking(false);
-                    URL.revokeObjectURL(audioUrl);
-                    stopAudioVisualizer();
-                    log('SPEECH', `Lỗi phát âm thanh: ${e.message}`);
-                };
-                
-                await audio.play();
-                
-            } catch (error) {
-                console.error('Gemini TTS error:', error);
-                log('SPEECH', `Gemini TTS thất bại: ${error.message}. Chuyển sang Web Speech.`);
-                
-                // Fallback to Web Speech
-                speakWithWebSpeech(text, langCode);
-            } finally {
-                document.getElementById('aiSpeechStatus').style.display = 'none';
-            }
-        }
-
-        // Hàm chuyển base64 thành Blob
-        function base64ToBlob(base64, mimeType) {
-            const byteCharacters = atob(base64);
-            const byteNumbers = new Array(byteCharacters.length);
-            for (let i = 0; i < byteCharacters.length; i++) {
-                byteNumbers[i] = byteCharacters.charCodeAt(i);
-            }
-            const byteArray = new Uint8Array(byteNumbers);
-            return new Blob([byteArray], { type: mimeType });
-        }
-
         // === HÀM UPDATE UI COMPLETE ===
         function updateUI() {
             updateWordDisplays();
@@ -3416,6 +3256,8 @@
         // === KHỞI TẠO ===
         document.addEventListener('DOMContentLoaded', function() {
             log('SYSTEM', 'Ứng dụng tối ưu đã khởi động với tính năng hiệu chuẩn');
+            log('SYSTEM', `Sử dụng Netlify Functions: ${GEMINI_TRANSLATE_URL} và ${GEMINI_TTS_URL}`);
+
             
             // Khởi tạo FPS counter
             function updateFPS() {
@@ -3460,11 +3302,57 @@
                 toggleAutoRefresh();
             }, 100);
             
-            if (!GEMINI_API_KEY) {
-                log('SYSTEM', 'Lưu ý: Không có cấu hình khóa API Gemini. Sử dụng Web Speech API.');
+            if (!GEMINI_TRANSLATE_URL || !GEMINI_TTS_URL) {
+                log('SYSTEM', 'Lưu ý: Không có cấu hình Netlify Functions. Sử dụng Web Speech API.');
                 useGeminiTTS = false;
             }
         });
+
+        // === THÊM BIẾN TTS BỔ SUNG ===
+        async function speakWithGeminiTTS(text, langCode) {
+            try {
+                const audioDataBase64 = await speakWithRetry(text, langCode);
+                const wavBlob = pcmToWav(audioDataBase64);
+                if (!wavBlob) {
+                    throw new Error("Audio generation failed");
+                }
+
+                const audioUrl = URL.createObjectURL(wavBlob);
+                const audio = new Audio(audioUrl);
+                currentSpeech = audio;
+                
+                audio.onplay = () => {
+                    setIsSpeaking(true);
+                    startAudioVisualizer();
+                    log('SPEECH', `Bắt đầu Gemini TTS: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
+                };
+                
+                audio.onended = () => {
+                    setIsSpeaking(false);
+                    URL.revokeObjectURL(audioUrl);
+                    stopAudioVisualizer();
+                    log('SPEECH', 'Kết thúc Gemini TTS');
+                };
+                
+                audio.onerror = () => {
+                    setIsSpeaking(false);
+                    URL.revokeObjectURL(audioUrl);
+                    stopAudioVisualizer();
+                    log('SPEECH', 'Lỗi Gemini TTS');
+                };
+                
+                await audio.play();
+                
+            } catch (error) {
+                console.error('Gemini TTS error:', error);
+                log('SPEECH', `Gemini TTS thất bại: ${error.message}`);
+                
+                // Fallback to Web Speech
+                speakWithWebSpeech(text, langCode);
+            } finally {
+                document.getElementById('aiSpeechStatus').style.display = 'none';
+            }
+        }
     </script>
 </body>
 </html>
