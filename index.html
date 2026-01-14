@@ -1224,11 +1224,51 @@
 
                 <div class="controls">
                     <button onclick="translateSentence()" class="blue">Dịch câu</button>
-                    <button onclick="testTranslationDirectly()" class="orange" style="margin-top: 10px;">
-    🧪 Test Dịch Trực Tiếp
+                    <button onclick="testTranslationDirectly()" class="orange" style="margin-top: 10px;">🧪 Test Dịch Trực Tiếp</button>
+                    <!-- Thêm nút này sau nút test dịch trực tiếp -->
+<button onclick="testCurrentSentence()" class="purple" style="margin-top: 10px;">
+    🔍 Test Câu Hiện Tại
 </button>
 
 <script>
+    async function testCurrentSentence() {
+    const textarea = document.getElementById('translationInput');
+    const text = textarea.value.trim();
+    const sourceLang = document.getElementById('sourceLanguage').value;
+    const targetLang = document.getElementById('targetLanguage').value;
+    
+    if (!text) {
+        alert('Vui lòng nhập văn bản vào ô dịch trước!');
+        return;
+    }
+    
+    console.log('=== TEST CURRENT SENTENCE ===');
+    console.log('Text:', text);
+    console.log('Source:', sourceLang);
+    console.log('Target:', targetLang);
+    
+    try {
+        const response = await fetch("/.netlify/functions/translate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                text: text,
+                sourceLang: sourceLang,
+                targetLang: targetLang
+            })
+        });
+        
+        console.log('Status:', response.status);
+        const result = await response.json();
+        console.log('Result:', result);
+        
+        alert(`Kết quả test:\n\nOriginal: ${text}\n\nTranslated: ${result.translated}\n\nStatus: ${response.status}`);
+        
+    } catch (error) {
+        console.error('Test failed:', error);
+        alert(`Test thất bại: ${error.message}`);
+    }
+}
     async function testTranslationDirectly() {
     const testText = "Xin chào, rất vui được gặp bạn";
     const testSource = "vi-VN";
@@ -1240,7 +1280,10 @@
     try {
         const response = await fetch("/.netlify/functions/translate", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
             body: JSON.stringify({
                 text: testText,
                 sourceLang: testSource,
@@ -1249,44 +1292,37 @@
         });
         
         console.log('Response status:', response.status);
-        const result = await response.json();
-        console.log('Direct test result:', result);
+        console.log('Response headers:', response.headers);
         
-        alert(`Test kết quả:\n\nOriginal: ${testText}\nTranslated: ${result.translated}\n\nStatus: ${response.status}`);
+        const responseText = await response.text();
+        console.log('Raw response text:', responseText);
         
-    } catch (error) {
-        console.error('Direct test failed:', error);
-        alert(`Test thất bại: ${error.message}`);
-    }
-}
-async function testTranslationDirectly() {
-    const testText = "Xin chào, rất vui được gặp bạn";
-    const testSource = "vi-VN";
-    const testTarget = "en-GB";
-    
-    console.log('=== DIRECT TEST START ===');
-    console.log('Testing with:', { testText, testSource, testTarget });
-    
-    try {
-        const response = await fetch("/.netlify/functions/translate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                text: testText,
-                sourceLang: testSource,
-                targetLang: testTarget
-            })
-        });
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${responseText.substring(0, 100)}`);
+        }
         
-        console.log('Response status:', response.status);
-        const result = await response.json();
-        console.log('Direct test result:', result);
+        const result = JSON.parse(responseText);
+        console.log('Parsed result:', result);
         
-        alert(`Test kết quả:\n\nOriginal: ${testText}\nTranslated: ${result.translated}\n\nStatus: ${response.status}`);
+        // Hiển thị kết quả lên UI luôn
+        document.getElementById('translationOutput').innerHTML = result.translated || result.text || testText;
+        document.getElementById('translationOutput').className = 'conversion-display success';
+        
+        // Cũng hiển thị alert
+        alert(`✅ Test thành công!\n\nOriginal: ${testText}\nTranslated: ${result.translated}\n\nStatus: ${response.status}`);
+        
+        // Log
+        log('TEST', `Dịch test: "${testText}" → "${result.translated}"`);
         
     } catch (error) {
         console.error('Direct test failed:', error);
-        alert(`Test thất bại: ${error.message}`);
+        
+        // Hiển thị lỗi lên UI
+        document.getElementById('translationOutput').innerHTML = 
+            `<span style="color: #F44336;">⚠️ Test thất bại: ${error.message}</span>`;
+        document.getElementById('translationOutput').className = 'conversion-display error';
+        
+        alert(`❌ Test thất bại: ${error.message}`);
     }
 }
 </script>
@@ -2966,57 +3002,26 @@ async function testTranslationDirectly() {
         // Hàm dịch với Gemini AI - Sử dụng Netlify Function
       // === HÀM DỊCH VỚI NETLIFY FUNCTION ===
 // === HÀM DỊCH VỚI NETLIFY FUNCTION ===
+// Có thể xóa hàm này hoặc giữ lại đơn giản
 async function translateWithAI(text, sourceLang, targetLang) {
-    console.log('translateWithAI called:', { text, sourceLang, targetLang });
+    console.log('translateWithAI called - redirecting to direct method');
+    // Chuyển sang sử dụng logic trực tiếp
+    const response = await fetch("/.netlify/functions/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            text: text,
+            sourceLang: sourceLang,
+            targetLang: targetLang
+        })
+    });
     
-    // Endpoint đúng từ log của bạn
-    const TRANSLATE_URL = "/.netlify/functions/translate";
-    
-    try {
-        console.log('Sending request to:', TRANSLATE_URL);
-        
-        const response = await fetch(TRANSLATE_URL, {
-            method: "POST",
-            headers: { 
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            },
-            body: JSON.stringify({
-                text: text,
-                sourceLang: sourceLang,
-                targetLang: targetLang
-            })
-        });
-
-        console.log('Response status:', response.status);
-        console.log('Response headers:', response.headers);
-        
-        const responseText = await response.text();
-        console.log('Raw response:', responseText);
-        
-        if (!response.ok) {
-            console.error('HTTP Error:', response.status, responseText);
-            throw new Error(`HTTP ${response.status}: ${responseText.substring(0, 100)}`);
-        }
-        
-        const data = JSON.parse(responseText);
-        console.log('Parsed response:', data);
-        
-        if (data.error) {
-            throw new Error(data.error);
-        }
-        
-        return data.translated || data.text || text;
-        
-    } catch (error) {
-        console.error("Translation Error:", error);
-        
-        // Fallback: hiển thị lỗi nhưng vẫn trả về text gốc
-        document.getElementById('translationOutput').innerHTML = 
-            `<span style="color: #FF9800;">⚠️ Lỗi dịch: ${error.message}<br>Văn bản gốc: ${text}</span>`;
-        
-        throw error;
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
     }
+    
+    const result = await response.json();
+    return result.translated || result.text || text;
 }
 
         async function translateSentence() {
@@ -3045,25 +3050,41 @@ async function translateWithAI(text, sourceLang, targetLang) {
     outputDiv.innerHTML = '<span class="loading">🔄 Đang dịch... Vui lòng đợi</span>';
     outputDiv.className = 'conversion-display loading';
     
-    // Clear cache
-    const cacheKey = text + '|' + sourceLang + '|' + targetLang;
-    delete translationCache[cacheKey];
-    
     try {
-        console.log('Calling translateWithAI...');
-        const translated = await translateWithAI(text, sourceLang, targetLang);
+        console.log('Sending translation request...');
         
-        console.log('Got translation:', translated);
+        const response = await fetch("/.netlify/functions/translate", {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            body: JSON.stringify({
+                text: text,
+                sourceLang: sourceLang,
+                targetLang: targetLang
+            })
+        });
         
-        // Cache kết quả
-        translationCache[cacheKey] = translated;
+        console.log('Response status:', response.status);
+        
+        const responseText = await response.text();
+        console.log('Raw response text:', responseText.substring(0, 200) + '...');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${responseText.substring(0, 100)}`);
+        }
+        
+        const result = JSON.parse(responseText);
+        console.log('Parsed result:', result);
         
         // Hiển thị kết quả
-        outputDiv.innerHTML = translated;
+        const translatedText = result.translated || result.text || text;
+        outputDiv.innerHTML = translatedText;
         outputDiv.className = 'conversion-display success';
         
-        // Log
-        log('TRANSLATION', `Đã dịch: "${text.substring(0, 30)}..." → "${translated.substring(0, 30)}..."`);
+        // Log thành công
+        log('TRANSLATION', `✅ Đã dịch: "${text.substring(0, 30)}..." → "${translatedText.substring(0, 30)}..."`);
         
         console.log('=== translateSentence SUCCESS ===');
         
@@ -3078,6 +3099,8 @@ async function translateWithAI(text, sourceLang, targetLang) {
             </div>
         `;
         outputDiv.className = 'conversion-display error';
+        
+        log('TRANSLATION', `❌ Lỗi dịch: ${error.message}`);
     }
 }
         function clearTranslation() {
