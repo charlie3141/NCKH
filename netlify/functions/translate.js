@@ -1,9 +1,7 @@
 exports.handler = async function(event, context) {
-    console.log('=== TRANSLATE FUNCTION (REAL) CALLED ===');
-    console.log('Method:', event.httpMethod);
-    console.log('Headers:', JSON.stringify(event.headers, null, 2));
+    console.log('=== TRANSLATE FUNCTION (FIXED) ===');
     
-    // CORS headers - QUAN TRỌNG
+    // CORS headers
     const headers = {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
@@ -11,136 +9,119 @@ exports.handler = async function(event, context) {
         'Content-Type': 'application/json'
     };
     
-    // Handle preflight OPTIONS
     if (event.httpMethod === 'OPTIONS') {
-        console.log('Handling OPTIONS preflight');
-        return {
-            statusCode: 200,
-            headers,
-            body: ''
-        };
+        return { statusCode: 200, headers, body: '' };
     }
     
-    // Chỉ chấp nhận POST
     if (event.httpMethod !== 'POST') {
         return {
             statusCode: 405,
             headers,
-            body: JSON.stringify({
-                error: 'Method not allowed',
-                allowed: ['POST', 'OPTIONS']
-            })
+            body: JSON.stringify({ error: 'Method not allowed' })
         };
     }
     
     try {
-        // Parse body
-        let body;
-        try {
-            body = JSON.parse(event.body || '{}');
-            console.log('Parsed body:', JSON.stringify(body, null, 2));
-        } catch (parseError) {
-            console.error('JSON parse error:', parseError.message);
-            return {
-                statusCode: 400,
-                headers,
-                body: JSON.stringify({
-                    error: 'Invalid JSON format',
-                    details: parseError.message
-                })
-            };
-        }
-        
+        const body = JSON.parse(event.body || '{}');
         const { text, sourceLang = 'en', targetLang = 'vi' } = body;
         
         if (!text || text.trim() === '') {
             return {
                 statusCode: 400,
                 headers,
-                body: JSON.stringify({
-                    error: 'Text is required and cannot be empty'
-                })
+                body: JSON.stringify({ error: 'Text is required' })
             };
         }
         
-        console.log(`Translating: "${text.substring(0, 100)}" from ${sourceLang} to ${targetLang}`);
+        console.log(`Translating: "${text}"`);
         
         const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
         
         if (!GEMINI_API_KEY) {
-            console.error('GEMINI_API_KEY is not configured');
             return {
                 statusCode: 500,
                 headers,
-                body: JSON.stringify({
-                    error: 'API key not configured',
-                    note: 'Please set GEMINI_API_KEY in Netlify environment variables'
-                })
+                body: JSON.stringify({ error: 'API key not configured' })
             };
         }
         
-        console.log('API Key length:', GEMINI_API_KEY.length);
-        console.log('API Key preview:', GEMINI_API_KEY.substring(0, 10) + '...');
-        
-        // THỬ CÁC MODEL - BẮT ĐẦU VỚI MODEL ĐƠN GIẢN
-        const modelsToTry = [
-            'gemini-1.5-flash',  // Model nhanh, ít tốn token
-            'gemini-1.0-pro',    // Model cơ bản
-            'gemini-pro',        // Model mặc định
-            'models/gemini-pro'  // Định dạng đầy đủ
+        // THỬ CÁC ENDPOINT KHÁC NHAU
+        const endpoints = [
+            {
+                name: 'gemini-1.5-pro-latest (v1beta)',
+                url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=${GEMINI_API_KEY}`
+            },
+            {
+                name: 'gemini-pro (v1)',
+                url: `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`
+            },
+            {
+                name: 'gemini-1.0-pro (v1)',
+                url: `https://generativelanguage.googleapis.com/v1/models/gemini-1.0-pro:generateContent?key=${GEMINI_API_KEY}`
+            },
+            {
+                name: 'text-bison-001 (PaLM)',
+                url: `https://generativelanguage.googleapis.com/v1beta2/models/text-bison-001:generateText?key=${GEMINI_API_KEY}`
+            }
         ];
         
-        for (const model of modelsToTry) {
+        for (const endpoint of endpoints) {
             try {
-                console.log(`Trying model: ${model}`);
+                console.log(`Trying endpoint: ${endpoint.name}`);
                 
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
-                console.log('API URL:', apiUrl);
+                let requestBody;
                 
-                const prompt = `Translate from ${sourceLang} to ${targetLang}. 
-                Return ONLY the translated text, nothing else.
+                if (endpoint.name.includes('text-bison')) {
+                    // PaLM API format
+                    requestBody = {
+                        prompt: {
+                            text: `Translate from ${sourceLang} to ${targetLang}: "${text}"`
+                        }
+                    };
+                } else {
+                    // Gemini API format
+                    requestBody = {
+                        contents: [{
+                            parts: [{
+                                text: `Translate this from ${sourceLang} to ${targetLang}: "${text}"`
+                            }]
+                        }],
+                        generationConfig: {
+                            temperature: 0.1,
+                            maxOutputTokens: 1000
+                        }
+                    };
+                }
                 
-                Original text: "${text}"`;
-                
-                const requestBody = {
-                    contents: [{
-                        parts: [{ text: prompt }]
-                    }],
-                    generationConfig: {
-                        temperature: 0.1,
-                        maxOutputTokens: 1000,
-                        topP: 0.8,
-                        topK: 40
-                    }
-                };
-                
-                console.log('Sending request to Gemini API...');
-                
-                const response = await fetch(apiUrl, {
+                const response = await fetch(endpoint.url, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(requestBody)
                 });
                 
-                console.log(`Response status for ${model}:`, response.status);
+                console.log(`Response from ${endpoint.name}:`, response.status);
                 
                 if (response.ok) {
                     const data = await response.json();
-                    console.log(`Success with model ${model}!`);
+                    console.log('Success! Data:', JSON.stringify(data).substring(0, 500));
                     
-                    let translated = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+                    let translated;
+                    
+                    if (endpoint.name.includes('text-bison')) {
+                        // PaLM response format
+                        translated = data.candidates?.[0]?.output?.trim() || 
+                                    data.predictions?.[0]?.content?.trim() || 
+                                    text;
+                    } else {
+                        // Gemini response format
+                        translated = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || 
+                                    data.text?.trim() || 
+                                    text;
+                    }
                     
                     // Clean up
                     translated = translated.replace(/^["']|["']$/g, '');
                     translated = translated.replace(/^Translation:\s*/i, '');
-                    translated = translated.replace(/^Here(?:'s| is) the translation:\s*/i, '');
-                    translated = translated.replace(/^In .*?:/i, '').trim();
-                    
-                    console.log('Raw translation:', translated);
-                    console.log('Cleaned translation:', translated);
                     
                     return {
                         statusCode: 200,
@@ -148,33 +129,57 @@ exports.handler = async function(event, context) {
                         body: JSON.stringify({
                             success: true,
                             original: text,
-                            translated: translated || text, // Fallback to original
+                            translated: translated,
                             sourceLang,
                             targetLang,
-                            modelUsed: model,
+                            endpoint: endpoint.name,
                             timestamp: new Date().toISOString()
                         })
                     };
-                    
                 } else {
                     const errorText = await response.text();
-                    console.log(`Model ${model} failed:`, response.status, errorText.substring(0, 200));
-                    // Continue to next model
+                    console.log(`Endpoint ${endpoint.name} failed:`, errorText.substring(0, 200));
                 }
                 
-            } catch (modelError) {
-                console.log(`Error with model ${model}:`, modelError.message);
-                // Continue to next model
+            } catch (endpointError) {
+                console.log(`Error with ${endpoint.name}:`, endpointError.message);
             }
         }
         
-        // Nếu tất cả model đều fail, dùng fallback
-        console.log('All Gemini models failed, using fallback translation');
+        // Nếu tất cả đều fail, dùng Google Translate Free API
+        console.log('All Gemini/PaLM endpoints failed, trying Google Translate Free API');
         
-        // Simple fallback: đảo ngược text (hoặc có thể dùng Google Translate API free)
-        const fallbackTranslated = text.split(' ').map(word => 
-            word.split('').reverse().join('')
-        ).join(' ');
+        try {
+            // Google Translate Free API (có giới hạn)
+            const translateUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+            
+            const response = await fetch(translateUrl);
+            
+            if (response.ok) {
+                const data = await response.json();
+                const translated = data[0]?.map(item => item[0]).join('') || text;
+                
+                return {
+                    statusCode: 200,
+                    headers,
+                    body: JSON.stringify({
+                        success: true,
+                        original: text,
+                        translated: translated,
+                        sourceLang,
+                        targetLang,
+                        endpoint: 'Google Translate Free API',
+                        note: 'Using free API with limitations',
+                        timestamp: new Date().toISOString()
+                    })
+                };
+            }
+        } catch (googleError) {
+            console.log('Google Translate also failed:', googleError.message);
+        }
+        
+        // Ultimate fallback
+        const fallbackTranslated = text.split('').reverse().join('');
         
         return {
             statusCode: 200,
@@ -185,20 +190,18 @@ exports.handler = async function(event, context) {
                 translated: fallbackTranslated,
                 sourceLang,
                 targetLang,
-                note: 'Using fallback translation (Gemini API unavailable)',
+                note: 'Using reverse text fallback (all APIs failed)',
                 timestamp: new Date().toISOString()
             })
         };
         
     } catch (error) {
-        console.error('Unexpected error in translate function:', error);
+        console.error('Fatal error:', error);
         return {
             statusCode: 500,
             headers,
             body: JSON.stringify({
-                error: 'Internal server error',
-                message: error.message,
-                timestamp: new Date().toISOString()
+                error: error.message
             })
         };
     }
