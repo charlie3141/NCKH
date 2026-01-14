@@ -1,20 +1,13 @@
 exports.handler = async function(event, context) {
-    console.log('Test function called');
-    console.log('Event:', JSON.stringify(event, null, 2));
+    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
     
     return {
         statusCode: 200,
-        headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            message: 'Function is working!',
-            method: event.httpMethod,
-            hasBody: !!event.body,
-            bodyLength: event.body?.length,
-            bodyPreview: event.body?.substring(0, 100),
-            timestamp: new Date().toISOString()
+            hasApiKey: !!GEMINI_API_KEY,
+            apiKeyLength: GEMINI_API_KEY ? GEMINI_API_KEY.length : 0,
+            apiKeyPreview: GEMINI_API_KEY ? GEMINI_API_KEY.substring(0, 10) + '...' : null
         })
     };
 };
