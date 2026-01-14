@@ -2895,39 +2895,40 @@
 
         // Hàm dịch với Gemini AI - Sử dụng Netlify Function
         async function translateWithAI(text, sourceLang, targetLang) {
-        console.log('Calling translate function with:', { text, sourceLang, targetLang });
-        
-        try {
-            const response = await fetch("/.netlify/functions/translate", {
-                method: "POST",
-                headers: { 
-                    "Content-Type": "application/json",
-                    "Accept": "application/json"
-                },
-                body: JSON.stringify({
-                    text: text,
-                    sourceLang: sourceLang,
-                    targetLang: targetLang
-                })
-            });
+    console.log('Calling translate function...', { text, sourceLang, targetLang });
     
-            console.log('Response status:', response.status);
-            const responseText = await response.text();
-            console.log('Raw response:', responseText);
-            
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${responseText}`);
-            }
-            
-            const data = JSON.parse(responseText);
-            console.log('Parsed data:', data);
-            return data.translated || "";
-            
-        } catch (error) {
-            console.error("Translation Error:", error);
-            throw error;
+    try {
+        const response = await fetch(GEMINI_TRANSLATE_URL, {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
+            body: JSON.stringify({
+                text: text,
+                sourceLang: sourceLang,
+                targetLang: targetLang
+            })
+        });
+
+        console.log('Response status:', response.status);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('API error response:', errorText);
+            throw new Error(`Translation failed: ${response.status}`);
         }
+        
+        const data = await response.json();
+        console.log('Response data:', data);
+        
+        return data.translated || text; // Fallback to original if no translation
+        
+    } catch (error) {
+        console.error("Translation Error:", error);
+        throw error;
     }
+}
 
 
         async function translateSentence() {
