@@ -5,11 +5,3 @@
     "node-fetch": "2.6.7"
   }
 }
-{
-  "name": "sign-language-translator",
-  "version": "1.0.0",
-  "description": "Ứng dụng dịch ngôn ngữ ký hiệu với Gemini AI",
-  "dependencies": {
-    "node-fetch": "^3.3.1"
-  }
-}
