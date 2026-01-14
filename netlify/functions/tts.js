@@ -24,7 +24,7 @@ exports.handler = async function(event, context) {
     
     try {
         const body = JSON.parse(event.body);
-        const { text, voiceName = "Aoede" } = body;
+        const { text } = body;
         
         if (!text) {
             return {
@@ -34,104 +34,28 @@ exports.handler = async function(event, context) {
             };
         }
         
-        const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+        console.log(`TTS requested for: "${text.substring(0, 50)}..."`);
         
-        if (!GEMINI_API_KEY) {
-            console.error('GEMINI_API_KEY not configured');
-            return {
-                statusCode: 500,
-                headers,
-                body: JSON.stringify({ error: 'API key not configured' })
-            };
-        }
-        
-        console.log(`Generating TTS for: "${text.substring(0, 50)}..."`);
-        
-        // SỬA: Dùng Gemini API với audio support
-        // Model cần hỗ trợ audio (gemini-1.5-pro)
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                contents: [{
-                    role: "user",
-                    parts: [{ 
-                        text: `Generate speech audio for this text: "${text}"` 
-                    }]
-                }],
-                generationConfig: {
-                    responseModalities: ["AUDIO"],
-                    audioConfig: {
-                        audioEncoding: "LINEAR16",
-                        speakingRate: 1.0,
-                        pitch: 0.0
-                    }
-                }
+        // Gemini TTS API hiện tại không dễ truy cập
+        // Tạm thời trả về text và để frontend dùng Web Speech
+        return {
+            statusCode: 200,
+            headers,
+            body: JSON.stringify({ 
+                success: true,
+                text: text,
+                note: "Use browser's Web Speech API for TTS",
+                instruction: "Frontend should use speechSynthesis API"
             })
-        });
-        
-        console.log('TTS API Response status:', response.status);
-        
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('TTS API error:', errorText);
-            
-            // Fallback: Trả về text nếu TTS không hoạt động
-            return {
-                statusCode: 200,
-                headers,
-                body: JSON.stringify({ 
-                    audioData: null,
-                    text: text,
-                    error: "TTS not available, using fallback",
-                    note: "Gemini TTS API might not be enabled for your API key"
-                })
-            };
-        }
-        
-        const data = await response.json();
-        console.log('TTS response received');
-        
-        // Gemini TTS trả về audio dưới dạng base64
-        const candidate = data.candidates?.[0];
-        const part = candidate?.content?.parts?.find(p => p.inlineData?.data);
-        const audioData = part?.inlineData?.data;
-        
-        if (audioData) {
-            console.log('Audio data received, length:', audioData.length);
-            return {
-                statusCode: 200,
-                headers,
-                body: JSON.stringify({ 
-                    audioData,
-                    textLength: text.length
-                })
-            };
-        } else {
-            console.log('No audio data in response, using fallback');
-            return {
-                statusCode: 200,
-                headers,
-                body: JSON.stringify({ 
-                    audioData: null,
-                    text: text,
-                    note: "No audio data returned from API"
-                })
-            };
-        }
+        };
         
     } catch (error) {
         console.error('ERROR in TTS function:', error);
         return {
-            statusCode: 200, // Vẫn trả về 200 để frontend không bị lỗi
+            statusCode: 500,
             headers,
             body: JSON.stringify({ 
-                audioData: null,
-                text: event.body ? JSON.parse(event.body).text : '',
-                error: error.message,
-                note: "Using text fallback"
+                error: error.message
             })
         };
     }
