@@ -1229,6 +1229,9 @@
 <button onclick="testCurrentSentence()" class="purple" style="margin-top: 10px;">
     🔍 Test Câu Hiện Tại
 </button>
+    <button onclick="speakTranslation()" class="purple" style="margin-top: 10px;">
+        🔊 Đọc Bản Dịch
+    </button>
 
 <script>
     async function testCurrentSentence() {
@@ -1259,16 +1262,43 @@
         });
         
         console.log('Status:', response.status);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 100)}`);
+        }
+        
         const result = await response.json();
         console.log('Result:', result);
         
-        alert(`Kết quả test:\n\nOriginal: ${text}\n\nTranslated: ${result.translated}\n\nStatus: ${response.status}`);
+        // Hiển thị lên UI
+        const translatedText = result.translated || result.text || text;
+        document.getElementById('translationOutput').innerHTML = translatedText;
+        document.getElementById('translationOutput').className = 'conversion-display success';
+        
+        // Lưu vào cache
+        const cacheKey = `${text}|${sourceLang}|${targetLang}`;
+        translationCache[cacheKey] = translatedText;
+        
+        alert(`✅ Test thành công!\n\nOriginal: ${text}\n\nTranslated: ${translatedText}\n\nStatus: ${response.status}`);
+        
+        // Log
+        log('TEST', `✅ Test dịch: "${text}" → "${translatedText}"`);
+        
+        // Đọc bản dịch
+        autoReadTranslation(translatedText, targetLang);
         
     } catch (error) {
         console.error('Test failed:', error);
-        alert(`Test thất bại: ${error.message}`);
+        
+        document.getElementById('translationOutput').innerHTML = 
+            `<span style="color: #F44336;">⚠️ Test thất bại: ${error.message}</span>`;
+        document.getElementById('translationOutput').className = 'conversion-display error';
+        
+        alert(`❌ Test thất bại: ${error.message}`);
     }
 }
+
     async function testTranslationDirectly() {
     const testText = "Xin chào, rất vui được gặp bạn";
     const testSource = "vi-VN";
@@ -3024,7 +3054,12 @@ async function translateWithAI(text, sourceLang, targetLang) {
     return result.translated || result.text || text;
 }
 
-        async function translateSentence() {
+        // === HÀM DỊCH THUẬT HOÀN CHỈNH ===
+
+// Cache để lưu kết quả dịch
+let translationCache = {};
+
+async function translateSentence() {
     console.log('=== translateSentence START ===');
     
     const textarea = document.getElementById('translationInput');
@@ -3043,6 +3078,16 @@ async function translateWithAI(text, sourceLang, targetLang) {
     if (!text) {
         outputDiv.innerHTML = '<span style="color: #F44336;">⚠️ Vui lòng nhập văn bản để dịch!</span>';
         outputDiv.className = 'conversion-display error';
+        return;
+    }
+    
+    // Kiểm tra cache
+    const cacheKey = `${text}|${sourceLang}|${targetLang}`;
+    if (translationCache[cacheKey]) {
+        console.log('Using cached translation');
+        outputDiv.innerHTML = translationCache[cacheKey];
+        outputDiv.className = 'conversion-display success';
+        log('TRANSLATION', `✅ Đã dịch (cache): "${text.substring(0, 30)}..."`);
         return;
     }
     
@@ -3068,18 +3113,21 @@ async function translateWithAI(text, sourceLang, targetLang) {
         
         console.log('Response status:', response.status);
         
-        const responseText = await response.text();
-        console.log('Raw response text:', responseText.substring(0, 200) + '...');
-        
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${responseText.substring(0, 100)}`);
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 100)}`);
         }
         
-        const result = JSON.parse(responseText);
-        console.log('Parsed result:', result);
+        const result = await response.json();
+        console.log('Result:', result);
+        
+        // Lấy bản dịch
+        const translatedText = result.translated || result.text || text;
+        
+        // Lưu vào cache
+        translationCache[cacheKey] = translatedText;
         
         // Hiển thị kết quả
-        const translatedText = result.translated || result.text || text;
         outputDiv.innerHTML = translatedText;
         outputDiv.className = 'conversion-display success';
         
@@ -3087,6 +3135,9 @@ async function translateWithAI(text, sourceLang, targetLang) {
         log('TRANSLATION', `✅ Đã dịch: "${text.substring(0, 30)}..." → "${translatedText.substring(0, 30)}..."`);
         
         console.log('=== translateSentence SUCCESS ===');
+        
+        // Tự động đọc bản dịch nếu người dùng muốn
+        autoReadTranslation(translatedText, targetLang);
         
     } catch (error) {
         console.error('translateSentence failed:', error);
@@ -3103,11 +3154,226 @@ async function translateWithAI(text, sourceLang, targetLang) {
         log('TRANSLATION', `❌ Lỗi dịch: ${error.message}`);
     }
 }
-        function clearTranslation() {
-            document.getElementById('translationOutput').innerHTML = 'Đang chờ dịch...';
-            document.getElementById('translationOutput').className = 'conversion-display';
-            translationCache = {};
+        // Hàm clear translation
+function clearTranslation() {
+    document.getElementById('translationInput').value = '';
+    document.getElementById('translationOutput').innerHTML = 'Đang chờ dịch...';
+    document.getElementById('translationOutput').className = 'conversion-display';
+    log('TRANSLATION', 'Đã xóa bản dịch');
+}
+
+// === HÀM GIỌNG NÓI HOÀN CHỈNH ===
+let isSpeaking = false;
+let currentSpeech = null;
+
+function speakText(text, langCode) {
+    if (isSpeaking) {
+        stopAllSpeech();
+        return;
+    }
+    
+    if (!('speechSynthesis' in window)) {
+        log('SPEECH', 'Speech synthesis not supported in this browser');
+        alert('Trình duyệt không hỗ trợ chức năng đọc văn bản!');
+        return;
+    }
+    
+    // Dừng tất cả giọng nói đang chạy
+    window.speechSynthesis.cancel();
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = langCode;
+    utterance.rate = 0.9;
+    utterance.pitch = 1.0;
+    utterance.volume = 1;
+    
+    // Tìm giọng phù hợp
+    const voices = window.speechSynthesis.getVoices();
+    const preferredVoice = voices.find(voice => 
+        voice.lang === langCode || voice.lang.startsWith(langCode.substring(0, 2))
+    );
+    
+    if (preferredVoice) {
+        utterance.voice = preferredVoice;
+    }
+    
+    utterance.onstart = function() {
+        isSpeaking = true;
+        updateSpeechUI(true);
+        startAudioVisualizer();
+        log('SPEECH', `🔊 Bắt đầu đọc: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
+    };
+    
+    utterance.onend = function() {
+        isSpeaking = false;
+        currentSpeech = null;
+        updateSpeechUI(false);
+        stopAudioVisualizer();
+        log('SPEECH', '✅ Kết thúc đọc');
+    };
+    
+    utterance.onerror = function(event) {
+        isSpeaking = false;
+        currentSpeech = null;
+        updateSpeechUI(false);
+        stopAudioVisualizer();
+        log('SPEECH', `❌ Lỗi đọc: ${event.error}`);
+    };
+    
+    currentSpeech = utterance;
+    window.speechSynthesis.speak(utterance);
+    
+    // Cập nhật UI ngay lập tức
+    updateSpeechUI(true);
+}
+
+function stopAllSpeech() {
+    if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+    }
+    
+    isSpeaking = false;
+    currentSpeech = null;
+    updateSpeechUI(false);
+    stopAudioVisualizer();
+    
+    log('SPEECH', '⏹️ Đã dừng tất cả giọng nói');
+}
+
+function updateSpeechUI(speaking) {
+    const speakBtn = document.getElementById('speakTransBtn');
+    const stopBtn = document.getElementById('stopSpeechBtn');
+    
+    if (speakBtn) {
+        speakBtn.disabled = speaking;
+        if (speaking) {
+            speakBtn.classList.add('speaking');
+            speakBtn.innerHTML = '🔊 Đang đọc...';
+        } else {
+            speakBtn.classList.remove('speaking');
+            speakBtn.innerHTML = '🔊 Đọc Bản Dịch';
         }
+    }
+    
+    if (stopBtn) {
+        stopBtn.disabled = !speaking;
+    }
+}
+
+// Audio visualizer
+let audioVisualizerInterval = null;
+
+function startAudioVisualizer() {
+    stopAudioVisualizer();
+    
+    const visualizer = document.getElementById('audioVisualizer');
+    visualizer.innerHTML = '';
+    
+    // Tạo 20 thanh
+    for (let i = 0; i < 20; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'audio-bar';
+        bar.style.height = '5px';
+        bar.style.backgroundColor = '#4CAF50';
+        visualizer.appendChild(bar);
+    }
+    
+    const bars = visualizer.querySelectorAll('.audio-bar');
+    audioVisualizerInterval = setInterval(() => {
+        bars.forEach((bar, index) => {
+            // Tạo hiệu ứng sóng
+            const time = Date.now() / 1000;
+            const height = 5 + Math.sin(time * 10 + index * 0.5) * 15 + Math.random() * 10;
+            bar.style.height = `${Math.max(5, height)}px`;
+            
+            // Thay đổi màu
+            const hue = 120 + Math.sin(time * 5 + index) * 30;
+            bar.style.backgroundColor = `hsl(${hue}, 70%, 50%)`;
+        });
+    }, 100);
+}
+
+function stopAudioVisualizer() {
+    if (audioVisualizerInterval) {
+        clearInterval(audioVisualizerInterval);
+        audioVisualizerInterval = null;
+    }
+    
+    const visualizer = document.getElementById('audioVisualizer');
+    if (visualizer) {
+        visualizer.innerHTML = '';
+        // Hiển thị thanh tĩnh
+        for (let i = 0; i < 20; i++) {
+            const bar = document.createElement('div');
+            bar.className = 'audio-bar';
+            bar.style.height = '5px';
+            bar.style.backgroundColor = '#e0e0e0';
+            visualizer.appendChild(bar);
+        }
+    }
+}
+
+// === KHỞI TẠO ===
+document.addEventListener('DOMContentLoaded', function() {
+    log('SYSTEM', 'Ứng dụng tối ưu đã khởi động với tính năng dịch và đọc');
+    
+    // Khởi tạo speech synthesis
+    if ('speechSynthesis' in window) {
+        speechSynthesis.getVoices();
+        
+        // Một số trình duyệt cần đợi sự kiện voiceschanged
+        speechSynthesis.onvoiceschanged = function() {
+            log('SPEECH', `Đã tải ${speechSynthesis.getVoices().length} giọng nói`);
+        };
+    }
+    
+    // Thêm tùy chọn auto-read vào settings
+    addAutoReadOption();
+});
+
+// Thêm tùy chọn tự động đọc
+function addAutoReadOption() {
+    // Kiểm tra nếu đã có chưa
+    if (document.getElementById('autoReadOption')) return;
+    
+    const card = document.querySelector('.card h3:contains("Dịch thuật")')?.parentElement;
+    if (card) {
+        const optionDiv = document.createElement('div');
+        optionDiv.id = 'autoReadOption';
+        optionDiv.style.margin = '10px 0';
+        optionDiv.style.padding = '10px';
+        optionDiv.style.background = '#f0f7ff';
+        optionDiv.style.borderRadius = '8px';
+        optionDiv.style.border = '1px solid #2196F3';
+        
+        optionDiv.innerHTML = `
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <input type="checkbox" id="autoReadCheckbox" onchange="toggleAutoRead(this.checked)">
+                <span style="color: #0d47a1; font-weight: bold;">🔊 Tự động đọc sau khi dịch</span>
+            </label>
+            <small style="color: #666; display: block; margin-top: 5px;">
+                Tự động đọc bản dịch sau khi hoàn thành
+            </small>
+        `;
+        
+        // Chèn sau textarea
+        const textarea = card.querySelector('textarea');
+        if (textarea) {
+            textarea.parentNode.insertBefore(optionDiv, textarea.nextSibling);
+        }
+        
+        // Khôi phục cài đặt từ localStorage
+        const saved = localStorage.getItem('autoReadTranslation');
+        if (saved !== null) {
+            document.getElementById('autoReadCheckbox').checked = saved === 'true';
+        }
+    }
+}
+
+function toggleAutoRead(enabled) {
+    localStorage.setItem('autoReadTranslation', enabled);
+    log('SETTINGS', `Tự động đọc: ${enabled ? 'BẬT' : 'TẮT'}`);
+}
 
         // === HÀM TTS ===
         const pcmToWav = (base64PCM, sampleRate = 24000) => {
@@ -3201,16 +3467,31 @@ async function translateWithAI(text, sourceLang, targetLang) {
             speakText(text, currentVoice.lang);
         }
 
-        async function speakTranslation() {
-            const text = document.getElementById('translationOutput').textContent;
-            if (!text || text.includes('Đang chờ dịch') || text.includes('Vui lòng nhập')) {
-                log('SPEECH', 'Không có văn bản dịch để đọc');
-                return;
-            }
-            
-            const lang = document.getElementById('targetLanguage').value;
-            speakText(text, lang);
-        }
+        
+// Hàm đọc bản dịch
+async function speakTranslation() {
+    const text = document.getElementById('translationOutput').textContent;
+    
+    if (!text || text.includes('Đang chờ dịch') || text.includes('Vui lòng nhập') || 
+        text.includes('⚠️') || text.includes('Lỗi')) {
+        log('SPEECH', 'Không có văn bản dịch hợp lệ để đọc');
+        alert('Không có bản dịch hợp lệ để đọc. Vui lòng dịch trước!');
+        return;
+    }
+    
+    const lang = document.getElementById('targetLanguage').value;
+    speakText(text, lang);
+}
+function autoReadTranslation(text, langCode) {
+    // Hỏi người dùng có muốn đọc không
+    const shouldAutoRead = localStorage.getItem('autoReadTranslation') === 'true';
+    
+    if (shouldAutoRead) {
+        setTimeout(() => {
+            speakText(text, langCode);
+        }, 1000);
+    }
+}
 
         async function speakText(text, langCode) {
             if (isSpeaking) {
