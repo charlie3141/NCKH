@@ -2894,29 +2894,27 @@
         let lastTranslationTime = 0;
         const TRANSLATION_COOLDOWN = 2000;
 
-        // Hàm dịch với Gemini AI (ĐÃ CẬP NHẬT VỚI API KEY MỚI)
-        async function translateWithAI(text, sourceLang, targetLang) {
-            const apiKey = GEMINI_API_KEY;
-            const url = `${GEMINI_TRANSLATE_URL}?key=${apiKey}`;
-            
-            const sourceName = languageNames[sourceLang]?.code || sourceLang;
-            const targetName = languageNames[targetLang]?.code || targetLang;
-            
-            try {
-                const response = await fetch(url, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [{
-                                text: `Translate from ${sourceName} to ${targetName}. 
-                                Maintain natural and formal tone. Output ONLY the translated text, no quotes, no extra notes.
-                                Text: "${text}"`
-                            }]
-                        }]
-                    })
-                });
-                
+        // Hàm dịch với Gemini AI (ĐÃ CẬP NHẬT VỚI API KEY MỚI)async function translateWithAI(text, sourceLang, targetLang) {
+    const url = GEMINI_TRANSLATE_URL;   // <-- không dùng ?key=
+
+    const sourceName = languageNames[sourceLang]?.code || sourceLang;
+    const targetName = languageNames[targetLang]?.code || targetLang;
+
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [{
+                        text: `Translate from ${sourceName} to ${targetName}.
+                        Maintain natural and formal tone. Output ONLY the translated text, no quotes, no extra notes.
+                        Text: "${text}"`
+                    }]
+                }]
+            })
+        });
+
                 if (!response.ok) {
                     throw new Error(`API error: ${response.status}`);
                 }
