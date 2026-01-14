@@ -1221,6 +1221,42 @@
 
                 <div class="controls">
                     <button onclick="translateSentence()" class="blue">Dịch câu</button>
+                    <button onclick="testTranslationDirectly()" class="orange" style="margin-top: 10px;">
+    🧪 Test Dịch Trực Tiếp
+</button>
+
+<script>
+async function testTranslationDirectly() {
+    const testText = "Xin chào, rất vui được gặp bạn";
+    const testSource = "vi-VN";
+    const testTarget = "en-GB";
+    
+    console.log('=== DIRECT TEST START ===');
+    console.log('Testing with:', { testText, testSource, testTarget });
+    
+    try {
+        const response = await fetch("/.netlify/functions/translate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                text: testText,
+                sourceLang: testSource,
+                targetLang: testTarget
+            })
+        });
+        
+        console.log('Response status:', response.status);
+        const result = await response.json();
+        console.log('Direct test result:', result);
+        
+        alert(`Test kết quả:\n\nOriginal: ${testText}\nTranslated: ${result.translated}\n\nStatus: ${response.status}`);
+        
+    } catch (error) {
+        console.error('Direct test failed:', error);
+        alert(`Test thất bại: ${error.message}`);
+    }
+}
+</script>
                     <button onclick="clearTranslation()" class="red">Xóa bản dịch</button>
                 </div>
             </div>
@@ -2950,38 +2986,63 @@ async function translateWithAI(text, sourceLang, targetLang) {
 }
 
         async function translateSentence() {
+    console.log('=== translateSentence START ===');
+    
     const textarea = document.getElementById('translationInput');
     const text = textarea.value.trim();
     const sourceLang = document.getElementById('sourceLanguage').value;
     const targetLang = document.getElementById('targetLanguage').value;
     const outputDiv = document.getElementById('translationOutput');
     
-    console.log('translateSentence called:', { text, sourceLang, targetLang });
+    console.log('Input:', { 
+        text, 
+        sourceLang, 
+        targetLang,
+        textLength: text.length 
+    });
     
     if (!text) {
-        outputDiv.innerHTML = '<span style="color: #F44336;">Vui lòng nhập văn bản!</span>';
+        outputDiv.innerHTML = '<span style="color: #F44336;">⚠️ Vui lòng nhập văn bản để dịch!</span>';
         outputDiv.className = 'conversion-display error';
         return;
     }
     
-    outputDiv.innerHTML = '<span class="loading">Đang dịch... ⏳</span>';
+    // Hiển thị loading
+    outputDiv.innerHTML = '<span class="loading">🔄 Đang dịch... Vui lòng đợi</span>';
     outputDiv.className = 'conversion-display loading';
     
+    // Clear cache
+    const cacheKey = text + '|' + sourceLang + '|' + targetLang;
+    delete translationCache[cacheKey];
+    
     try {
-        // THÊM TRY-CATCH ĐỂ DEBUG
+        console.log('Calling translateWithAI...');
         const translated = await translateWithAI(text, sourceLang, targetLang);
+        
         console.log('Got translation:', translated);
         
+        // Cache kết quả
+        translationCache[cacheKey] = translated;
+        
+        // Hiển thị kết quả
         outputDiv.innerHTML = translated;
         outputDiv.className = 'conversion-display success';
+        
+        // Log
         log('TRANSLATION', `Đã dịch: "${text.substring(0, 30)}..." → "${translated.substring(0, 30)}..."`);
         
+        console.log('=== translateSentence SUCCESS ===');
+        
     } catch (error) {
-        console.error('Translation failed:', error);
-        outputDiv.innerHTML = `<span style="color: #F44336;">
-            Lỗi: ${error.message}<br>
-            Vui lòng thử lại
-        </span>`;
+        console.error('translateSentence failed:', error);
+        
+        outputDiv.innerHTML = `
+            <div style="color: #F44336;">
+                <strong>⚠️ Lỗi dịch thuật:</strong><br>
+                ${error.message || 'Không xác định'}<br>
+                <small>Văn bản gốc: "${text.substring(0, 50)}..."</small>
+            </div>
+        `;
         outputDiv.className = 'conversion-display error';
     }
 }
