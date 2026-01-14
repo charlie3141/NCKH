@@ -10,7 +10,7 @@
             padding: 0;
             box-sizing: border-box;
         }
-
+    
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -1295,12 +1295,15 @@
     </div>
 
     <script>
-        // === CẤU HÌNH TỐC ĐỘ CAO ===
-        const FIREBASE_URL = "https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/sensorData.json";
-        // ĐÃ CẬP NHẬT API KEY MỚI
-        const GEMINI_API_KEY = "/.netlify/functions/gemini"
-        const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent";
-        const GEMINI_TRANSLATE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent";
+    // === CẤU HÌNH TỐC ĐỘ CAO ===
+    const FIREBASE_URL = "https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/sensorData.json";
+
+    // This now points to Netlify (secure)
+    const GEMINI_API_KEY = "/.netlify/functions/gemini";
+
+    // All Gemini requests go through Netlify
+    const GEMINI_API_URL = GEMINI_API_KEY;
+    const GEMINI_TRANSLATE_URL = GEMINI_API_KEY;
         
         // === BIẾN HIỆU CHUẨN ===
         let bentThresholds = [300, 450, 350, 300]; // Giá trị mặc định cho ngưỡng uốn
