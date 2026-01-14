@@ -1186,7 +1186,10 @@
                             <!-- Đề xuất động cho dịch thuật -->
                         </div>
                     </div>
-                    
+                    <!-- Trong phần Card Dịch thuật, thêm nút này: -->
+<button onclick="testTranslationDirectly()" class="orange" style="margin-top: 10px;">
+    🧪 Test Dịch Trực Tiếp
+</button>
                     <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 10px;">
                         <div><strong>Tùy chọn dịch thuật:</strong></div>
                         <div style="display: flex; gap: 15px; margin-top: 10px; flex-wrap: wrap;">
@@ -1226,6 +1229,36 @@
 </button>
 
 <script>
+    async function testTranslationDirectly() {
+    const testText = "Xin chào, rất vui được gặp bạn";
+    const testSource = "vi-VN";
+    const testTarget = "en-GB";
+    
+    console.log('=== DIRECT TEST START ===');
+    console.log('Testing with:', { testText, testSource, testTarget });
+    
+    try {
+        const response = await fetch("/.netlify/functions/translate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                text: testText,
+                sourceLang: testSource,
+                targetLang: testTarget
+            })
+        });
+        
+        console.log('Response status:', response.status);
+        const result = await response.json();
+        console.log('Direct test result:', result);
+        
+        alert(`Test kết quả:\n\nOriginal: ${testText}\nTranslated: ${result.translated}\n\nStatus: ${response.status}`);
+        
+    } catch (error) {
+        console.error('Direct test failed:', error);
+        alert(`Test thất bại: ${error.message}`);
+    }
+}
 async function testTranslationDirectly() {
     const testText = "Xin chào, rất vui được gặp bạn";
     const testSource = "vi-VN";
@@ -2932,10 +2965,11 @@ async function testTranslationDirectly() {
 
         // Hàm dịch với Gemini AI - Sử dụng Netlify Function
       // === HÀM DỊCH VỚI NETLIFY FUNCTION ===
+// === HÀM DỊCH VỚI NETLIFY FUNCTION ===
 async function translateWithAI(text, sourceLang, targetLang) {
     console.log('translateWithAI called:', { text, sourceLang, targetLang });
     
-    // Endpoint đúng
+    // Endpoint đúng từ log của bạn
     const TRANSLATE_URL = "/.netlify/functions/translate";
     
     try {
@@ -3379,10 +3413,10 @@ async function translateWithAI(text, sourceLang, targetLang) {
 
         // === THÊM BIẾN TTS BỔ SUNG ===
         async function speakWithGeminiTTS(text, langCode) {
-            // Luôn fallback về Web Speech
-            console.log('Gemini TTS requested but using Web Speech fallback');
-            speakWithWebSpeech(text, langCode);
-        }
+    // LUÔN dùng Web Speech vì Gemini TTS không khả dụng
+    console.log('Gemini TTS requested but using Web Speech fallback');
+    speakWithWebSpeech(text, langCode);
+}
 
         const data = await response.json();
         
