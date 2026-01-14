@@ -2894,7 +2894,8 @@
         let lastTranslationTime = 0;
         const TRANSLATION_COOLDOWN = 2000;
 
-        // Hàm dịch với Gemini AI (ĐÃ CẬP NHẬT VỚI API KEY MỚI)async function translateWithAI(text, sourceLang, targetLang) {
+        // Hàm dịch với Gemini AI (ĐÃ CẬP NHẬT VỚI API KEY MỚI)
+    async function translateWithAI(text, sourceLang, targetLang) {
     const url = GEMINI_TRANSLATE_URL;   // <-- không dùng ?key=
 
     const sourceName = languageNames[sourceLang]?.code || sourceLang;
