@@ -3299,16 +3299,10 @@
 
         // === THÊM BIẾN TTS BỔ SUNG ===
         async function speakWithGeminiTTS(text, langCode) {
-    try {
-        const response = await fetch(GEMINI_TTS_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                text: text,
-                voiceName: "Aoede",
-                langCode: langCode
-            })
-        });
+            // Luôn fallback về Web Speech
+            console.log('Gemini TTS requested but using Web Speech fallback');
+            speakWithWebSpeech(text, langCode);
+        }
 
         const data = await response.json();
         
