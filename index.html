@@ -2894,24 +2894,34 @@
 
         // Hàm dịch với Gemini AI - Sử dụng Netlify Function
         async function translateWithAI(text, sourceLang, targetLang) {
-        const sourceName = languageNames[sourceLang]?.code || sourceLang;
-        const targetName = languageNames[targetLang]?.code || targetLang;
-    
+        console.log('Calling translate function with:', { text, sourceLang, targetLang });
+        
         try {
-            const response = await fetch(GEMINI_TRANSLATE_URL, {
+            const response = await fetch("/.netlify/functions/translate", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { 
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
                 body: JSON.stringify({
                     text: text,
-                    sourceLang: sourceName,
-                    targetLang: targetName
+                    sourceLang: sourceLang,
+                    targetLang: targetLang
                 })
             });
     
-            if (!response.ok) throw new Error(`API error: ${response.status}`);
+            console.log('Response status:', response.status);
+            const responseText = await response.text();
+            console.log('Raw response:', responseText);
             
-            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${responseText}`);
+            }
+            
+            const data = JSON.parse(responseText);
+            console.log('Parsed data:', data);
             return data.translated || "";
+            
         } catch (error) {
             console.error("Translation Error:", error);
             throw error;
@@ -2920,50 +2930,41 @@
 
 
         async function translateSentence() {
-            const textarea = document.getElementById('translationInput');
-            const text = textarea.value.trim();
-            const sourceLang = document.getElementById('sourceLanguage').value;
-            const targetLang = document.getElementById('targetLanguage').value;
-            const outputDiv = document.getElementById('translationOutput');
-            
-            if (!text) {
-                outputDiv.innerHTML = '<span style="color: #F44336;">Vui lòng nhập văn bản để dịch!</span>';
-                outputDiv.className = 'conversion-display error';
-                return;
-            }
-            
-            const now = Date.now();
-            if (now - lastTranslationTime < TRANSLATION_COOLDOWN) {
-                outputDiv.innerHTML = '<span style="color: #FF9800;">Vui lòng đợi trước khi dịch lại...</span>';
-                outputDiv.className = 'conversion-display';
-                return;
-            }
-            
-            const cacheKey = text + '|' + sourceLang + '|' + targetLang;
-            if (translationCache[cacheKey]) {
-                outputDiv.innerHTML = translationCache[cacheKey];
-                outputDiv.className = 'conversion-display success';
-                lastTranslationTime = now;
-                return;
-            }
-            
-            outputDiv.innerHTML = '<span class="loading">Đang dịch với AI... ⏳</span>';
-            outputDiv.className = 'conversion-display loading';
-            
-            try {
-                const translated = await translateWithAI(text, sourceLang, targetLang);
-                translationCache[cacheKey] = translated;
-                outputDiv.innerHTML = translated;
-                outputDiv.className = 'conversion-display success';
-                lastTranslationTime = Date.now();
-                log('TRANSLATION', `Đã dịch từ ${sourceLang} sang ${targetLang}: ${translated}`);
-            } catch (error) {
-                console.error('Translation error:', error);
-                outputDiv.innerHTML = '<span style="color: #F44336;">Dịch thuật thất bại. Vui lòng thử lại sau.</span>';
-                outputDiv.className = 'conversion-display error';
-            }
-        }
-
+    const textarea = document.getElementById('translationInput');
+    const text = textarea.value.trim();
+    const sourceLang = document.getElementById('sourceLanguage').value;
+    const targetLang = document.getElementById('targetLanguage').value;
+    const outputDiv = document.getElementById('translationOutput');
+    
+    console.log('translateSentence called:', { text, sourceLang, targetLang });
+    
+    if (!text) {
+        outputDiv.innerHTML = '<span style="color: #F44336;">Vui lòng nhập văn bản!</span>';
+        outputDiv.className = 'conversion-display error';
+        return;
+    }
+    
+    outputDiv.innerHTML = '<span class="loading">Đang dịch... ⏳</span>';
+    outputDiv.className = 'conversion-display loading';
+    
+    try {
+        // THÊM TRY-CATCH ĐỂ DEBUG
+        const translated = await translateWithAI(text, sourceLang, targetLang);
+        console.log('Got translation:', translated);
+        
+        outputDiv.innerHTML = translated;
+        outputDiv.className = 'conversion-display success';
+        log('TRANSLATION', `Đã dịch: "${text.substring(0, 30)}..." → "${translated.substring(0, 30)}..."`);
+        
+    } catch (error) {
+        console.error('Translation failed:', error);
+        outputDiv.innerHTML = `<span style="color: #F44336;">
+            Lỗi: ${error.message}<br>
+            Vui lòng thử lại
+        </span>`;
+        outputDiv.className = 'conversion-display error';
+    }
+}
         function clearTranslation() {
             document.getElementById('translationOutput').innerHTML = 'Đang chờ dịch...';
             document.getElementById('translationOutput').className = 'conversion-display';
