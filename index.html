@@ -1297,12 +1297,9 @@
     <script>
     // === CẤU HÌNH TỐC ĐỘ CAO ===
     const FIREBASE_URL = "https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/sensorData.json";
+    const GEMINI_API_KEY = "";  // không dùng nữa
+    const GEMINI_API_URL = "/.netlify/functions/gemini";
 
-    // This now points to Netlify (secure)
-    const GEMINI_API_KEY = "/.netlify/functions/gemini";
-
-    // All Gemini requests go through Netlify
-    const GEMINI_API_URL = GEMINI_API_KEY;
     const GEMINI_TRANSLATE_URL = GEMINI_API_KEY;
         
         // === BIẾN HIỆU CHUẨN ===
@@ -2896,6 +2893,7 @@
 
         // Hàm dịch với Gemini AI (ĐÃ CẬP NHẬT VỚI API KEY MỚI)
     async function translateWithAI(text, sourceLang, targetLang) {
+    const apiKey = GEMINI_API_KEY;
     const url = GEMINI_TRANSLATE_URL;   // <-- không dùng ?key=
 
     const sourceName = languageNames[sourceLang]?.code || sourceLang;
@@ -3028,62 +3026,63 @@
         };
 
         async function speakWithRetry(text, langCode, retries = 3) {
-            const voiceName = voiceConfigs[currentVoice.gender]?.[langCode] || 
-                            (currentVoice.gender === 'male' ? 'Aoede' : 'Kore');
-            
-            for (let i = 0; i < retries; i++) {
-                try {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const voiceName = voiceConfigs[currentVoice.gender]?.[langCode] || 
+                    (currentVoice.gender === 'male' ? 'Aoede' : 'Kore');
+    
+    for (let i = 0; i < retries; i++) {
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-                    const response = await fetch(
-                        `${GEMINI_API_URL}?key=${GEMINI_API_KEY}`,
-                        {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            signal: controller.signal,
-                            body: JSON.stringify({
-                                contents: [{ 
-                                    role: "user",
-                                    parts: [{ text: `Say this naturally in a clear voice: ${text}` }] 
-                                }],
-                                generationConfig: {
-                                    responseModalities: ["AUDIO"],
-                                    speechConfig: {
-                                        voiceConfig: { 
-                                            prebuiltVoiceConfig: { 
-                                                voiceName: voiceName 
-                                            } 
-                                        }
-                                    }
+            // 🔥 FIX: gọi Netlify function trực tiếp
+            const response = await fetch(
+                GEMINI_API_URL,     // <-- KHÔNG dùng ?key=...
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    signal: controller.signal,
+                    body: JSON.stringify({
+                        contents: [{ 
+                            role: "user",
+                            parts: [{ text: `Say this naturally in a clear voice: ${text}` }] 
+                        }],
+                        generationConfig: {
+                            responseModalities: ["AUDIO"],
+                            speechConfig: {
+                                voiceConfig: { 
+                                    prebuiltVoiceConfig: { 
+                                        voiceName: voiceName 
+                                    } 
                                 }
-                            }),
+                            }
                         }
-                    );
-
-                    clearTimeout(timeoutId);
-                    
-                    if (!response.ok) {
-                        const errorData = await response.json().catch(() => ({}));
-                        throw new Error(`API_ERROR_${response.status}: ${errorData?.error?.message || response.statusText}`);
-                    }
-
-                    const data = await response.json();
-                    const candidate = data.candidates?.[0];
-                    if (!candidate) throw new Error("No candidates found in response");
-                    
-                    const part = candidate.content?.parts?.find(p => p.inlineData && p.inlineData.data);
-                    const audioData = part?.inlineData?.data;
-                    
-                    if (audioData) return audioData;
-                    throw new Error("Không nhận được dữ liệu âm thanh từ AI.");
-                } catch (err) {
-                    if (i === retries - 1) throw err;
-                    const delay = Math.pow(2, i) * 1000;
-                    await new Promise(r => setTimeout(r, delay));
+                    })
                 }
+            );
+
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(`API_ERROR_${response.status}: ${errorData?.error?.message || response.statusText}`);
             }
+
+            const data = await response.json();
+            const candidate = data.candidates?.[0];
+            if (!candidate) throw new Error("No candidates found in response");
+            
+            const part = candidate.content?.parts?.find(p => p.inlineData && p.inlineData.data);
+            const audioData = part?.inlineData?.data;
+            
+            if (audioData) return audioData;
+            throw new Error("Không nhận được dữ liệu âm thanh từ AI.");
+        } catch (err) {
+            if (i === retries - 1) throw err;
+            const delay = Math.pow(2, i) * 1000;
+            await new Promise(r => setTimeout(r, delay));
         }
+    }
+}
 
         async function speakVietnameseSentence() {
             const text = convertedFullSentence || document.getElementById('convertedSentenceDisplay').textContent;
@@ -3276,7 +3275,8 @@
         // === KHỞI TẠO ===
         document.addEventListener('DOMContentLoaded', function() {
             log('SYSTEM', 'Ứng dụng tối ưu đã khởi động với tính năng hiệu chuẩn');
-            log('SYSTEM', `Sử dụng API Key Gemini mới: ${GEMINI_API_KEY.substring(0, 10)}...`);
+            log('SYSTEM', `Gemini connected via Netlify proxy`);
+
             
             // Khởi tạo FPS counter
             function updateFPS() {
