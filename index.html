@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ứng dụng Dịch Thủ Ngữ với Google TTS Proxy</title>
-    <!-- CSS giữ nguyên từ code gốc -->
     <style>
+        /* CSS đã được tối ưu và giữ nguyên từ code gốc */
         * {
             margin: 0;
             padding: 0;
@@ -960,6 +960,42 @@
             margin-top: 4px;
             display: inline-block;
         }
+        
+        .speech-btn.loading {
+            background: linear-gradient(to right, #FF9800, #FF5722);
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        
+        .tts-status {
+            text-align: center;
+            margin-top: 10px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
+        
+        .tts-quality-selector {
+            display: flex;
+            gap: 5px;
+            margin: 10px 0;
+            justify-content: center;
+        }
+        
+        .quality-btn {
+            padding: 5px 10px;
+            background: #e0e0e0;
+            border: none;
+            border-radius: 15px;
+            font-size: 0.7rem;
+            cursor: pointer;
+        }
+        
+        .quality-btn.active {
+            background: #4CAF50;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -1002,7 +1038,7 @@
                     
                     <!-- Chuyển đổi TTS -->
                     <div class="tts-toggle">
-                        <button class="tts-toggle-btn active" id="useGoogleTTS" onclick="toggleTTSMode(true)">🔊 Google TTS</button>
+                        <button class="tts-toggle-btn active" id="useGoogleTTS" onclick="toggleTTSMode(true)">🔊 Google TTS Proxy</button>
                         <button class="tts-toggle-btn" id="useWebSpeech" onclick="toggleTTSMode(false)">🎤 Web Speech</button>
                     </div>
                     
@@ -1016,17 +1052,33 @@
                     <div class="voice-options">
                         <div class="voice-btn male active" data-gender="male" data-lang="vi-VN" onclick="selectVoice(this)">👨 Nam Tiếng Việt</div>
                         <div class="voice-btn female" data-gender="female" data-lang="vi-VN" onclick="selectVoice(this)">👩 Nữ Tiếng Việt</div>
-                        <div class="voice-btn male" data-gender="male" data-lang="en-GB" onclick="selectVoice(this)">👨 Nam Tiếng Anh</div>
-                        <div class="voice-btn female" data-gender="female" data-lang="en-GB" onclick="selectVoice(this)">👩 Nữ Tiếng Anh</div>
+                        <div class="voice-btn male" data-gender="male" data-lang="en-US" onclick="selectVoice(this)">👨 Nam Tiếng Anh (Mỹ)</div>
+                        <div class="voice-btn female" data-gender="female" data-lang="en-US" onclick="selectVoice(this)">👩 Nữ Tiếng Anh (Mỹ)</div>
+                        <div class="voice-btn male" data-gender="male" data-lang="en-GB" onclick="selectVoice(this)">👨 Nam Tiếng Anh (Anh)</div>
                     </div>
                     
-                    <div class="language-voice-display" id="currentVoiceDisplay">Hiện tại: Nam Tiếng Việt (Google TTS)</div>
+                    <!-- Accent selector -->
+                    <div class="accent-selector">
+                        <div class="sensor-label" style="width: 100%; text-align: center; margin: 10px 0 5px 0;">ACCENT TIẾNG VIỆT</div>
+                        <button class="accent-btn north active" data-accent="north" onclick="selectAccent(this)">🇻🇳 Miền Bắc</button>
+                        <button class="accent-btn central" data-accent="central" onclick="selectAccent(this)">🇻🇳 Miền Trung</button>
+                        <button class="accent-btn south" data-accent="south" onclick="selectAccent(this)">🇻🇳 Miền Nam</button>
+                    </div>
+                    
+                    <div class="language-voice-display" id="currentVoiceDisplay">Hiện tại: Nam Tiếng Việt (Google TTS Proxy)</div>
                     
                     <!-- Điều khiển giọng nói -->
                     <div class="speech-controls">
                         <button class="speech-btn" onclick="speakVietnameseSentence()" id="speakVnBtn">🔊 Đọc Tiếng Việt</button>
                         <button class="speech-btn blue" onclick="speakTranslation()" id="speakTransBtn">🔈 Đọc Bản dịch</button>
                         <button class="speech-btn red" onclick="stopAllSpeech()" id="stopSpeechBtn">⏹ Dừng đọc</button>
+                    </div>
+                    
+                    <div class="tts-status" id="ttsStatus" style="display: none;">
+                        <div class="ai-speech-status">
+                            <span class="ai-loading">⏳</span>
+                            <span id="ttsLoadingText">Đang xử lý giọng nói...</span>
+                        </div>
                     </div>
                     
                     <div class="audio-visualizer" id="audioVisualizer"></div>
@@ -1130,6 +1182,8 @@
                                     <option value="ja">Tiếng Nhật</option>
                                     <option value="ko">Tiếng Hàn</option>
                                     <option value="zh-CN">Tiếng Trung</option>
+                                    <option value="fr">Tiếng Pháp</option>
+                                    <option value="es">Tiếng Tây Ban Nha</option>
                                 </select>
                             </div>
                             <div>
@@ -1140,6 +1194,8 @@
                                     <option value="ja">Tiếng Nhật</option>
                                     <option value="ko">Tiếng Hàn</option>
                                     <option value="zh-CN">Tiếng Trung</option>
+                                    <option value="fr">Tiếng Pháp</option>
+                                    <option value="es">Tiếng Tây Ban Nha</option>
                                 </select>
                             </div>
                         </div>
@@ -1225,77 +1281,73 @@
         </div>
     </div>
 
-<script>
-    // === CẤU HÌNH TỐC ĐỘ CAO ===
-    const FIREBASE_URL = "https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/sensorData.json";
-    
-    // === CONFIGURATION FOR GOOGLE TTS PROXY ===
-    const TTS_PROXY_SERVERS = [
-        'https://translate.google.com/translate_tts',
-        'https://translate.googleapis.com/translate_tts'
-    ];
-    
-    const CORS_PROXY = 'https://corsproxy.io/?';
-    const USE_CORS_PROXY = true;
-    
-    // === BIẾN HIỆU CHUẨN ===
-    let bentThresholds = [300, 450, 350, 300];
-    const STRAIGHT_THRESHOLDS = [75, 75, 75, 75];
-    
-    let isCalibrating = false;
-    let calibrationTimeout = null;
-    let calibrationInterval = null;
-    let calibrationCountdown = 10;
-    let calibrationStartTime = 0;
-    let calibrationMaxValues = [0, 0, 0, 0];
-    let calibrationCurrentSensor = 0;
-    let calibrationStep = "waiting";
-    
-    // === BIẾN TỐI ƯU HÓA ===
-    let firebaseData = null;
-    let lastUpdateTime = 0;
-    let autoRefresh = true;
-    let autoRefreshInterval;
-    let logEntries = [];
-    const MAX_LOG_ENTRIES = 20;
-    let isFetching = false;
-    let lastFirebaseData = null;
-    let uiUpdateScheduled = false;
-    let lastFrameTime = performance.now();
-    let frameCount = 0;
-    let currentFPS = 60;
-    let pollingInterval = 300;
-    let turboMode = false;
-    let currentFetchController = null;
-    
-    // Biến xây dựng câu
-    let slot1 = "";
-    let slot2 = "";
-    let displayBuffer = "";
-    let convertedCurrentWord = "";
-    let sentenceWords = [];
-    let fullSentence = "";
-    let convertedFullSentence = "";
-    
-    // Trạng thái cảm biến uốn
-    let flexStates = [0, 0, 0, 0];
-    let lastFlexStates = [-1, -1, -1, -1];
-    let stableCount = 0;
-    let lastDetectedIndex = -1;
-    let holdStartMs = 0;
-    let holdFired = false;
-    const DEBOUNCE_COUNT = 3;
-    const HOLD_MS_DEFAULT = 1000;
-    const POST_HOLD_COOLDOWN = 800;
-    let lastActionMs = 0;
-    let lastStateString = '';
-    
-    // CACHE cho tối ưu hóa
-    const mappingCache = new Map();
-    const vietnameseCache = new Map();
-    let translationCache = {};
-    let audioCache = new Map();
-    
+    <script>
+        // === CẤU HÌNH TỐC ĐỘ CAO ===
+        const FIREBASE_URL = "https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/sensorData.json";
+        
+        // === CẤU HÌNH GOOGLE TTS PROXY ===
+        const GOOGLE_TTS_URL = 'https://translate.google.com/translate_tts';
+        const TTS_PROXY_URL = 'https://corsproxy.io/?';
+        const USE_PROXY = true;
+        
+        // === BIẾN HIỆU CHUẨN ===
+        let bentThresholds = [300, 450, 350, 300];
+        const STRAIGHT_THRESHOLDS = [75, 75, 75, 75];
+        
+        let isCalibrating = false;
+        let calibrationTimeout = null;
+        let calibrationInterval = null;
+        let calibrationCountdown = 10;
+        let calibrationStartTime = 0;
+        let calibrationMaxValues = [0, 0, 0, 0];
+        let calibrationCurrentSensor = 0;
+        let calibrationStep = "waiting";
+        
+        // === BIẾN TỐI ƯU HÓA ===
+        let firebaseData = null;
+        let lastUpdateTime = 0;
+        let autoRefresh = true;
+        let autoRefreshInterval;
+        let logEntries = [];
+        const MAX_LOG_ENTRIES = 20;
+        let isFetching = false;
+        let lastFirebaseData = null;
+        let uiUpdateScheduled = false;
+        let lastFrameTime = performance.now();
+        let frameCount = 0;
+        let currentFPS = 60;
+        let pollingInterval = 300;
+        let turboMode = false;
+        let currentFetchController = null;
+        
+        // Biến xây dựng câu
+        let slot1 = "";
+        let slot2 = "";
+        let displayBuffer = "";
+        let convertedCurrentWord = "";
+        let sentenceWords = [];
+        let fullSentence = "";
+        let convertedFullSentence = "";
+        
+        // Trạng thái cảm biến uốn
+        let flexStates = [0, 0, 0, 0];
+        let lastFlexStates = [-1, -1, -1, -1];
+        let stableCount = 0;
+        let lastDetectedIndex = -1;
+        let holdStartMs = 0;
+        let holdFired = false;
+        const DEBOUNCE_COUNT = 3;
+        const HOLD_MS_DEFAULT = 1000;
+        const POST_HOLD_COOLDOWN = 800;
+        let lastActionMs = 0;
+        let lastStateString = '';
+        
+        // CACHE cho tối ưu hóa
+        const mappingCache = new Map();
+        const vietnameseCache = new Map();
+        let translationCache = {};
+        let audioCache = new Map();
+        
         // === BẢNG DỮ LIỆU ===
         const tableA = [
             ["IAY","IC","ICH","IE","IEC","IEM","IEN","IENG","IEO"],
@@ -1325,49 +1377,7 @@
             [ ["GH","KH","NG"],["NGH","NH","PH"],["TH","TR","_"] ]
         ];
 
-    
-    // Ánh xạ trạng thái MPU
-    const mpuStateMap = {
-        "Up": 0,
-        "Down": 1,
-        "Left": 2,
-        "Right": 3,
-        "Forward": 4,
-        "Backward": 5
-    };
-
-    // Danh sách cụm từ đề xuất
-        // Danh sách cụm từ đề xuất
-        const commonPhrases = [
-            "Xin chào, rất vui được gặp bạn",
-            "Chào buổi sáng",
-            "Chào buổi chiều",
-            "Chào buổi tối",
-            "Làm ơn cho tôi xin hóa đơn",
-            "Bạn khỏe không?",
-            "Cảm ơn bạn rất nhiều",
-            "Làm ơn cho tôi hỏi đường",
-            "Chúc một ngày tốt lành",
-            "Tôi yêu ngôn ngữ này",
-            "Hẹn gặp lại sau",
-            "Tôi đói bụng",
-            "Bao nhiêu tiền?",
-            "Tôi không hiểu",
-            "Bạn có thể nói chậm hơn được không?",
-            "Bạn tên là gì?",
-            "Tôi tên là...",
-            "Rất vui được làm quen",
-            "Tôi cần giúp đỡ",
-            "Làm ơn chỉ đường đến nhà ga",
-            "Nhà vệ sinh ở đâu?",
-            "Tôi bị lạc đường",
-            "Bạn nói tiếng Anh được không?",
-            "Xin lỗi, tôi không nghe rõ",
-            "Bạn có thể lặp lại không?"
-        ];
-
-
-    // Bảng chuyển đổi Tiếng Việt (giữ nguyên)
+        // Bảng chuyển đổi Tiếng Việt
         const vietnameseTable = [
             {key: "IAY", forms: ["iáy", "iày", "iảy", "iãy", "iạy", "iay", "iấy", "iầy", "iẩy", "iẫy", "iậy", "iây", "iắy", "iằy", "iẳy", "iẵy", "iặy", "iăy"]},
             {key: "IC", forms: ["íc", "ìc", "ỉc", "ĩc", "ịc", "ic", "íc", "ìc", "ỉc", "ĩc", "ịc", "ic", "íc", "ìc", "ỉc", "ĩc", "ịc", "ic"]},
@@ -1511,96 +1521,491 @@
             {key: "UYU", forms: ["uýu", "uỳu", "uỷu", "uỹu", "uỵu", "uyu", "uýu", "uỳu", "uỷu", "uỹu", "uỵu", "uyu", "uýu", "uỳu", "uỷu", "uỹu", "uỵu", "uyu"]},
             {key: "YEM", forms: ["yém", "yèm", "yẻm", "yẽm", "yẹm", "yem", "yếm", "yềm", "yểm", "yễm", "yệm", "yêm", "yém", "yèm", "yẻm", "yẽm", "yẹm", "yem"]},
             {key: "OAP", forms: ["oáp", "oàp", "oảp", "oãp", "oạp", "oap", "oáp", "oàp", "oảp", "oãp", "oạp", "oap", "oáp", "oàp", "oảp", "oãp", "oạp", "oap"]}
-       
         ];
 
-    // === GOOGLE TTS CONFIGURATION ===
-    const TTS_CONFIG = {
-        languages: {
-            'vi-VN': {
-                name: 'Tiếng Việt',
-                voices: {
-                    male: { speed: 0.9, pitch: 'low' },
-                    female: { speed: 1.0, pitch: 'high' }
-                }
-            },
-            'en-GB': {
-                name: 'Tiếng Anh (Anh)',
-                voices: {
-                    male: { speed: 0.9, pitch: 'low' },
-                    female: { speed: 1.0, pitch: 'high' }
-                }
-            },
-            'en-US': {
-                name: 'Tiếng Anh (Mỹ)',
-                voices: {
-                    male: { speed: 0.9, pitch: 'low' },
-                    female: { speed: 1.0, pitch: 'high' }
-                }
-            },
-            'ja-JP': {
-                name: 'Tiếng Nhật',
-                voices: {
-                    male: { speed: 0.9, pitch: 'low' },
-                    female: { speed: 1.0, pitch: 'high' }
-                }
-            },
-            'ko-KR': {
-                name: 'Tiếng Hàn',
-                voices: {
-                    male: { speed: 0.9, pitch: 'low' },
-                    female: { speed: 1.0, pitch: 'high' }
-                }
-            },
-            'zh-CN': {
-                name: 'Tiếng Trung',
-                voices: {
-                    male: { speed: 0.9, pitch: 'low' },
-                    female: { speed: 1.0, pitch: 'high' }
-                }
-            }
-        },
+        // Ánh xạ trạng thái MPU
+        const mpuStateMap = {
+            "Up": 0,
+            "Down": 1,
+            "Left": 2,
+            "Right": 3,
+            "Forward": 4,
+            "Backward": 5
+        };
+
+        // Danh sách cụm từ đề xuất
+        const commonPhrases = [
+            "Xin chào, rất vui được gặp bạn",
+            "Chào buổi sáng",
+            "Chào buổi chiều",
+            "Chào buổi tối",
+            "Làm ơn cho tôi xin hóa đơn",
+            "Bạn khỏe không?",
+            "Cảm ơn bạn rất nhiều",
+            "Làm ơn cho tôi hỏi đường",
+            "Chúc một ngày tốt lành",
+            "Tôi yêu ngôn ngữ này",
+            "Hẹn gặp lại sau",
+            "Tôi đói bụng",
+            "Bao nhiêu tiền?",
+            "Tôi không hiểu",
+            "Bạn có thể nói chậm hơn được không?",
+            "Bạn tên là gì?",
+            "Tôi tên là...",
+            "Rất vui được làm quen",
+            "Tôi cần giúp đỡ",
+            "Làm ơn chỉ đường đến nhà ga",
+            "Nhà vệ sinh ở đâu?",
+            "Tôi bị lạc đường",
+            "Bạn nói tiếng Anh được không?",
+            "Xin lỗi, tôi không nghe rõ",
+            "Bạn có thể lặp lại không?"
+        ];
+
+        // === HÀM GOOGLE TTS PROXY ===
+        let isSpeaking = false;
+        let currentSpeech = null;
+        let audioVisualizerInterval = null;
+        let useGoogleTTS = true;
         
-        // Google language codes mapping
-        googleLangCodes: {
+        let currentVoice = {
+            lang: 'vi-VN',
+            gender: 'male',
+            accent: 'north',
+            speed: 1.0,
+            pitch: 1.0
+        };
+
+        const LANGUAGE_MAPPING = {
+            'vi': 'vi-VN',
             'vi-VN': 'vi',
-            'en-GB': 'en',
+            'en': 'en-US',
             'en-US': 'en',
+            'en-GB': 'en-GB',
+            'ja': 'ja-JP',
             'ja-JP': 'ja',
+            'ko': 'ko-KR',
             'ko-KR': 'ko',
             'zh-CN': 'zh-CN',
+            'zh-TW': 'zh-TW',
+            'fr': 'fr-FR',
             'fr-FR': 'fr',
+            'es': 'es-ES',
             'es-ES': 'es',
+            'de': 'de-DE',
             'de-DE': 'de'
-        },
-        
-        // Language display names
-        langDisplayNames: {
-            'vi-VN': 'Tiếng Việt',
-            'en-GB': 'Tiếng Anh (Anh)',
-            'en-US': 'Tiếng Anh (Mỹ)',
-            'ja-JP': 'Tiếng Nhật',
-            'ko-KR': 'Tiếng Hàn',
-            'zh-CN': 'Tiếng Trung'
+        };
+
+        const VOICE_PROFILES = {
+            'vi-VN': {
+                male: { langCode: 'vi', speed: 0.95, pitch: 0.9, name: 'Nam Tiếng Việt' },
+                female: { langCode: 'vi', speed: 1.05, pitch: 1.1, name: 'Nữ Tiếng Việt' }
+            },
+            'en-US': {
+                male: { langCode: 'en', speed: 1.0, pitch: 0.95, name: 'Nam Tiếng Anh (Mỹ)' },
+                female: { langCode: 'en', speed: 1.1, pitch: 1.05, name: 'Nữ Tiếng Anh (Mỹ)' }
+            },
+            'en-GB': {
+                male: { langCode: 'en', speed: 0.95, pitch: 0.9, name: 'Nam Tiếng Anh (Anh)' },
+                female: { langCode: 'en', speed: 1.0, pitch: 1.0, name: 'Nữ Tiếng Anh (Anh)' }
+            },
+            'ja-JP': {
+                male: { langCode: 'ja', speed: 0.9, pitch: 0.85, name: 'Nam Tiếng Nhật' },
+                female: { langCode: 'ja', speed: 1.0, pitch: 1.1, name: 'Nữ Tiếng Nhật' }
+            },
+            'ko-KR': {
+                male: { langCode: 'ko', speed: 0.95, pitch: 0.9, name: 'Nam Tiếng Hàn' },
+                female: { langCode: 'ko', speed: 1.05, pitch: 1.05, name: 'Nữ Tiếng Hàn' }
+            },
+            'zh-CN': {
+                male: { langCode: 'zh-CN', speed: 0.9, pitch: 0.85, name: 'Nam Tiếng Trung' },
+                female: { langCode: 'zh-CN', speed: 1.0, pitch: 1.0, name: 'Nữ Tiếng Trung' }
+            }
+        };
+
+        async function speakWithGoogleTTS(text, lang = 'vi-VN', gender = 'male', speed = 1.0, pitch = 1.0) {
+            if (!text || text.trim() === '') {
+                showTTSError('Không có văn bản để đọc');
+                return;
+            }
+            
+            if (isSpeaking) {
+                stopAllSpeech();
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
+            const voiceProfile = VOICE_PROFILES[lang]?.[gender] || VOICE_PROFILES['vi-VN']['male'];
+            const langCode = LANGUAGE_MAPPING[lang] || lang.split('-')[0];
+            
+            const cacheKey = `${text}_${lang}_${gender}_${speed}_${pitch}`;
+            
+            if (audioCache.has(cacheKey)) {
+                const cachedAudio = audioCache.get(cacheKey);
+                playCachedAudio(cachedAudio, text);
+                return;
+            }
+            
+            try {
+                showTTSError('');
+                document.getElementById('speakVnBtn').classList.add('loading');
+                
+                const encodedText = encodeURIComponent(text);
+                const ttsParams = new URLSearchParams({
+                    ie: 'UTF-8',
+                    client: 'tw-ob',
+                    q: encodedText,
+                    tl: langCode,
+                    ttsspeed: speed.toString(),
+                    total: '1',
+                    idx: '0',
+                    textlen: text.length.toString()
+                });
+                
+                let ttsUrl = `${GOOGLE_TTS_URL}?${ttsParams.toString()}`;
+                
+                if (USE_PROXY) {
+                    ttsUrl = `${TTS_PROXY_URL}${encodeURIComponent(ttsUrl)}`;
+                }
+                
+                const response = await fetch(ttsUrl, {
+                    headers: {
+                        'Accept': 'audio/mpeg',
+                        'Content-Type': 'audio/mpeg',
+                        'Referer': 'https://translate.google.com/',
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const audioBlob = await response.blob();
+                const audioUrl = URL.createObjectURL(audioBlob);
+                
+                const audioData = {
+                    url: audioUrl,
+                    blob: audioBlob,
+                    timestamp: Date.now()
+                };
+                audioCache.set(cacheKey, audioData);
+                
+                if (audioCache.size > 50) {
+                    const oldestKey = audioCache.keys().next().value;
+                    audioCache.delete(oldestKey);
+                }
+                
+                playAudio(audioUrl, text, voiceProfile.name);
+                
+            } catch (error) {
+                console.error('Google TTS Proxy Error:', error);
+                showTTSError(`Lỗi TTS: ${error.message}. Thử Web Speech...`);
+                
+                speakWithWebSpeech(text, lang);
+            } finally {
+                document.getElementById('speakVnBtn').classList.remove('loading');
+            }
         }
-    };
 
-    // Biến tổng hợp giọng nói
-    let isSpeaking = false;
-    let currentSpeech = null;
-    let audioVisualizerInterval = null;
-    
-    // Chế độ TTS - Mặc định dùng Google TTS Proxy
-    let useGoogleTTS = true;
-    
-    // Cài đặt giọng nói hiện tại
-    let currentVoice = {
-        lang: 'vi-VN',
-        gender: 'male',
-        accent: 'vn-native'
-    };
+        function playCachedAudio(audioData, text) {
+            playAudio(audioData.url, text, 'Từ cache');
+        }
 
-        // === HÀM HIỆU CHUẨN (giữ nguyên) ===
+        function playAudio(audioUrl, text, source = 'Google TTS') {
+            if (isSpeaking) {
+                stopAllSpeech();
+            }
+            
+            const audio = new Audio(audioUrl);
+            currentSpeech = audio;
+            
+            audio.preload = 'auto';
+            audio.volume = 1.0;
+            
+            audio.onplay = () => {
+                isSpeaking = true;
+                updateSpeechButtons(true);
+                startAudioVisualizer();
+                log('TTS', `Bắt đầu đọc (${source}): "${text.substring(0, 50)}..."`);
+            };
+            
+            audio.onended = () => {
+                isSpeaking = false;
+                currentSpeech = null;
+                updateSpeechButtons(false);
+                stopAudioVisualizer();
+                log('TTS', 'Kết thúc đọc');
+            };
+            
+            audio.onerror = (e) => {
+                console.error('Audio playback error:', e);
+                isSpeaking = false;
+                currentSpeech = null;
+                updateSpeechButtons(false);
+                stopAudioVisualizer();
+                log('TTS', `Lỗi phát âm thanh: ${e.message}`);
+            };
+            
+            audio.play().catch(e => {
+                console.error('Playback failed:', e);
+                showTTSError(`Không thể phát âm thanh: ${e.message}`);
+            });
+        }
+
+        function speakWithWebSpeech(text, lang = 'vi-VN') {
+            if (!('speechSynthesis' in window)) {
+                showTTSError('Trình duyệt không hỗ trợ Web Speech API');
+                return;
+            }
+            
+            if (isSpeaking) {
+                window.speechSynthesis.cancel();
+            }
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = lang;
+            utterance.rate = currentVoice.speed;
+            utterance.pitch = currentVoice.pitch;
+            utterance.volume = 1.0;
+            
+            const voices = window.speechSynthesis.getVoices();
+            const targetVoice = voices.find(voice => 
+                voice.lang.startsWith(lang) && 
+                voice.name.toLowerCase().includes(currentVoice.gender)
+            );
+            
+            if (targetVoice) {
+                utterance.voice = targetVoice;
+            }
+            
+            utterance.onstart = () => {
+                isSpeaking = true;
+                updateSpeechButtons(true);
+                startAudioVisualizer();
+                log('TTS', `Web Speech bắt đầu: "${text.substring(0, 50)}..."`);
+            };
+            
+            utterance.onend = () => {
+                isSpeaking = false;
+                updateSpeechButtons(false);
+                stopAudioVisualizer();
+                log('TTS', 'Web Speech kết thúc');
+            };
+            
+            utterance.onerror = (event) => {
+                console.error('SpeechSynthesis Error:', event);
+                isSpeaking = false;
+                updateSpeechButtons(false);
+                stopAudioVisualizer();
+                log('TTS', `Lỗi Web Speech: ${event.error}`);
+            };
+            
+            currentSpeech = utterance;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function updateSpeechButtons(speaking) {
+            const speakVnBtn = document.getElementById('speakVnBtn');
+            const speakTransBtn = document.getElementById('speakTransBtn');
+            const stopSpeechBtn = document.getElementById('stopSpeechBtn');
+            
+            if (speaking) {
+                speakVnBtn.disabled = true;
+                speakTransBtn.disabled = true;
+                stopSpeechBtn.disabled = false;
+                speakVnBtn.classList.add('speaking');
+            } else {
+                speakVnBtn.disabled = false;
+                speakTransBtn.disabled = false;
+                stopSpeechBtn.disabled = true;
+                speakVnBtn.classList.remove('speaking');
+            }
+        }
+
+        function startAudioVisualizer() {
+            stopAudioVisualizer();
+            
+            const visualizer = document.getElementById('audioVisualizer');
+            if (!visualizer) return;
+            
+            visualizer.innerHTML = '';
+            
+            for (let i = 0; i < 20; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'audio-bar';
+                bar.style.height = '5px';
+                bar.style.backgroundColor = '#4CAF50';
+                visualizer.appendChild(bar);
+            }
+            
+            const bars = visualizer.querySelectorAll('.audio-bar');
+            audioVisualizerInterval = setInterval(() => {
+                bars.forEach((bar, index) => {
+                    const baseHeight = 5;
+                    const variance = 30;
+                    const time = Date.now() / 1000;
+                    const height = baseHeight + Math.abs(Math.sin(time * 2 + index * 0.3)) * variance;
+                    bar.style.height = `${height}px`;
+                    
+                    const intensity = height / (baseHeight + variance);
+                    const hue = 120 + (1 - intensity) * 60;
+                    bar.style.backgroundColor = `hsl(${hue}, 70%, 50%)`;
+                });
+            }, 100);
+        }
+
+        function stopAudioVisualizer() {
+            if (audioVisualizerInterval) {
+                clearInterval(audioVisualizerInterval);
+                audioVisualizerInterval = null;
+            }
+            
+            const visualizer = document.getElementById('audioVisualizer');
+            if (visualizer) {
+                visualizer.innerHTML = '<div class="tts-loading" style="display: none;"><span>⏳</span> Đang tải âm thanh...</div>';
+            }
+        }
+
+        function stopAllSpeech() {
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
+            }
+            
+            if (currentSpeech) {
+                if (currentSpeech.pause) {
+                    currentSpeech.pause();
+                    currentSpeech.currentTime = 0;
+                }
+                currentSpeech = null;
+            }
+            
+            isSpeaking = false;
+            updateSpeechButtons(false);
+            stopAudioVisualizer();
+            log('TTS', 'Đã dừng tất cả giọng nói');
+        }
+
+        function showTTSError(message) {
+            const errorDiv = document.getElementById('ttsStatus');
+            if (!errorDiv) return;
+            
+            if (message) {
+                errorDiv.innerHTML = `<div class="error-message">${message}</div>`;
+                errorDiv.style.display = 'block';
+                setTimeout(() => {
+                    errorDiv.style.display = 'none';
+                }, 3000);
+            } else {
+                errorDiv.style.display = 'none';
+            }
+        }
+
+        function selectVoice(button) {
+            const lang = button.getAttribute('data-lang');
+            const gender = button.getAttribute('data-gender');
+            
+            currentVoice.lang = lang;
+            currentVoice.gender = gender;
+            
+            document.querySelectorAll('.voice-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            button.classList.add('active');
+            
+            updateVoiceDisplay();
+            log('TTS', `Đã chọn giọng: ${VOICE_PROFILES[lang]?.[gender]?.name || `${gender} ${lang}`}`);
+        }
+
+        function selectAccent(button) {
+            const accent = button.getAttribute('data-accent');
+            currentVoice.accent = accent;
+            
+            document.querySelectorAll('.accent-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            button.classList.add('active');
+            
+            switch(accent) {
+                case 'north':
+                    currentVoice.speed = 1.0;
+                    currentVoice.pitch = 1.0;
+                    break;
+                case 'central':
+                    currentVoice.speed = 0.95;
+                    currentVoice.pitch = 0.95;
+                    break;
+                case 'south':
+                    currentVoice.speed = 1.05;
+                    currentVoice.pitch = 1.05;
+                    break;
+            }
+            
+            updateVoiceDisplay();
+            log('TTS', `Đã chọn accent: ${accent}`);
+        }
+
+        function updateVoiceDisplay() {
+            const voiceProfile = VOICE_PROFILES[currentVoice.lang]?.[currentVoice.gender] || 
+                                 VOICE_PROFILES['vi-VN']['male'];
+            const display = document.getElementById('currentVoiceDisplay');
+            if (display) {
+                display.textContent = `Giọng: ${voiceProfile.name} (${currentVoice.accent}) - ${useGoogleTTS ? 'Google TTS Proxy' : 'Web Speech'}`;
+            }
+        }
+
+        function toggleTTSMode(useGoogle) {
+            useGoogleTTS = useGoogle;
+            
+            document.getElementById('useGoogleTTS').classList.toggle('active', useGoogle);
+            document.getElementById('useWebSpeech').classList.toggle('active', !useGoogle);
+            
+            updateVoiceDisplay();
+            log('TTS', `Chuyển sang ${useGoogle ? 'Google TTS Proxy' : 'Web Speech'}`);
+        }
+
+        async function speakVietnameseSentence() {
+            const text = convertedFullSentence || document.getElementById('convertedSentenceDisplay').textContent;
+            if (!text || text === '---') {
+                showTTSError('Không có văn bản tiếng Việt để đọc');
+                return;
+            }
+            
+            if (useGoogleTTS) {
+                await speakWithGoogleTTS(text, currentVoice.lang, currentVoice.gender, currentVoice.speed, currentVoice.pitch);
+            } else {
+                speakWithWebSpeech(text, currentVoice.lang);
+            }
+        }
+
+        async function speakTranslation() {
+            const translationOutput = document.getElementById('translationOutput');
+            const text = translationOutput.textContent;
+            
+            if (!text || text.includes('Đang chờ dịch') || text.includes('Vui lòng nhập')) {
+                showTTSError('Không có bản dịch để đọc');
+                return;
+            }
+            
+            const targetLang = document.getElementById('targetLanguage').value;
+            let langCode;
+            
+            switch(targetLang) {
+                case 'vi': langCode = 'vi-VN'; break;
+                case 'en': langCode = 'en-US'; break;
+                case 'ja': langCode = 'ja-JP'; break;
+                case 'ko': langCode = 'ko-KR'; break;
+                case 'zh-CN': langCode = 'zh-CN'; break;
+                default: langCode = 'en-US';
+            }
+            
+            if (useGoogleTTS) {
+                await speakWithGoogleTTS(text, langCode, currentVoice.gender, currentVoice.speed, currentVoice.pitch);
+            } else {
+                speakWithWebSpeech(text, langCode);
+            }
+        }
+
+        // === HÀM HIỆU CHUẨN ===
         function startCalibration() {
             if (isCalibrating) return;
             
@@ -1809,7 +2214,7 @@
             statusDiv.appendChild(div);
         }
 
-        // === HÀM TỐI ƯU HÓA FIREBASE (giữ nguyên) ===
+        // === HÀM TỐI ƯU HÓA FIREBASE ===
         async function fetchFirebaseDataOptimized() {
             if (isFetching) return null;
             
@@ -1934,7 +2339,6 @@
             }, 0);
         }
 
-        // === HÀM TÍNH TRẠNG THÁI UỐN VỚI HIỆU CHUẨN ===
         function calculateFlexState(rawValue, sensorIndex) {
             const STRAIGHT_THRESHOLD = STRAIGHT_THRESHOLDS[sensorIndex];
             
@@ -2084,7 +2488,6 @@
             }
         }
 
-        // === HÀM CACHE VÀ TỐI ƯU ===
         function convertVietnameseWordCached(encodedWord) {
             if (!encodedWord || encodedWord.length === 0) return "";
             
@@ -2188,7 +2591,6 @@
             return null;
         }
 
-        // === HÀM HỖ TRỢ ===
         function log(source, message) {
             const timestamp = new Date().toLocaleTimeString();
             const logEntry = { timestamp, source, message };
@@ -2273,7 +2675,6 @@
             }
         }
 
-        // === HÀM XÂY DỰNG CÂU ===
         function performActionSlotLogic(mpu, a0, a1, a2, a3) {
             const mapping = getMappingForIndicesCached(mpu, a0, a1, a2, a3);
             if (!mapping || mapping === "nullptr") return false;
@@ -2426,7 +2827,6 @@
             scheduleUIUpdate();
         }
 
-        // === HÀM ĐIỀU KHIỂN ===
         function refreshData() {
             fetchFirebaseDataOptimized();
         }
@@ -2496,7 +2896,6 @@
             }
         }
 
-        // === HÀM ĐỀ XUẤT ===
         function loadPhraseSuggestions() {
             const phrasePills = document.getElementById('phrasePills');
             phrasePills.innerHTML = '';
@@ -2604,6 +3003,19 @@
             log('SUGGESTION', `Tìm thấy ${topSuggestions.length} đề xuất cho câu: "${currentSentence.substring(0, 30)}..."`);
         }
 
+        async function speakText(text, langCode) {
+            if (isSpeaking) {
+                stopAllSpeech();
+                return;
+            }
+            
+            if (useGoogleTTS) {
+                await speakWithGoogleTTS(text, langCode, currentVoice.gender, currentVoice.speed, currentVoice.pitch);
+            } else {
+                speakWithWebSpeech(text, langCode);
+            }
+        }
+
         function getDefaultSuggestions(words) {
             const defaultSuggestions = [];
             
@@ -2656,567 +3068,172 @@
             log('SUGGESTION', `Dịch đề xuất: "${text}"`);
         }
 
-    // === GOOGLE TTS PROXY FUNCTIONS ===
-    async function speakWithGoogleTTSProxy(text, langCode, gender = 'male') {
-        if (isSpeaking) {
-            stopAllSpeech();
-            await new Promise(resolve => setTimeout(resolve, 100));
-        }
-        
-        // Tạo cache key
-        const cacheKey = `${text}_${langCode}_${gender}`;
-        
-        // Kiểm tra cache
-        if (audioCache.has(cacheKey)) {
-            const audio = audioCache.get(cacheKey);
-            currentSpeech = audio.cloneNode();
+        async function translateWithGoogle() {
+            const textarea = document.getElementById('translationInput');
+            const text = textarea.value.trim();
+            const sourceLang = document.getElementById('sourceLanguage').value;
+            const targetLang = document.getElementById('targetLanguage').value;
+            const outputDiv = document.getElementById('translationOutput');
             
-            return new Promise((resolve, reject) => {
-                currentSpeech.onended = () => {
-                    setIsSpeaking(false);
-                    stopAudioVisualizer();
-                    updateUI();
-                    log('TTS', 'Kết thúc phát âm thanh từ cache');
-                    resolve();
-                };
-                
-                currentSpeech.onerror = (err) => {
-                    setIsSpeaking(false);
-                    stopAudioVisualizer();
-                    updateUI();
-                    log('TTS', 'Lỗi khi phát âm thanh từ cache');
-                    reject(err);
-                };
-                
-                setIsSpeaking(true);
-                startAudioVisualizer();
-                currentSpeech.play().then(resolve).catch(reject);
-                
-                log('TTS', `Phát âm thanh từ cache: "${text.substring(0, 50)}..."`);
-            });
-        }
-        
-        try {
-            // Chuẩn bị tham số cho Google TTS
-            const googleLang = TTS_CONFIG.googleLangCodes[langCode] || langCode.split('-')[0];
-            const encodedText = encodeURIComponent(text);
-            
-            // Thêm tham số tốc độ dựa trên giới tính
-            const speed = TTS_CONFIG.languages[langCode]?.voices[gender]?.speed || 
-                         (gender === 'male' ? 0.9 : 1.0);
-            
-            // Xây dựng URL Google TTS
-            let ttsUrl = `${TTS_PROXY_SERVERS[0]}?ie=UTF-8&client=tw-ob&q=${encodedText}&tl=${googleLang}`;
-            
-            // Thêm CORS proxy nếu cần
-            if (USE_CORS_PROXY) {
-                ttsUrl = CORS_PROXY + encodeURIComponent(ttsUrl);
+            if (!text) {
+                outputDiv.innerHTML = '<span style="color: #F44336;">Vui lòng nhập văn bản để dịch!</span>';
+                outputDiv.className = 'conversion-display error';
+                return;
             }
             
-            // Tạo audio element
-            const audio = new Audio();
-            audio.crossOrigin = "anonymous";
-            
-            return new Promise((resolve, reject) => {
-                // Set timeout để tránh treo
-                const timeout = setTimeout(() => {
-                    if (isSpeaking) {
-                        audio.pause();
-                        setIsSpeaking(false);
-                        stopAudioVisualizer();
-                        log('TTS', 'Timeout khi tải TTS');
-                        reject(new Error('TTS timeout'));
-                    }
-                }, 10000);
-                
-                audio.onloadeddata = () => {
-                    clearTimeout(timeout);
-                    
-                    // Lưu vào cache trước khi phát
-                    audioCache.set(cacheKey, audio.cloneNode());
-                    
-                    currentSpeech = audio;
-                    setIsSpeaking(true);
-                    startAudioVisualizer();
-                    
-                    audio.play().then(() => {
-                        log('TTS', `Bắt đầu Google TTS: "${text.substring(0, 50)}..."`);
-                        resolve();
-                    }).catch(reject);
-                };
-                
-                audio.onended = () => {
-                    clearTimeout(timeout);
-                    setIsSpeaking(false);
-                    stopAudioVisualizer();
-                    updateUI();
-                    log('TTS', 'Kết thúc Google TTS');
-                    resolve();
-                };
-                
-                audio.onerror = (err) => {
-                    clearTimeout(timeout);
-                    setIsSpeaking(false);
-                    stopAudioVisualizer();
-                    updateUI();
-                    log('TTS', `Lỗi Google TTS: ${err}`);
-                    reject(err);
-                };
-                
-                // Bắt đầu tải
-                audio.src = ttsUrl;
-                audio.load();
-            });
-            
-        } catch (error) {
-            console.error('Google TTS Proxy error:', error);
-            log('TTS', `Google TTS thất bại: ${error.message}`);
-            
-            // Fallback to Web Speech
-            if (window.speechSynthesis) {
-                speakWithWebSpeech(text, langCode, gender);
+            const cacheKey = text + '|' + sourceLang + '|' + targetLang;
+            if (translationCache[cacheKey]) {
+                outputDiv.innerHTML = translationCache[cacheKey];
+                outputDiv.className = 'conversion-display success';
+                return;
             }
-            throw error;
-        }
-    }
-
-    // === WEB SPEECH FUNCTIONS ===
-    function speakWithWebSpeech(text, langCode, gender = 'male') {
-        if (isSpeaking) {
-            stopAllSpeech();
-            return;
-        }
-        
-        if (!('speechSynthesis' in window)) {
-            log('SPEECH', 'Speech synthesis không được hỗ trợ trên trình duyệt này');
-            return;
-        }
-        
-        window.speechSynthesis.cancel();
-        
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = langCode;
-        utterance.rate = gender === 'male' ? 0.9 : 1.1;
-        utterance.pitch = gender === 'male' ? 0.8 : 1.2;
-        utterance.volume = 1;
-        
-        // Tìm giọng phù hợp nếu có
-        const voices = window.speechSynthesis.getVoices();
-        const preferredVoice = voices.find(voice => 
-            voice.lang.startsWith(langCode.split('-')[0]) &&
-            ((gender === 'male' && voice.name.toLowerCase().includes('male')) ||
-             (gender === 'female' && voice.name.toLowerCase().includes('female')))
-        );
-        
-        if (preferredVoice) {
-            utterance.voice = preferredVoice;
-            log('SPEECH', `Sử dụng giọng: ${preferredVoice.name}`);
-        }
-        
-        utterance.onstart = function() {
-            setIsSpeaking(true);
-            updateUI();
-            startAudioVisualizer();
-            log('SPEECH', `Bắt đầu Web Speech: "${text.substring(0, 50)}..."`);
-        };
-        
-        utterance.onend = function() {
-            setIsSpeaking(false);
-            currentSpeech = null;
-            stopAudioVisualizer();
-            updateUI();
-            log('SPEECH', 'Kết thúc Web Speech');
-        };
-        
-        utterance.onerror = function(event) {
-            setIsSpeaking(false);
-            currentSpeech = null;
-            stopAudioVisualizer();
-            updateUI();
-            log('SPEECH', `Lỗi Web Speech: ${event.error}`);
-        };
-        
-        currentSpeech = utterance;
-        window.speechSynthesis.speak(utterance);
-    }
-
-    // === MAIN SPEECH FUNCTIONS ===
-    async function speakVietnameseSentence() {
-        const text = convertedFullSentence || document.getElementById('convertedSentenceDisplay').textContent;
-        if (!text || text === '---' || text.trim().length === 0) {
-            log('SPEECH', 'Không có văn bản tiếng Việt để đọc');
-            return;
-        }
-        
-        await speakText(text, currentVoice.lang, currentVoice.gender);
-    }
-
-    async function speakTranslation() {
-        const text = document.getElementById('translationOutput').textContent;
-        if (!text || text.includes('Đang chờ dịch') || text.includes('Vui lòng nhập') || text.trim().length === 0) {
-            log('SPEECH', 'Không có văn bản dịch để đọc');
-            return;
-        }
-        
-        const targetLang = document.getElementById('targetLanguage').value;
-        const langMap = {
-            'vi': 'vi-VN',
-            'en': 'en-GB',
-            'ja': 'ja-JP',
-            'ko': 'ko-KR',
-            'zh-CN': 'zh-CN',
-            'fr': 'fr-FR',
-            'es': 'es-ES',
-            'de': 'de-DE'
-        };
-        
-        const langCode = langMap[targetLang] || targetLang;
-        
-        // Sử dụng giới tính hiện tại hoặc mặc định là nam
-        await speakText(text, langCode, currentVoice.gender || 'male');
-    }
-
-    async function speakText(text, langCode, gender = 'male') {
-        if (isSpeaking) {
-            stopAllSpeech();
-            await new Promise(resolve => setTimeout(resolve, 100));
-        }
-        
-        if (useGoogleTTS) {
+            
+            outputDiv.innerHTML = '<span class="loading">Đang dịch với Google Translate... ⏳</span>';
+            outputDiv.className = 'conversion-display loading';
+            
             try {
-                await speakWithGoogleTTSProxy(text, langCode, gender);
-            } catch (error) {
-                console.error('Google TTS Proxy failed:', error);
-                log('TTS', `Google TTS thất bại, chuyển sang Web Speech: ${error.message}`);
+                const encodedText = encodeURIComponent(text);
+                const apiUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodedText}`;
                 
-                // Fallback to Web Speech
-                if (window.speechSynthesis) {
-                    speakWithWebSpeech(text, langCode, gender);
+                const response = await fetch(apiUrl);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
                 }
-            }
-        } else {
-            speakWithWebSpeech(text, langCode, gender);
-        }
-    }
-
-    function setIsSpeaking(speaking) {
-        isSpeaking = speaking;
-        updateUI();
-    }
-
-    function stopAllSpeech() {
-        // Dừng Web Speech
-        if (window.speechSynthesis) {
-            window.speechSynthesis.cancel();
-        }
-        
-        // Dừng audio element
-        if (currentSpeech) {
-            if (currentSpeech.pause) {
-                currentSpeech.pause();
-                currentSpeech.currentTime = 0;
-            }
-            currentSpeech = null;
-        }
-        
-        setIsSpeaking(false);
-        stopAudioVisualizer();
-        updateUI();
-        
-        log('SPEECH', 'Đã dừng tất cả giọng nói');
-    }
-
-    function startAudioVisualizer() {
-        stopAudioVisualizer();
-        
-        const visualizer = document.getElementById('audioVisualizer');
-        visualizer.innerHTML = '';
-        
-        // Tạo thanh visualizer
-        for (let i = 0; i < 20; i++) {
-            const bar = document.createElement('div');
-            bar.className = 'audio-bar';
-            bar.style.height = '5px';
-            visualizer.appendChild(bar);
-        }
-        
-        const bars = visualizer.querySelectorAll('.audio-bar');
-        audioVisualizerInterval = setInterval(() => {
-            bars.forEach(bar => {
-                const height = 5 + Math.random() * 35;
-                bar.style.height = `${height}px`;
                 
-                // Màu sắc thay đổi ngẫu nhiên
-                const hue = 200 + Math.random() * 160;
-                bar.style.backgroundColor = `hsl(${hue}, 70%, 50%)`;
-            });
-        }, 100);
-    }
-
-    function stopAudioVisualizer() {
-        if (audioVisualizerInterval) {
-            clearInterval(audioVisualizerInterval);
-            audioVisualizerInterval = null;
-        }
-        
-        const visualizer = document.getElementById('audioVisualizer');
-        if (visualizer) {
-            visualizer.innerHTML = '';
-            
-            // Tạo thanh tĩnh
-            for (let i = 0; i < 20; i++) {
-                const bar = document.createElement('div');
-                bar.className = 'audio-bar';
-                bar.style.height = '5px';
-                bar.style.backgroundColor = '#e0e0e0';
-                visualizer.appendChild(bar);
+                const data = await response.json();
+                let translated = '';
+                
+                if (data && data[0]) {
+                    data[0].forEach(item => {
+                        if (item[0]) {
+                            translated += item[0];
+                        }
+                    });
+                }
+                
+                translationCache[cacheKey] = translated;
+                outputDiv.innerHTML = translated;
+                outputDiv.className = 'conversion-display success';
+                
+                log('TRANSLATION', `Đã dịch từ ${sourceLang} sang ${targetLang}: ${translated.substring(0, 100)}...`);
+                
+            } catch (error) {
+                console.error('Translation error:', error);
+                outputDiv.innerHTML = '<span style="color: #F44336;">Dịch thuật thất bại. Vui lòng thử lại sau.</span>';
+                outputDiv.className = 'conversion-display error';
+                log('TRANSLATION', `Lỗi dịch thuật: ${error.message}`);
             }
         }
-    }
 
-    // === VOICE SELECTION FUNCTIONS ===
-    function selectVoice(button) {
-        const lang = button.getAttribute('data-lang');
-        const gender = button.getAttribute('data-gender');
-        
-        currentVoice = {
-            lang: lang,
-            gender: gender,
-            accent: 'native'
-        };
-        
-        // Cập nhật giao diện
-        document.querySelectorAll('.voice-btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        button.classList.add('active');
-        
-        updateUI();
-        log('VOICE', `Đã chọn giọng: ${TTS_CONFIG.langDisplayNames[lang] || lang} ${gender === 'male' ? 'Nam' : 'Nữ'}`);
-    }
-
-    function toggleTTSMode(useGoogle) {
-        useGoogleTTS = useGoogle;
-        
-        document.getElementById('useGoogleTTS').classList.toggle('active', useGoogle);
-        document.getElementById('useWebSpeech').classList.toggle('active', !useGoogle);
-        
-        updateUI();
-        log('TTS', `Chuyển sang ${useGoogle ? 'Google TTS Proxy' : 'Web Speech API'}`);
-    }
-
-    // === GOOGLE TRANSLATE FUNCTIONS ===
-    async function translateWithGoogle() {
-        const textarea = document.getElementById('translationInput');
-        const text = textarea.value.trim();
-        const sourceLang = document.getElementById('sourceLanguage').value;
-        const targetLang = document.getElementById('targetLanguage').value;
-        const outputDiv = document.getElementById('translationOutput');
-        
-        if (!text) {
-            outputDiv.innerHTML = '<span style="color: #F44336;">Vui lòng nhập văn bản để dịch!</span>';
-            outputDiv.className = 'conversion-display error';
-            return;
+        function clearTranslation() {
+            document.getElementById('translationOutput').innerHTML = 'Đang chờ dịch...';
+            document.getElementById('translationOutput').className = 'conversion-display';
+            translationCache = {};
         }
-        
-        const cacheKey = text + '|' + sourceLang + '|' + targetLang;
-        if (translationCache[cacheKey]) {
-            outputDiv.innerHTML = translationCache[cacheKey];
-            outputDiv.className = 'conversion-display success';
-            log('TRANSLATION', `Sử dụng kết quả dịch từ cache`);
-            return;
-        }
-        
-        outputDiv.innerHTML = '<span class="loading">Đang dịch với Google Translate... ⏳</span>';
-        outputDiv.className = 'conversion-display loading';
-        
-        try {
-            // Sử dụng Google Translate API
-            const encodedText = encodeURIComponent(text);
-            const apiUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodedText}`;
+
+        function handleTranslationInput() {
+            const input = document.getElementById('translationInput').value;
+            const suggestionsDiv = document.getElementById('translationSuggestions');
+            const sourceLang = document.getElementById('sourceLanguage').value;
             
-            const response = await fetch(apiUrl);
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
+            if (!input || input.trim().length === 0) {
+                suggestionsDiv.innerHTML = '';
+                suggestionsDiv.classList.remove('show');
+                return;
             }
             
-            const data = await response.json();
-            let translated = '';
+            const inputLower = input.toLowerCase();
+            const filteredPhrases = commonPhrases.filter(phrase => 
+                phrase.toLowerCase().includes(inputLower) && phrase !== input
+            );
             
-            if (data && data[0]) {
-                data[0].forEach(item => {
-                    if (item[0]) {
-                        translated += item[0];
+            if (filteredPhrases.length > 0) {
+                suggestionsDiv.innerHTML = filteredPhrases.map(phrase => `
+                    <div class="suggestion-item" onclick="selectTranslationSuggestion('${phrase.replace(/'/g, "\\'")}')">
+                        ${phrase}
+                    </div>
+                `).join('');
+                suggestionsDiv.classList.add('show');
+            } else {
+                suggestionsDiv.innerHTML = '';
+                suggestionsDiv.classList.remove('show');
+            }
+        }
+
+        function selectTranslationSuggestion(phrase) {
+            document.getElementById('translationInput').value = phrase;
+            document.getElementById('translationSuggestions').innerHTML = '';
+            document.getElementById('translationSuggestions').classList.remove('show');
+            translateWithGoogle();
+        }
+
+        function initializeTTS() {
+            if ('speechSynthesis' in window) {
+                speechSynthesis.getVoices();
+                
+                speechSynthesis.onvoiceschanged = () => {
+                    log('TTS', 'Đã tải danh sách giọng Web Speech');
+                };
+            }
+            
+            updateVoiceDisplay();
+            
+            setInterval(() => {
+                const now = Date.now();
+                audioCache.forEach((data, key) => {
+                    if (now - data.timestamp > 30 * 60 * 1000) {
+                        URL.revokeObjectURL(data.url);
+                        audioCache.delete(key);
                     }
                 });
-            }
+            }, 5 * 60 * 1000);
             
-            // Lưu vào cache
-            translationCache[cacheKey] = translated;
-            
-            // Giới hạn cache size
-            const cacheKeys = Object.keys(translationCache);
-            if (cacheKeys.length > 50) {
-                delete translationCache[cacheKeys[0]];
-            }
-            
-            outputDiv.innerHTML = translated;
-            outputDiv.className = 'conversion-display success';
-            
-            log('TRANSLATION', `Đã dịch từ ${sourceLang} sang ${targetLang}: ${translated.substring(0, 100)}...`);
-            
-        } catch (error) {
-            console.error('Translation error:', error);
-            outputDiv.innerHTML = '<span style="color: #F44336;">Dịch thuật thất bại. Vui lòng thử lại sau.</span>';
-            outputDiv.className = 'conversion-display error';
-            log('TRANSLATION', `Lỗi dịch thuật: ${error.message}`);
+            log('TTS', 'Đã khởi tạo hệ thống TTS với Google TTS Proxy');
         }
-    }
 
-    function clearTranslation() {
-        document.getElementById('translationOutput').innerHTML = 'Đang chờ dịch...';
-        document.getElementById('translationOutput').className = 'conversion-display';
-    }
-
-    function handleTranslationInput() {
-        const input = document.getElementById('translationInput').value;
-        const suggestionsDiv = document.getElementById('translationSuggestions');
-        
-        if (!input || input.trim().length === 0) {
-            suggestionsDiv.innerHTML = '';
-            suggestionsDiv.classList.remove('show');
-            return;
-        }
-        
-        const inputLower = input.toLowerCase();
-        const filteredPhrases = commonPhrases.filter(phrase => 
-            phrase.toLowerCase().includes(inputLower) && phrase !== input
-        );
-        
-        if (filteredPhrases.length > 0) {
-            suggestionsDiv.innerHTML = filteredPhrases.map(phrase => `
-                <div class="suggestion-item" onclick="selectTranslationSuggestion('${phrase.replace(/'/g, "\\'")}')">
-                    ${phrase}
-                </div>
-            `).join('');
-            suggestionsDiv.classList.add('show');
-        } else {
-            suggestionsDiv.innerHTML = '';
-            suggestionsDiv.classList.remove('show');
-        }
-    }
-
-    function selectTranslationSuggestion(phrase) {
-        document.getElementById('translationInput').value = phrase;
-        document.getElementById('translationSuggestions').innerHTML = '';
-        document.getElementById('translationSuggestions').classList.remove('show');
-        translateWithGoogle();
-    }
-
-    // === HÀM UPDATE UI COMPLETE ===
-    function updateUI() {
-        updateWordDisplays();
-        updateSentenceDisplay();
-        
-        // Cập nhật trạng thái nút giọng nói
-        const speakVnBtn = document.getElementById('speakVnBtn');
-        const speakTransBtn = document.getElementById('speakTransBtn');
-        const stopSpeechBtn = document.getElementById('stopSpeechBtn');
-        
-        speakVnBtn.disabled = !convertedFullSentence || isSpeaking;
-        speakTransBtn.disabled = !document.getElementById('translationOutput').textContent || 
-            document.getElementById('translationOutput').textContent.includes('Đang chờ dịch') ||
-            isSpeaking;
-        stopSpeechBtn.disabled = !isSpeaking;
-        
-        if (isSpeaking) {
-            speakVnBtn.classList.add('speaking');
-            speakVnBtn.innerHTML = '🔊 Đang đọc...';
-        } else {
-            speakVnBtn.classList.remove('speaking');
-            speakVnBtn.innerHTML = '🔊 Đọc Tiếng Việt';
-        }
-        
-        // Cập nhật hiển thị giọng hiện tại
-        const langName = TTS_CONFIG.langDisplayNames[currentVoice.lang] || currentVoice.lang;
-        const genderName = currentVoice.gender === 'male' ? 'Nam' : 'Nữ';
-        const ttsMode = useGoogleTTS ? 'Google TTS' : 'Web Speech';
-        
-        document.getElementById('currentVoiceDisplay').textContent = 
-            `Hiện tại: ${langName} - ${genderName} (${ttsMode})`;
-        
-        // Cập nhật nút chọn TTS mode
-        document.getElementById('useGoogleTTS').classList.toggle('active', useGoogleTTS);
-        document.getElementById('useWebSpeech').classList.toggle('active', !useGoogleTTS);
-    }
-
-    // === KHỞI TẠO ===
-    document.addEventListener('DOMContentLoaded', function() {
-        log('SYSTEM', 'Ứng dụng đã khởi động với Google TTS Proxy');
-        log('TTS', `Chế độ TTS: ${USE_CORS_PROXY ? 'Google TTS Proxy với CORS proxy' : 'Google TTS Proxy trực tiếp'}`);
-        
-        // Khởi tạo FPS counter
-        function updateFPS() {
-            frameCount++;
-            const currentTime = performance.now();
-            if (currentTime - lastFrameTime >= 1000) {
-                currentFPS = frameCount;
-                frameCount = 0;
-                lastFrameTime = currentTime;
-                
-                document.getElementById('fps').textContent = currentFPS;
-                
-                // Điều chỉnh polling interval dựa trên FPS
-                if (currentFPS < 30 && pollingInterval > 150) {
-                    pollingInterval = Math.min(pollingInterval * 1.5, 1000);
-                    updatePollingDisplay();
-                    log('PERF', `FPS thấp (${currentFPS}), tăng polling interval lên ${pollingInterval}ms`);
-                } else if (currentFPS > 50 && pollingInterval < 1000) {
-                    pollingInterval = Math.max(pollingInterval * 0.8, 150);
-                    updatePollingDisplay();
+        // === KHỞI TẠO ===
+        document.addEventListener('DOMContentLoaded', function() {
+            log('SYSTEM', 'Ứng dụng đã khởi động với Google TTS Proxy');
+            
+            function updateFPS() {
+                frameCount++;
+                const currentTime = performance.now();
+                if (currentTime - lastFrameTime >= 1000) {
+                    currentFPS = frameCount;
+                    frameCount = 0;
+                    lastFrameTime = currentTime;
+                    
+                    document.getElementById('fps').textContent = currentFPS;
+                    
+                    if (currentFPS < 30 && pollingInterval > 150) {
+                        pollingInterval = Math.min(pollingInterval * 1.5, 1000);
+                        updatePollingDisplay();
+                        log('PERF', `FPS thấp (${currentFPS}), tăng tần suất cập nhật lên ${pollingInterval}ms`);
+                    } else if (currentFPS > 50 && pollingInterval < 1000) {
+                        pollingInterval = Math.max(pollingInterval * 0.8, 150);
+                        updatePollingDisplay();
+                    }
                 }
+                requestAnimationFrame(updateFPS);
             }
+            
             requestAnimationFrame(updateFPS);
-        }
-        
-        requestAnimationFrame(updateFPS);
-        
-        // Tải hiệu chuẩn từ localStorage nếu có
-        loadCalibration();
-        
-        // Tải đề xuất cụm từ
-        loadPhraseSuggestions();
-        
-        // Khởi tạo Web Speech API voices
-        if ('speechSynthesis' in window) {
-            speechSynthesis.getVoices();
             
-            speechSynthesis.onvoiceschanged = function() {
-                const voices = speechSynthesis.getVoices();
-                log('SPEECH', `Đã tải ${voices.length} giọng tổng hợp`);
-                
-                // Log available voices for debugging
-                voices.forEach(voice => {
-                    console.log(`Voice: ${voice.name} - ${voice.lang} - ${voice.localService ? 'Local' : 'Remote'}`);
-                });
-            };
-        }
-        
-        // Khởi tạo auto-refresh
-        setTimeout(() => {
-            fetchFirebaseDataOptimized();
-            toggleAutoRefresh();
-        }, 100);
-        
-        // Clear audio cache periodically
-        setInterval(() => {
-            if (audioCache.size > 20) {
-                const keys = Array.from(audioCache.keys());
-                for (let i = 0; i < 5; i++) {
-                    audioCache.delete(keys[i]);
-                }
-                log('CACHE', `Đã xóa 5 item từ audio cache, còn ${audioCache.size} item`);
+            loadCalibration();
+            loadPhraseSuggestions();
+            initializeTTS();
+            
+            setTimeout(() => {
+                fetchFirebaseDataOptimized();
+                toggleAutoRefresh();
+            }, 100);
+            
+            if (!USE_PROXY) {
+                log('SYSTEM', 'Chế độ TTS: Google TTS Proxy trực tiếp (có thể gặp CORS)');
+            } else {
+                log('SYSTEM', 'Chế độ TTS: Google TTS Proxy với CORS proxy');
             }
-        }, 60000); // Mỗi phút
-    });
-</script>    
+        });
+    </script>
+</body>
+</html>
