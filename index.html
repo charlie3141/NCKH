@@ -3,2742 +3,573 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ứng dụng Dịch Thủ Ngữ với Google TTS Proxy</title>
+    <title>Demo TTS Miễn Phí - Tổng Hợp Các Công Cụ</title>
     <style>
-        /* CSS đã được tối ưu */
         * {
-            margin: 0;
-            padding: 0;
             box-sizing: border-box;
-        }
-
-        body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #333;
-            min-height: 100vh;
-            padding: 20px;
         }
-
-        .container {
-            max-width: 1400px;
+        
+        body {
+            max-width: 1200px;
             margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            line-height: 1.6;
+        }
+        
+        .header {
+            text-align: center;
+            padding: 30px 20px;
             background: white;
             border-radius: 15px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
         }
-
-        header {
-            background: linear-gradient(to right, #4A00E0, #8E2DE2);
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
-
+        
         h1 {
-            font-size: 2rem;
-            margin-bottom: 5px;
+            color: #2c3e50;
+            margin-bottom: 10px;
         }
-
-        .dashboard {
-            padding: 20px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 20px;
+        
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 1.1em;
         }
-
-        .card {
+        
+        .section {
             background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-            border: 1px solid #eaeaea;
-            will-change: transform, opacity;
-            contain: content;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
         }
-
-        .card h3 {
-            color: #4A00E0;
-            margin-bottom: 15px;
+        
+        .section:hover {
+            transform: translateY(-5px);
+        }
+        
+        h2 {
+            color: #3498db;
+            border-bottom: 2px solid #3498db;
             padding-bottom: 10px;
-            border-bottom: 2px solid #f0f0f0;
+            margin-top: 0;
         }
-
-        /* Các style cơ bản khác */
-        .calibration-card {
-            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
-            border: 2px solid #e0e6ff;
-        }
-
-        .calibration-status {
-            margin: 15px 0;
-            padding: 15px;
-            border-radius: 10px;
-            text-align: center;
-            font-weight: bold;
-        }
-
-        .calibrating {
-            background: #FFF3CD;
-            border: 2px solid #FFC107;
-            color: #856404;
-            animation: pulse 1s infinite;
-        }
-
-        .calibrated {
-            background: #D4EDDA;
-            border: 2px solid #28A745;
-            color: #155724;
-        }
-
-        .calibration-ready {
-            background: #E3F2FD;
-            border: 2px solid #2196F3;
-            color: #0d47a1;
-        }
-
-        .calibration-error {
-            background: #FFEBEE;
-            border: 2px solid #F44336;
-            color: #b71c1c;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.7; }
-            100% { opacity: 1; }
-        }
-
-        .conversion-display {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #2196F3;
-            margin: 10px 0;
-            min-height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #E3F2FD;
-            border-radius: 10px;
-            padding: 15px;
-            border: 2px solid #2196F3;
-            line-height: 1.4;
-            contain: strict;
-            transform: translateZ(0);
-        }
-
-        .sentence-display {
-            font-size: 1.8rem;
-            font-weight: bold;
-            color: #4CAF50;
-            margin: 10px 0;
-            min-height: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #E8F5E9;
-            border-radius: 10px;
-            padding: 20px;
-            border: 2px solid #4CAF50;
-            line-height: 1.4;
-            contain: strict;
-            transform: translateZ(0);
-        }
-
-        .current-word-display {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #FF5722;
-            margin: 10px 0;
-            min-height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #FFF8E1;
-            border-radius: 10px;
-            padding: 15px;
-            border: 2px dashed #FFC107;
-            contain: strict;
-            transform: translateZ(0);
-        }
-
-        .word-list {
-            margin: 15px 0;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            border: 1px solid #eaeaea;
-        }
-
-        .word-item {
-            display: inline-block;
-            padding: 8px 15px;
-            margin: 5px;
-            background: #e3f2fd;
-            border-radius: 20px;
-            border: 1px solid #bbdefb;
-        }
-
-        .sensor-label {
-            font-size: 0.8rem;
-            color: #444;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .flex-box {
-            display: inline-block;
-            width: 40px;
-            height: 40px;
-            line-height: 40px;
-            text-align: center;
-            background: #f8f9fa;
-            border-radius: 8px;
-            margin: 2px;
-            font-weight: bold;
-            border: 2px solid transparent;
-        }
-
-        .flex-box.active-0 { background: #4CAF50; color: white; }
-        .flex-box.active-1 { background: #FF9800; color: white; }
-        .flex-box.active-2 { background: #F44336; color: white; }
-
-        .controls {
+        
+        .language-selector {
             display: flex;
             gap: 10px;
-            margin-top: 20px;
-            justify-content: center;
+            margin-bottom: 20px;
             flex-wrap: wrap;
         }
-
-        button {
-            padding: 12px 24px;
+        
+        .lang-btn {
+            padding: 10px 20px;
+            background: #ecf0f1;
             border: none;
-            border-radius: 8px;
-            background: linear-gradient(to right, #4A00E0, #8E2DE2);
-            color: white;
-            font-weight: bold;
+            border-radius: 25px;
             cursor: pointer;
-            transition: all 0.2s;
+            font-weight: bold;
+            transition: all 0.3s;
         }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        
+        .lang-btn:hover {
+            background: #bdc3c7;
         }
-
-        button.red {
-            background: linear-gradient(to right, #FF416C, #FF4B2B);
+        
+        .lang-btn.active {
+            background: #3498db;
+            color: white;
         }
-
-        button.green {
-            background: linear-gradient(to right, #00b09b, #96c93d);
-        }
-
-        button.blue {
-            background: linear-gradient(to right, #2196F3, #21CBF3);
-        }
-
-        button.orange {
-            background: linear-gradient(to right, #FF9800, #FF5722);
-        }
-
-        button.purple {
-            background: linear-gradient(to right, #9C27B0, #673AB7);
-        }
-
-        .status-bar {
-            background: #f8f9fa;
-            padding: 15px;
-            border-top: 1px solid #eaeaea;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .indicator {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 8px;
-        }
-
-        .indicator.online {
-            background: #4CAF50;
-            animation: blink 1s infinite;
-        }
-
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
+        
         textarea {
             width: 100%;
             height: 120px;
-            font-size: 1.5rem;
             padding: 15px;
-            border: 2px solid #4CAF50;
+            border: 2px solid #ddd;
             border-radius: 10px;
-            background: #E8F5E9;
-            color: #333;
+            font-size: 16px;
             resize: vertical;
+            margin-bottom: 15px;
         }
-
-        select {
-            padding: 8px 15px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            min-width: 150px;
-        }
-
-        .speech-controls {
+        
+        .controls {
             display: flex;
             gap: 10px;
-            margin-top: 15px;
-            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
         }
-
-        .speech-btn {
-            padding: 10px 20px;
-            background: linear-gradient(to right, #9C27B0, #673AB7);
+        
+        button {
+            padding: 12px 25px;
+            background: #2ecc71;
             color: white;
             border: none;
             border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
             font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s;
+            transition: all 0.3s;
         }
-
-        .speech-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(156,39,176,0.3);
+        
+        button:hover {
+            background: #27ae60;
+            transform: scale(1.05);
         }
-
-        .speech-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
+        
+        button.stop {
+            background: #e74c3c;
         }
-
-        .speech-btn.speaking {
-            background: linear-gradient(to right, #FF5722, #E64A19);
-            animation: pulse 1s infinite;
+        
+        button.stop:hover {
+            background: #c0392b;
         }
-
-        .audio-visualizer {
-            margin-top: 10px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 3px;
+        
+        button.demo {
+            background: #9b59b6;
         }
-
-        .audio-bar {
-            width: 4px;
-            background: #4CAF50;
-            border-radius: 2px;
-            transition: height 0.1s ease;
+        
+        button.demo:hover {
+            background: #8e44ad;
         }
-
-        .voice-options {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .voice-btn {
-            padding: 6px 12px;
-            background: linear-gradient(to right, #FF9800, #FF5722);
-            color: white;
-            border: none;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .voice-btn.active {
-            background: linear-gradient(to right, #4A00E0, #8E2DE2);
-            box-shadow: 0 2px 8px rgba(74,0,224,0.3);
-        }
-
-        .language-voice-display {
-            font-size: 0.8rem;
-            color: #444;
-            text-align: center;
-            margin-top: 5px;
-        }
-
-        .tts-toggle {
-            margin-top: 10px;
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .tts-toggle-btn {
-            padding: 6px 12px;
-            background: #f0f0f0;
-            border: 2px solid #ddd;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.8rem;
-        }
-
-        .tts-toggle-btn.active {
-            background: linear-gradient(to right, #4A00E0, #8E2DE2);
-            color: white;
-            border-color: #4A00E0;
-        }
-
-        .accent-selector {
-            display: flex;
-            gap: 10px;
-            margin: 15px 0;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .accent-btn {
-            padding: 8px 15px;
-            background: #f8f9fa;
-            border: 2px solid #ddd;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            transition: all 0.2s;
-        }
-
-        .accent-btn.active {
-            background: linear-gradient(to right, #4A00E0, #8E2DE2);
-            color: white;
-            border-color: #4A00E0;
-        }
-
-        .accent-btn.north {
-            background: #E3F2FD;
-            border-color: #2196F3;
-        }
-
-        .accent-btn.central {
-            background: #E8F5E9;
-            border-color: #4CAF50;
-        }
-
-        .accent-btn.south {
-            background: #FFF3E0;
-            border-color: #FF9800;
-        }
-
-        .error-message {
-            background: #FFEBEE;
-            border: 1px solid #F44336;
-            border-radius: 8px;
-            padding: 10px;
-            margin: 10px 0;
-            color: #b71c1c;
-            text-align: center;
-            animation: pulse 1s infinite;
-        }
-
-        .speech-btn.loading {
-            background: linear-gradient(to right, #FF9800, #FF5722);
-            opacity: 0.7;
-            cursor: not-allowed;
-        }
-
-        .tts-status {
-            text-align: center;
-            margin-top: 10px;
-            padding: 10px;
-            background: #f5f5f5;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-        }
-
-        .phrase-suggestions {
+        
+        .note {
+            background: #fffde7;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #f1c40f;
             margin-top: 15px;
+            font-size: 0.9em;
+        }
+        
+        .warning {
+            background: #ffebee;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #e74c3c;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+        
+        .result {
+            margin-top: 20px;
             padding: 15px;
             background: #f8f9fa;
             border-radius: 10px;
-            border: 1px solid #eaeaea;
+            border: 1px dashed #3498db;
         }
-
-        .phrase-pills {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 10px;
-        }
-
-        .phrase-pill {
-            padding: 6px 12px;
-            background: linear-gradient(to right, #4CAF50, #45a049);
-            color: white;
-            border: none;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .phrase-pill:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 3px 8px rgba(76,175,80,0.3);
-        }
-
-        .phrase-pill.blue {
-            background: linear-gradient(to right, #2196F3, #1976D2);
-        }
-
-        .fast-mode {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: #4CAF50;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            z-index: 1000;
-        }
-
-        .performance-info {
-            font-size: 0.7rem;
-            color: #666;
+        
+        .footer {
             text-align: center;
-            margin-top: 5px;
+            margin-top: 40px;
+            padding: 20px;
+            color: #7f8c8d;
+            font-size: 0.9em;
         }
-
-        .sensor-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
-
-        .sensor-item {
-            padding: 12px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border-left: 4px solid;
-        }
-
-        .sensor-item.mpu {
-            border-left-color: #2196F3;
-        }
-
-        .sensor-item.flex {
-            border-left-color: #4CAF50;
-        }
-
-        .sensor-value {
-            font-size: 1.8rem;
-            font-weight: bold;
-            color: #333;
-            margin: 5px 0;
+        
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="fast-mode" id="fastModeIndicator" style="display: none;">🚀 Chế độ tốc độ cao: BẬT</div>
-    <div class="container">
-        <header>
-            <h1>Ứng dụng Dịch Thủ Ngữ với Google TTS Proxy</h1>
-            <div>Giám sát thời gian thực từ Firebase</div>
-            <div class="firebase-status" id="firebaseStatus">Đang kết nối với Firebase...</div>
-            <div class="performance-info" id="performanceInfo">
-                Độ trễ: <span id="latency">--</span>ms | FPS: <span id="fps">--</span> | Tần suất: <span id="pollingRate">--</span>ms
-            </div>
-        </header>
+    <div class="header">
+        <h1>Demo Tổng Hợp Công Cụ TTS Miễn Phí</h1>
+        <p class="subtitle">Trải nghiệm các công nghệ Text-to-Speech khác nhau trực tiếp trên trình duyệt</p>
+    </div>
 
-        <div class="dashboard">
-            <!-- Card Xây dựng Câu -->
-            <div class="card">
-                <h3>Xây dựng Câu</h3>
-                <div style="text-align: center; padding: 20px; margin-bottom: 20px;">
-                    <div class="sensor-label">TỪ HIỆN TẠI (Tiếng Việt)</div>
-                    <div class="current-word-display" id="displayBuffer">---</div>
-                    <div class="sensor-label">TỪ HIỆN TẠI (Mã hóa)</div>
-                    <div class="conversion-display" id="convertedCurrentWord">---</div>
-                    
-                    <div style="margin: 15px 0; color: #444;">
-                        <div><strong>Sử dụng '_' để thêm từ vào câu</strong></div>
-                        <div><strong>Sử dụng 'COMMIT' để hoàn thành câu</strong></div>
-                    </div>
-                    
-                    <div class="sensor-label">CÂU ĐẦY ĐỦ (Mã hóa)</div>
-                    <div class="sentence-display" id="sentenceDisplay">---</div>
-                    <div class="sensor-label">CÂU ĐẦY ĐỦ (Tiếng Việt)</div>
-                    <div class="conversion-display" id="convertedSentenceDisplay">---</div>
-                    
-                    <!-- Phần đề xuất cụm từ -->
-                    <div class="phrase-suggestions">
-                        <h4>📝 ĐỀ XUẤT CỤM TỪ THÔNG DỤNG</h4>
-                        <div class="phrase-pills" id="phrasePills"></div>
-                    </div>
-                    
-                    <!-- Chuyển đổi TTS -->
-                    <div class="tts-toggle">
-                        <button class="tts-toggle-btn active" id="useGoogleTTS" onclick="toggleTTSMode(true)">🔊 Google TTS Proxy</button>
-                        <button class="tts-toggle-btn" id="useWebSpeech" onclick="toggleTTSMode(false)">🎤 Web Speech</button>
-                    </div>
-                    
-                    <!-- Tùy chọn giọng nói -->
-                    <div class="voice-options">
-                        <div class="voice-btn male active" data-gender="male" data-lang="vi-VN" onclick="selectVoice(this)">👨 Nam Tiếng Việt</div>
-                        <div class="voice-btn female" data-gender="female" data-lang="vi-VN" onclick="selectVoice(this)">👩 Nữ Tiếng Việt</div>
-                        <div class="voice-btn male" data-gender="male" data-lang="en-US" onclick="selectVoice(this)">👨 Nam Tiếng Anh (Mỹ)</div>
-                        <div class="voice-btn female" data-gender="female" data-lang="en-US" onclick="selectVoice(this)">👩 Nữ Tiếng Anh (Mỹ)</div>
-                        <div class="voice-btn male" data-gender="male" data-lang="en-GB" onclick="selectVoice(this)">👨 Nam Tiếng Anh (Anh)</div>
-                    </div>
-                    
-                    <!-- Accent selector -->
-                    <div class="accent-selector">
-                        <div class="sensor-label" style="width: 100%; text-align: center; margin: 10px 0 5px 0;">ACCENT TIẾNG VIỆT</div>
-                        <button class="accent-btn north active" data-accent="north" onclick="selectAccent(this)">🇻🇳 Miền Bắc</button>
-                        <button class="accent-btn central" data-accent="central" onclick="selectAccent(this)">🇻🇳 Miền Trung</button>
-                        <button class="accent-btn south" data-accent="south" onclick="selectAccent(this)">🇻🇳 Miền Nam</button>
-                    </div>
-                    
-                    <div class="language-voice-display" id="currentVoiceDisplay">Hiện tại: Nam Tiếng Việt (Google TTS Proxy)</div>
-                    
-                    <!-- Điều khiển giọng nói -->
-                    <div class="speech-controls">
-                        <button class="speech-btn orange" onclick="testTTSConnection()" id="ttsTestBtn">🔧 Test TTS</button>
-                        <button class="speech-btn" onclick="speakVietnameseSentence()" id="speakVnBtn">🔊 Đọc Tiếng Việt</button>
-                        <button class="speech-btn blue" onclick="speakTranslation()" id="speakTransBtn">🔈 Đọc Bản dịch</button>
-                        <button class="speech-btn red" onclick="stopAllSpeech()" id="stopSpeechBtn">⏹ Dừng đọc</button>
-                    </div>
-                    
-                    <div class="tts-status" id="ttsStatus" style="display: none;"></div>
-                    
-                    <div class="audio-visualizer" id="audioVisualizer"></div>
-                    
-                    <div class="word-list" id="wordList">Chưa có từ nào</div>
-                    <div class="word-count">Số từ trong câu: <span id="wordCount">0</span>/10</div>
-                    
-                    <div style="display: flex; justify-content: space-around; margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 10px;">
-                        <div><div class="sensor-label">KHE 1</div><div class="sensor-value" id="slot1" style="font-size: 1.2rem;">---</div></div>
-                        <div><div class="sensor-label">KHE 2</div><div class="sensor-value" id="slot2" style="font-size: 1.2rem;">---</div></div>
-                    </div>
-                    
-                    <div class="controls">
-                        <button onclick="clearCurrentWord()" class="red">Xóa từ hiện tại</button>
-                        <button onclick="backspace()">Xóa ký tự</button>
-                        <button onclick="addWordToSentence()" class="green">Thêm từ (_)</button>
-                        <button onclick="commitSentence()" class="blue">Hoàn thành câu</button>
-                        <button onclick="resetSentence()" class="red">Đặt lại tất cả</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Card Hiệu chuẩn -->
-            <div class="card calibration-card">
-                <h3>🎯 Hiệu chuẩn Cảm biến Uốn</h3>
-                <div class="calibration-instructions">
-                    <h4>📋 Hướng dẫn Hiệu chuẩn:</h4>
-                    <div class="calibration-step">Đặt tay thẳng và thư giãn</div>
-                    <div class="calibration-step">Nhấn "Bắt đầu Hiệu chuẩn"</div>
-                    <div class="calibration-step">Lần lượt uốn từng ngón tay hết mức có thể (10 giây)</div>
-                    <div class="calibration-step">Hệ thống sẽ tự động lưu giá trị ngưỡng uốn</div>
-                    <div class="calibration-step">Sau khi hoàn thành, hệ thống sẽ sử dụng giá trị đã hiệu chuẩn</div>
-                </div>
-                
-                <div class="calibration-status" id="calibrationStatus">
-                    <div class="calibration-ready">Sẵn sàng để Hiệu chuẩn</div>
-                </div>
-                
-                <!-- Hiển thị quá trình hiệu chuẩn -->
-                <div id="calibrationProgress" style="display: none;">
-                    <div class="calibration-countdown" id="calibrationCountdown">10</div>
-                    <div style="text-align: center; margin: 10px 0; font-weight: bold; color: #4A00E0;">
-                        <span id="calibrationMessage">Đang hiệu chuẩn... Vui lòng uốn ngón tay hết mức!</span>
-                    </div>
-                    
-                    <div class="calibration-display" id="calibrationDisplay"></div>
-                    
-                    <div class="progress-container">
-                        <div class="progress-bar" id="calibrationProgressBar" style="width: 0%"></div>
-                    </div>
-                </div>
-                
-                <!-- Hiển thị ngưỡng hiện tại -->
-                <div class="sensor-calibration" style="margin-top: 20px;">
-                    <div class="sensor-label">NGƯỠNG HIỆN TẠI</div>
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px;">
-                        <div><div class="sensor-name">Cảm biến 0</div><div class="sensor-threshold" id="currentThreshold0">300</div></div>
-                        <div><div class="sensor-name">Cảm biến 1</div><div class="sensor-threshold" id="currentThreshold1">450</div></div>
-                        <div><div class="sensor-name">Cảm biến 2</div><div class="sensor-threshold" id="currentThreshold2">350</div></div>
-                        <div><div class="sensor-name">Cảm biến 3</div><div class="sensor-threshold" id="currentThreshold3">300</div></div>
-                    </div>
-                </div>
-                
-                <div class="flex-sensor-legend">
-                    <div class="legend-item"><div class="legend-color" style="background: #4CAF50;"></div><div class="legend-text">Thẳng (0)</div></div>
-                    <div class="legend-item"><div class="legend-color" style="background: #FF9800;"></div><div class="legend-text">Hơi uốn (1)</div></div>
-                    <div class="legend-item"><div class="legend-color" style="background: #F44336;"></div><div class="legend-text">Uốn hết (2)</div></div>
-                </div>
-                
-                <div class="controls">
-                    <button onclick="startCalibration()" class="orange" id="calibrateBtn">🎯 Bắt đầu Hiệu chuẩn</button>
-                    <button onclick="stopCalibration()" class="red" id="stopCalibrateBtn" style="display: none;">⏹ Dừng Hiệu chuẩn</button>
-                    <button onclick="resetCalibration()" class="purple">🔄 Reset về Mặc định</button>
-                    <button onclick="loadCalibration()" class="blue">💾 Tải Hiệu chuẩn</button>
-                </div>
-                
-                <div class="calibration-info" style="margin-top: 15px; font-size: 0.8rem; color: #444; text-align: center;">
-                    <div>Ngưỡng thẳng cố định: Cảm biến 0-2: 75, Cảm biến 3: 75</div>
-                    <div>Ngưỡng uốn sẽ được hiệu chuẩn tự động</div>
-                </div>
-            </div>
-
-            <!-- Card Dịch thuật với Google Translate API -->
-            <div class="card">
-                <h3>Dịch thuật với Google Translate</h3>
-                <div style="margin-bottom: 20px;">
-                    <div class="sensor-label">CÂU ĐẦY ĐỦ (Tiếng Việt - Để dịch)</div>
-                    <div class="text-input-container">
-                        <textarea id="translationInput" placeholder="Nhập văn bản tiếng Việt ở đây..." oninput="handleTranslationInput()"></textarea>
-                        <div class="dynamic-suggestions" id="translationSuggestions"></div>
-                    </div>
-                    
-                    <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 10px;">
-                        <div><strong>Tùy chọn dịch thuật:</strong></div>
-                        <div style="display: flex; gap: 15px; margin-top: 10px; flex-wrap: wrap;">
-                            <div>
-                                <div class="sensor-label">Ngôn ngữ nguồn</div>
-                                <select id="sourceLanguage" class="language-select">
-                                    <option value="vi">Tiếng Việt</option>
-                                    <option value="en">Tiếng Anh</option>
-                                    <option value="ja">Tiếng Nhật</option>
-                                    <option value="ko">Tiếng Hàn</option>
-                                    <option value="zh-CN">Tiếng Trung</option>
-                                    <option value="fr">Tiếng Pháp</option>
-                                    <option value="es">Tiếng Tây Ban Nha</option>
-                                </select>
-                            </div>
-                            <div>
-                                <div class="sensor-label">Ngôn ngữ đích</div>
-                                <select id="targetLanguage" class="language-select">
-                                    <option value="en">Tiếng Anh</option>
-                                    <option value="vi">Tiếng Việt</option>
-                                    <option value="ja">Tiếng Nhật</option>
-                                    <option value="ko">Tiếng Hàn</option>
-                                    <option value="zh-CN">Tiếng Trung</option>
-                                    <option value="fr">Tiếng Pháp</option>
-                                    <option value="es">Tiếng Tây Ban Nha</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="sensor-label">KẾT QUẢ DỊCH</div>
-                <div id="translationOutput" class="conversion-display" style="min-height: 80px; margin-bottom: 15px;">Đang chờ dịch...</div>
-
-                <div class="controls">
-                    <button onclick="translateWithGoogle()" class="blue">Dịch câu</button>
-                    <button onclick="clearTranslation()" class="red">Xóa bản dịch</button>
-                </div>
-            </div>
-
-            <!-- Card Hiển thị Cảm biến -->
-            <div class="card">
-                <h3>Dữ liệu Cảm biến từ Firebase</h3>
-                <div class="sensor-grid">
-                    <div class="sensor-item mpu">
-                        <div class="sensor-label">ĐỊNH HƯỚNG MPU6050</div>
-                        <div class="sensor-value" id="mpuOrientation">Không xác định</div>
-                        <div class="sensor-label">TRẠNG THÁI LẮC</div>
-                        <div class="sensor-value" id="mpuShakeState">Không</div>
-                        <div class="sensor-label">ĐANG LẮC?</div>
-                        <div class="sensor-value" id="isShaking">KHÔNG</div>
-                    </div>
-                    <div class="sensor-item flex">
-                        <div class="sensor-label">CẢM BIẾN UỐN</div>
-                        <div>
-                            <div>
-                                <span class="flex-box" id="flex0-box">0</span>
-                                <span class="flex-box" id="flex1-box">0</span>
-                                <span class="flex-box" id="flex2-box">0</span>
-                                <span class="flex-box" id="flex3-box">0</span>
-                            </div>
-                            <div class="sensor-label" style="margin-top: 10px;">
-                                Giá trị thô: <span id="rawValues">0, 0, 0, 0</span>
-                            </div>
-                            <div class="sensor-label">
-                                Trạng thái: <span id="flexFormat">0000</span> (a0,a1,a2,a3)
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="sensor-item" style="margin-top: 15px;">
-                    <div class="sensor-label">TRẠNG THÁI HỆ THỐNG</div>
-                    <div>Cập nhật lần cuối: <span id="lastUpdateTime" class="last-update">Chưa bao giờ</span></div>
-                    <div>Thời gian xử lý: <span id="processingTime" class="last-update">0ms</span></div>
-                </div>
-                
-                <div class="controls" style="margin-top: 15px;">
-                    <button onclick="refreshData()" class="blue">Làm mới ngay</button>
-                    <button onclick="toggleAutoRefresh()" id="autoRefreshBtn" class="green">Tự động: BẬT (300ms)</button>
-                    <button onclick="toggleTurboMode()" id="turboBtn" class="green">🚀 Chế độ Turbo</button>
-                </div>
-            </div>
-
-            <!-- Card Hiển thị Nhật ký -->
-            <div class="card">
-                <h3>Nhật ký Hệ thống</h3>
-                <div style="max-height: 300px; overflow-y: auto; background: #f8f9fa; border-radius: 8px; padding: 10px;">
-                    <div id="logContainer">
-                        <div class="log-entry">Hệ thống đã khởi động. Đang chờ dữ liệu Firebase...</div>
-                    </div>
-                </div>
-                <div class="controls" style="margin-top: 15px;">
-                    <button onclick="clearLog()" class="red">Xóa nhật ký</button>
-                    <button onclick="exportLog()" class="blue">Xuất nhật ký</button>
-                </div>
-            </div>
+    <!-- Phần 1: Web Speech API (Tích hợp sẵn trong trình duyệt) -->
+    <div class="section">
+        <h2>1. Web Speech API (Miễn phí, tích hợp sẵn trong trình duyệt)</h2>
+        <p>Đây là API chuẩn của trình duyệt, hỗ trợ nhiều ngôn ngữ, chất lượng phụ thuộc vào trình duyệt và hệ điều hành.</p>
+        
+        <div class="language-selector" id="webSpeechLanguages">
+            <button class="lang-btn active" data-lang="vi-VN">Tiếng Việt</button>
+            <button class="lang-btn" data-lang="en-US">English (US)</button>
+            <button class="lang-btn" data-lang="en-GB">English (UK)</button>
+            <button class="lang-btn" data-lang="fr-FR">Français</button>
+            <button class="lang-btn" data-lang="es-ES">Español</button>
+            <button class="lang-btn" data-lang="de-DE">Deutsch</button>
+            <button class="lang-btn" data-lang="ja-JP">日本語</button>
+            <button class="lang-btn" data-lang="ko-KR">한국어</button>
+            <button class="lang-btn" data-lang="zh-CN">中文 (普通话)</button>
         </div>
-
-        <div class="status-bar">
-            <div>
-                <span class="indicator" id="connectionStatus"></span>
-                <span id="statusText">Đang kết nối với Firebase...</span>
-            </div>
-            <div>
-                <span id="lastUpdate">Cập nhật Firebase lần cuối: --:--:--</span>
-            </div>
+        
+        <textarea id="webSpeechText">Xin chào! Đây là bản demo Text-to-Speech sử dụng Web Speech API. Bạn có thể nhập bất kỳ văn bản nào vào đây.</textarea>
+        
+        <div class="controls">
+            <button id="webSpeechBtn">Đọc văn bản</button>
+            <button id="webSpeechStop" class="stop">Dừng đọc</button>
+            <button id="webSpeechDemo" class="demo">Nghe demo đa ngôn ngữ</button>
+        </div>
+        
+        <div class="note">
+            <strong>Lưu ý:</strong> Web Speech API có sẵn trên Chrome, Edge, Safari. Trên Firefox cần bật flag. Chất lượng giọng phụ thuộc vào giọng mặc định của hệ điều hành.
+        </div>
+        
+        <div class="result">
+            <strong>Trạng thái:</strong> <span id="webSpeechStatus">Sẵn sàng</span>
+            <br>
+            <strong>Giọng đang dùng:</strong> <span id="webSpeechVoice">Đang tải...</span>
         </div>
     </div>
 
+    <!-- Phần 2: Google Translate TTS (Qua iframe) -->
+    <div class="section">
+        <h2>2. Google Translate TTS (Gián tiếp qua iframe)</h2>
+        <p>Sử dụng cơ chế của Google Translate để đọc văn bản. Chất lượng khá tốt cho nhiều ngôn ngữ.</p>
+        
+        <div class="language-selector" id="googleLanguages">
+            <button class="lang-btn active" data-lang="vi">Tiếng Việt</button>
+            <button class="lang-btn" data-lang="en">English</button>
+            <button class="lang-btn" data-lang="fr">French</button>
+            <button class="lang-btn" data-lang="es">Spanish</button>
+            <button class="lang-btn" data-lang="de">German</button>
+            <button class="lang-btn" data-lang="ja">Japanese</button>
+            <button class="lang-btn" data-lang="ko">Korean</button>
+            <button class="lang-btn" data-lang="zh-CN">Chinese</button>
+        </div>
+        
+        <textarea id="googleText">Xin chào! Tôi là giọng đọc của Google Translate. Chất lượng khá ổn và hoàn toàn miễn phí.</textarea>
+        
+        <div class="controls">
+            <button id="googleBtn">Đọc bằng Google TTS</button>
+            <button id="googleStop" class="stop">Dừng đọc</button>
+        </div>
+        
+        <div class="warning">
+            <strong>Giới hạn:</strong> Phương pháp này có thể bị Google chặn nếu sử dụng quá nhiều. Chỉ dùng cho mục đích thử nghiệm.
+        </div>
+        
+        <div class="result">
+            <strong>Trạng thái:</strong> <span id="googleStatus">Sẵn sàng</span>
+        </div>
+        
+        <!-- iframe ẩn cho Google TTS -->
+        <iframe id="googleTTSFrame" style="display: none;"></iframe>
+    </div>
+
+    <!-- Phần 3: Microsoft Edge TTS (Nếu dùng trình duyệt Edge) -->
+    <div class="section">
+        <h2>3. Tích hợp với giọng hệ thống</h2>
+        <p>Một số trình duyệt có thể sử dụng giọng hệ thống (trên Windows/macOS) nếu được cài đặt.</p>
+        
+        <textarea id="systemText">Đây là giọng đọc sử dụng voices có sẵn trong hệ thống của bạn. Chất lượng phụ thuộc vào giọng bạn đã cài đặt.</textarea>
+        
+        <div class="controls">
+            <button id="systemBtn">Hiển thị giọng có sẵn</button>
+            <button id="systemSpeak">Đọc bằng giọng hệ thống</button>
+        </div>
+        
+        <div class="note">
+            <strong>Mẹo:</strong> Trên Windows, vào Settings > Time & Language > Speech để cài thêm giọng chất lượng cao. Trên macOS, giọng hệ thống khá tốt.
+        </div>
+        
+        <div class="result">
+            <strong>Giọng có sẵn:</strong> <span id="systemVoices">Đang kiểm tra...</span>
+        </div>
+    </div>
+
+    <!-- Phần 4: Hướng dẫn sử dụng các công cụ khác -->
+    <div class="section">
+        <h2>4. Các công cụ TTS miễn phí khác (Cần cài đặt/truy cập ngoài)</h2>
+        
+        <div class="note">
+            <h3>Balabolka (Windows, Offline)</h3>
+            <p><strong>Cách dùng:</strong> Tải về từ <a href="http://www.cross-plus-a.com/balabolka.htm" target="_blank">trang chủ</a>, cài đặt và sử dụng với giọng hệ thống.</p>
+            
+            <h3>Microsoft Azure TTS (Miễn phí có hạn mức)</h3>
+            <p><strong>Cách dùng:</strong> Đăng ký tài khoản Azure free tier, nhận $200 credit, sử dụng Speech Studio.</p>
+            
+            <h3>Google Cloud TTS (Miễn phí có hạn mức)</h3>
+            <p><strong>Cách dùng:</strong> Tạo tài khoản Google Cloud, kích hoạt Text-to-Speech API, có 1 triệu ký tự miễn phí mỗi tháng.</p>
+            
+            <h3>NVDA với giọng RHVoice (Miễn phí, Offline)</h3>
+            <p><strong>Cách dùng:</strong> Cài NVDA và cấu hình với giọng RHVoice (hỗ trợ nhiều ngôn ngữ).</p>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Demo TTS tổng hợp | Các công cụ được đề xuất: Web Speech API, Google TTS, Microsoft Edge TTS</p>
+        <p>Lưu ý: Một số tính năng có thể không hoạt động trên tất cả trình duyệt. Khuyến nghị dùng Chrome/Edge để có trải nghiệm tốt nhất.</p>
+    </div>
+
     <script>
-        // === CẤU HÌNH CHÍNH ===
-        const FIREBASE_URL = "https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/sensorData.json";
+        // ========== PHẦN 1: WEB SPEECH API ==========
+        const webSpeechBtn = document.getElementById('webSpeechBtn');
+        const webSpeechStop = document.getElementById('webSpeechStop');
+        const webSpeechDemo = document.getElementById('webSpeechDemo');
+        const webSpeechText = document.getElementById('webSpeechText');
+        const webSpeechStatus = document.getElementById('webSpeechStatus');
+        const webSpeechVoice = document.getElementById('webSpeechVoice');
+        const webSpeechLangButtons = document.querySelectorAll('#webSpeechLanguages .lang-btn');
         
-        // === CẤU HÌNH GOOGLE TTS PROXY MỚI ===
-        const GOOGLE_TTS_URL = 'https://translate.google.com/translate_tts';
-        const TTS_PROXY_URLS = [
-            'https://corsproxy.io/?',
-            'https://api.allorigins.win/raw?url=',
-            'https://api.codetabs.com/v1/proxy?quest=',
-            '' // Không dùng proxy (thử trực tiếp)
-        ];
-        let currentProxyIndex = 0;
+        let currentLang = 'vi-VN';
+        let speechSynthesis = window.speechSynthesis;
+        let currentUtterance = null;
         
-        // === BIẾN HIỆU CHUẨN ===
-        let bentThresholds = [300, 450, 350, 300];
-        const STRAIGHT_THRESHOLDS = [75, 75, 75, 75];
-        
-        let isCalibrating = false;
-        let calibrationInterval = null;
-        let calibrationCountdown = 10;
-        let calibrationMaxValues = [0, 0, 0, 0];
-        
-        // === BIẾN TỐI ƯU HÓA ===
-        let firebaseData = null;
-        let lastUpdateTime = 0;
-        let autoRefresh = true;
-        let logEntries = [];
-        const MAX_LOG_ENTRIES = 20;
-        let isFetching = false;
-        let lastFirebaseData = null;
-        let uiUpdateScheduled = false;
-        let lastFrameTime = performance.now();
-        let frameCount = 0;
-        let currentFPS = 60;
-        let pollingInterval = 300;
-        let turboMode = false;
-        let currentFetchController = null;
-        
-        // Biến xây dựng câu
-        let slot1 = "";
-        let slot2 = "";
-        let displayBuffer = "";
-        let convertedCurrentWord = "";
-        let sentenceWords = [];
-        let fullSentence = "";
-        let convertedFullSentence = "";
-        
-        // Trạng thái cảm biến uốn
-        let flexStates = [0, 0, 0, 0];
-        let lastFlexStates = [-1, -1, -1, -1];
-        let stableCount = 0;
-        let holdStartMs = 0;
-        let holdFired = false;
-        const DEBOUNCE_COUNT = 3;
-        const HOLD_MS_DEFAULT = 1000;
-        const POST_HOLD_COOLDOWN = 800;
-        let lastActionMs = 0;
-        let lastStateString = '';
-        
-        // CACHE cho tối ưu hóa
-        const mappingCache = new Map();
-        const vietnameseCache = new Map();
-        let translationCache = {};
-        let audioCache = new Map();
-        
-        // === BẢNG DỮ LIỆU ===
-        const tableA = [
-            ["IAY","IC","ICH","IE","IEC","IEM","IEN","IENG","IEO"],
-            ["IEP","IET","IEU","IM","IN","ING","INH","IO","IOI"],
-            ["ENG","ENH","EO","EP","ET","EU","I","IA","IAC"],
-            ["IAI","IAM","IAN","IANG","IANH","IAO","IAP","IAT","IAU"],
-            ["AP","AT","AU","AY","E","EC","ECH","EM","EN"],
-            ["A","AC","ACH","AI","AM","AN","ANG","ANH","AO"],
-            ["IUN","IUONG","IUP","O","OA","OAC","OACH","OAI","OAM"],
-            ["ION","IONG","IOT","IP","IT","IU","IUA","IUC","IUI"]
-        ];
-
-        const tableB = [
-            ["UE","UECH","UEN","UENH","UEO","UET","UI","UM","UN"],
-            ["UNG","UO","UOC","UOI","UOM","UON","UONG","UOP","OUT"],
-            ["ONG","OOC","OONG","OP","OT","U","UA","UAC","UACH"],
-            ["UAI","UAM","UAN","UANG","UANH","UAO","UAT","UAY","UC"],
-            ["OAY","OC","OE","OEN","OEO","OET","OI","OM","ON"],
-            ["COMMIT","_","nullptr","nullptr","OAN","OANG","OANH","OAP","OAT"],
-            ["UYNH","UYP","UYT","UYU","Y","YEM","YEN","YET","YEU"],
-            ["UOU","UP","UT","UU","UY","UYA","UYCH","UYEN","UYET"]
-        ];
-
-        const tableC = [
-            [ ["B","C","D"],["Đ","G","H"],["K","L","M"] ],
-            [ ["N","P","Q"],["R","S","T"],["V","X","CH"] ],
-            [ ["GH","KH","NG"],["NGH","NH","PH"],["TH","TR","_"] ]
-        ];
-
-        // Bảng chuyển đổi Tiếng Việt (rút gọn)
-        const vietnameseTable = [
-            {key: "IAY", forms: ["iáy", "iày", "iảy", "iãy", "iạy", "iay", "iấy", "iầy", "iẩy", "iẫy", "iậy", "iây", "iắy", "iằy", "iẳy", "iẵy", "iặy", "iăy"]},
-            {key: "IC", forms: ["íc", "ìc", "ỉc", "ĩc", "ịc", "ic", "íc", "ìc", "ỉc", "ĩc", "ịc", "ic", "íc", "ìc", "ỉc", "ĩc", "ịc", "ic"]},
-            {key: "ICH", forms: ["ích", "ìch", "ỉch", "ĩch", "ịch", "ich", "ích", "ìch", "ỉch", "ĩch", "ịch", "ich", "ích", "ìch", "ỉch", "ĩch", "ịch", "ich"]},
-            {key: "IE", forms: ["ié", "iè", "iẻ", "iẽ", "iẹ", "ie", "iế", "iề", "iể", "iễ", "iệ", "iê", "ié", "iè", "iẻ", "iẽ", "iẹ", "ie"]},
-            {key: "IEC", forms: ["iéc", "ièc", "iẻc", "iẽc", "iẹc", "iec", "iếc", "iềc", "iểc", "iễc", "iệc", "iêc", "iéc", "ièc", "iẻc", "iẽc", "iẹc", "iec"]},
-            {key: "IEM", forms: ["iém", "ièm", "iểm", "iẽm", "ịem", "iem", "iếm", "iềm", "iểm", "iễm", "iệm", "iêm", "iém", "ièm", "iểm", "iẽm", "ịem", "iem"]},
-            {key: "IEN", forms: ["ien", "ièn", "iẻn", "iẽn", "iẹn", "ien", "iên", "iền", "iển", "iễn", "iện", "iên", "ien", "ièn", "iẻn", "iẽn", "iẹn", "ien"]},
-            {key: "IENG", forms: ["ieng", "ièng", "iẻng", "iẽng", "iẹng", "ieng", "iêng", "iềng", "iểng", "iễng", "iệng", "iêng", "ieng", "ièng", "iẻng", "iẽng", "iẹng", "ieng"]},
-            {key: "IEO", forms: ["iéo", "ièo", "iẻo", "iẽo", "iẹo", "ieo", "iếo", "iềo", "iểo", "iễo", "iệo", "iêo", "iéo", "ièo", "iẻo", "iẽo", "iẹo", "ieo"]},
-            {key: "IEP", forms: ["iép", "ièp", "iẻp", "iẽp", "iẹp", "iep", "iếp", "iềp", "iểp", "iễp", "iệp", "iêp", "iép", "ièp", "iẻp", "iẽp", "iẹp", "iep"]},
-            {key: "IET", forms: ["iét", "ièt", "iẻt", "iẽt", "iẹt", "iet", "iết", "iềt", "iểt", "iễt", "iệt", "iêt", "iét", "ièt", "iẻt", "iẽt", "iẹt", "iet"]},
-            {key: "IEU", forms: ["iéu", "ièu", "iẻu", "iẽu", "iẹu", "ieu", "iếu", "iều", "iểu", "iễu", "iệu", "iêu", "iéu", "ièu", "iẻu", "iẽu", "iẹu", "ieu"]},
-            {key: "IM", forms: ["ím", "ìm", "ỉm", "ĩm", "ịm", "im", "ím", "ìm", "ỉm", "ĩm", "ịm", "im", "ím", "ìm", "ỉm", "ĩm", "ịm", "im"]},
-            {key: "IN", forms: ["ín", "ìn", "ỉn", "ĩn", "ịn", "in", "ín", "ìn", "ỉn", "ĩn", "ịn", "in", "ín", "ìn", "ỉn", "ĩn", "ịn", "in"]},
-            {key: "ING", forms: ["íng", "ìng", "ỉng", "ĩng", "ịng", "ing", "íng", "ìng", "ỉng", "ĩng", "ịng", "ing", "íng", "ìng", "ỉng", "ĩng", "ịng", "ing"]},
-            {key: "INH", forms: ["ính", "ình", "ỉnh", "ĩnh", "ịnh", "inh", "ính", "ình", "ỉnh", "ĩnh", "ịnh", "inh", "ính", "ình", "ỉnh", "ĩnh", "ịnh", "inh"]},
-            {key: "IO", forms: ["ió", "iò", "iỏ", "iõ", "iọ", "io", "iố", "iồ", "iổ", "iỗ", "iộ", "iô", "iớ", "iờ", "iở", "iỡ", "iợ", "iơ"]},
-            {key: "IOI", forms: ["iói", "iòi", "iỏi", "iõi", "iọi", "ioi", "iối", "iồi", "iổi", "iỗi", "iội", "iôi", "iới", "iời", "iởi", "iỡi", "iợi", "iơi"]},
-            {key: "I", forms: ["í", "ì", "ỉ", "ĩ", "ị", "i", "í", "ì", "ỉ", "ĩ", "ị", "i", "í", "ì", "ỉ", "ĩ", "ị", "i"]},
-            {key: "IA", forms: ["ía", "ìa", "ỉa", "ĩa", "ịa", "ia", "ía", "ìa", "ỉa", "ĩa", "ịa", "ia", "ía", "ìa", "ỉa", "ĩa", "ịa", "ia"]},
-            {key: "IAI", forms: ["iái", "iài", "iải", "iãi", "iại", "iai", "iấi", "iầi", "iẩi", "iẫi", "iậi", "iâi", "iắi", "iằi", "iẳi", "iẵi", "iặi", "iăi"]},
-            {key: "IAM", forms: ["iám", "iàm", "iảm", "iãm", "iạm", "iam", "iấm", "iầm", "iẩm", "iẫm", "iậm", "iâm", "iắm", "iằm", "iẳm", "iẵm", "iặm", "iăm"]},
-            {key: "IAN", forms: ["ián", "iàn", "iản", "iãn", "iạn", "ian", "iấn", "iần", "iẩn", "iẫn", "iận", "iân", "iắn", "iằn", "iẳn", "iẵn", "iặn", "iăn"]},
-            {key: "IANG", forms: ["iáng", "iàng", "iảng", "iãng", "iạng", "iang", "iấng", "iầng", "iẩng", "iẫng", "iậng", "iâng", "iắng", "iằng", "iẳng", "iẵng", "iặng", "iăng"]},
-            {key: "IANH", forms: ["iánh", "iành", "iảnh", "iãnh", "iạnh", "ianh", "iấnh", "iầnh", "iẩnh", "iẫnh", "iậnh", "iânh", "iắnh", "iằnh", "iẳnh", "iẵnh", "iặnh", "iănh"]},
-            {key: "IAO", forms: ["iáo", "iào", "iảo", "ião", "iạo", "iao", "iáo", "iào", "iảo", "ião", "iạo", "iao", "iáo", "iào", "iảo", "ião", "iạo", "iao"]},
-            {key: "IAP", forms: ["iáp", "iàp", "iảp", "iãp", "iạp", "iap", "iấp", "iầp", "iẩp", "iẫp", "iập", "iâp", "iắp", "iằp", "iẳp", "iẵp", "iặp", "iăp"]},
-            {key: "IAT", forms: ["iát", "iàt", "iảt", "iãt", "iạt", "iat", "iất", "iầt", "iẩt", "iẫt", "iật", "iât", "iắt", "iằt", "iẳt", "iẵt", "iặt", "iăt"]},
-            {key: "IAU", forms: ["iáu", "iàu", "iảu", "iãu", "iạu", "iau", "iấu", "iầu", "iẩu", "iẫu", "iậu", "iâu", "iáu", "iàu", "iảu", "iãu", "iạu", "iau"]},
-            {key: "AP", forms: ["áp", "àp", "ảp", "ãp", "ạp", "ap", "ấp", "ầp", "ẩp", "ẫp", "ập", "âp", "ắp", "ằp", "ẳp", "ẵp", "ặp", "ăp"]},
-            {key: "AT", forms: ["át", "àt", "ảt", "ãt", "ạt", "at", "ất", "ầt", "ẩt", "ẫt", "ật", "ât", "ắt", "ằt", "ẳt", "ẵt", "ặt", "ăt"]},
-            {key: "AU", forms: ["áu", "àu", "ảu", "ãu", "ạu", "au", "ấu", "ầu", "ẩu", "ẫu", "ậu", "âu", "ắu", "ằu", "ẳu", "ẵu", "ặu", "ău"]},
-            {key: "AY", forms: ["áy", "ày", "ảy", "ãy", "ạy", "ay", "ấy", "ầy", "ẩy", "ẫy", "ậy", "ây", "ắy", "ằy", "ẳy", "ẵy", "ặy", "ăy"]},
-            {key: "E", forms: ["é", "è", "ẻ", "ẽ", "ẹ", "e", "ế", "ề", "ể", "ễ", "ệ", "ê", "é", "è", "ẻ", "ẽ", "ẹ", "e"]},
-            {key: "EM", forms: ["ém", "èm", "ểm", "ẽm", "ẹm", "em", "ếm", "ềm", "ểm", "ễm", "ệm", "êm", "ém", "èm", "ểm", "ẽm", "ẹm", "em"]},
-            {key: "EN", forms: ["én", "èn", "ển", "ễn", "ện", "en", "ến", "ền", "ển", "ễn", "ện", "ên", "én", "èn", "ển", "ễn", "ện", "en"]},
-            {key: "A", forms: ["á", "à", "ả", "ã", "ạ", "a", "ấ", "ầ", "ẩ", "ẫ", "ậ", "â", "ắ", "ằ", "ẳ", "ẵ", "ặ", "ă"]},
-            {key: "AI", forms: ["ái", "ài", "ải", "ãi", "ại", "ai", "ấi", "ầi", "ẩi", "ẫi", "ậi", "âi", "ắi", "ằi", "ẳi", "ẵi", "ặi", "ăi"]},
-            {key: "AM", forms: ["ám", "àm", "ảm", "ãm", "ạm", "am", "ấm", "ầm", "ẩm", "ẫm", "ậm", "âm", "ắm", "ằm", "ẳm", "ẵm", "ặm", "ăm"]},
-            {key: "AN", forms: ["án", "àn", "ản", "ãn", "ạn", "an", "ấn", "ần", "ẩn", "ẫn", "ận", "ân", "ắn", "ằn", "ẳn", "ẵn", "ặn", "ăn"]},
-            {key: "ANG", forms: ["áng", "àng", "ảng", "ãng", "ạng", "ang", "ấng", "ầng", "ẩng", "ẫng", "ậng", "âng", "ắng", "ằng", "ẳng", "ẵng", "ặng", "ăng"]},
-            {key: "ANH", forms: ["ánh", "ành", "ảnh", "ãnh", "ạnh", "anh", "ấnh", "ầnh", "ẩnh", "ẫnh", "ậnh", "ânh", "ắnh", "ằnh", "ẳnh", "ẵnh", "ặnh", "ănh"]},
-            {key: "AO", forms: ["áo", "ào", "ảo", "ão", "ạo", "ao", "ấo", "ầo", "ẩo", "ẫo", "ậo", "âo", "ắo", "ằo", "ẳo", "ẵo", "ặo", "ăo"]},
-            {key: "UE", forms: ["ué", "uè", "uẻ", "uẽ", "uẹ", "ue", "uế", "uề", "uể", "uễ", "uệ", "uê", "ưé", "ưè", "ưẻ", "ưẽ", "ưẹ", "ưe"]},
-            {key: "UEN", forms: ["uên", "uền", "uển", "uễn", "uện", "uen", "uên", "uền", "uển", "uễn", "uện", "uên", "ưên", "ưền", "ưển", "ưễn", "ưện", "ưen"]},
-            {key: "UI", forms: ["úi", "ùi", "ủi", "ũi", "ụi", "ui", "úi", "ùi", "ủi", "ũi", "ụi", "ui", "ứi", "ừi", "ửi", "ữi", "ựi", "ưi"]},
-            {key: "UM", forms: ["úm", "ùm", "ủm", "ũm", "ụm", "um", "úm", "ùm", "ủm", "ũm", "ụm", "um", "ứm", "ừm", "ửm", "ữm", "ựm", "ưm"]},
-            {key: "UN", forms: ["ún", "ùn", "ủn", "ũn", "ụn", "un", "ún", "ùn", "ủn", "ũn", "ụn", "un", "ứn", "ừn", "ửn", "ữn", "ựn", "ưn"]},
-            {key: "UNG", forms: ["úng", "ùng", "ủng", "ũng", "ụng", "ung", "úng", "ùng", "ủng", "ũng", "ụng", "ung", "ứng", "ừng", "ửng", "ững", "ựng", "ưng"]},
-            {key: "UO", forms: ["uó", "uò", "uỏ", "uõ", "uọ", "uo", "uố", "uồ", "uổ", "uỗ", "uộ", "uô", "ướ", "ườ", "ưở", "ưỡ", "ượ", "ươ"]},
-            {key: "UOC", forms: ["uốc", "uộc", "uổc", "uỗc", "uộc", "uoc", "uốc", "uộc", "uổc", "uỗc", "uộc", "uôc", "ưốc", "ưộc", "ưổc", "ưỗc", "ưộc", "ươc"]},
-            {key: "UOI", forms: ["uối", "uồi", "uổi", "uỗi", "uội", "uoi", "uối", "uồi", "uổi", "uỗi", "uội", "uôi", "ưối", "ưồi", "ưổi", "ưỗi", "ưội", "ươi"]},
-            {key: "UON", forms: ["uón", "uòn", "uỏn", "uõn", "uọn", "uon", "uốn", "uồn", "uổn", "uỗn", "uộn", "uôn", "ướn", "ườn", "ưởn", "ưỡn", "ượn", "ươn"]},
-            {key: "UONG", forms: ["uóng", "uòng", "uỏng", "uõng", "uọng", "uong", "uống", "uồng", "uổng", "uỗng", "uộng", "uông", "ướng", "ường", "ưởng", "ưỡng", "ượng", "ương"]},
-            {key: "ONG", forms: ["óng", "òng", "ỏng", "õng", "ọng", "ong", "ống", "ồng", "ổng", "ỗng", "ộng", "ông", "ớng", "ờng", "ởng", "ỡng", "ợng", "ơng"]},
-            {key: "OP", forms: ["óp", "òp", "ỏp", "õp", "ọp", "op", "ốp", "ồp", "ổp", "ỗp", "ộp", "ôp", "ớp", "ờp", "ởp", "ỡp", "ợp", "ơp"]},
-            {key: "OT", forms: ["ót", "òt", "ỏt", "õt", "ọt", "ot", "ốt", "ồt", "ổt", "ỗt", "ột", "ôt", "ớt", "ờt", "ởt", "ỡt", "ợt", "ơt"]},
-            {key: "U", forms: ["ú", "ù", "ủ", "ũ", "ụ", "u", "ú", "ù", "ủ", "ũ", "ụ", "u", "ứ", "ừ", "ử", "ữ", "ự", "ư"]},
-            {key: "UA", forms: ["úa", "ùa", "ủa", "ũa", "ụa", "ua", "úa", "ùa", "ủa", "ũa", "ụa", "ua", "úa", "ùa", "ủa", "ũa", "ụa", "ua"]},
-            {key: "UAI", forms: ["uái", "uài", "uải", "uãi", "uại", "uai", "uấi", "uầi", "uẩi", "uẫi", "uậi", "uâi", "uái", "uài", "uải", "uãi", "uại", "uai"]},
-            {key: "UAN", forms: ["uán", "uàn", "uản", "uãn", "uạn", "uan", "uấn", "uần", "uẩn", "uẫn", "uận", "uân", "uắn", "uằn", "uẳn", "uẵn", "uặn", "uăn"]},
-            {key: "UANG", forms: ["uáng", "uàng", "uảng", "uãng", "uạng", "uang", "uấng", "uầng", "uẩng", "uẫng", "uậng", "uâng", "uắng", "uằng", "uẳng", "uẵng", "uặng", "uăng"]},
-            {key: "UANH", forms: ["uánh", "uành", "uảnh", "uãnh", "uạnh", "uanh", "uấnh", "uầnh", "uẩnh", "uẫnh", "uậnh", "uânh", "uắnh", "uằnh", "uẳnh", "uẵnh", "uặnh", "uănh"]},
-            {key: "UAY", forms: ["uáy", "uày", "uảy", "uãy", "uạy", "uay", "uấy", "uầy", "uẩy", "uẫy", "uậy", "uây", "uắy", "uằy", "uẳy", "uẵy", "uặy", "uăy"]},
-            {key: "UC", forms: ["úc", "ùc", "ủc", "ũc", "ục", "uc", "úc", "ùc", "ủc", "ũc", "ục", "uc", "ức", "ừc", "ửc", "ữc", "ực", "ưc"]},
-            {key: "OAY", forms: ["oáy", "oày", "oảy", "oãy", "oạy", "oay", "oáy", "oày", "oảy", "oãy", "oạy", "oay", "oáy", "oày", "oảy", "oãy", "oạy", "oay"]},
-            {key: "OC", forms: ["óc", "òc", "ỏc", "õc", "ọc", "oc", "ốc", "ồc", "ổc", "ỗc", "ộc", "ôc", "ớc", "ờc", "ởc", "ỡc", "ợc", "ơc"]},
-            {key: "OE", forms: ["óe", "òe", "ỏe", "õe", "ọe", "oe", "óe", "òe", "ỏe", "õe", "ọe", "oe", "óe", "òe", "ỏe", "õe", "ọe", "oe"]},
-            {key: "OI", forms: ["ói", "òi", "ỏi", "õi", "ọi", "oi", "ối", "ồi", "ổi", "ỗi", "ội", "ôi", "ới", "ời", "ởi", "ỡi", "ợi", "ơi"]},
-            {key: "OM", forms: ["óm", "òm", "ỏm", "õm", "ọm", "om", "ốm", "ồm", "ổm", "ỗm", "ộm", "ôm", "ớm", "ờm", "ởm", "ỡm", "ợm", "ơm"]},
-            {key: "ON", forms: ["ón", "òn", "ỏn", "õn", "ọn", "on", "ốn", "ồn", "ổn", "ỗn", "ộn", "ôn", "ớn", "ờn", "ởn", "ỡn", "ợn", "ơn"]},
-            {key: "OAN", forms: ["oán", "oàn", "oản", "oãn", "oạn", "oan", "oán", "oàn", "oản", "oãn", "oạn", "oan", "oán", "oàn", "oản", "oãn", "oạn", "oan"]},
-            {key: "OANG", forms: ["oáng", "oàng", "oảng", "oãng", "oạng", "oang", "oáng", "oàng", "oảng", "oãng", "oạng", "oang", "oáng", "oàng", "oảng", "oãng", "oạng", "oang"]},
-            {key: "OANH", forms: ["oánh", "oành", "oảnh", "oãnh", "oạnh", "oanh", "oánh", "oành", "oảnh", "oãnh", "oạnh", "oanh", "oánh", "oành", "oảnh", "oãnh", "oạnh", "oanh"]},
-            {key: "OAT", forms: ["oát", "òat", "oảt", "oãt", "oạt", "oat", "oát", "òat", "oảt", "oãt", "oạt", "oat", "oát", "òat", "oảt", "oãt", "oạt", "oat"]},
-            {key: "Y", forms: ["ý", "ỳ", "ỷ", "ỹ", "ỵ", "y", "ý", "ỳ", "ỷ", "ỹ", "ỵ", "y", "ý", "ỳ", "ỷ", "ỹ", "ỵ", "y"]},
-            {key: "YEN", forms: ["yen", "yèn", "yẻn", "yẽn", "yẹn", "yen", "yên", "yền", "yển", "yễn", "yện", "yên", "yen", "yèn", "yẻn", "yẽn", "yẹn", "yen"]},
-            {key: "YET", forms: ["yét", "yèt", "yẻt", "yẽt", "yẹt", "yet", "yết", "yềt", "yểt", "yễt", "yệt", "yêt", "yét", "yèt", "yẻt", "yẽt", "yẹt", "yet"]},
-            {key: "YEU", forms: ["yêu", "yều", "yểu", "yễu", "yệu", "yeu", "yêu", "yều", "yểu", "yễu", "yệu", "yêu", "yêu", "yều", "yểu", "yễu", "yệu", "yeu"]},
-            {key: "UY", forms: ["úy", "ùy", "ủy", "ũy", "ụy", "uy", "úy", "ùy", "ủy", "ũy", "ụy", "uy", "ứy", "ừy", "ửy", "ữy", "ựy", "ưy"]},
-            {key: "UYET", forms: ["uyét", "uyèt", "uyẻt", "uyẽt", "uyẹt", "uyet", "uyết", "uyềt", "uyểt", "uyễt", "uyệt", "uyêt", "uyét", "uyèt", "uyẻt", "uyẽt", "uyẹt", "uyet"]},
-            {key: "AC", forms: ["ác", "àc", "ảc", "ãc", "ạc", "ac", "ấc", "ầc", "ẩc", "ẫc", "ậc", "âc", "ắc", "ằc", "ẳc", "ẵc", "ặc", "ăc"]},
-            {key: "ACH", forms: ["ách", "àch", "ảch", "ãch", "ạch", "ach", "ấch", "ầch", "ẩch", "ẫch", "ậch", "âch", "ắch", "ằch", "ẳch", "ẵch", "ặch", "ăch"]},
-            {key: "EC", forms: ["éc", "èc", "ẻc", "ẽc", "ẹc", "ec", "ếc", "ềc", "ểc", "ễc", "ệc", "êc", "éc", "èc", "ẻc", "ẽc", "ẹc", "ec"]},
-            {key: "ECH", forms: ["éch", "èch", "ẻch", "ẽch", "ẹch", "ech", "ếch", "ềch", "ểch", "ễch", "ệch", "êch", "éch", "èch", "ẻch", "ẽch", "ẹch", "ech"]},
-            {key: "ENG", forms: ["éng", "èng", "ẻng", "ẽng", "ẹng", "eng", "ếng", "ềng", "ểng", "ễng", "ệng", "êng", "éng", "èng", "ẻng", "ẽng", "ẹng", "eng"]},
-            {key: "ENH", forms: ["enh", "ènh", "ẻnh", "ẽnh", "ẹnh", "enh", "ếnh", "ềnh", "ểnh", "ễnh", "ệnh", "ênh", "enh", "ènh", "ẻnh", "ẽnh", "ẹnh", "enh"]},
-            {key: "EO", forms: ["éo", "èo", "ẻo", "ẽo", "ẹo", "eo", "éo", "èo", "ẻo", "ẽo", "ẹo", "eo", "éo", "èo", "ẻo", "ẽo", "ẹo", "eo"]},
-            {key: "EP", forms: ["ép", "èp", "ẻp", "ẽp", "ẹp", "ep", "ếp", "ềp", "ểp", "ễp", "ệp", "êp", "ép", "èp", "ẻp", "ẽp", "ẹp", "ep"]},
-            {key: "ET", forms: ["ét", "èt", "ẻt", "ẽt", "ẹt", "et", "ết", "ềt", "ểt", "ễt", "ệt", "êt", "ét", "èt", "ẻt", "ẽt", "ẹt", "et"]},
-            {key: "EU", forms: ["éu", "èu", "ẻu", "ẽu", "ẹu", "eu", "ếu", "ều", "ểu", "ễu", "ệu", "êu", "éu", "èu", "ẻu", "ẽu", "ẹu", "eu"]},
-            {key: "IAC", forms: ["iác", "iàc", "iảc", "iãc", "iạc", "iac", "iấc", "iầc", "iẩc", "iẫc", "iậc", "iâc", "iắc", "iằc", "iẳc", "iẵc", "iặc", "iăc"]},
-            {key: "ION", forms: ["ión", "ìon", "ỉon", "ĩon", "ịon", "ion", "ión", "ìon", "ỉon", "ĩon", "ịon", "ion", "ión", "ìon", "ỉon", "ĩon", "ịon", "ion"]},
-            {key: "IONG", forms: ["ióng", "ìong", "ỉong", "ĩong", "ịong", "iong", "ióng", "ìong", "ỉong", "ĩong", "ịong", "iong", "ióng", "ìong", "ỉong", "ĩong", "ịong", "iong"]},
-            {key: "IOT", forms: ["iót", "ìot", "ỉot", "ĩot", "ịot", "iot", "iót", "ìot", "ỉot", "ĩot", "ịot", "iot", "iót", "ìot", "ỉot", "ĩot", "ịot", "iot"]},
-            {key: "IP", forms: ["íp", "ìp", "ỉp", "ĩp", "ịp", "ip", "íp", "ìp", "ỉp", "ĩp", "ịp", "ip", "íp", "ìp", "ỉp", "ĩp", "ịp", "ip"]},
-            {key: "IT", forms: ["ít", "ìt", "ỉt", "ĩt", "ịt", "it", "ít", "ìt", "ỉt", "ĩt", "ịt", "it", "ít", "ìt", "ỉt", "ĩt", "ịt", "it"]},
-            {key: "IU", forms: ["iú", "ìu", "ỉu", "ĩu", "ịu", "iu", "iú", "ìu", "ỉu", "ĩu", "ịu", "iu", "iú", "ìu", "ỉu", "ĩu", "ịu", "iu"]},
-            {key: "IUA", forms: ["iúa", "iùa", "iủa", "iũa", "iụa", "iua", "iúa", "iùa", "iủa", "iũa", "iụa", "iua", "iúa", "iùa", "iủa", "iũa", "iụa", "iua"]},
-            {key: "IUC", forms: ["iúc", "iùc", "iủc", "iũc", "iục", "iuc", "iúc", "iùc", "iủc", "iũc", "iục", "iuc", "iúc", "iùc", "iủc", "iũc", "iục", "iuc"]},
-            {key: "IUI", forms: ["íui", "ìui", "ỉui", "ĩui", "ịui", "iui", "íui", "ìui", "ỉui", "ĩui", "ịui", "iui", "íui", "ìui", "ỉui", "ĩui", "ịui", "iui"]},
-            {key: "IUN", forms: ["iún", "iùn", "iủn", "iũn", "iụn", "iun", "iún", "iùn", "iủn", "iũn", "iụn", "iun", "iún", "iùn", "iủn", "iũn", "iụn", "iun"]},
-            {key: "IUONG", forms: ["íuong", "ìuong", "ỉuong", "ĩuong", "ịuong", "iuong", "íuong", "ìuong", "ỉuong", "ĩuong", "ịuong", "iuong", "iướng", "iường", "iưởng", "iưỡng", "iượng", "iương"]},
-            {key: "IUP", forms: ["iúp", "iùp", "iủp", "iũp", "iụp", "iup", "iúp", "iùp", "iủp", "iũp", "iụp", "iup", "íup", "ìup", "ỉup", "iũp", "iụp", "iup"]},
-            {key: "O", forms: ["ó", "ò", "ỏ", "õ", "ọ", "o", "ố", "ồ", "ổ", "ỗ", "ộ", "ô", "ớ", "ờ", "ở", "ỡ", "ợ", "ơ"]},
-            {key: "OA", forms: ["óa", "òa", "ỏa", "õa", "ọa", "oa", "óa", "òa", "ỏa", "õa", "ọa", "oa", "óa", "òa", "ỏa", "õa", "ọa", "oa"]},
-            {key: "OAC", forms: ["oác", "oàc", "oảc", "oãc", "oạc", "oac", "oác", "oàc", "oảc", "oãc", "oạc", "oac", "oắc", "oằc", "oẳc", "oẵc", "oặc", "oăc"]},
-            {key: "OACH", forms: ["oách", "oàch", "oảch", "oãch", "oạch", "oach", "oách", "oàch", "oảch", "oãch", "oạch", "oach", "oách", "oàch", "oảch", "oãch", "oạch", "oach"]},
-            {key: "OAI", forms: ["oái", "oài", "oải", "oãi", "oại", "oai", "oái", "oài", "oải", "oãi", "oại", "oai", "oái", "oài", "oải", "oãi", "oại", "oai"]},
-            {key: "OAM", forms: ["oám", "oàm", "oảm", "oãm", "oạm", "oam", "oám", "oàm", "oảm", "oãm", "oạm", "oam", "oám", "oàm", "oảm", "oãm", "oạm", "oam"]},
-            {key: "OEN", forms: ["oén", "oèn", "oẻn", "oẽn", "oẹn", "oen", "oến", "oền", "oển", "oễn", "oện", "oên", "oén", "oèn", "oẻn", "oẽn", "oẹn", "oen"]},
-            {key: "OEO", forms: ["oéo", "oèo", "oẻo", "oẽo", "oẹo", "oeo", "oếo", "oềo", "oểo", "oễo", "oệo", "oêo", "oéo", "oèo", "oẻo", "oẽo", "oẹo", "oeo"]},
-            {key: "OET", forms: ["oét", "oèt", "oẻt", "oẽt", "oẹt", "oet", "oết", "oềt", "oểt", "oễt", "oệt", "oêt", "oét", "oèt", "oẻt", "oẽt", "oẹt", "oet"]},
-            {key: "OOC", forms: ["oóc", "oòc", "oỏc", "oõc", "oọc", "ooc", "oóc", "oòc", "oỏc", "oõc", "oọc", "ooc", "oóc", "oòc", "oỏc", "oõc", "oọc", "ooc"]},
-            {key: "OONG", forms: ["oóng", "oòng", "oỏng", "oõng", "oọng", "oong", "oóng", "oòng", "oỏng", "oõng", "oọng", "oong", "oóng", "oòng", "oỏng", "oõng", "oọng", "oong"]},
-            {key: "UAC", forms: ["uác", "uàc", "uảc", "uãc", "uạc", "uac", "uấc", "uầc", "uẩc", "uẫc", "uậc", "uâc", "uắc", "uằc", "uẳc", "uẵc", "uặc", "uăc"]},
-            {key: "UACH", forms: ["uách", "uàch", "uảch", "uãch", "uạch", "uach", "uấch", "uầch", "uẩch", "uẫch", "uậch", "uâch", "uắch", "uằch", "uẳch", "uẵch", "uặch", "uăch"]},
-            {key: "UAI", forms: ["uái", "uài", "uải", "uãi", "uại", "uai", "uấi", "uầi", "uẩi", "uẫi", "uậi", "uâi", "uái", "uài", "uải", "uãi", "uại", "uai"]},
-            {key: "UAM", forms: ["uám", "uàm", "uảm", "uãm", "uạm", "uam", "uấm", "uầm", "uẩm", "uẫm", "uậm", "uâm", "uám", "uàm", "uảm", "uãm", "uạm", "uam"]},
-            {key: "UAO", forms: ["uáo", "uào", "uảo", "uão", "uạo", "uao", "uáo", "uào", "uảo", "uão", "uạo", "uao", "uáo", "uào", "uảo", "uão", "uạo", "uao"]},
-            {key: "UAT", forms: ["uát", "uàt", "uảt", "uãt", "uạt", "uat", "uất", "uầt", "uẩt", "uẫt", "uật", "uât", "uắt", "uằt", "uẳt", "uẵt", "uặt", "uăt"]},
-            {key: "UECH", forms: ["uéch", "uèch", "uẻch", "uẽch", "uẹch", "uech", "uếch", "uềch", "uểch", "uễch", "uệch", "uêch", "uéch", "uèch", "uẻch", "uẽch", "uẹch", "uech"]},
-            {key: "UENH", forms: ["uénh", "uènh", "uẻnh", "uẽnh", "uẹnh", "uenh", "uếnh", "uềnh", "uểnh", "uễnh", "uệnh", "uênh", "uénh", "uènh", "uẻnh", "uẽnh", "uẹnh", "uenh"]},
-            {key: "UEO", forms: ["uéo", "uèo", "uẻo", "uẽo", "uẹo", "ueo", "uếo", "uềo", "uểo", "uễo", "uệo", "uêo", "uéo", "uèo", "uẻo", "uẽo", "uẹo", "ueo"]},
-            {key: "UET", forms: ["uét", "uèt", "uẻt", "uẽt", "uẹt", "uet", "uết", "uềt", "uểt", "uễt", "uệt", "uêt", "uét", "uèt", "uẻt", "uẽt", "uẹt", "uet"]},
-            {key: "UOM", forms: ["uóm", "uòm", "uỏm", "uõm", "uọm", "uom", "uốm", "uồm", "uổm", "uỗm", "uộm", "uôm", "ướm", "ườm", "ưởm", "ưỡm", "ượm", "ươm"]},
-            {key: "UOP", forms: ["uóp", "uòp", "uỏp", "uõp", "uọp", "uop", "uốp", "uồp", "uổp", "uỗp", "uộp", "uôp", "ướp", "ườp", "ưởp", "ưỡp", "ượp", "ươp"]},
-            {key: "OUT", forms: ["óut", "òut", "ỏut", "õut", "ọut", "out", "óut", "òut", "ỏut", "õut", "ọut", "out", "óut", "òut", "ỏut", "õut", "ọut", "out"]},
-            {key: "UOU", forms: ["uóu", "uòu", "uỏu", "uõu", "uọu", "uou", "uốu", "uồu", "uổu", "uỗu", "uộu", "uôu", "ướu", "ườu", "ưởu", "ưỡu", "ượu", "ươu"]},
-            {key: "UP", forms: ["úp", "ùp", "ủp", "ũp", "ụp", "up", "úp", "ùp", "ủp", "ũp", "ụp", "up", "ứp", "ừp", "ửp", "ữp", "ựp", "ưp"]},
-            {key: "UT", forms: ["út", "ùt", "ủt", "ũt", "ụt", "ut", "út", "ùt", "ủt", "ũt", "ụt", "ut", "ứt", "ừt", "ửt", "ữt", "ựt", "ưt"]},
-            {key: "UU", forms: ["úu", "ùu", "ủu", "ũu", "ụu", "uu", "úu", "ùu", "ủu", "ũu", "ụu", "uu", "ứu", "ừu", "ửu", "ữu", "ựu", "ưu"]},
-            {key: "UYA", forms: ["uýa", "uỳa", "uỷa", "uỹa", "uỵa", "uya", "uýa", "uỳa", "uỷa", "uỹa", "uỵa", "uya", "uýa", "uỳa", "uỷa", "uỹa", "uỵa", "uya"]},
-            {key: "UYCH", forms: ["uých", "uỳch", "uỷch", "uỹch", "uỵch", "uych", "uých", "uỳch", "uỷch", "uỹch", "uỵch", "uych", "uých", "uỳch", "uỷch", "uỹch", "uỵch", "uych"]},
-            {key: "UYEN", forms: ["uyén", "uyèn", "uyẻn", "uyẽn", "uyẹn", "uyen", "uyến", "uyền", "uyển", "uyễn", "uyện", "uyên", "uyén", "uyèn", "uyẻn", "uyẽn", "uyẹn", "uyen"]},
-            {key: "UYET", forms: ["uyét", "uyèt", "uyẻt", "uyẽt", "uyẹt", "uyet", "uyết", "uyềt", "uyểt", "uyễt", "uyệt", "uyêt", "uyét", "uyèt", "uyẻt", "uyẽt", "uyẹt", "uyet"]},
-            {key: "UYNH", forms: ["uýnh", "uỳnh", "uỷnh", "uỹnh", "uỵnh", "uynh", "uýnh", "uỳnh", "uỷnh", "uỹnh", "uỵnh", "uynh", "uýnh", "uỳnh", "uỷnh", "uỹnh", "uỵnh", "uynh"]},
-            {key: "UYP", forms: ["uýp", "uỳp", "uỷp", "uỹp", "uỵp", "uyp", "uýp", "uỳp", "uỷp", "uỹp", "uỵp", "uyp", "uýp", "uỳp", "uỷp", "uỹp", "uỵp", "uyp"]},
-            {key: "UYT", forms: ["uýt", "uỳt", "uỷt", "uỹt", "uỵt", "uyt", "uýt", "uỳt", "uỷt", "uỹt", "uỵt", "uyt", "uýt", "uỳt", "uỷt", "uỹt", "uỵt", "uyt"]},
-            {key: "UYU", forms: ["uýu", "uỳu", "uỷu", "uỹu", "uỵu", "uyu", "uýu", "uỳu", "uỷu", "uỹu", "uỵu", "uyu", "uýu", "uỳu", "uỷu", "uỹu", "uỵu", "uyu"]},
-            {key: "YEM", forms: ["yém", "yèm", "yẻm", "yẽm", "yẹm", "yem", "yếm", "yềm", "yểm", "yễm", "yệm", "yêm", "yém", "yèm", "yẻm", "yẽm", "yẹm", "yem"]},
-            {key: "OAP", forms: ["oáp", "oàp", "oảp", "oãp", "oạp", "oap", "oáp", "oàp", "oảp", "oãp", "oạp", "oap", "oáp", "oàp", "oảp", "oãp", "oạp", "oap"]}
-       
-        ];
-
-        // Ánh xạ trạng thái MPU
-        const mpuStateMap = {
-            "Up": 0,
-            "Down": 1,
-            "Left": 2,
-            "Right": 3,
-            "Forward": 4,
-            "Backward": 5
-        };
-
-        // Danh sách cụm từ đề xuất
-        const commonPhrases = [
-            "Xin chào, rất vui được gặp bạn",
-            "Chào buổi sáng",
-            "Chào buổi chiều",
-            "Chào buổi tối",
-            "Làm ơn cho tôi xin hóa đơn",
-            "Bạn khỏe không?",
-            "Cảm ơn bạn rất nhiều",
-            "Làm ơn cho tôi hỏi đường",
-            "Chúc một ngày tốt lành",
-            "Tôi yêu ngôn ngữ này",
-            "Hẹn gặp lại sau",
-            "Tôi đói bụng",
-            "Bao nhiêu tiền?",
-            "Tôi không hiểu",
-            "Bạn có thể nói chậm hơn được không?",
-            "Bạn tên là gì?",
-            "Tôi tên là...",
-            "Rất vui được làm quen",
-            "Tôi cần giúp đỡ",
-            "Làm ơn chỉ đường đến nhà ga",
-            "Nhà vệ sinh ở đâu?",
-            "Tôi bị lạc đường",
-            "Bạn nói tiếng Anh được không?",
-            "Xin lỗi, tôi không nghe rõ",
-            "Bạn có thể lặp lại không?"
-        ];
-
-        // === BIẾN TTS ===
-        let isSpeaking = false;
-        let currentSpeech = null;
-        let audioVisualizerInterval = null;
-        let useGoogleTTS = true;
-        
-        // Giọng nói hiện tại
-        let currentVoice = {
-            lang: 'vi-VN',
-            gender: 'male',
-            accent: 'north',
-            speed: 1.0,
-            pitch: 1.0
-        };
-
-        // Mapping ngôn ngữ cho Google TTS
-        const LANGUAGE_MAPPING = {
-            'vi': 'vi-VN',
-            'vi-VN': 'vi',
-            'en': 'en-US',
-            'en-US': 'en',
-            'en-GB': 'en-GB',
-            'ja': 'ja-JP',
-            'ja-JP': 'ja',
-            'ko': 'ko-KR',
-            'ko-KR': 'ko',
-            'zh-CN': 'zh-CN',
-            'zh-TW': 'zh-TW',
-            'fr': 'fr-FR',
-            'fr-FR': 'fr',
-            'es': 'es-ES',
-            'es-ES': 'es',
-            'de': 'de-DE',
-            'de-DE': 'de'
-        };
-
-        // Giọng nói theo ngôn ngữ và giới tính
-        const VOICE_PROFILES = {
-            'vi-VN': {
-                male: { langCode: 'vi', speed: 0.95, pitch: 0.9, name: 'Nam Tiếng Việt' },
-                female: { langCode: 'vi', speed: 1.05, pitch: 1.1, name: 'Nữ Tiếng Việt' }
-            },
-            'en-US': {
-                male: { langCode: 'en', speed: 1.0, pitch: 0.95, name: 'Nam Tiếng Anh (Mỹ)' },
-                female: { langCode: 'en', speed: 1.1, pitch: 1.05, name: 'Nữ Tiếng Anh (Mỹ)' }
-            },
-            'en-GB': {
-                male: { langCode: 'en', speed: 0.95, pitch: 0.9, name: 'Nam Tiếng Anh (Anh)' },
-                female: { langCode: 'en', speed: 1.0, pitch: 1.0, name: 'Nữ Tiếng Anh (Anh)' }
-            },
-            'ja-JP': {
-                male: { langCode: 'ja', speed: 0.9, pitch: 0.85, name: 'Nam Tiếng Nhật' },
-                female: { langCode: 'ja', speed: 1.0, pitch: 1.1, name: 'Nữ Tiếng Nhật' }
-            },
-            'ko-KR': {
-                male: { langCode: 'ko', speed: 0.95, pitch: 0.9, name: 'Nam Tiếng Hàn' },
-                female: { langCode: 'ko', speed: 1.05, pitch: 1.05, name: 'Nữ Tiếng Hàn' }
-            },
-            'zh-CN': {
-                male: { langCode: 'zh-CN', speed: 0.9, pitch: 0.85, name: 'Nam Tiếng Trung' },
-                female: { langCode: 'zh-CN', speed: 1.0, pitch: 1.0, name: 'Nữ Tiếng Trung' }
-            }
-        };
-
-        // === HÀM GOOGLE TTS PROXY CẢI TIẾN ===
-        async function speakWithGoogleTTS(text, lang = 'vi-VN', gender = 'male', speed = 1.0, pitch = 1.0) {
-            if (!text || text.trim() === '') {
-                showTTSError('Không có văn bản để đọc');
-                return;
-            }
-            
-            if (isSpeaking) {
-                stopAllSpeech();
-                await new Promise(resolve => setTimeout(resolve, 100));
-            }
-            
-            const voiceProfile = VOICE_PROFILES[lang]?.[gender] || VOICE_PROFILES['vi-VN']['male'];
-            const langCode = LANGUAGE_MAPPING[lang] || lang.split('-')[0];
-            
-            const cacheKey = `${text}_${lang}_${gender}_${speed}_${pitch}`;
-            
-            if (audioCache.has(cacheKey)) {
-                const cachedAudio = audioCache.get(cacheKey);
-                playCachedAudio(cachedAudio, text);
-                return;
-            }
-            
-            const maxRetries = TTS_PROXY_URLS.length;
-            let lastError = null;
-            
-            for (let retry = 0; retry < maxRetries; retry++) {
-                const proxyUrl = TTS_PROXY_URLS[currentProxyIndex];
-                
-                try {
-                    showTTSError('');
-                    document.getElementById('speakVnBtn').classList.add('loading');
-                    
-                    const encodedText = encodeURIComponent(text);
-                    const ttsParams = new URLSearchParams({
-                        ie: 'UTF-8',
-                        q: encodedText,
-                        tl: langCode,
-                        total: '1',
-                        idx: '0',
-                        textlen: text.length.toString(),
-                        client: 'tw-ob',
-                        prev: 'input',
-                        ttsspeed: speed
-                    });
-                    
-                    let ttsUrl = `${GOOGLE_TTS_URL}?${ttsParams.toString()}`;
-                    
-                    if (proxyUrl && proxyUrl.trim() !== '') {
-                        if (proxyUrl.includes('corsproxy.io') || proxyUrl.includes('allorigins.win')) {
-                            ttsUrl = proxyUrl + encodeURIComponent(ttsUrl);
-                        } else {
-                            ttsUrl = proxyUrl + ttsUrl;
-                        }
-                    }
-                    
-                    console.log('TTS Attempt:', retry + 1, 'Proxy:', proxyUrl || 'none');
-                    
-                    const response = await fetch(ttsUrl, {
-                        method: 'GET',
-                        mode: 'cors',
-                        headers: {
-                            'Accept': 'audio/mpeg, audio/*',
-                            'Range': 'bytes=0-',
-                            'Referer': 'https://translate.google.com/',
-                            'User-Agent': navigator.userAgent || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                        },
-                        credentials: 'omit'
-                    });
-                    
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                    }
-                    
-                    const audioBlob = await response.blob();
-                    
-                    if (!audioBlob || audioBlob.size === 0) {
-                        throw new Error('Audio blob is empty');
-                    }
-                    
-                    const audioUrl = URL.createObjectURL(audioBlob);
-                    
-                    const audioData = {
-                        url: audioUrl,
-                        blob: audioBlob,
-                        timestamp: Date.now()
-                    };
-                    audioCache.set(cacheKey, audioData);
-                    
-                    if (audioCache.size > 50) {
-                        const oldestKey = audioCache.keys().next().value;
-                        audioCache.delete(oldestKey);
-                    }
-                    
-                    playAudio(audioUrl, text, `Google TTS (Proxy ${currentProxyIndex + 1})`);
-                    
-                    currentProxyIndex = 0;
-                    return;
-                    
-                } catch (error) {
-                    lastError = error;
-                    console.warn(`TTS Attempt ${retry + 1} failed:`, error.message);
-                    
-                    currentProxyIndex = (currentProxyIndex + 1) % TTS_PROXY_URLS.length;
-                    
-                    if (retry < maxRetries - 1) {
-                        await new Promise(resolve => setTimeout(resolve, 500));
-                    }
-                } finally {
-                    document.getElementById('speakVnBtn').classList.remove('loading');
+        // Khởi tạo giọng nói
+        function initVoices() {
+            // Chờ voices được tải
+            speechSynthesis.onvoiceschanged = function() {
+                const voices = speechSynthesis.getVoices();
+                if (voices.length > 0) {
+                    // Tìm giọng phù hợp với ngôn ngữ đã chọn
+                    const voice = voices.find(v => v.lang === currentLang) || voices[0];
+                    webSpeechVoice.textContent = `${voice.name} (${voice.lang})`;
                 }
+            };
+            
+            // Trigger sự kiện voiceschanged nếu voices đã sẵn sàng
+            if (speechSynthesis.getVoices().length > 0) {
+                speechSynthesis.onvoiceschanged();
             }
-            
-            console.error('All TTS attempts failed:', lastError);
-            showTTSError(`Lỗi TTS: ${lastError.message}. Đang thử Web Speech...`);
-            log('TTS', `Tất cả proxy thất bại, chuyển sang Web Speech`);
-            
-            speakWithWebSpeech(text, lang);
         }
-
-        function playCachedAudio(audioData, text) {
-            playAudio(audioData.url, text, 'Từ cache');
-        }
-
-        function playAudio(audioUrl, text, source = 'Google TTS') {
-            if (isSpeaking) {
-                stopAllSpeech();
-            }
-            
-            const audio = new Audio(audioUrl);
-            currentSpeech = audio;
-            
-            audio.preload = 'auto';
-            audio.volume = 1.0;
-            
-            audio.onplay = () => {
-                isSpeaking = true;
-                updateSpeechButtons(true);
-                startAudioVisualizer();
-                log('TTS', `Bắt đầu đọc (${source}): "${text.substring(0, 50)}..."`);
-            };
-            
-            audio.onended = () => {
-                isSpeaking = false;
-                currentSpeech = null;
-                updateSpeechButtons(false);
-                stopAudioVisualizer();
-                log('TTS', 'Kết thúc đọc');
-            };
-            
-            audio.onerror = (e) => {
-                console.error('Audio playback error:', e);
-                isSpeaking = false;
-                currentSpeech = null;
-                updateSpeechButtons(false);
-                stopAudioVisualizer();
-                log('TTS', `Lỗi phát âm thanh: ${e.message}`);
-            };
-            
-            audio.play().catch(e => {
-                console.error('Playback failed:', e);
-                showTTSError(`Không thể phát âm thanh: ${e.message}`);
+        
+        // Thay đổi ngôn ngữ
+        webSpeechLangButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                webSpeechLangButtons.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentLang = this.getAttribute('data-lang');
+                webSpeechStatus.textContent = `Đã chọn ngôn ngữ: ${currentLang}`;
+                initVoices();
             });
-        }
-
-        // === HÀM WEB SPEECH (fallback) ===
-        function speakWithWebSpeech(text, lang = 'vi-VN') {
-            if (!('speechSynthesis' in window)) {
-                showTTSError('Trình duyệt không hỗ trợ Web Speech API');
+        });
+        
+        // Đọc văn bản
+        webSpeechBtn.addEventListener('click', function() {
+            if (speechSynthesis.speaking) {
+                speechSynthesis.cancel();
+            }
+            
+            const text = webSpeechText.value.trim();
+            if (!text) {
+                webSpeechStatus.textContent = 'Vui lòng nhập văn bản';
                 return;
             }
             
-            if (isSpeaking) {
-                window.speechSynthesis.cancel();
+            currentUtterance = new SpeechSynthesisUtterance(text);
+            currentUtterance.lang = currentLang;
+            currentUtterance.rate = 1.0;
+            currentUtterance.pitch = 1.0;
+            currentUtterance.volume = 1.0;
+            
+            // Chọn giọng phù hợp
+            const voices = speechSynthesis.getVoices();
+            const voice = voices.find(v => v.lang === currentLang) || voices[0];
+            if (voice) {
+                currentUtterance.voice = voice;
+                webSpeechVoice.textContent = `${voice.name} (${voice.lang})`;
+            }
+            
+            currentUtterance.onstart = function() {
+                webSpeechStatus.textContent = 'Đang đọc...';
+            };
+            
+            currentUtterance.onend = function() {
+                webSpeechStatus.textContent = 'Hoàn thành';
+            };
+            
+            currentUtterance.onerror = function(event) {
+                webSpeechStatus.textContent = 'Lỗi: ' + event.error;
+            };
+            
+            speechSynthesis.speak(currentUtterance);
+            webSpeechStatus.textContent = 'Đang bắt đầu...';
+        });
+        
+        // Dừng đọc
+        webSpeechStop.addEventListener('click', function() {
+            if (speechSynthesis.speaking) {
+                speechSynthesis.cancel();
+                webSpeechStatus.textContent = 'Đã dừng';
+            }
+        });
+        
+        // Demo đa ngôn ngữ
+        webSpeechDemo.addEventListener('click', function() {
+            if (speechSynthesis.speaking) {
+                speechSynthesis.cancel();
+            }
+            
+            const demos = [
+                { lang: 'vi-VN', text: 'Xin chào, tôi là giọng tiếng Việt' },
+                { lang: 'en-US', text: 'Hello, I am English US voice' },
+                { lang: 'en-GB', text: 'Hello, I am English UK voice' },
+                { lang: 'fr-FR', text: 'Bonjour, je suis la voix française' },
+                { lang: 'es-ES', text: 'Hola, soy la voz española' },
+                { lang: 'ja-JP', text: 'こんにちは、私は日本語の音声です' }
+            ];
+            
+            let index = 0;
+            
+            function speakNext() {
+                if (index >= demos.length) {
+                    webSpeechStatus.textContent = 'Đã hoàn thành demo';
+                    return;
+                }
+                
+                const demo = demos[index];
+                currentUtterance = new SpeechSynthesisUtterance(demo.text);
+                currentUtterance.lang = demo.lang;
+                
+                // Chọn giọng phù hợp
+                const voices = speechSynthesis.getVoices();
+                const voice = voices.find(v => v.lang === demo.lang) || voices[0];
+                if (voice) {
+                    currentUtterance.voice = voice;
+                }
+                
+                currentUtterance.onend = function() {
+                    index++;
+                    setTimeout(speakNext, 500);
+                };
+                
+                webSpeechStatus.textContent = `Đang đọc: ${demo.lang} - "${demo.text}"`;
+                speechSynthesis.speak(currentUtterance);
+                index++;
+            }
+            
+            speakNext();
+        });
+        
+        // ========== PHẦN 2: GOOGLE TRANSLATE TTS ==========
+        const googleBtn = document.getElementById('googleBtn');
+        const googleStop = document.getElementById('googleStop');
+        const googleText = document.getElementById('googleText');
+        const googleStatus = document.getElementById('googleStatus');
+        const googleLangButtons = document.querySelectorAll('#googleLanguages .lang-btn');
+        const googleTTSFrame = document.getElementById('googleTTSFrame');
+        
+        let googleCurrentLang = 'vi';
+        let googleAudio = null;
+        
+        // Thay đổi ngôn ngữ Google TTS
+        googleLangButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                googleLangButtons.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                googleCurrentLang = this.getAttribute('data-lang');
+                googleStatus.textContent = `Đã chọn ngôn ngữ: ${googleCurrentLang}`;
+            });
+        });
+        
+        // Đọc bằng Google TTS
+        googleBtn.addEventListener('click', function() {
+            const text = googleText.value.trim();
+            if (!text) {
+                googleStatus.textContent = 'Vui lòng nhập văn bản';
+                return;
+            }
+            
+            // Dừng audio đang phát nếu có
+            if (googleAudio) {
+                googleAudio.pause();
+            }
+            
+            // Tạo URL Google TTS
+            const encodedText = encodeURIComponent(text);
+            const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=${googleCurrentLang}&q=${encodedText}`;
+            
+            // Tạo audio element
+            googleAudio = new Audio(ttsUrl);
+            googleStatus.textContent = 'Đang tải và phát âm thanh...';
+            
+            googleAudio.play().then(() => {
+                googleStatus.textContent = 'Đang phát...';
+            }).catch(error => {
+                googleStatus.textContent = 'Lỗi khi phát: ' + error.message;
+                console.error('Google TTS Error:', error);
+            });
+            
+            googleAudio.onended = function() {
+                googleStatus.textContent = 'Hoàn thành';
+            };
+        });
+        
+        // Dừng Google TTS
+        googleStop.addEventListener('click', function() {
+            if (googleAudio) {
+                googleAudio.pause();
+                googleAudio.currentTime = 0;
+                googleStatus.textContent = 'Đã dừng';
+            }
+        });
+        
+        // ========== PHẦN 3: HỆ THỐNG VOICES ==========
+        const systemBtn = document.getElementById('systemBtn');
+        const systemSpeak = document.getElementById('systemSpeak');
+        const systemText = document.getElementById('systemText');
+        const systemVoices = document.getElementById('systemVoices');
+        
+        // Hiển thị giọng có sẵn
+        systemBtn.addEventListener('click', function() {
+            const voices = speechSynthesis.getVoices();
+            if (voices.length === 0) {
+                systemVoices.textContent = 'Không có voices nào được tìm thấy. Đang tải...';
+                // Thử tải lại voices
+                speechSynthesis.onvoiceschanged = function() {
+                    const loadedVoices = speechSynthesis.getVoices();
+                    displayVoices(loadedVoices);
+                };
+            } else {
+                displayVoices(voices);
+            }
+        });
+        
+        function displayVoices(voices) {
+            const voiceList = voices.map(voice => 
+                `${voice.name} (${voice.lang})${voice.default ? ' - Mặc định' : ''}`
+            ).join(', ');
+            
+            systemVoices.textContent = `Tìm thấy ${voices.length} giọng: ${voiceList}`;
+        }
+        
+        // Đọc bằng giọng hệ thống
+        systemSpeak.addEventListener('click', function() {
+            const text = systemText.value.trim();
+            if (!text) {
+                alert('Vui lòng nhập văn bản');
+                return;
             }
             
             const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = lang;
-            utterance.rate = currentVoice.speed;
-            utterance.pitch = currentVoice.pitch;
-            utterance.volume = 1.0;
             
-            const voices = window.speechSynthesis.getVoices();
-            const targetVoice = voices.find(voice => 
-                voice.lang.startsWith(lang) && 
-                voice.name.toLowerCase().includes(currentVoice.gender)
-            );
-            
-            if (targetVoice) {
-                utterance.voice = targetVoice;
-            }
-            
-            utterance.onstart = () => {
-                isSpeaking = true;
-                updateSpeechButtons(true);
-                startAudioVisualizer();
-                log('TTS', `Web Speech bắt đầu: "${text.substring(0, 50)}..."`);
-            };
-            
-            utterance.onend = () => {
-                isSpeaking = false;
-                updateSpeechButtons(false);
-                stopAudioVisualizer();
-                log('TTS', 'Web Speech kết thúc');
-            };
-            
-            utterance.onerror = (event) => {
-                console.error('SpeechSynthesis Error:', event);
-                isSpeaking = false;
-                updateSpeechButtons(false);
-                stopAudioVisualizer();
-                log('TTS', `Lỗi Web Speech: ${event.error}`);
-            };
-            
-            currentSpeech = utterance;
-            window.speechSynthesis.speak(utterance);
-        }
-
-        // === HÀM ĐỌC VĂN BẢN (SỬA) ===
-        async function speakVietnameseSentence() {
-            const textarea = document.getElementById('translationInput');
-            const text = textarea.value.trim();
-            
-            if (!text || text === '') {
-                showTTSError('Không có văn bản tiếng Việt để đọc');
-                return;
-            }
-            
-            log('TTS', `Bắt đầu đọc tiếng Việt từ textarea: "${text.substring(0, 50)}..."`);
-            
-            if (useGoogleTTS) {
-                await speakWithGoogleTTS(text, currentVoice.lang, currentVoice.gender, currentVoice.speed, currentVoice.pitch);
-            } else {
-                speakWithWebSpeech(text, currentVoice.lang);
-            }
-        }
-
-        async function speakTranslation() {
-            const translationOutput = document.getElementById('translationOutput');
-            const text = translationOutput.textContent;
-            
-            if (!text || text.includes('Đang chờ dịch') || text.includes('Vui lòng nhập') || text.includes('Lỗi dịch')) {
-                showTTSError('Không có bản dịch để đọc');
-                return;
-            }
-            
-            const targetLang = document.getElementById('targetLanguage').value;
-            let langCode;
-            
-            switch(targetLang) {
-                case 'vi': langCode = 'vi-VN'; break;
-                case 'en': langCode = 'en-US'; break;
-                case 'ja': langCode = 'ja-JP'; break;
-                case 'ko': langCode = 'ko-KR'; break;
-                case 'zh-CN': langCode = 'zh-CN'; break;
-                case 'fr': langCode = 'fr-FR'; break;
-                case 'es': langCode = 'es-ES'; break;
-                case 'de': langCode = 'de-DE'; break;
-                default: langCode = 'en-US';
-            }
-            
-            log('TTS', `Bắt đầu đọc bản dịch (${langCode}): "${text.substring(0, 50)}..."`);
-            
-            if (useGoogleTTS) {
-                await speakWithGoogleTTS(text, langCode, currentVoice.gender, currentVoice.speed, currentVoice.pitch);
-            } else {
-                speakWithWebSpeech(text, langCode);
-            }
-        }
-
-        // === HÀM HỖ TRỢ TTS ===
-        function updateSpeechButtons(speaking) {
-            const speakVnBtn = document.getElementById('speakVnBtn');
-            const speakTransBtn = document.getElementById('speakTransBtn');
-            const stopSpeechBtn = document.getElementById('stopSpeechBtn');
-            
-            if (speaking) {
-                speakVnBtn.disabled = true;
-                speakTransBtn.disabled = true;
-                stopSpeechBtn.disabled = false;
-                speakVnBtn.classList.add('speaking');
-            } else {
-                speakVnBtn.disabled = false;
-                speakTransBtn.disabled = false;
-                stopSpeechBtn.disabled = true;
-                speakVnBtn.classList.remove('speaking');
-            }
-        }
-
-        function startAudioVisualizer() {
-            stopAudioVisualizer();
-            
-            const visualizer = document.getElementById('audioVisualizer');
-            if (!visualizer) return;
-            
-            visualizer.innerHTML = '';
-            
-            for (let i = 0; i < 20; i++) {
-                const bar = document.createElement('div');
-                bar.className = 'audio-bar';
-                bar.style.height = '5px';
-                bar.style.backgroundColor = '#4CAF50';
-                visualizer.appendChild(bar);
-            }
-            
-            const bars = visualizer.querySelectorAll('.audio-bar');
-            audioVisualizerInterval = setInterval(() => {
-                bars.forEach((bar, index) => {
-                    const baseHeight = 5;
-                    const variance = 30;
-                    const time = Date.now() / 1000;
-                    const height = baseHeight + Math.abs(Math.sin(time * 2 + index * 0.3)) * variance;
-                    bar.style.height = `${height}px`;
-                    
-                    const intensity = height / (baseHeight + variance);
-                    const hue = 120 + (1 - intensity) * 60;
-                    bar.style.backgroundColor = `hsl(${hue}, 70%, 50%)`;
-                });
-            }, 100);
-        }
-
-        function stopAudioVisualizer() {
-            if (audioVisualizerInterval) {
-                clearInterval(audioVisualizerInterval);
-                audioVisualizerInterval = null;
-            }
-            
-            const visualizer = document.getElementById('audioVisualizer');
-            if (visualizer) {
-                visualizer.innerHTML = '<div class="tts-loading" style="display: none;"><span>⏳</span> Đang tải âm thanh...</div>';
-            }
-        }
-
-        function stopAllSpeech() {
-            if (window.speechSynthesis) {
-                window.speechSynthesis.cancel();
-            }
-            
-            if (currentSpeech) {
-                if (currentSpeech.pause) {
-                    currentSpeech.pause();
-                    currentSpeech.currentTime = 0;
-                }
-                currentSpeech = null;
-            }
-            
-            isSpeaking = false;
-            updateSpeechButtons(false);
-            stopAudioVisualizer();
-            log('TTS', 'Đã dừng tất cả giọng nói');
-        }
-
-        function showTTSError(message) {
-            const errorDiv = document.getElementById('ttsStatus');
-            if (!errorDiv) return;
-            
-            if (message) {
-                errorDiv.innerHTML = `<div class="error-message">${message}</div>`;
-                errorDiv.style.display = 'block';
-                setTimeout(() => {
-                    errorDiv.style.display = 'none';
-                }, 3000);
-            } else {
-                errorDiv.style.display = 'none';
-            }
-        }
-
-        // === HÀM CHỌN GIỌNG NÓI ===
-        function selectVoice(button) {
-            const lang = button.getAttribute('data-lang');
-            const gender = button.getAttribute('data-gender');
-            
-            currentVoice.lang = lang;
-            currentVoice.gender = gender;
-            
-            document.querySelectorAll('.voice-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            button.classList.add('active');
-            
-            updateVoiceDisplay();
-            log('TTS', `Đã chọn giọng: ${VOICE_PROFILES[lang]?.[gender]?.name || `${gender} ${lang}`}`);
-        }
-
-        function selectAccent(button) {
-            const accent = button.getAttribute('data-accent');
-            currentVoice.accent = accent;
-            
-            document.querySelectorAll('.accent-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            button.classList.add('active');
-            
-            switch(accent) {
-                case 'north':
-                    currentVoice.speed = 1.0;
-                    currentVoice.pitch = 1.0;
-                    break;
-                case 'central':
-                    currentVoice.speed = 0.95;
-                    currentVoice.pitch = 0.95;
-                    break;
-                case 'south':
-                    currentVoice.speed = 1.05;
-                    currentVoice.pitch = 1.05;
-                    break;
-            }
-            
-            updateVoiceDisplay();
-            log('TTS', `Đã chọn accent: ${accent}`);
-        }
-
-        function updateVoiceDisplay() {
-            const voiceProfile = VOICE_PROFILES[currentVoice.lang]?.[currentVoice.gender] || 
-                                 VOICE_PROFILES['vi-VN']['male'];
-            const display = document.getElementById('currentVoiceDisplay');
-            if (display) {
-                const proxyInfo = TTS_PROXY_URLS[currentProxyIndex] 
-                    ? `Proxy ${currentProxyIndex + 1}` 
-                    : 'Direct';
-                display.textContent = `Giọng: ${voiceProfile.name} (${currentVoice.accent}) - ${useGoogleTTS ? 'Google TTS' : 'Web Speech'} [${proxyInfo}]`;
-            }
-        }
-
-        function toggleTTSMode(useGoogle) {
-            useGoogleTTS = useGoogle;
-            
-            document.getElementById('useGoogleTTS').classList.toggle('active', useGoogle);
-            document.getElementById('useWebSpeech').classList.toggle('active', !useGoogle);
-            
-            updateVoiceDisplay();
-            log('TTS', `Chuyển sang ${useGoogle ? 'Google TTS Proxy' : 'Web Speech'}`);
-        }
-
-        // === HÀM KIỂM TRA KẾT NỐI TTS ===
-        async function testTTSConnection() {
-            const testText = 'Xin chào. Đây là kiểm tra giọng nói tiếng Việt.';
-            
-            log('TTS TEST', 'Bắt đầu kiểm tra TTS connection...');
-            showTTSError('Đang kiểm tra kết nối TTS...');
-            
-            for (let i = 0; i < TTS_PROXY_URLS.length; i++) {
-                const proxy = TTS_PROXY_URLS[i];
-                const proxyName = proxy ? `Proxy ${i+1}` : 'Direct (no proxy)';
-                
-                try {
-                    const encodedText = encodeURIComponent(testText);
-                    const ttsParams = new URLSearchParams({
-                        ie: 'UTF-8',
-                        q: encodedText,
-                        tl: 'vi',
-                        client: 'tw-ob'
-                    });
-                    
-                    let testUrl = `${GOOGLE_TTS_URL}?${ttsParams.toString()}`;
-                    
-                    if (proxy && proxy.trim() !== '') {
-                        if (proxy.includes('corsproxy.io') || proxy.includes('allorigins.win')) {
-                            testUrl = proxy + encodeURIComponent(testUrl);
-                        } else {
-                            testUrl = proxy + testUrl;
-                        }
-                    }
-                    
-                    const response = await fetch(testUrl, {
-                        method: 'HEAD',
-                        mode: 'cors',
-                        headers: {
-                            'Accept': 'audio/mpeg',
-                            'Referer': 'https://translate.google.com/'
-                        }
-                    });
-                    
-                    if (response.ok) {
-                        log('TTS TEST', `✓ ${proxyName}: KẾT NỐI THÀNH CÔNG`);
-                        showTTSError(`${proxyName}: Kết nối thành công!`);
-                        
-                        currentProxyIndex = i;
-                        
-                        setTimeout(() => {
-                            speakWithGoogleTTS(testText, 'vi-VN', 'male', 1.0, 1.0);
-                        }, 1000);
-                        
-                        return;
-                    }
-                    
-                } catch (error) {
-                    log('TTS TEST', `✗ ${proxyName}: Lỗi - ${error.message}`);
+            // Lấy giọng đầu tiên không phải là giọng mặc định của trình duyệt (nếu có)
+            const voices = speechSynthesis.getVoices();
+            if (voices.length > 0) {
+                // Ưu tiên giọng tiếng Việt, nếu không có thì dùng giọng đầu tiên
+                const vietnameseVoice = voices.find(v => v.lang.startsWith('vi'));
+                if (vietnameseVoice) {
+                    utterance.voice = vietnameseVoice;
+                    utterance.lang = 'vi-VN';
                 }
             }
             
-            showTTSError('Tất cả proxy đều thất bại. Sử dụng Web Speech làm fallback.');
-            log('TTS TEST', 'Tất cả proxy đều thất bại');
-            
-            setTimeout(() => {
-                speakWithWebSpeech(testText, 'vi-VN');
-            }, 2000);
-        }
-
-        // === HÀM HIỆU CHUẨN ===
-        function startCalibration() {
-            if (isCalibrating) return;
-            
-            isCalibrating = true;
-            calibrationCountdown = 10;
-            calibrationMaxValues = [0, 0, 0, 0];
-            
-            document.getElementById('calibrationProgress').style.display = 'block';
-            document.getElementById('calibrateBtn').style.display = 'none';
-            document.getElementById('stopCalibrateBtn').style.display = 'inline-block';
-            
-            updateCalibrationStatus("calibrating", "Đang hiệu chuẩn... Vui lòng uốn tất cả ngón tay hết mức có thể!");
-            
-            const display = document.getElementById('calibrationDisplay');
-            display.innerHTML = '';
-            
-            for (let i = 0; i < 4; i++) {
-                const sensorDiv = document.createElement('div');
-                sensorDiv.className = 'sensor-calibration';
-                sensorDiv.id = `calibrationSensor${i}`;
-                sensorDiv.innerHTML = `
-                    <div class="sensor-name">CẢM BIẾN ${i}</div>
-                    <div class="sensor-value">0</div>
-                    <div class="sensor-max">Max: 0</div>
-                    <div class="progress-container">
-                        <div class="progress-bar" id="progressBar${i}" style="width: 0%"></div>
-                    </div>
-                `;
-                display.appendChild(sensorDiv);
-            }
-            
-            calibrationInterval = setInterval(updateCalibration, 1000);
-            document.getElementById('calibrationMessage').textContent = `Đang hiệu chuẩn... Vui lòng uốn TẤT CẢ ngón tay hết mức!`;
-            
-            log('HIỆU CHUẨN', 'Bắt đầu hiệu chuẩn cảm biến uốn');
-        }
-
-        function updateCalibration() {
-            if (!isCalibrating) return;
-            
-            calibrationCountdown--;
-            document.getElementById('calibrationCountdown').textContent = calibrationCountdown;
-            
-            const progress = ((10 - calibrationCountdown) / 10) * 100;
-            document.getElementById('calibrationProgressBar').style.width = `${progress}%`;
-            
-            if (firebaseData) {
-                const flexValues = [firebaseData.f0 || 0, firebaseData.f1 || 0, firebaseData.f2 || 0, firebaseData.f3 || 0];
-                
-                for (let i = 0; i < 4; i++) {
-                    const valueElement = document.querySelector(`#calibrationSensor${i} .sensor-value`);
-                    if (valueElement) {
-                        valueElement.textContent = flexValues[i];
-                    }
-                    
-                    if (flexValues[i] > calibrationMaxValues[i]) {
-                        calibrationMaxValues[i] = flexValues[i];
-                        const maxElement = document.querySelector(`#calibrationSensor${i} .sensor-max`);
-                        if (maxElement) {
-                            maxElement.textContent = `Max: ${flexValues[i]}`;
-                            maxElement.style.color = '#F44336';
-                        }
-                    }
-                    
-                    const progressValue = Math.min((flexValues[i] / 1024) * 100, 100);
-                    const progressBar = document.getElementById(`progressBar${i}`);
-                    if (progressBar) {
-                        progressBar.style.width = `${progressValue}%`;
-                        
-                        if (progressValue < 30) {
-                            progressBar.style.background = '#4CAF50';
-                        } else if (progressValue < 70) {
-                            progressBar.style.background = '#FF9800';
-                        } else {
-                            progressBar.style.background = '#F44336';
-                        }
-                    }
-                }
-            }
-            
-            if (calibrationCountdown <= 0) {
-                finishCalibration();
-            }
-        }
-
-        function finishCalibration() {
-            isCalibrating = false;
-            clearInterval(calibrationInterval);
-            
-            let hasValidCalibration = false;
-            for (let i = 0; i < 4; i++) {
-                if (calibrationMaxValues[i] > STRAIGHT_THRESHOLDS[i] + 50) {
-                    bentThresholds[i] = calibrationMaxValues[i];
-                    hasValidCalibration = true;
-                } else {
-                    log('HIỆU CHUẨN', `Cảm biến ${i} không có dữ liệu hiệu chuẩn hợp lệ (Max: ${calibrationMaxValues[i]})`);
-                }
-            }
-            
-            if (hasValidCalibration) {
-                localStorage.setItem('bentThresholds', JSON.stringify(bentThresholds));
-                updateThresholdDisplay();
-                updateCalibrationStatus("calibrated", `Hiệu chuẩn hoàn thành! Ngưỡng đã được cập nhật.`);
-                log('HIỆU CHUẨN', `Hiệu chuẩn hoàn thành: ${bentThresholds}`);
-                
-                setTimeout(() => {
-                    document.getElementById('calibrationProgress').style.display = 'none';
-                    document.getElementById('calibrateBtn').style.display = 'inline-block';
-                    document.getElementById('stopCalibrateBtn').style.display = 'none';
-                }, 3000);
-            } else {
-                updateCalibrationStatus("error", "Hiệu chuẩn thất bại! Không có dữ liệu hợp lệ. Vui lòng thử lại.");
-                log('HIỆU CHUẨN', 'Hiệu chuẩn thất bại: Không có dữ liệu hợp lệ');
-                
-                setTimeout(() => {
-                    document.getElementById('calibrationProgress').style.display = 'none';
-                    document.getElementById('calibrateBtn').style.display = 'inline-block';
-                    document.getElementById('stopCalibrateBtn').style.display = 'none';
-                }, 3000);
-            }
-        }
-
-        function stopCalibration() {
-            if (isCalibrating) {
-                isCalibrating = false;
-                clearInterval(calibrationInterval);
-                
-                updateCalibrationStatus("ready", "Hiệu chuẩn đã dừng");
-                
-                document.getElementById('calibrationProgress').style.display = 'none';
-                document.getElementById('calibrateBtn').style.display = 'inline-block';
-                document.getElementById('stopCalibrateBtn').style.display = 'none';
-                
-                log('HIỆU CHUẨN', 'Hiệu chuẩn đã dừng bởi người dùng');
-            }
-        }
-
-        function resetCalibration() {
-            bentThresholds = [300, 450, 350, 300];
-            localStorage.removeItem('bentThresholds');
-            
-            updateThresholdDisplay();
-            updateCalibrationStatus("ready", "Đã reset về giá trị mặc định");
-            
-            log('HIỆU CHUẨN', 'Reset hiệu chuẩn về giá trị mặc định');
-        }
-
-        function loadCalibration() {
-            const savedThresholds = localStorage.getItem('bentThresholds');
-            if (savedThresholds) {
-                try {
-                    bentThresholds = JSON.parse(savedThresholds);
-                    updateThresholdDisplay();
-                    updateCalibrationStatus("calibrated", "Đã tải hiệu chuẩn từ bộ nhớ");
-                    log('HIỆU CHUẨN', `Đã tải hiệu chuẩn: ${bentThresholds}`);
-                } catch (e) {
-                    log('HIỆU CHUẨN', `Lỗi khi tải hiệu chuẩn: ${e.message}`);
-                }
-            } else {
-                updateCalibrationStatus("ready", "Không tìm thấy hiệu chuẩn đã lưu");
-                log('HIỆU CHUẨN', 'Không tìm thấy hiệu chuẩn đã lưu');
-            }
-        }
-
-        function updateThresholdDisplay() {
-            for (let i = 0; i < 4; i++) {
-                document.getElementById(`currentThreshold${i}`).textContent = bentThresholds[i];
-            }
-        }
-
-        function updateCalibrationStatus(status, message) {
-            const statusDiv = document.getElementById('calibrationStatus');
-            statusDiv.innerHTML = '';
-            
-            let statusClass = "";
-            let statusText = "";
-            
-            switch(status) {
-                case "calibrating":
-                    statusClass = "calibrating";
-                    statusText = "ĐANG HIỆU CHUẨN";
-                    break;
-                case "calibrated":
-                    statusClass = "calibrated";
-                    statusText = "ĐÃ HIỆU CHUẨN";
-                    break;
-                case "error":
-                    statusClass = "calibration-error";
-                    statusText = "LỖI HIỆU CHUẨN";
-                    break;
-                default:
-                    statusClass = "calibration-ready";
-                    statusText = "SẴN SÀNG";
-            }
-            
-            const div = document.createElement('div');
-            div.className = statusClass;
-            div.innerHTML = `
-                <div>${statusText}</div>
-                <div style="font-size: 0.9rem; margin-top: 5px;">${message}</div>
-            `;
-            statusDiv.appendChild(div);
-        }
-
-        // === HÀM TỐI ƯU HÓA FIREBASE ===
-        async function fetchFirebaseDataOptimized() {
-            if (isFetching) return null;
-            
-            if (currentFetchController) {
-                currentFetchController.abort();
-            }
-            
-            isFetching = true;
-            const startTime = performance.now();
-            currentFetchController = new AbortController();
-            const signal = currentFetchController.signal;
-            
-            try {
-                const timestamp = Date.now();
-                const url = `${FIREBASE_URL}?t=${timestamp}`;
-                
-                const response = await fetch(url, {
-                    signal,
-                    method: 'GET',
-                    headers: {
-                        'Cache-Control': 'no-cache, no-store, must-revalidate',
-                        'Pragma': 'no-cache',
-                        'Expires': '0'
-                    },
-                    priority: 'high'
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-                
-                const data = await response.json();
-                const fetchTime = performance.now() - startTime;
-                
-                document.getElementById('latency').textContent = Math.round(fetchTime);
-                
-                if (JSON.stringify(data) !== JSON.stringify(lastFirebaseData)) {
-                    lastFirebaseData = data;
-                    firebaseData = data;
-                    lastUpdateTime = Date.now();
-                    
-                    updateConnectionStatus(true);
-                    processDataImmediately(data);
-                    scheduleUIUpdate();
-                    
-                    log('Firebase', `Data updated (${Math.round(fetchTime)}ms)`);
-                    
-                    if (fetchTime < 100) {
-                        pollingInterval = turboMode ? 150 : 250;
-                    } else if (fetchTime > 500) {
-                        pollingInterval = 1000;
-                    }
-                    
-                    updatePollingDisplay();
-                } else {
-                    lastUpdateTime = Date.now();
-                    document.getElementById('lastUpdate').textContent = 
-                        `Cập nhật: ${formatTime(Date.now())}`;
-                }
-                
-                return data;
-                
-            } catch (error) {
-                if (error.name !== 'AbortError') {
-                    console.warn('Fetch error:', error);
-                    updateConnectionStatus(false);
-                    log('Firebase', `Error: ${error.message}`);
-                    
-                    pollingInterval = Math.min(pollingInterval * 2, 5000);
-                    updatePollingDisplay();
-                }
-                return null;
-            } finally {
-                isFetching = false;
-                const totalTime = performance.now() - startTime;
-                document.getElementById('processingTime').textContent = `${Math.round(totalTime)}ms`;
-            }
-        }
-
-        function processDataImmediately(data) {
-            const startTime = performance.now();
-            
-            if (data.o !== undefined) {
-                const mpuElement = document.getElementById('mpuOrientation');
-                if (mpuElement.textContent !== data.o) {
-                    mpuElement.textContent = data.o || 'N/A';
-                }
-            }
-            
-            if (data.d !== undefined) {
-                const shakeElement = document.getElementById('mpuShakeState');
-                if (shakeElement.textContent !== data.d) {
-                    shakeElement.textContent = data.d || 'No';
-                }
-            }
-            
-            if (data.sf !== undefined) {
-                const isShakingElement = document.getElementById('isShaking');
-                if (isShakingElement.textContent !== data.sf) {
-                    isShakingElement.textContent = data.sf || 'NO';
-                }
-            }
-            
-            if (data.f0 !== undefined) {
-                const flexValues = [data.f0, data.f1 || 0, data.f2 || 0, data.f3 || 0];
-                for (let i = 0; i < 4; i++) {
-                    const newState = calculateFlexState(flexValues[i], i);
-                    if (flexStates[i] !== newState) {
-                        flexStates[i] = newState;
-                    }
-                }
-            }
-            
-            setTimeout(() => {
-                const mpuState = getMPUState(data.o || "", data.d || "");
-                const a0 = flexStates[0];
-                const a1 = flexStates[1];
-                const a2 = flexStates[2];
-                const a3 = flexStates[3];
-                
-                processWordConstructionFast(mpuState, a0, a1, a2, a3);
-            }, 0);
-        }
-
-        function calculateFlexState(rawValue, sensorIndex) {
-            const STRAIGHT_THRESHOLD = STRAIGHT_THRESHOLDS[sensorIndex];
-            
-            if (rawValue <= STRAIGHT_THRESHOLD) return 0;
-            if (rawValue <= bentThresholds[sensorIndex]) return 1;
-            return 2;
-        }
-
-        function processWordConstructionFast(mpu, a0, a1, a2, a3) {
-            const currentState = `${mpu}_${a0}_${a1}_${a2}_${a3}`;
-            
-            if (currentState !== lastStateString) {
-                lastStateString = currentState;
-                stableCount = 0;
-                holdStartMs = Date.now();
-                holdFired = false;
-            } else {
-                stableCount++;
-            }
-            
-            lastFlexStates = [a0, a1, a2, a3];
-            
-            if (stableCount >= DEBOUNCE_COUNT) {
-                const held = Date.now() - holdStartMs;
-                if (!holdFired && held >= HOLD_MS_DEFAULT) {
-                    if (Date.now() - lastActionMs > POST_HOLD_COOLDOWN) {
-                        performActionSlotLogic(mpu, a0, a1, a2, a3);
-                        holdFired = true;
-                        lastActionMs = Date.now();
-                    }
-                }
-            }
-        }
-
-        function scheduleUIUpdate() {
-            if (!uiUpdateScheduled) {
-                uiUpdateScheduled = true;
-                requestAnimationFrame(() => {
-                    updateCriticalUI();
-                    uiUpdateScheduled = false;
-                });
-            }
-        }
-
-        function updateCriticalUI() {
-            const startTime = performance.now();
-            
-            updateSensorDisplay();
-            updateWordDisplays();
-            updateSentenceDisplay();
-            
-            const updateTime = document.getElementById('lastUpdate');
-            const currentTime = formatTime(Date.now());
-            if (updateTime.textContent !== `Cập nhật: ${currentTime}`) {
-                updateTime.textContent = `Cập nhật: ${currentTime}`;
-                document.getElementById('lastUpdateTime').textContent = currentTime;
-            }
-            
-            const uiTime = performance.now() - startTime;
-            if (uiTime > 16) {
-                console.warn(`UI update slow: ${Math.round(uiTime)}ms`);
-            }
-        }
-
-        function updateSensorDisplay() {
-            for (let i = 0; i < 4; i++) {
-                const box = document.getElementById(`flex${i}-box`);
-                if (box && box.textContent !== flexStates[i].toString()) {
-                    box.textContent = flexStates[i];
-                    box.className = `flex-box active-${flexStates[i]}`;
-                }
-            }
-            
-            if (firebaseData) {
-                const rawValues = [firebaseData.f0 || 0, firebaseData.f1 || 0, firebaseData.f2 || 0, firebaseData.f3 || 0];
-                const rawValuesElement = document.getElementById('rawValues');
-                const newRawText = rawValues.join(', ');
-                if (rawValuesElement.textContent !== newRawText) {
-                    rawValuesElement.textContent = newRawText;
-                }
-                
-                const flexFormatElement = document.getElementById('flexFormat');
-                const newFlexText = flexStates.join('');
-                if (flexFormatElement.textContent !== newFlexText) {
-                    flexFormatElement.textContent = newFlexText;
-                }
-            }
-        }
-
-        function updateWordDisplays() {
-            if (displayBuffer.length > 0) {
-                convertedCurrentWord = convertVietnameseWordCached(displayBuffer);
-            } else {
-                convertedCurrentWord = "";
-            }
-
-            const displayBufferElement = document.getElementById('displayBuffer');
-            if (displayBufferElement.textContent !== convertedCurrentWord) {
-                displayBufferElement.textContent = convertedCurrentWord || '---';
-            }
-            
-            const slot1Element = document.getElementById('slot1');
-            if (slot1Element.textContent !== slot1) {
-                slot1Element.textContent = slot1 || '---';
-            }
-            
-            const slot2Element = document.getElementById('slot2');
-            if (slot2Element.textContent !== slot2) {
-                slot2Element.textContent = slot2 || '---';
-            }
-            
-            const convertedWordElement = document.getElementById('convertedCurrentWord');
-            if (convertedWordElement.textContent !== displayBuffer) {
-                convertedWordElement.textContent = displayBuffer || '---';
-            }
-        }
-
-        function updateSentenceDisplay() {
-            const sentenceElement = document.getElementById('sentenceDisplay');
-            const newSentence = sentenceWords.join(' ');
-            
-            if (fullSentence !== newSentence) {
-                fullSentence = newSentence;
-                sentenceElement.textContent = fullSentence || '---';
-                
-                convertedFullSentence = convertVietnameseTextFast(fullSentence);
-                const convertedElement = document.getElementById('convertedSentenceDisplay');
-                convertedElement.textContent = convertedFullSentence || '---';
-                
-                updateWordList();
-                
-                const wordCountElement = document.getElementById('wordCount');
-                wordCountElement.textContent = sentenceWords.length;
-            }
-        }
-
-        function updateWordList() {
-            const wordListDiv = document.getElementById('wordList');
-            if (sentenceWords.length > 0) {
-                wordListDiv.innerHTML = sentenceWords.map(word => 
-                    `<div class="word-item">${word}</div>`
-                ).join('');
-            } else {
-                wordListDiv.innerHTML = 'Chưa có từ nào';
-            }
-        }
-
-        // === HÀM CHUYỂN ĐỔI TIẾNG VIỆT ===
-        function convertVietnameseWordCached(encodedWord) {
-            if (!encodedWord || encodedWord.length === 0) return "";
-            
-            if (vietnameseCache.has(encodedWord)) {
-                return vietnameseCache.get(encodedWord);
-            }
-            
-            const result = convertVietnameseWordOriginal(encodedWord);
-            vietnameseCache.set(encodedWord, result);
-            return result;
-        }
-
-        function convertVietnameseWordOriginal(encodedWord) {
-            if (!encodedWord || encodedWord.length === 0) return "";
-            
-            const parts = encodedWord.split('_');
-            if (parts.length !== 3) return encodedWord;
-            
-            const consonant = parts[0];
-            const middle = parts[1];
-            const vowelTypeStr = parts[2];
-            
-            if (middle.length < 2) return encodedWord;
-            
-            const toneChar = middle[0];
-            const vowelKey = middle.substring(1);
-            
-            let tone = parseInt(toneChar);
-            if (isNaN(tone) || tone < 0 || tone > 5) {
-                return encodedWord;
-            }
-            
-            tone = tone + 1;
-            
-            let vowelType = 0;
-            if (vowelTypeStr === "b") {
-                vowelType = 1;
-            } else if (vowelTypeStr === "p") {
-                vowelType = 2;
-            } else if (vowelTypeStr !== "s") {
-                return encodedWord;
-            }
-            
-            const tableIndex = (tone - 1) + (vowelType * 6);
-            
-            if (tableIndex < 0 || tableIndex >= 18) {
-                return encodedWord;
-            }
-            
-            const vowelKeyUpper = vowelKey.toUpperCase();
-            
-            for (let i = 0; i < vietnameseTable.length; i++) {
-                if (vowelKeyUpper === vietnameseTable[i].key) {
-                    const convertedVowel = vietnameseTable[i].forms[tableIndex];
-                    return consonant + convertedVowel;
-                }
-            }
-            
-            return encodedWord;
-        }
-
-        function convertVietnameseTextFast(encodedText) {
-            if (!encodedText || encodedText.length === 0) return "";
-            
-            const words = encodedText.split(' ');
-            const convertedWords = words.map(word => convertVietnameseWordCached(word));
-            return convertedWords.join(' ');
-        }
-
-        function getMappingForIndicesCached(mpuState, a0, a1, a2, a3) {
-            const cacheKey = `${mpuState}_${a0}_${a1}_${a2}_${a3}`;
-            
-            if (mappingCache.has(cacheKey)) {
-                return mappingCache.get(cacheKey);
-            }
-            
-            const result = getMappingForIndicesOriginal(mpuState, a0, a1, a2, a3);
-            mappingCache.set(cacheKey, result);
-            return result;
-        }
-
-        function getMappingForIndicesOriginal(mpuState, a0, a1, a2, a3) {
-            if (mpuState < 0 || mpuState > 7) return null;
-            
-            if (a3 === 2) {
-                if (a0 < 3 && a1 < 3 && a2 < 3) {
-                    return tableC[a0][a1][a2];
-                }
-                return null;
-            }
-            
-            const a3bin = a3 === 1 ? 1 : 0;
-            if (a1 < 0 || a1 >= 3 || a2 < 0 || a2 >= 3) return null;
-            
-            const flatIndex = a1 * 3 + a2;
-            
-            if (flatIndex >= 0 && flatIndex < 9) {
-                return a3bin === 0 ? tableA[mpuState][flatIndex] : tableB[mpuState][flatIndex];
-            }
-            
-            return null;
-        }
-
-        // === HÀM HỖ TRỢ CHUNG ===
-        function log(source, message) {
-            const timestamp = new Date().toLocaleTimeString();
-            const logEntry = { timestamp, source, message };
-            
-            logEntries.unshift(logEntry);
-            if (logEntries.length > MAX_LOG_ENTRIES) {
-                logEntries.pop();
-            }
-            
-            updateLogDisplay();
-            
-            console.log(`[${timestamp}] ${source}: ${message}`);
-        }
-
-        function updateLogDisplay() {
-            const logContainer = document.getElementById('logContainer');
-            const visibleEntries = logEntries.slice(0, 5);
-            
-            logContainer.innerHTML = visibleEntries.map(entry => 
-                `<div class="log-entry">
-                    <span style="color: #666; font-size: 0.8rem;">[${entry.timestamp}] ${entry.source}:</span>
-                    <span style="color: #333;"> ${entry.message}</span>
-                </div>`
-            ).join('');
-        }
-
-        function clearLog() {
-            logEntries = [];
-            updateLogDisplay();
-        }
-
-        function exportLog() {
-            const logText = logEntries.map(entry => 
-                `[${entry.timestamp}] ${entry.source}: ${entry.message}`
-            ).join('\n');
-            
-            const blob = new Blob([logText], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `log_${new Date().toISOString().slice(0, 10)}.txt`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-
-        function updateConnectionStatus(connected) {
-            const indicator = document.getElementById('connectionStatus');
-            const statusText = document.getElementById('statusText');
-            const firebaseStatus = document.getElementById('firebaseStatus');
-            
-            if (connected) {
-                indicator.className = 'indicator online';
-                statusText.textContent = 'Đã kết nối với Firebase';
-                firebaseStatus.textContent = 'Đã kết nối với Firebase';
-                firebaseStatus.style.color = '#4CAF50';
-            } else {
-                indicator.className = 'indicator';
-                indicator.style.background = '#F44336';
-                statusText.textContent = 'Mất kết nối với Firebase';
-                firebaseStatus.textContent = 'Mất kết nối với Firebase';
-                firebaseStatus.style.color = '#F44336';
-            }
-        }
-
-        function formatTime(timestamp) {
-            const date = new Date(timestamp);
-            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        }
-
-        function getMPUState(orientation, shakeState) {
-            if (shakeState === "Shake Left") return 6;
-            if (shakeState === "Shake Right") return 7;
-            
-            switch(orientation) {
-                case "Up": return 0;
-                case "Down": return 1;
-                case "Left": return 2;
-                case "Right": return 3;
-                case "Forward": return 4;
-                case "Backward": return 5;
-                default: return -1;
-            }
-        }
-
-        // === HÀM XÂY DỰNG CÂU ===
-        function performActionSlotLogic(mpu, a0, a1, a2, a3) {
-            const mapping = getMappingForIndicesCached(mpu, a0, a1, a2, a3);
-            if (!mapping || mapping === "nullptr") return false;
-            
-            if (mapping === "_") {
-                if (displayBuffer && displayBuffer.length > 0 && displayBuffer !== "---") {
-                    addWordToSentence();
-                } else {
-                    log('WORD', 'Dấu cách được phát hiện, nhưng không có từ trong bộ đệm');
-                }
-                return true;
-            }
-            
-            if (mapping === "COMMIT") {
-                commitSentence();
-                return true;
-            }
-            
-            if (mapping === "<") {
-                backspaceBuffer();
-                scheduleUIUpdate();
-                return true;
-            }
-            
-            const isSlot1 = (a3 === 2);
-            const held = Date.now() - holdStartMs;
-            
-            if (isSlot1 && stableCount >= DEBOUNCE_COUNT && held < HOLD_MS_DEFAULT) {
-                const mode = flexModeCharFromA0(a0);
-                slot2 = `${mapping}_${mode}`;
-            } else if (isSlot1) {
-                slot1 = `${mapping}_${mpu}`;
-            } else {
-                const mode = flexModeCharFromA0(a0);
-                slot2 = `${mapping}_${mode}`;
-            }
-            
-            updateDisplayBufferFromSlots();
-            log('WORD', `Hành động: ${displayBuffer}`);
-            return true;
-        }
-
-        function flexModeCharFromA0(a0) {
-            switch(a0) {
-                case 0: return 's';
-                case 1: return 'b';
-                case 2: return 'p';
-                default: return 'x';
-            }
-        }
-
-        function updateDisplayBufferFromSlots() {
-            const oldBuffer = displayBuffer;
-            displayBuffer = '';
-            
-            if (slot1) displayBuffer += slot1.toLowerCase();
-            if (slot2) displayBuffer += slot2.toLowerCase();
-            
-            if (oldBuffer !== displayBuffer) {
-                scheduleUIUpdate();
-                log('WORD', `Đã cập nhật: ${displayBuffer}`);
-            }
-        }
-
-        function addWordToSentence() {
-            if (!displayBuffer || displayBuffer === "---" || displayBuffer.length === 0) {
-                log('SENTENCE', 'Không thể thêm từ trống vào câu');
-                return;
-            }
-            
-            if (sentenceWords.length < 10) {
-                sentenceWords.push(displayBuffer);
-                scheduleUIUpdate();
-                log('SENTENCE', `Đã thêm: '${displayBuffer}'`);
-                
-                slot1 = '';
-                slot2 = '';
-                displayBuffer = '';
-                convertedCurrentWord = '';
-                
-                scheduleUIUpdate();
-            } else {
-                log('SENTENCE', 'Câu đã đầy! Tối đa 10 từ.');
-            }
-        }
-
-        function commitSentence() {
-            if (sentenceWords.length === 0) {
-                log('SENTENCE', 'Không có từ nào để hoàn thành!');
-                return;
-            }
-            
-            if (displayBuffer && displayBuffer.length > 0 && displayBuffer !== "---") {
-                addWordToSentence();
-            }
-            
-            log('SENTENCE', '=== CÂU ĐÃ HOÀN THÀNH ===');
-            log('SENTENCE', `Đầy đủ: ${fullSentence}`);
-            log('CONVERSION', `Đã chuyển đổi: ${convertedFullSentence}`);
-            
-            if (convertedFullSentence && convertedFullSentence !== "---") {
-                document.getElementById('translationInput').value = convertedFullSentence;
-                setTimeout(() => {
-                    translateWithGoogle();
-                }, 500);
-            }
-            
-            resetSentence();
-        }
-
-        function resetSentence() {
-            sentenceWords = [];
-            fullSentence = '';
-            convertedFullSentence = '';
-            slot1 = '';
-            slot2 = '';
-            displayBuffer = '';
-            convertedCurrentWord = '';
-            
-            log('SENTENCE', 'Đã đặt lại câu');
-            scheduleUIUpdate();
-        }
-
-        function clearCurrentWord() {
-            slot1 = '';
-            slot2 = '';
-            displayBuffer = '';
-            convertedCurrentWord = '';
-            
-            scheduleUIUpdate();
-            log('WORD', 'Đã xóa từ hiện tại');
-        }
-
-        function backspaceBuffer() {
-            if (displayBuffer.length > 0) {
-                displayBuffer = displayBuffer.slice(0, -1);
-                log('WORD', `Xóa ký tự - Bộ đệm: ${displayBuffer}`);
-            }
-        }
-
-        function backspace() {
-            backspaceBuffer();
-            scheduleUIUpdate();
-        }
-
-        // === HÀM ĐIỀU KHIỂN ===
-        function refreshData() {
-            fetchFirebaseDataOptimized();
-        }
-
-        function toggleAutoRefresh() {
-            autoRefresh = !autoRefresh;
-            const btn = document.getElementById('autoRefreshBtn');
-            
-            if (autoRefresh) {
-                btn.textContent = `Tự động: BẬT (${pollingInterval}ms)`;
-                btn.className = 'green';
-                
-                function scheduleNextRefresh() {
-                    if (!autoRefresh) return;
-                    
-                    setTimeout(() => {
-                        if (autoRefresh) {
-                            fetchFirebaseDataOptimized().then(() => {
-                                if (autoRefresh) {
-                                    scheduleNextRefresh();
-                                }
-                            });
-                        }
-                    }, pollingInterval);
-                }
-                
-                scheduleNextRefresh();
-                log('SYSTEM', `Bật tự động làm mới ${pollingInterval}ms`);
-            } else {
-                btn.textContent = 'Tự động: TẮT';
-                btn.className = 'red';
-                log('SYSTEM', 'Tắt tự động làm mới');
-            }
-        }
-
-        function toggleTurboMode() {
-            turboMode = !turboMode;
-            const btn = document.getElementById('turboBtn');
-            
-            if (turboMode) {
-                pollingInterval = 150;
-                btn.textContent = '🚀 Turbo: BẬT';
-                btn.className = 'red';
-                document.getElementById('fastModeIndicator').style.display = 'block';
-                log('SYSTEM', 'Bật chế độ Turbo (150ms polling)');
-            } else {
-                pollingInterval = 300;
-                btn.textContent = '🚀 Chế độ Turbo';
-                btn.className = 'green';
-                document.getElementById('fastModeIndicator').style.display = 'none';
-                log('SYSTEM', 'Tắt chế độ Turbo');
-            }
-            
-            updatePollingDisplay();
-            
-            if (autoRefresh) {
-                toggleAutoRefresh();
-                toggleAutoRefresh();
-            }
-        }
-
-        function updatePollingDisplay() {
-            document.getElementById('pollingRate').textContent = pollingInterval;
-            const btn = document.getElementById('autoRefreshBtn');
-            if (autoRefresh) {
-                btn.textContent = `Tự động: BẬT (${pollingInterval}ms)`;
-            }
-        }
-
-        // === HÀM ĐỀ XUẤT CỤM TỪ ===
-        function loadPhraseSuggestions() {
-            const phrasePills = document.getElementById('phrasePills');
-            phrasePills.innerHTML = '';
-            
-            commonPhrases.forEach(phrase => {
-                const pill = document.createElement('button');
-                pill.className = 'phrase-pill';
-                pill.textContent = phrase.length > 30 ? phrase.substring(0, 27) + '...' : phrase;
-                pill.onclick = () => {
-                    document.getElementById('translationInput').value = phrase;
-                    translateWithGoogle();
-                    log('PHRASE', `Đã chọn cụm từ: "${phrase}"`);
-                };
-                pill.title = phrase;
-                phrasePills.appendChild(pill);
-            });
-        }
-
-        // === HÀM DỊCH THUẬT ===
-        async function translateWithGoogle() {
-            const textarea = document.getElementById('translationInput');
-            const text = textarea.value.trim();
-            const sourceLang = document.getElementById('sourceLanguage').value;
-            const targetLang = document.getElementById('targetLanguage').value;
-            const outputDiv = document.getElementById('translationOutput');
-            
-            if (!text) {
-                outputDiv.innerHTML = '<span style="color: #F44336;">Vui lòng nhập văn bản để dịch!</span>';
-                outputDiv.className = 'conversion-display error';
-                return;
-            }
-            
-            const cacheKey = text + '|' + sourceLang + '|' + targetLang;
-            if (translationCache[cacheKey]) {
-                outputDiv.innerHTML = translationCache[cacheKey];
-                outputDiv.className = 'conversion-display success';
-                return;
-            }
-            
-            outputDiv.innerHTML = '<span class="loading">Đang dịch với Google Translate... ⏳</span>';
-            outputDiv.className = 'conversion-display loading';
-            
-            try {
-                const encodedText = encodeURIComponent(text);
-                const apiUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodedText}`;
-                
-                const response = await fetch(apiUrl);
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-                
-                const data = await response.json();
-                let translated = '';
-                
-                if (data && data[0]) {
-                    data[0].forEach(item => {
-                        if (item[0]) {
-                            translated += item[0];
-                        }
-                    });
-                }
-                
-                translationCache[cacheKey] = translated;
-                outputDiv.innerHTML = translated;
-                outputDiv.className = 'conversion-display success';
-                
-                log('TRANSLATION', `Đã dịch từ ${sourceLang} sang ${targetLang}: ${translated.substring(0, 100)}...`);
-                
-            } catch (error) {
-                console.error('Translation error:', error);
-                outputDiv.innerHTML = '<span style="color: #F44336;">Dịch thuật thất bại. Vui lòng thử lại sau.</span>';
-                outputDiv.className = 'conversion-display error';
-                log('TRANSLATION', `Lỗi dịch thuật: ${error.message}`);
-            }
-        }
-
-        function clearTranslation() {
-            document.getElementById('translationOutput').innerHTML = 'Đang chờ dịch...';
-            document.getElementById('translationOutput').className = 'conversion-display';
-            translationCache = {};
-        }
-
-        function handleTranslationInput() {
-            const input = document.getElementById('translationInput').value;
-            const suggestionsDiv = document.getElementById('translationSuggestions');
-            
-            if (!input || input.trim().length === 0) {
-                suggestionsDiv.innerHTML = '';
-                suggestionsDiv.classList.remove('show');
-                return;
-            }
-            
-            const inputLower = input.toLowerCase();
-            const filteredPhrases = commonPhrases.filter(phrase => 
-                phrase.toLowerCase().includes(inputLower) && phrase !== input
-            );
-            
-            if (filteredPhrases.length > 0) {
-                suggestionsDiv.innerHTML = filteredPhrases.map(phrase => `
-                    <div class="suggestion-item" onclick="selectTranslationSuggestion('${phrase.replace(/'/g, "\\'")}')">
-                        ${phrase}
-                    </div>
-                `).join('');
-                suggestionsDiv.classList.add('show');
-            } else {
-                suggestionsDiv.innerHTML = '';
-                suggestionsDiv.classList.remove('show');
-            }
-        }
-
-        function selectTranslationSuggestion(phrase) {
-            document.getElementById('translationInput').value = phrase;
-            document.getElementById('translationSuggestions').innerHTML = '';
-            document.getElementById('translationSuggestions').classList.remove('show');
-            translateWithGoogle();
-        }
-
-        // === HÀM KHỞI TẠO TTS ===
-        function initializeTTS() {
-            if ('speechSynthesis' in window) {
-                speechSynthesis.getVoices();
-                
-                speechSynthesis.onvoiceschanged = () => {
-                    log('TTS', 'Đã tải danh sách giọng Web Speech');
-                };
-            }
-            
-            updateVoiceDisplay();
-            
-            setInterval(() => {
-                const now = Date.now();
-                audioCache.forEach((data, key) => {
-                    if (now - data.timestamp > 30 * 60 * 1000) {
-                        URL.revokeObjectURL(data.url);
-                        audioCache.delete(key);
-                    }
-                });
-            }, 5 * 60 * 1000);
-            
-            log('TTS', `Đã khởi tạo TTS với ${TTS_PROXY_URLS.length} proxy options`);
-            log('TTS', `Proxy hiện tại: ${TTS_PROXY_URLS[currentProxyIndex] || 'Direct (no proxy)'}`);
-        }
-
-        // === KHỞI TẠO CHÍNH ===
+            speechSynthesis.speak(utterance);
+        });
+        
+        // ========== KHỞI TẠO KHI TRANG ĐƯỢC TẢI ==========
         document.addEventListener('DOMContentLoaded', function() {
-            log('SYSTEM', 'Ứng dụng đã khởi động với Google TTS Proxy cải tiến');
+            initVoices();
             
-            function updateFPS() {
-                frameCount++;
-                const currentTime = performance.now();
-                if (currentTime - lastFrameTime >= 1000) {
-                    currentFPS = frameCount;
-                    frameCount = 0;
-                    lastFrameTime = currentTime;
-                    
-                    document.getElementById('fps').textContent = currentFPS;
-                    
-                    if (currentFPS < 30 && pollingInterval > 150) {
-                        pollingInterval = Math.min(pollingInterval * 1.5, 1000);
-                        updatePollingDisplay();
-                        log('PERF', `FPS thấp (${currentFPS}), tăng tần suất cập nhật lên ${pollingInterval}ms`);
-                    } else if (currentFPS > 50 && pollingInterval < 1000) {
-                        pollingInterval = Math.max(pollingInterval * 0.8, 150);
-                        updatePollingDisplay();
-                    }
-                }
-                requestAnimationFrame(updateFPS);
-            }
-            
-            requestAnimationFrame(updateFPS);
-            
-            loadCalibration();
-            loadPhraseSuggestions();
-            initializeTTS();
-            
+            // Tự động tải voices cho hệ thống
             setTimeout(() => {
-                log('TTS', 'Tự động kiểm tra kết nối TTS...');
-                testTTSConnection();
-            }, 2000);
+                const voices = speechSynthesis.getVoices();
+                displayVoices(voices);
+            }, 1000);
             
-            setTimeout(() => {
-                fetchFirebaseDataOptimized();
-                toggleAutoRefresh();
-            }, 100);
+            console.log('Demo TTS đã sẵn sàng!');
+            console.log('Hỗ trợ Web Speech API:', 'speechSynthesis' in window);
+            console.log('Hỗ trợ Speech Recognition:', 'SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
         });
     </script>
 </body>
