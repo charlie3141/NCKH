@@ -2895,13 +2895,22 @@
         const TRANSLATION_COOLDOWN = 2000;
 
         // Hàm dịch với Gemini AI - Sử dụng Netlify Function
-       async function translateWithAI(text, sourceLang, targetLang) {
-    console.log('Translating with reliable API...');
+      // === HÀM DỊCH VỚI NETLIFY FUNCTION ===
+async function translateWithAI(text, sourceLang, targetLang) {
+    console.log('translateWithAI called:', { text, sourceLang, targetLang });
+    
+    // Endpoint đúng
+    const TRANSLATE_URL = "/.netlify/functions/translate";
     
     try {
-        const response = await fetch(GEMINI_TRANSLATE_URL, {
+        console.log('Sending request to:', TRANSLATE_URL);
+        
+        const response = await fetch(TRANSLATE_URL, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            },
             body: JSON.stringify({
                 text: text,
                 sourceLang: sourceLang,
@@ -2909,21 +2918,36 @@
             })
         });
 
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+        
+        const responseText = await response.text();
+        console.log('Raw response:', responseText);
+        
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+            console.error('HTTP Error:', response.status, responseText);
+            throw new Error(`HTTP ${response.status}: ${responseText.substring(0, 100)}`);
         }
         
-        const data = await response.json();
-        console.log('Translation result:', data);
-        return data.translated || text;
+        const data = JSON.parse(responseText);
+        console.log('Parsed response:', data);
+        
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        
+        return data.translated || data.text || text;
         
     } catch (error) {
         console.error("Translation Error:", error);
-        // Fallback: return original text
-        return text;
+        
+        // Fallback: hiển thị lỗi nhưng vẫn trả về text gốc
+        document.getElementById('translationOutput').innerHTML = 
+            `<span style="color: #FF9800;">⚠️ Lỗi dịch: ${error.message}<br>Văn bản gốc: ${text}</span>`;
+        
+        throw error;
     }
 }
-
 
         async function translateSentence() {
     const textarea = document.getElementById('translationInput');
