@@ -3298,49 +3298,65 @@
 
         // === THÊM BIẾN TTS BỔ SUNG ===
         async function speakWithGeminiTTS(text, langCode) {
-            try {
-                const audioDataBase64 = await speakWithRetry(text, langCode);
-                const wavBlob = pcmToWav(audioDataBase64);
-                if (!wavBlob) {
-                    throw new Error("Audio generation failed");
-                }
+    try {
+        const response = await fetch(GEMINI_TTS_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                text: text,
+                voiceName: "Aoede",
+                langCode: langCode
+            })
+        });
 
-                const audioUrl = URL.createObjectURL(wavBlob);
-                const audio = new Audio(audioUrl);
-                currentSpeech = audio;
-                
-                audio.onplay = () => {
-                    setIsSpeaking(true);
-                    startAudioVisualizer();
-                    log('SPEECH', `Bắt đầu Gemini TTS: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
-                };
-                
-                audio.onended = () => {
-                    setIsSpeaking(false);
-                    URL.revokeObjectURL(audioUrl);
-                    stopAudioVisualizer();
-                    log('SPEECH', 'Kết thúc Gemini TTS');
-                };
-                
-                audio.onerror = () => {
-                    setIsSpeaking(false);
-                    URL.revokeObjectURL(audioUrl);
-                    stopAudioVisualizer();
-                    log('SPEECH', 'Lỗi Gemini TTS');
-                };
-                
-                await audio.play();
-                
-            } catch (error) {
-                console.error('Gemini TTS error:', error);
-                log('SPEECH', `Gemini TTS thất bại: ${error.message}`);
-                
-                // Fallback to Web Speech
-                speakWithWebSpeech(text, langCode);
-            } finally {
-                document.getElementById('aiSpeechStatus').style.display = 'none';
-            }
+        const data = await response.json();
+        
+        // Xử lý fallback nếu không có audio
+        if (!data.audioData) {
+            console.warn('No audio data from API, using Web Speech fallback');
+            speakWithWebSpeech(text, langCode);
+            return;
         }
+        
+        const wavBlob = pcmToWav(data.audioData);
+        if (!wavBlob) {
+            throw new Error("Audio conversion failed");
+        }
+
+        const audioUrl = URL.createObjectURL(wavBlob);
+        const audio = new Audio(audioUrl);
+        currentSpeech = audio;
+        
+        audio.onplay = () => {
+            setIsSpeaking(true);
+            startAudioVisualizer();
+            log('SPEECH', `Playing Gemini TTS: "${text.substring(0, 50)}..."`);
+        };
+        
+        audio.onended = () => {
+            setIsSpeaking(false);
+            URL.revokeObjectURL(audioUrl);
+            stopAudioVisualizer();
+        };
+        
+        audio.onerror = () => {
+            setIsSpeaking(false);
+            URL.revokeObjectURL(audioUrl);
+            stopAudioVisualizer();
+            // Fallback to Web Speech
+            speakWithWebSpeech(text, langCode);
+        };
+        
+        await audio.play();
+        
+    } catch (error) {
+        console.error('Gemini TTS error:', error);
+        // Fallback to Web Speech
+        speakWithWebSpeech(text, langCode);
+    } finally {
+        document.getElementById('aiSpeechStatus').style.display = 'none';
+    }
+}
     </script>
 </body>
 </html>
