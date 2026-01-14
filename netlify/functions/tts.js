@@ -4,8 +4,8 @@ exports.handler = async function(event, context) {
     // CORS headers
     const headers = {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
         'Content-Type': 'application/json'
     };
     
@@ -14,47 +14,53 @@ exports.handler = async function(event, context) {
         return { statusCode: 200, headers, body: '' };
     }
     
-    if (!event.body || event.body.trim() === '') {
+    // Chỉ chấp nhận POST
+    if (event.httpMethod !== 'POST') {
         return {
-            statusCode: 400,
+            statusCode: 405,
             headers,
-            body: JSON.stringify({ error: 'Request body is empty' })
+            body: JSON.stringify({
+                error: 'Method not allowed',
+                allowed: ['POST', 'OPTIONS']
+            })
         };
     }
     
     try {
-        const body = JSON.parse(event.body);
+        const body = JSON.parse(event.body || '{}');
         const { text } = body;
         
-        if (!text) {
+        if (!text || text.trim() === '') {
             return {
                 statusCode: 400,
                 headers,
-                body: JSON.stringify({ error: 'Text is required' })
+                body: JSON.stringify({
+                    error: 'Text is required'
+                })
             };
         }
         
-        console.log(`TTS requested for: "${text.substring(0, 50)}..."`);
+        console.log(`TTS requested for: "${text.substring(0, 100)}"`);
         
-        // Gemini TTS API hiện tại không dễ truy cập
-        // Tạm thời trả về text và để frontend dùng Web Speech
+        // Hiện tại Gemini TTS API khó truy cập
+        // Trả về success nhưng không có audio, frontend sẽ dùng Web Speech
         return {
             statusCode: 200,
             headers,
-            body: JSON.stringify({ 
+            body: JSON.stringify({
                 success: true,
                 text: text,
-                note: "Use browser's Web Speech API for TTS",
-                instruction: "Frontend should use speechSynthesis API"
+                note: 'Use browser Web Speech API for TTS',
+                timestamp: new Date().toISOString()
             })
         };
         
     } catch (error) {
-        console.error('ERROR in TTS function:', error);
+        console.error('Error in TTS function:', error);
         return {
             statusCode: 500,
             headers,
-            body: JSON.stringify({ 
+            body: JSON.stringify({
                 error: error.message
             })
         };
