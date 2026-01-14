@@ -64,7 +64,25 @@
             padding-bottom: 10px;
             border-bottom: 2px solid #f0f0f0;
         }
+.audio-visualizer {
+    margin-top: 10px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    background: #f5f5f5;
+    border-radius: 8px;
+    padding: 5px;
+}
 
+.audio-bar {
+    width: 4px;
+    background: #4CAF50;
+    border-radius: 2px;
+    transition: height 0.1s ease;
+    min-height: 5px;
+}
         /* === CARD HIỆU CHUẨN === */
         .calibration-card {
             background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
@@ -1050,17 +1068,18 @@
                     </div>
                     
                     <!-- Điều khiển giọng nói -->
-                    <div class="speech-controls">
-                        <button class="speech-btn" onclick="speakVietnameseSentence()" id="speakVnBtn">
-                            🔊 Đọc Tiếng Việt
-                        </button>
-                        <button class="speech-btn blue" onclick="speakTranslation()" id="speakTransBtn">
-                            🔈 Đọc Bản dịch
-                        </button>
-                        <button class="speech-btn red" onclick="stopAllSpeech()" id="stopSpeechBtn">
-                            ⏹ Dừng đọc
-                        </button>
-                    </div>
+                    <!-- Điều khiển giọng nói cập nhật -->
+<div class="speech-controls">
+    <button class="speech-btn" onclick="speakVietnameseSentence()" id="speakVnBtn">
+        🔊 Đọc Tiếng Việt
+    </button>
+    <button class="speech-btn blue" onclick="speakTranslation()" id="speakTransBtn">
+        🔈 Đọc Bản dịch
+    </button>
+    <button class="speech-btn red" onclick="stopAllSpeech()" id="stopSpeechBtn" disabled>
+        ⏹ Dừng đọc
+    </button>
+</div>
                     
                     <div class="audio-visualizer" id="audioVisualizer">
                         <!-- Thanh âm thanh sẽ được thêm ở đây -->
@@ -1234,6 +1253,16 @@
     </button>
 
 <script>
+    function speakVietnameseSentence() {
+    const text = convertedFullSentence || document.getElementById('convertedSentenceDisplay').textContent;
+    if (!text || text === '---') {
+        log('SPEECH', 'Không có văn bản tiếng Việt để đọc');
+        alert('Không có câu tiếng Việt để đọc. Vui lòng xây dựng câu trước!');
+        return;
+    }
+    
+    speakText(text, 'vi-VN');
+}
     async function testCurrentSentence() {
     const textarea = document.getElementById('translationInput');
     const text = textarea.value.trim();
