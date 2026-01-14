@@ -5,12 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ứng dụng và cải tiến "Công nghệ dịch thủ ngữ" vào đời sống - Phiên bản tối ưu với Hiệu chuẩn</title>
     <style>
-                * {
+        /* Toàn bộ CSS giữ nguyên như bạn đã cung cấp */
+        * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
+    
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -1298,8 +1299,9 @@
     // === CẤU HÌNH TỐC ĐỘ CAO ===
     const FIREBASE_URL = "https://gangtay-f1efe-default-rtdb.asia-southeast1.firebasedatabase.app/sensorData.json";
     
-    // Sử dụng Netlify Function cho Gemini API
-    const GEMINI_API_URL = "/.netlify/functions/gemini-proxy";
+    // Netlify Functions endpoints
+    const GEMINI_TRANSLATE_URL = "/.netlify/functions/translate";
+    const GEMINI_TTS_URL = "/.netlify/functions/tts";
         
         // === BIẾN HIỆU CHUẨN ===
         let bentThresholds = [300, 450, 350, 300]; // Giá trị mặc định cho ngưỡng uốn
@@ -2811,7 +2813,7 @@
                 "보고서를 다시 확인해 주세요.",
                 "마감일은 금요일입니다.",
                 "전적으로 동의합니다.",
-                "メニュー를 보여주세요.",
+                "메뉴를 보여주세요.",
                 "계산서 부탁드립니다.",
                 "이 요리는 매운가요?",
                 "박물관에는 어떻게 가나요?",
@@ -2890,23 +2892,21 @@
         let lastTranslationTime = 0;
         const TRANSLATION_COOLDOWN = 2000;
 
-        // Hàm dịch với Gemini AI qua Netlify Function
+        // Hàm dịch với Gemini AI - Sử dụng Netlify Function
         async function translateWithAI(text, sourceLang, targetLang) {
             const sourceName = languageNames[sourceLang]?.code || sourceLang;
             const targetName = languageNames[targetLang]?.code || targetLang;
 
             try {
-                const response = await fetch(GEMINI_API_URL, {
+                const response = await fetch(GEMINI_TRANSLATE_URL, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: { 
+                        "Content-Type": "application/json"
+                    },
                     body: JSON.stringify({
-                        contents: [{
-                            parts: [{
-                                text: `Translate from ${sourceName} to ${targetName}.
-                                Maintain natural and formal tone. Output ONLY the translated text, no quotes, no extra notes.
-                                Text: "${text}"`
-                            }]
-                        }]
+                        text: text,
+                        sourceLang: sourceName,
+                        targetLang: targetName
                     })
                 });
 
@@ -2915,7 +2915,7 @@
                 }
                 
                 const data = await response.json();
-                let translated = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+                let translated = data.translated || "";
                 translated = translated.replace(/^["']|["']$/g, '');
                 return translated;
             } catch (error) {
@@ -3030,15 +3030,17 @@
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 15000);
 
+                    // Gọi Netlify Function cho TTS
                     const response = await fetch(
-                        "/.netlify/functions/gemini-tts",
+                        GEMINI_TTS_URL,
                         {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             signal: controller.signal,
                             body: JSON.stringify({
                                 text: text,
-                                voiceName: voiceName
+                                voiceName: voiceName,
+                                langCode: langCode
                             })
                         }
                     );
@@ -3213,51 +3215,6 @@
             }
         }
 
-        async function speakWithGeminiTTS(text, langCode) {
-            try {
-                const audioDataBase64 = await speakWithRetry(text, langCode);
-                const wavBlob = pcmToWav(audioDataBase64);
-                if (!wavBlob) {
-                    throw new Error("Audio generation failed");
-                }
-
-                const audioUrl = URL.createObjectURL(wavBlob);
-                const audio = new Audio(audioUrl);
-                currentSpeech = audio;
-                
-                audio.onplay = () => {
-                    setIsSpeaking(true);
-                    startAudioVisualizer();
-                    log('SPEECH', `Bắt đầu Gemini TTS: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
-                };
-                
-                audio.onended = () => {
-                    setIsSpeaking(false);
-                    URL.revokeObjectURL(audioUrl);
-                    stopAudioVisualizer();
-                    log('SPEECH', 'Kết thúc Gemini TTS');
-                };
-                
-                audio.onerror = () => {
-                    setIsSpeaking(false);
-                    URL.revokeObjectURL(audioUrl);
-                    stopAudioVisualizer();
-                    log('SPEECH', 'Lỗi Gemini TTS');
-                };
-                
-                await audio.play();
-                
-            } catch (error) {
-                console.error('Gemini TTS error:', error);
-                log('SPEECH', `Gemini TTS thất bại: ${error.message}`);
-                
-                // Fallback to Web Speech
-                speakWithWebSpeech(text, langCode);
-            } finally {
-                document.getElementById('aiSpeechStatus').style.display = 'none';
-            }
-        }
-
         // === HÀM UPDATE UI COMPLETE ===
         function updateUI() {
             updateWordDisplays();
@@ -3299,7 +3256,7 @@
         // === KHỞI TẠO ===
         document.addEventListener('DOMContentLoaded', function() {
             log('SYSTEM', 'Ứng dụng tối ưu đã khởi động với tính năng hiệu chuẩn');
-            log('SYSTEM', `Gemini connected via Netlify proxy`);
+            log('SYSTEM', `Sử dụng Netlify Functions: ${GEMINI_TRANSLATE_URL} và ${GEMINI_TTS_URL}`);
 
             
             // Khởi tạo FPS counter
@@ -3344,7 +3301,58 @@
                 fetchFirebaseDataOptimized();
                 toggleAutoRefresh();
             }, 100);
+            
+            if (!GEMINI_TRANSLATE_URL || !GEMINI_TTS_URL) {
+                log('SYSTEM', 'Lưu ý: Không có cấu hình Netlify Functions. Sử dụng Web Speech API.');
+                useGeminiTTS = false;
+            }
         });
+
+        // === THÊM BIẾN TTS BỔ SUNG ===
+        async function speakWithGeminiTTS(text, langCode) {
+            try {
+                const audioDataBase64 = await speakWithRetry(text, langCode);
+                const wavBlob = pcmToWav(audioDataBase64);
+                if (!wavBlob) {
+                    throw new Error("Audio generation failed");
+                }
+
+                const audioUrl = URL.createObjectURL(wavBlob);
+                const audio = new Audio(audioUrl);
+                currentSpeech = audio;
+                
+                audio.onplay = () => {
+                    setIsSpeaking(true);
+                    startAudioVisualizer();
+                    log('SPEECH', `Bắt đầu Gemini TTS: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
+                };
+                
+                audio.onended = () => {
+                    setIsSpeaking(false);
+                    URL.revokeObjectURL(audioUrl);
+                    stopAudioVisualizer();
+                    log('SPEECH', 'Kết thúc Gemini TTS');
+                };
+                
+                audio.onerror = () => {
+                    setIsSpeaking(false);
+                    URL.revokeObjectURL(audioUrl);
+                    stopAudioVisualizer();
+                    log('SPEECH', 'Lỗi Gemini TTS');
+                };
+                
+                await audio.play();
+                
+            } catch (error) {
+                console.error('Gemini TTS error:', error);
+                log('SPEECH', `Gemini TTS thất bại: ${error.message}`);
+                
+                // Fallback to Web Speech
+                speakWithWebSpeech(text, langCode);
+            } finally {
+                document.getElementById('aiSpeechStatus').style.display = 'none';
+            }
+        }
     </script>
 </body>
 </html>
