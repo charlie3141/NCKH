@@ -966,9 +966,9 @@
     <div class="container">
         <header>
             <h1>Ứng dụng và cải tiến "Công nghệ dịch thủ ngữ" vào đời sống - Phiên bản tối ưu với Hiệu chuẩn</h1>
-            <div>Giám sát thời gian thực từ Cơ sở dữ liệu Firebase</div>
+            <div>Giám sát thời gian thực từ Cơ sở dữ liệu Firebase (qua Netlify Proxy)</div>
             <div class="firebase-status" id="firebaseStatus">
-                Đang kết nối với Firebase...
+                Đang kết nối với Firebase qua Netlify...
             </div>
             <div class="performance-info" id="performanceInfo">
                 Độ trễ: <span id="latency">--</span>ms | FPS: <span id="fps">--</span> | Tần suất cập nhật: <span id="pollingRate">--</span>ms
@@ -1084,7 +1084,7 @@
                         <button onclick="backspace()">Xóa ký tự</button>
                         <button onclick="addWordToSentence()" class="green">Thêm từ (_)</button>
                         <button onclick="commitSentence()" class="blue">Hoàn thành câu</button>
-                        <button onclick="resetSentence()" class="red">Đặt lại tất cả</button>
+                        <button onclick="resetAll()" class="red">Đặt lại tất cả</button>
                     </div>
                 </div>
             </div>
@@ -1226,7 +1226,7 @@
 
             <!-- Card Hiển thị Cảm biến -->
             <div class="card">
-                <h3>Dữ liệu Cảm biến từ Firebase</h3>
+                <h3>Dữ liệu Cảm biến từ Firebase (qua Proxy)</h3>
                 <div class="sensor-grid">
                     <div class="sensor-item mpu">
                         <div class="sensor-label">ĐỊNH HƯỚNG MPU6050</div>
@@ -1286,7 +1286,7 @@
         <div class="status-bar">
             <div>
                 <span class="indicator" id="connectionStatus"></span>
-                <span id="statusText">Đang kết nối với Firebase...</span>
+                <span id="statusText">Đang kết nối với Firebase qua Netlify...</span>
             </div>
             <div>
                 <span id="lastUpdate">Cập nhật Firebase lần cuối: --:--:--</span>
@@ -1295,29 +1295,12 @@
     </div>
 
     <script>
-            const getSafeEnv = (key) => {
-          try {
-            if (typeof import.meta !== 'undefined' && import.meta.env?.[key]) {
-              return import.meta.env[key];
-            }
-            if (typeof process !== 'undefined' && process.env?.[key]) {
-              return process.env[key];
-            }
-          } catch (e) {
-            return "";
-          }
-          return "";
-        }
-        
-        // === CẤU HÌNH BẢO MẬT QUA NETLIFY ===
-        const GEMINI_API_KEY = getSafeEnv('VITE_GEMINI_API_KEY');
-        const FIREBASE_URL = getSafeEnv('VITE_FIREBASE_URL');
-        const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent";
-        const GEMINI_TRANSLATE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent";
+        // === NETLIFY PROXY ENDPOINTS ===
+        const NETLIFY_PROXY_URL = '/.netlify/functions/proxy';
         
         // === BIẾN HIỆU CHUẨN ===
-        let bentThresholds = [300, 450, 350, 300]; // Giá trị mặc định cho ngưỡng uốn
-        const STRAIGHT_THRESHOLDS = [75, 75, 75, 75]; // Giá trị cố định cho ngưỡng thẳng
+        let bentThresholds = [300, 450, 350, 300];
+        const STRAIGHT_THRESHOLDS = [75, 75, 75, 75];
         
         let isCalibrating = false;
         let calibrationTimeout = null;
@@ -1326,7 +1309,7 @@
         let calibrationStartTime = 0;
         let calibrationMaxValues = [0, 0, 0, 0];
         let calibrationCurrentSensor = 0;
-        let calibrationStep = "waiting"; // waiting, calibrating, done
+        let calibrationStep = "waiting";
         
         // === BIẾN TỐI ƯU HÓA ===
         let firebaseData = null;
@@ -1362,8 +1345,8 @@
         let holdStartMs = 0;
         let holdFired = false;
         const DEBOUNCE_COUNT = 3;
-        const HOLD_MS_DEFAULT = 1000; // ĐÃ ĐỔI: Từ 800ms lên 1000ms (1 giây)
-        const POST_HOLD_COOLDOWN = 800; // ĐÃ ĐỔI: Từ 600ms lên 800ms
+        const HOLD_MS_DEFAULT = 1000;
+        const POST_HOLD_COOLDOWN = 800;
         let lastActionMs = 0;
         let lastStateString = '';
         
@@ -1373,7 +1356,7 @@
         let translationCache = {};
         let audioCache = {};
         
-        // === BẢNG DỮ LIỆU (giữ nguyên từ file gốc) ===
+        // === BẢNG DỮ LIỆU ===
         const tableA = [
             ["IAY","IC","ICH","IE","IEC","IEM","IEN","IENG","IEO"],
             ["IEP","IET","IEU","IM","IN","ING","INH","IO","IOI"],
@@ -1402,7 +1385,7 @@
             [ ["GH","KH","NG"],["NGH","NH","PH"],["TH","TR","_"] ]
         ];
 
-        // Bảng chuyển đổi Tiếng Việt (bảng đầy đủ từ ESP32 code)
+        // Bảng chuyển đổi Tiếng Việt
         const vietnameseTable = [
             {key: "IAY", forms: ["iáy", "iày", "iảy", "iãy", "iạy", "iay", "iấy", "iầy", "iẩy", "iẫy", "iậy", "iây", "iắy", "iằy", "iẳy", "iẵy", "iặy", "iăy"]},
             {key: "IC", forms: ["íc", "ìc", "ỉc", "ĩc", "ịc", "ic", "íc", "ìc", "ỉc", "ĩc", "ịc", "ic", "íc", "ìc", "ỉc", "ĩc", "ịc", "ic"]},
@@ -1546,6 +1529,9 @@
             {key: "UYU", forms: ["uýu", "uỳu", "uỷu", "uỹu", "uỵu", "uyu", "uýu", "uỳu", "uỷu", "uỹu", "uỵu", "uyu", "uýu", "uỳu", "uỷu", "uỹu", "uỵu", "uyu"]},
             {key: "YEM", forms: ["yém", "yèm", "yẻm", "yẽm", "yẹm", "yem", "yếm", "yềm", "yểm", "yễm", "yệm", "yêm", "yém", "yèm", "yẻm", "yẽm", "yẹm", "yem"]},
             {key: "OAP", forms: ["oáp", "oàp", "oảp", "oãp", "oạp", "oap", "oáp", "oàp", "oảp", "oãp", "oạp", "oap", "oáp", "oàp", "oảp", "oãp", "oạp", "oap"]}
+    
+            // ... (giữ nguyên bảng vietnameseTable từ code cũ)
+            // Do giới hạn ký tự, giữ nguyên bảng vietnameseTable như cũ
         ];
 
         // Ánh xạ trạng thái MPU
@@ -1601,6 +1587,38 @@
             gender: 'male'
         };
 
+        // === HÀM LOG EVENT TỚI FIREBASE ===
+        async function logEventToFirebase(eventName, eventData = {}) {
+            try {
+                const logData = {
+                    eventName,
+                    eventData,
+                    userInfo: {
+                        userAgent: navigator.userAgent,
+                        screenResolution: `${window.screen.width}x${window.screen.height}`,
+                        language: navigator.language
+                    },
+                    timestamp: new Date().toISOString()
+                };
+
+                const response = await fetch(`${NETLIFY_PROXY_URL}/log`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(logData)
+                });
+
+                const result = await response.json();
+                log('FIREBASE_LOG', `Đã ghi sự kiện "${eventName}" thành công: ${result.logId}`);
+                return result;
+            } catch (error) {
+                console.error('Lỗi khi ghi log:', error);
+                log('FIREBASE_LOG', `Lỗi ghi sự kiện "${eventName}": ${error.message}`);
+                return null;
+            }
+        }
+
         // === HÀM HIỆU CHUẨN ===
         function startCalibration() {
             if (isCalibrating) return;
@@ -1611,6 +1629,11 @@
             calibrationMaxValues = [0, 0, 0, 0];
             calibrationCurrentSensor = 0;
             calibrationStep = "calibrating";
+            
+            // Log sự kiện hiệu chuẩn
+            logEventToFirebase('calibration_started', {
+                startTime: new Date().toISOString()
+            });
             
             // Hiển thị giao diện hiệu chuẩn
             document.getElementById('calibrationProgress').style.display = 'block';
@@ -1731,6 +1754,12 @@
                 
                 log('HIỆU CHUẨN', `Hiệu chuẩn hoàn thành: ${bentThresholds}`);
                 
+                // Log sự kiện hoàn thành hiệu chuẩn
+                logEventToFirebase('calibration_completed', {
+                    thresholds: bentThresholds,
+                    maxValues: calibrationMaxValues
+                });
+                
                 // Ẩn phần hiệu chuẩn sau 3 giây
                 setTimeout(() => {
                     document.getElementById('calibrationProgress').style.display = 'none';
@@ -1831,7 +1860,7 @@
             statusDiv.appendChild(div);
         }
 
-        // === HÀM TỐI ƯU HÓA FIREBASE ===
+        // === HÀM TỐI ƯU HÓA FIREBASE VỚI NETLIFY PROXY ===
         async function fetchFirebaseDataOptimized() {
             if (isFetching) return null;
             
@@ -1846,11 +1875,9 @@
             const signal = currentFetchController.signal;
             
             try {
-                // Thêm timestamp để tránh cache
+                // Sử dụng Netlify Proxy để lấy dữ liệu
                 const timestamp = Date.now();
-                const url = `${FIREBASE_URL}?t=${timestamp}`;
-                
-                const response = await fetch(url, {
+                const response = await fetch(`${NETLIFY_PROXY_URL}/sensor?t=${timestamp}`, {
                     signal,
                     method: 'GET',
                     headers: {
@@ -1865,11 +1892,13 @@
                     throw new Error(`HTTP ${response.status}`);
                 }
                 
-                const data = await response.json();
+                const result = await response.json();
                 const fetchTime = performance.now() - startTime;
                 
                 // Cập nhật thông tin độ trễ
                 document.getElementById('latency').textContent = Math.round(fetchTime);
+                
+                const data = result.sensorData;
                 
                 // Chỉ xử lý nếu dữ liệu thay đổi
                 if (JSON.stringify(data) !== JSON.stringify(lastFirebaseData)) {
@@ -1885,7 +1914,7 @@
                     // Lên lịch update UI cho frame tiếp theo
                     scheduleUIUpdate();
                     
-                    log('Firebase', `Data updated (${Math.round(fetchTime)}ms)`);
+                    log('Firebase', `Data updated via proxy (${Math.round(fetchTime)}ms)`);
                     
                     // Điều chỉnh polling interval dựa trên tốc độ
                     if (fetchTime < 100) {
@@ -2294,8 +2323,8 @@
             
             if (connected) {
                 indicator.className = 'indicator online';
-                statusText.textContent = 'Đã kết nối với Firebase';
-                firebaseStatus.textContent = 'Đã kết nối với Firebase';
+                statusText.textContent = 'Đã kết nối với Firebase qua Netlify';
+                firebaseStatus.textContent = 'Đã kết nối với Firebase qua Netlify';
                 firebaseStatus.style.color = '#4CAF50';
             } else {
                 indicator.className = 'indicator';
@@ -2403,6 +2432,13 @@
                 scheduleUIUpdate();
                 log('SENTENCE', `Đã thêm: '${displayBuffer}'`);
                 
+                // Log sự kiện thêm từ
+                logEventToFirebase('word_added', {
+                    word: displayBuffer,
+                    convertedWord: convertedCurrentWord,
+                    wordCount: sentenceWords.length
+                });
+                
                 // Xóa để nhập từ tiếp theo
                 slot1 = '';
                 slot2 = '';
@@ -2430,6 +2466,13 @@
             log('SENTENCE', `Đầy đủ: ${fullSentence}`);
             log('CONVERSION', `Đã chuyển đổi: ${convertedFullSentence}`);
             
+            // Log sự kiện hoàn thành câu
+            logEventToFirebase('sentence_completed', {
+                encodedSentence: fullSentence,
+                vietnameseSentence: convertedFullSentence,
+                wordCount: sentenceWords.length
+            });
+            
             // Tự động dịch câu
             if (convertedFullSentence && convertedFullSentence !== "---") {
                 document.getElementById('translationInput').value = convertedFullSentence;
@@ -2437,6 +2480,17 @@
                     translateSentence();
                 }, 500);
             }
+            
+            resetSentence();
+        }
+
+        // Hàm resetAll mới để log sự kiện
+        function resetAll() {
+            // Log sự kiện reset all
+            logEventToFirebase('reset_all_clicked', {
+                previousSentence: fullSentence,
+                previousWordCount: sentenceWords.length
+            });
             
             resetSentence();
         }
@@ -2568,6 +2622,12 @@
                     document.getElementById('translationInput').value = phrase;
                     translatePhrase(phrase);
                     log('PHRASE', `Đã chọn cụm từ: "${phrase}"`);
+                    
+                    // Log sự kiện click cụm từ đề xuất
+                    logEventToFirebase('phrase_suggestion_clicked', {
+                        phrase: phrase,
+                        source: 'phrase_suggestions'
+                    });
                 };
                 pill.title = phrase;
                 phrasePills.appendChild(pill);
@@ -2723,6 +2783,12 @@
             document.getElementById('translationInput').value = text;
             translateSentence();
             log('SUGGESTION', `Sử dụng đề xuất: "${text}"`);
+            
+            // Log sự kiện sử dụng đề xuất tự động
+            logEventToFirebase('auto_suggestion_used', {
+                suggestion: text,
+                source: 'auto_suggestions'
+            });
         }
 
         function translateSuggestion(text) {
@@ -2760,114 +2826,18 @@
             log('TTS', `Chuyển sang ${useGemini ? 'Gemini AI' : 'Web Speech'} TTS`);
         }
 
-        // === HÀM DỊCH THUẬT ===
-        // Thư viện cụm từ đa ngôn ngữ
-        const phraseLibrary = {
-            "vi-VN": [
-                "Xin chào, rất vui được gặp bạn.",
-                "Chào buổi sáng.",
-                "Bạn tên là gì?",
-                "Tôi có thể giúp gì không?",
-                "Vui lòng kiểm tra lại báo cáo.",
-                "Hạn chót là thứ Sáu.",
-                "Tôi hoàn toàn đồng ý.",
-                "Làm ơn cho tôi xem thực đơn.",
-                "Làm ơn cho tôi xin hóa đơn.",
-                "Món này có cay không?",
-                "Đường đến bảo tàng đi thế nào?",
-                "Ga tàu cách đây bao xa?",
-                "Cái này giá bao nhiêu?",
-                "Tôi cần gặp bác sĩ.",
-                "Làm ơn gọi xe cấp cứu.",
-                "Bạn có thể hướng dẫn tôi không?",
-            ],
-            "en-GB": [
-                "Hello, nice to meet you.",
-                "Good morning.",
-                "What is your name?",
-                "May I help you?",
-                "Please double-check the report.",
-                "The deadline is Friday.",
-                "I completely agree.",
-                "Please let me see the menu.",
-                "Could I have the bill, please?",
-                "Is this dish spicy?",
-                "How do I get to the museum?",
-                "How far is the train station?",
-                "How much does this cost?",
-                "I need to see a doctor.",
-                "Please call an ambulance.",
-                "Could you guide me?",
-            ],
-            "ja-JP": [
-                "こんにちは、お会いできて嬉しいです。",
-                "おはようございます。",
-                "お名前は何ですか？",
-                "何かお手伝いできますか？",
-                "レポートを再確認してください。",
-                "締め切りは金曜日です。",
-                "完全に同意します。",
-                "メニューを見せてください。",
-                "お会計をお願いします。",
-                "この料理は辛いですか？",
-                "博物館にはどう行けばいいですか？",
-                "駅まではどれくらいですか？",
-                "これはいくらですか？",
-                "医者に診てもらう必要があります。",
-                "救急車を呼んでください。",
-                "案内してもらえますか？",
-            ],
-            "ko-KR": [
-                "안녕하세요, 만나서 반갑습니다.",
-                "좋은 아침입니다.",
-                "이름이 무엇인가요?",
-                "도와드릴까요?",
-                "보고서를 다시 확인해 주세요.",
-                "마감일은 금요일입니다.",
-                "전적으로 동의합니다.",
-                "メニュ를 보여주세요.",
-                "계산서 부탁드립니다.",
-                "이 요리는 매운가요?",
-                "박물관에는 어떻게 가나요?",
-                "기차역까지 얼마나 멀나요?",
-                "이것은 얼마인가요?",
-                "의사를 만나야 합니다.",
-                "구급차를 불러 주세요.",
-                "안내해 주시겠어요?",
-            ],
-            "zh-CN": [
-                "你好，很高兴见到你。",
-                "早上好。",
-                "你叫什么名字？",
-                "我可以帮忙吗？",
-                "请再次检查报告。",
-                "截止日期是星期五。",
-                "我完全同意。",
-                "请让我看看菜单。",
-                "请给我账单。",
-                "这道菜辣吗？",
-                "去博物馆怎么走？",
-                "火车站有多远？",
-                "这个多少钱？",
-                "我需要看医生。",
-                "请叫救护车。",
-                "你能指导我吗？",
-            ]
-        };
-
-        // Ánh xạ ngôn ngữ
+        // === HÀM DỊCH THUẬT NÂNG CAO VỚI NETLIFY PROXY ===
         const languageNames = {
             "vi-VN": { name: "Tiếng Việt", code: "Vietnamese" },
             "en-GB": { name: "Tiếng Anh", code: "English" },
             "ja-JP": { name: "Tiếng Nhật", code: "Japanese" },
             "ko-KR": { name: "Tiếng Hàn", code: "Korean" },
-            "zh-CN": { name: "Tiếng Trung", code: "Chinese (Simplified)" }
+            "zh-CN": { name: "Tiếng Trung", code: "Chinese" }
         };
 
         function handleTranslationInput() {
             const input = document.getElementById('translationInput').value;
             const suggestionsDiv = document.getElementById('translationSuggestions');
-            const sourceLang = document.getElementById('sourceLanguage').value;
             
             if (!input || input.trim().length === 0) {
                 suggestionsDiv.innerHTML = '';
@@ -2876,8 +2846,7 @@
             }
             
             const inputLower = input.toLowerCase();
-            const currentLibrary = phraseLibrary[sourceLang] || [];
-            const filteredPhrases = currentLibrary.filter(phrase => 
+            const filteredPhrases = commonPhrases.filter(phrase => 
                 phrase.toLowerCase().includes(inputLower) && phrase !== input
             );
             
@@ -2904,92 +2873,35 @@
         let lastTranslationTime = 0;
         const TRANSLATION_COOLDOWN = 2000;
 
-        // Hàm dịch với Gemini AI - ĐÃ SỬA LỖI
+        // Hàm dịch với Gemini AI qua Netlify Proxy
         async function translateWithAI(text, sourceLang, targetLang) {
-            const apiKey = GEMINI_API_KEY;
-            const url = `${GEMINI_TRANSLATE_URL}?key=${apiKey}`;
-            
-            const sourceName = languageNames[sourceLang]?.code || sourceLang;
-            const targetName = languageNames[targetLang]?.code || targetLang;
-            
             try {
-                // Đơn giản hóa prompt để tránh lỗi
-                const prompt = `Dịch văn bản sau từ ${sourceName} sang ${targetName}:\n"${text}"\n\nChỉ trả về bản dịch, không thêm bất kỳ giải thích nào.`;
-                
-                const response = await fetch(url, {
+                const response = await fetch(`${NETLIFY_PROXY_URL}/translate`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        contents: [{
-                            parts: [{ text: prompt }]
-                        }]
+                        text,
+                        sourceLang,
+                        targetLang
                     })
                 });
                 
                 if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`API error ${response.status}: ${errorText}`);
+                    throw new Error(`API error: ${response.status}`);
                 }
                 
                 const data = await response.json();
+                let translated = data.translated || "";
                 
-                // Xử lý phản hồi từ Gemini
-                if (data.candidates && data.candidates.length > 0) {
-                    const candidate = data.candidates[0];
-                    if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
-                        let translated = candidate.content.parts[0].text || "";
-                        
-                        // Loại bỏ dấu ngoặc kép nếu có
-                        translated = translated.replace(/^["']|["']$/g, '');
-                        translated = translated.trim();
-                        
-                        return translated;
-                    }
-                }
+                // Loại bỏ các ký tự không cần thiết
+                translated = translated.replace(/^["']|["']$/g, '');
+                translated = translated.replace(/^Dịch:|Translation:|Result:/i, '').trim();
                 
-                throw new Error("Không nhận được bản dịch hợp lệ từ API.");
-                
+                return translated;
             } catch (error) {
                 console.error("AI Translation Error:", error);
-                
-                // Fallback: Dùng Google Translate đơn giản nếu có lỗi
-                const fallbackTranslation = getFallbackTranslation(text, sourceLang, targetLang);
-                if (fallbackTranslation) {
-                    log('TRANSLATION', `Dùng bản dịch dự phòng: ${fallbackTranslation}`);
-                    return fallbackTranslation;
-                }
-                
                 throw error;
             }
-        }
-
-        // Hàm dịch dự phòng đơn giản
-        function getFallbackTranslation(text, sourceLang, targetLang) {
-            // Một số bản dịch cơ bản
-            const fallbackDict = {
-                "vi-VN_to_en-GB": {
-                    "xin chào": "hello",
-                    "cảm ơn": "thank you",
-                    "tạm biệt": "goodbye",
-                    "tôi yêu bạn": "i love you"
-                },
-                "en-GB_to_vi-VN": {
-                    "hello": "xin chào",
-                    "thank you": "cảm ơn",
-                    "goodbye": "tạm biệt",
-                    "i love you": "tôi yêu bạn"
-                }
-            };
-            
-            const key = `${sourceLang}_to_${targetLang}`;
-            const dict = fallbackDict[key];
-            
-            if (dict) {
-                const lowerText = text.toLowerCase();
-                return dict[lowerText] || null;
-            }
-            
-            return null;
         }
 
         async function translateSentence() {
@@ -3029,10 +2941,19 @@
                 outputDiv.innerHTML = translated;
                 outputDiv.className = 'conversion-display success';
                 lastTranslationTime = Date.now();
-                log('TRANSLATION', `Đã dịch từ ${sourceLang} sang ${targetLang}: ${translated}`);
+                log('TRANSLATION', `Đã dịch từ ${sourceLang} sang ${targetLang}: "${text}" -> "${translated}"`);
+                
+                // Log sự kiện dịch
+                logEventToFirebase('translation_performed', {
+                    sourceLang,
+                    targetLang,
+                    originalText: text,
+                    translatedText: translated,
+                    textLength: text.length
+                });
             } catch (error) {
                 console.error('Translation error:', error);
-                outputDiv.innerHTML = `<span style="color: #F44336;">Dịch thuật thất bại: ${error.message}</span>`;
+                outputDiv.innerHTML = '<span style="color: #F44336;">Dịch thuật thất bại. Vui lòng thử lại sau.</span>';
                 outputDiv.className = 'conversion-display error';
             }
         }
@@ -3043,174 +2964,82 @@
             translationCache = {};
         }
 
-        // === HÀM TTS ===
-        const pcmToWav = (base64PCM, sampleRate = 24000) => {
+        // === HÀM TTS NÂNG CAO VỚI NETLIFY PROXY ===
+        async function speakWithGeminiTTS(text, langCode) {
+            if (!text || text.trim().length === 0) return;
+            
             try {
-                const binaryString = atob(base64PCM);
-                const len = binaryString.length;
-                const bytes = new Uint8Array(len);
-                for (let i = 0; i < len; i++) {
-                    bytes[i] = binaryString.charCodeAt(i);
+                const response = await fetch(`${NETLIFY_PROXY_URL}/tts`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        text: text
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`TTS API error: ${response.status}`);
                 }
-
-                const wavHeader = new ArrayBuffer(44);
-                const view = new DataView(wavHeader);
-
-                const writeString = (view, offset, string) => {
-                    for (let i = 0; i < string.length; i++) {
-                        view.setUint8(offset + i, string.charCodeAt(i));
-                    }
+                
+                const data = await response.json();
+                const audioContent = data.audioContent;
+                
+                if (!audioContent) {
+                    throw new Error("No audio content received");
+                }
+                
+                // Chuyển base64 thành audio blob
+                const audioBlob = base64ToBlob(audioContent, 'audio/mp3');
+                const audioUrl = URL.createObjectURL(audioBlob);
+                const audio = new Audio(audioUrl);
+                
+                audio.onplay = () => {
+                    setIsSpeaking(true);
+                    startAudioVisualizer();
+                    log('SPEECH', `Bắt đầu phát âm thanh Gemini: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
+                    
+                    // Log sự kiện TTS
+                    logEventToFirebase('tts_started', {
+                        textLength: text.length,
+                        language: langCode,
+                        ttsProvider: 'gemini'
+                    });
                 };
-
-                writeString(view, 0, "RIFF");
-                view.setUint32(4, 36 + len, true);
-                writeString(view, 8, "WAVE");
-                writeString(view, 12, "fmt ");
-                view.setUint32(16, 16, true);
-                view.setUint16(20, 1, true);
-                view.setUint16(22, 1, true);
-                view.setUint32(24, sampleRate, true);
-                view.setUint32(28, sampleRate * 2, true);
-                view.setUint16(32, 2, true);
-                view.setUint16(34, 16, true);
-                writeString(view, 36, "data");
-                view.setUint32(40, len, true);
-
-                return new Blob([wavHeader, bytes], { type: "audio/wav" });
+                
+                audio.onended = () => {
+                    setIsSpeaking(false);
+                    URL.revokeObjectURL(audioUrl);
+                    stopAudioVisualizer();
+                    log('SPEECH', 'Kết thúc phát âm thanh Gemini');
+                };
+                
+                audio.onerror = (error) => {
+                    setIsSpeaking(false);
+                    URL.revokeObjectURL(audioUrl);
+                    stopAudioVisualizer();
+                    log('SPEECH', `Lỗi phát âm thanh Gemini: ${error}`);
+                };
+                
+                currentSpeech = audio;
+                await audio.play();
+                
             } catch (error) {
-                console.error("PCM to WAV error:", error);
-                return null;
-            }
-        };
-
-        // Cấu hình giọng nói Gemini - ĐÃ SỬA LẠI
-        const voiceConfigs = {
-            female: { 
-                "vi-VN": "Aoede", 
-                "en-GB": "Kore", 
-                "ja-JP": "Leda", 
-                "ko-KR": "Kore", 
-                "zh-CN": "Aoede" 
-            },
-            male: { 
-                "vi-VN": "Charon", 
-                "en-GB": "Puck", 
-                "ja-JP": "Fenrir", 
-                "ko-KR": "Puck", 
-                "zh-CN": "Zubenelgenubi" 
-            }
-        };
-
-        async function speakWithRetry(text, langCode, retries = 2) {
-            const voiceName = voiceConfigs[currentVoice.gender]?.[langCode] || 
-                            (currentVoice.gender === 'male' ? 'Puck' : 'Kore');
-            
-            for (let i = 0; i < retries; i++) {
-                try {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-                    // Tạo prompt đơn giản
-                    const prompt = `Hãy đọc văn bản này một cách tự nhiên: "${text}"`;
-                    
-                    const response = await fetch(
-                        `${GEMINI_API_URL}?key=${GEMINI_API_KEY}`,
-                        {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            signal: controller.signal,
-                            body: JSON.stringify({
-                                contents: [{ 
-                                    parts: [{ text: prompt }] 
-                                }],
-                                generationConfig: {
-                                    responseModalities: ["AUDIO"],
-                                    audioConfig: {
-                                        audioEncoding: "LINEAR16",
-                                        speakingRate: 1.0,
-                                        pitch: 0.0,
-                                        volumeGainDb: 0.0,
-                                        sampleRateHertz: 24000,
-                                        effectsProfileId: ["small-bluetooth-speaker-class-device"]
-                                    },
-                                    voiceConfig: { 
-                                        prebuiltVoiceConfig: { 
-                                            voiceName: voiceName 
-                                        } 
-                                    }
-                                }
-                            }),
-                        }
-                    );
-
-                    clearTimeout(timeoutId);
-                    
-                    if (!response.ok) {
-                        const errorData = await response.json().catch(() => ({}));
-                        throw new Error(`API_ERROR_${response.status}: ${errorData?.error?.message || response.statusText}`);
-                    }
-
-                    const data = await response.json();
-                    
-                    // Lấy dữ liệu âm thanh từ response
-                    let audioData = null;
-                    
-                    // Thử các cấu trúc response khác nhau
-                    if (data.audioContent) {
-                        audioData = data.audioContent;
-                    } else if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) {
-                        const part = data.candidates[0].content.parts.find(p => p.inlineData && p.inlineData.data);
-                        if (part && part.inlineData && part.inlineData.data) {
-                            audioData = part.inlineData.data;
-                        }
-                    }
-                    
-                    if (audioData) return audioData;
-                    throw new Error("Không nhận được dữ liệu âm thanh từ AI.");
-                } catch (err) {
-                    if (i === retries - 1) throw err;
-                    const delay = Math.pow(2, i) * 500;
-                    await new Promise(r => setTimeout(r, delay));
-                }
-            }
-        }
-
-        async function speakVietnameseSentence() {
-            const text = convertedFullSentence || document.getElementById('convertedSentenceDisplay').textContent;
-            if (!text || text === '---') {
-                log('SPEECH', 'Không có văn bản tiếng Việt để đọc');
-                return;
-            }
-            
-            speakText(text, currentVoice.lang);
-        }
-
-        async function speakTranslation() {
-            const text = document.getElementById('translationOutput').textContent;
-            if (!text || text.includes('Đang chờ dịch') || text.includes('Vui lòng nhập')) {
-                log('SPEECH', 'Không có văn bản dịch để đọc');
-                return;
-            }
-            
-            const lang = document.getElementById('targetLanguage').value;
-            speakText(text, lang);
-        }
-
-        async function speakText(text, langCode) {
-            if (isSpeaking) {
-                stopAllSpeech();
-                return;
-            }
-            
-            if (useGeminiTTS) {
-                document.getElementById('aiSpeechStatus').style.display = 'flex';
-            }
-            
-            if (useGeminiTTS && GEMINI_API_KEY) {
-                await speakWithGeminiTTS(text, langCode);
-            } else {
+                console.error('Gemini TTS error:', error);
+                // Fallback to Web Speech
                 speakWithWebSpeech(text, langCode);
+            } finally {
+                document.getElementById('aiSpeechStatus').style.display = 'none';
             }
+        }
+
+        function base64ToBlob(base64, mimeType) {
+            const byteCharacters = atob(base64);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            return new Blob([byteArray], { type: mimeType });
         }
 
         function speakWithWebSpeech(text, langCode) {
@@ -3237,6 +3066,13 @@
                 updateUI();
                 startAudioVisualizer();
                 log('SPEECH', `Bắt đầu Web Speech: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
+                
+                // Log sự kiện TTS
+                logEventToFirebase('tts_started', {
+                    textLength: text.length,
+                    language: langCode,
+                    ttsProvider: 'web_speech'
+                });
             };
             
             utterance.onend = function() {
@@ -3257,6 +3093,41 @@
             
             currentSpeech = utterance;
             window.speechSynthesis.speak(utterance);
+        }
+
+        async function speakVietnameseSentence() {
+            const text = convertedFullSentence || document.getElementById('convertedSentenceDisplay').textContent;
+            if (!text || text === '---') {
+                log('SPEECH', 'Không có văn bản tiếng Việt để đọc');
+                return;
+            }
+            
+            await speakText(text, currentVoice.lang);
+        }
+
+        async function speakTranslation() {
+            const text = document.getElementById('translationOutput').textContent;
+            if (!text || text.includes('Đang chờ dịch') || text.includes('Vui lòng nhập')) {
+                log('SPEECH', 'Không có văn bản dịch để đọc');
+                return;
+            }
+            
+            const lang = document.getElementById('targetLanguage').value;
+            await speakText(text, lang);
+        }
+
+        async function speakText(text, langCode) {
+            if (isSpeaking) {
+                stopAllSpeech();
+                return;
+            }
+            
+            if (useGeminiTTS) {
+                document.getElementById('aiSpeechStatus').style.display = 'flex';
+                await speakWithGeminiTTS(text, langCode);
+            } else {
+                speakWithWebSpeech(text, langCode);
+            }
         }
 
         function setIsSpeaking(speaking) {
@@ -3325,70 +3196,6 @@
             }
         }
 
-        // HÀM TTS VỚI GEMINI - ĐÃ SỬA LẠI
-        async function speakWithGeminiTTS(text, langCode) {
-            if (!GEMINI_API_KEY) {
-                speakWithWebSpeech(text, langCode);
-                return;
-            }
-            
-            try {
-                const audioDataBase64 = await speakWithRetry(text, langCode);
-                
-                if (!audioDataBase64) {
-                    throw new Error("Không nhận được dữ liệu âm thanh từ AI.");
-                }
-                
-                // Chuyển đổi base64 thành blob âm thanh
-                const audioBlob = base64ToBlob(audioDataBase64, 'audio/wav');
-                const audioUrl = URL.createObjectURL(audioBlob);
-                const audio = new Audio(audioUrl);
-                currentSpeech = audio;
-                
-                audio.onplay = () => {
-                    setIsSpeaking(true);
-                    startAudioVisualizer();
-                    log('SPEECH', `Bắt đầu Gemini TTS: "${text.substring(0, 50)}${text.length > 50 ? '...' : ''}"`);
-                };
-                
-                audio.onended = () => {
-                    setIsSpeaking(false);
-                    URL.revokeObjectURL(audioUrl);
-                    stopAudioVisualizer();
-                    log('SPEECH', 'Kết thúc Gemini TTS');
-                };
-                
-                audio.onerror = (e) => {
-                    setIsSpeaking(false);
-                    URL.revokeObjectURL(audioUrl);
-                    stopAudioVisualizer();
-                    log('SPEECH', `Lỗi phát âm thanh: ${e.message}`);
-                };
-                
-                await audio.play();
-                
-            } catch (error) {
-                console.error('Gemini TTS error:', error);
-                log('SPEECH', `Gemini TTS thất bại: ${error.message}. Chuyển sang Web Speech.`);
-                
-                // Fallback to Web Speech
-                speakWithWebSpeech(text, langCode);
-            } finally {
-                document.getElementById('aiSpeechStatus').style.display = 'none';
-            }
-        }
-
-        // Hàm chuyển base64 thành Blob
-        function base64ToBlob(base64, mimeType) {
-            const byteCharacters = atob(base64);
-            const byteNumbers = new Array(byteCharacters.length);
-            for (let i = 0; i < byteCharacters.length; i++) {
-                byteNumbers[i] = byteCharacters.charCodeAt(i);
-            }
-            const byteArray = new Uint8Array(byteNumbers);
-            return new Blob([byteArray], { type: mimeType });
-        }
-
         // === HÀM UPDATE UI COMPLETE ===
         function updateUI() {
             updateWordDisplays();
@@ -3429,7 +3236,7 @@
 
         // === KHỞI TẠO ===
         document.addEventListener('DOMContentLoaded', function() {
-            log('SYSTEM', 'Ứng dụng tối ưu đã khởi động với tính năng hiệu chuẩn');
+            log('SYSTEM', 'Ứng dụng tối ưu đã khởi động với tính năng hiệu chuẩn và Netlify Proxy');
             
             // Khởi tạo FPS counter
             function updateFPS() {
@@ -3474,10 +3281,12 @@
                 toggleAutoRefresh();
             }, 100);
             
-            if (!GEMINI_API_KEY) {
-                log('SYSTEM', 'Lưu ý: Không có cấu hình khóa API Gemini. Sử dụng Web Speech API.');
-                useGeminiTTS = false;
-            }
+            // Log sự kiện khởi động ứng dụng
+            logEventToFirebase('app_started', {
+                appVersion: '1.0.0',
+                screenSize: `${window.screen.width}x${window.screen.height}`,
+                userAgent: navigator.userAgent.substring(0, 100)
+            });
         });
     </script>
 </body>
