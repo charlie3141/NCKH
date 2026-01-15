@@ -1100,9 +1100,17 @@
             <div class="card">
                 <h3>Xây dựng Câu</h3>
                 <div style="text-align: center; padding: 15px; margin-bottom: 15px;">
-                    <!-- CÂU ĐẦY ĐỦ (Tiếng Việt) - HIỂN THỊ ĐẦU TIÊN -->
-                    <div class="sensor-label">CÂU ĐẦY ĐỦ (Tiếng Việt)</div>
-                    <div class="sentence-display" id="convertedSentenceDisplay">---</div>
+                    
+                    <!-- PHẦN CÒN LẠI CỦA CARD XÂY DỰNG CÂU -->
+                    <div class="sensor-label">TỪ HIỆN TẠI (Tiếng Việt)</div>
+                    <div class="current-word-display" id="displayBuffer">---</div>
+                    <div class="sensor-label">TỪ HIỆN TẠI (Mã hóa)</div>
+                    <div class="conversion-display" id="convertedCurrentWord">---</div>
+                    
+                    <div style="margin: 15px 0; color: #444;">
+                        <div><strong>Sử dụng '_' để thêm từ vào câu</strong></div>
+                        <div><strong>Sử dụng 'COMMIT' để hoàn thành câu</strong></div>
+                    </div>
                     
                     <!-- 4 Ô CẢM BIẾN UỐN - HIỂN THỊ THỨ 2 -->
                     <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 10px;">
@@ -1127,9 +1135,9 @@
                         </div>
                     </div>
                     
-                    <!-- CÂU ĐẦY ĐỦ (Mã hóa) - HIỂN THỊ THỨ 3 -->
-                    <div class="sensor-label">CÂU ĐẦY ĐỦ (Mã hóa)</div>
-                    <div class="conversion-display" id="sentenceDisplay">---</div>
+                    <!-- CÂU ĐẦY ĐỦ (Tiếng Việt) - HIỂN THỊ ĐẦU TIÊN -->
+                    <div class="sensor-label">CÂU ĐẦY ĐỦ (Tiếng Việt)</div>
+                    <div class="sentence-display" id="convertedSentenceDisplay">---</div>
                     
                     <!-- CÁC CÂU SUGGESTION - HIỂN THỊ THỨ 4 -->
                     <div class="phrase-suggestions">
@@ -1143,16 +1151,6 @@
                         <div class="auto-suggestions-grid" id="autoSuggestionsGrid"></div>
                     </div>
                     
-                    <!-- PHẦN CÒN LẠI CỦA CARD XÂY DỰNG CÂU -->
-                    <div class="sensor-label">TỪ HIỆN TẠI (Tiếng Việt)</div>
-                    <div class="current-word-display" id="displayBuffer">---</div>
-                    <div class="sensor-label">TỪ HIỆN TẠI (Mã hóa)</div>
-                    <div class="conversion-display" id="convertedCurrentWord">---</div>
-                    
-                    <div style="margin: 15px 0; color: #444;">
-                        <div><strong>Sử dụng '_' để thêm từ vào câu</strong></div>
-                        <div><strong>Sử dụng 'COMMIT' để hoàn thành câu</strong></div>
-                    </div>
                     
                     <!-- Chuyển đổi TTS -->
                     <div class="tts-toggle">
