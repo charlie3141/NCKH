@@ -1402,6 +1402,9 @@
     const MAX_PROCESSED_IDS = 1000;
     let lastActionFromDevice = new Map();
     
+    // === FIX THÊM: Biến để kiểm soát listener ===
+    let isActionListenerAttached = false;
+    
     // === BẢNG DỮ LIỆU ===
     const tableA = [
         ["IAY","IC","ICH","IE","IEC","IEM","IEN","IENG","IEO"],
@@ -1525,7 +1528,7 @@
         accent: 'vn-native'
     };
 
-    // === HÀM ĐỒNG BỘ FIREBASE ===
+    // === HÀM ĐỒNG BỘ FIREBASE (ĐÃ SỬA LỖI LẶP) ===
     
     function initializeFirebaseSync() {
         // Lưu thông tin thiết bị
@@ -1598,16 +1601,24 @@
             syncIndicator.className = 'sync-indicator';
             syncStatus.textContent = 'Đã tắt đồng bộ';
             
-            // Dừng lắng nghe
-            database.ref('actions').off();
+            // FIX: Dừng lắng nghe và đặt lại trạng thái
+            stopListeningToActions();
             log('SYNC', 'Đã tắt chế độ đồng bộ');
         }
     }
     
     function startListeningToActions() {
+        // FIX: Chỉ gắn listener một lần
+        if (isActionListenerAttached) {
+            return;
+        }
+        
         // Lắng nghe các hành động mới - FIXED: Sử dụng timestamp để tránh lặp
         const now = Date.now();
-        database.ref('actions').orderByChild('timestamp').startAt(now).on('child_added', (snapshot) => {
+        const actionsRef = database.ref('actions');
+        
+        // FIX: Gắn listener với startAt để chỉ nhận hành động mới
+        actionsRef.orderByChild('timestamp').startAt(now).on('child_added', (snapshot) => {
             const actionId = snapshot.key;
             const action = snapshot.val();
             
@@ -1644,12 +1655,25 @@
             processRemoteAction(action, actionId);
         });
         
+        isActionListenerAttached = true;
+        
         // Load lịch sử hành động gần đây
         loadRecentActions();
     }
     
+    function stopListeningToActions() {
+        // FIX: Gỡ tất cả listeners và đặt lại trạng thái
+        database.ref('actions').off();
+        isActionListenerAttached = false;
+    }
+    
     function logAction(actionType, data = null) {
         if (!isSyncing) return;
+        
+        // FIX: Không gửi hành động nếu đang xử lý hành động từ xa
+        if (isProcessingRemoteAction) {
+            return;
+        }
         
         const action = {
             type: actionType,
