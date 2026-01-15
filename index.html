@@ -2,11 +2,10 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ứng dụng Dịch Thủ Ngữ với Google TTS Proxy</title>
     <!-- CSS giữ nguyên từ code gốc -->
     <style>
-        /* Giữ nguyên toàn bộ CSS từ file gốc */
         * {
             margin: 0;
             padding: 0;
@@ -18,7 +17,7 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: #333;
             min-height: 100vh;
-            padding: 10px;
+            padding: 20px;
         }
 
         .container {
@@ -33,26 +32,26 @@
         header {
             background: linear-gradient(to right, #4A00E0, #8E2DE2);
             color: white;
-            padding: 15px;
+            padding: 20px;
             text-align: center;
         }
 
         h1 {
-            font-size: 1.5rem;
+            font-size: 2rem;
             margin-bottom: 5px;
         }
 
         .dashboard {
-            padding: 15px;
+            padding: 20px;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
         }
 
         .card {
             background: white;
             border-radius: 10px;
-            padding: 15px;
+            padding: 20px;
             box-shadow: 0 3px 10px rgba(0,0,0,0.1);
             border: 1px solid #eaeaea;
             will-change: transform, opacity;
@@ -64,7 +63,6 @@
             margin-bottom: 15px;
             padding-bottom: 10px;
             border-bottom: 2px solid #f0f0f0;
-            font-size: 1.1rem;
         }
 
         /* === CARD HIỆU CHUẨN === */
@@ -140,19 +138,19 @@
         }
 
         .sensor-value {
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             font-weight: bold;
             margin: 5px 0;
         }
 
         .sensor-max {
-            font-size: 1rem;
+            font-size: 1.2rem;
             color: #4CAF50;
             font-weight: bold;
         }
 
         .sensor-threshold {
-            font-size: 0.9rem;
+            font-size: 1rem;
             color: #2196F3;
             margin-top: 5px;
         }
@@ -174,7 +172,7 @@
         }
 
         .calibration-countdown {
-            font-size: 2rem;
+            font-size: 2.5rem;
             font-weight: bold;
             color: #FF5722;
             margin: 10px 0;
@@ -230,17 +228,17 @@
         }
 
         .conversion-display {
-            font-size: 1.2rem;
+            font-size: 1.5rem;
             font-weight: bold;
             color: #2196F3;
             margin: 10px 0;
-            min-height: 50px;
+            min-height: 60px;
             display: flex;
             align-items: center;
             justify-content: center;
             background: #E3F2FD;
             border-radius: 10px;
-            padding: 12px;
+            padding: 15px;
             border: 2px solid #2196F3;
             line-height: 1.4;
             contain: strict;
@@ -248,17 +246,17 @@
         }
 
         .sentence-display {
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             font-weight: bold;
             color: #4CAF50;
             margin: 10px 0;
-            min-height: 70px;
+            min-height: 80px;
             display: flex;
             align-items: center;
             justify-content: center;
             background: #E8F5E9;
             border-radius: 10px;
-            padding: 15px;
+            padding: 20px;
             border: 2px solid #4CAF50;
             line-height: 1.4;
             contain: strict;
@@ -266,17 +264,17 @@
         }
 
         .current-word-display {
-            font-size: 1.5rem;
+            font-size: 2rem;
             font-weight: bold;
             color: #FF5722;
             margin: 10px 0;
-            min-height: 50px;
+            min-height: 60px;
             display: flex;
             align-items: center;
             justify-content: center;
             background: #FFF8E1;
             border-radius: 10px;
-            padding: 12px;
+            padding: 15px;
             border: 2px dashed #FFC107;
             contain: strict;
             transform: translateZ(0);
@@ -297,7 +295,6 @@
             background: #e3f2fd;
             border-radius: 20px;
             border: 1px solid #bbdefb;
-            font-size: 0.9rem;
         }
 
         .word-count {
@@ -328,7 +325,7 @@
         }
 
         .sensor-value {
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             font-weight: bold;
             color: #333;
             margin: 5px 0;
@@ -343,16 +340,15 @@
 
         .flex-box {
             display: inline-block;
-            width: 35px;
-            height: 35px;
-            line-height: 35px;
+            width: 40px;
+            height: 40px;
+            line-height: 40px;
             text-align: center;
             background: #f8f9fa;
             border-radius: 8px;
             margin: 2px;
             font-weight: bold;
             border: 2px solid transparent;
-            font-size: 0.9rem;
         }
 
         .flex-box.active-0 { background: #4CAF50; color: white; }
@@ -361,14 +357,14 @@
 
         .controls {
             display: flex;
-            gap: 8px;
+            gap: 10px;
             margin-top: 20px;
             justify-content: center;
             flex-wrap: wrap;
         }
 
         button {
-            padding: 10px 15px;
+            padding: 12px 24px;
             border: none;
             border-radius: 8px;
             background: linear-gradient(to right, #4A00E0, #8E2DE2);
@@ -376,8 +372,6 @@
             font-weight: bold;
             cursor: pointer;
             transition: all 0.2s;
-            font-size: 0.9rem;
-            min-width: 120px;
         }
 
         button:hover {
@@ -407,12 +401,11 @@
 
         .status-bar {
             background: #f8f9fa;
-            padding: 12px;
+            padding: 15px;
             border-top: 1px solid #eaeaea;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
         }
 
         .indicator {
@@ -450,7 +443,7 @@
             border-radius: 8px;
             border: 1px solid #ccc;
             background: white;
-            font-size: 0.9rem;
+            font-size: 1rem;
         }
 
         .phrase-btn {
@@ -488,9 +481,9 @@
 
         textarea {
             width: 100%;
-            height: 100px;
-            font-size: 1.2rem;
-            padding: 12px;
+            height: 120px;
+            font-size: 1.5rem;
+            padding: 15px;
             border: 2px solid #4CAF50;
             border-radius: 10px;
             background: #E8F5E9;
@@ -502,12 +495,11 @@
             padding: 8px 15px;
             border-radius: 8px;
             border: 1px solid #ccc;
-            min-width: 120px;
-            font-size: 0.9rem;
+            min-width: 150px;
         }
 
         .firebase-status {
-            font-size: 0.8rem;
+            font-size: 0.9rem;
             color: #444;
             margin-top: 5px;
         }
@@ -521,7 +513,6 @@
             margin-bottom: 5px;
             padding: 5px;
             border-bottom: 1px solid #eee;
-            font-size: 0.8rem;
         }
 
         .phrase-suggestions {
@@ -535,7 +526,7 @@
         .phrase-suggestions h4 {
             margin-bottom: 10px;
             color: #4A00E0;
-            font-size: 0.9rem;
+            font-size: 1rem;
         }
 
         .phrase-pills {
@@ -551,7 +542,7 @@
             color: white;
             border: none;
             border-radius: 20px;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             cursor: pointer;
             transition: all 0.2s;
         }
@@ -567,13 +558,13 @@
 
         .speech-controls {
             display: flex;
-            gap: 8px;
+            gap: 10px;
             margin-top: 15px;
             justify-content: center;
         }
 
         .speech-btn {
-            padding: 8px 15px;
+            padding: 10px 20px;
             background: linear-gradient(to right, #9C27B0, #673AB7);
             color: white;
             border: none;
@@ -584,7 +575,6 @@
             align-items: center;
             gap: 8px;
             transition: all 0.2s;
-            font-size: 0.9rem;
         }
 
         .speech-btn:hover {
@@ -683,7 +673,7 @@
 
         .auto-suggestions-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
             gap: 10px;
         }
 
@@ -704,7 +694,7 @@
         }
 
         .auto-suggestion-text {
-            font-size: 0.8rem;
+            font-size: 0.9rem;
             margin-bottom: 8px;
         }
 
@@ -716,7 +706,7 @@
 
         .auto-suggestion-btn {
             padding: 4px 8px;
-            font-size: 0.7rem;
+            font-size: 0.75rem;
             border-radius: 4px;
             border: none;
             cursor: pointer;
@@ -741,7 +731,7 @@
 
         .voice-options {
             display: flex;
-            gap: 8px;
+            gap: 10px;
             margin-top: 10px;
             justify-content: center;
             flex-wrap: wrap;
@@ -753,7 +743,7 @@
             color: white;
             border: none;
             border-radius: 20px;
-            font-size: 0.7rem;
+            font-size: 0.8rem;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -766,7 +756,7 @@
         }
 
         .language-voice-display {
-            font-size: 0.7rem;
+            font-size: 0.8rem;
             color: #444;
             text-align: center;
             margin-top: 5px;
@@ -774,7 +764,7 @@
 
         .ai-speech-status {
             margin-top: 5px;
-            font-size: 0.7rem;
+            font-size: 0.8rem;
             color: #4CAF50;
             text-align: center;
             display: flex;
@@ -791,7 +781,7 @@
             margin-top: 10px;
             display: flex;
             justify-content: center;
-            gap: 8px;
+            gap: 10px;
         }
 
         .tts-toggle-btn {
@@ -800,7 +790,7 @@
             border: 2px solid #ddd;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 0.7rem;
+            font-size: 0.8rem;
         }
 
         .tts-toggle-btn.active {
@@ -818,7 +808,7 @@
         }
 
         .performance-info {
-            font-size: 0.6rem;
+            font-size: 0.7rem;
             color: #666;
             text-align: center;
             margin-top: 5px;
@@ -832,7 +822,7 @@
             color: white;
             padding: 5px 10px;
             border-radius: 20px;
-            font-size: 0.7rem;
+            font-size: 0.8rem;
             z-index: 1000;
         }
 
@@ -850,7 +840,7 @@
             border-bottom: 1px solid #f0f0f0;
             cursor: pointer;
             transition: all 0.2s;
-            font-size: 0.8rem;
+            font-size: 0.9rem;
         }
 
         .phrase-list-item:hover {
@@ -864,18 +854,18 @@
 
         .accent-selector {
             display: flex;
-            gap: 8px;
+            gap: 10px;
             margin: 15px 0;
             justify-content: center;
             flex-wrap: wrap;
         }
 
         .accent-btn {
-            padding: 6px 12px;
+            padding: 8px 15px;
             background: #f8f9fa;
             border: 2px solid #ddd;
             border-radius: 20px;
-            font-size: 0.7rem;
+            font-size: 0.8rem;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -906,17 +896,17 @@
 
         .voice-gender-selector {
             display: flex;
-            gap: 8px;
+            gap: 10px;
             margin: 10px 0;
             justify-content: center;
         }
 
         .voice-gender-btn {
-            padding: 6px 15px;
+            padding: 8px 20px;
             background: #f8f9fa;
             border: 2px solid #ddd;
             border-radius: 20px;
-            font-size: 0.8rem;
+            font-size: 0.9rem;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -964,122 +954,11 @@
         .suggestion-header {
             background: #f8f9fa;
             padding: 4px 8px;
-            font-size: 0.6rem;
+            font-size: 0.7rem;
             color: #666;
             border-radius: 4px;
             margin-top: 4px;
             display: inline-block;
-        }
-        
-        /* Responsive cho iPhone */
-        @media (max-width: 768px) {
-            .dashboard {
-                grid-template-columns: 1fr;
-            }
-            
-            h1 {
-                font-size: 1.2rem;
-            }
-            
-            .card {
-                padding: 12px;
-            }
-            
-            .sentence-display {
-                font-size: 1.2rem;
-                min-height: 60px;
-                padding: 12px;
-            }
-            
-            .conversion-display {
-                font-size: 1rem;
-                min-height: 45px;
-                padding: 10px;
-            }
-            
-            .current-word-display {
-                font-size: 1.2rem;
-                min-height: 45px;
-                padding: 10px;
-            }
-            
-            button {
-                padding: 8px 12px;
-                min-width: 100px;
-                font-size: 0.8rem;
-            }
-            
-            .controls {
-                gap: 5px;
-            }
-            
-            .flex-box {
-                width: 30px;
-                height: 30px;
-                line-height: 30px;
-                font-size: 0.8rem;
-            }
-            
-            .sensor-value {
-                font-size: 1.2rem;
-            }
-            
-            .voice-options {
-                flex-wrap: wrap;
-            }
-            
-            .speech-controls {
-                flex-direction: column;
-            }
-            
-            .speech-btn {
-                width: 100%;
-                justify-content: center;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            body {
-                padding: 5px;
-            }
-            
-            .container {
-                border-radius: 10px;
-            }
-            
-            header {
-                padding: 10px;
-            }
-            
-            .dashboard {
-                padding: 10px;
-                gap: 10px;
-            }
-            
-            .card h3 {
-                font-size: 1rem;
-            }
-            
-            .sentence-display {
-                font-size: 1rem;
-            }
-            
-            .calibration-display {
-                grid-template-columns: 1fr;
-                gap: 10px;
-            }
-            
-            .auto-suggestions-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .tts-toggle {
-                flex-direction: column;
-            }
-            
-            .tts-toggle-btn {
-                width: 100%;
-            }
         }
     </style>
 </head>
@@ -1099,9 +978,7 @@
             <!-- Card Xây dựng Câu -->
             <div class="card">
                 <h3>Xây dựng Câu</h3>
-                <div style="text-align: center; padding: 15px; margin-bottom: 15px;">
-                    
-                    <!-- PHẦN CÒN LẠI CỦA CARD XÂY DỰNG CÂU -->
+                <div style="text-align: center; padding: 20px; margin-bottom: 20px;">
                     <div class="sensor-label">TỪ HIỆN TẠI (Tiếng Việt)</div>
                     <div class="current-word-display" id="displayBuffer">---</div>
                     <div class="sensor-label">TỪ HIỆN TẠI (Mã hóa)</div>
@@ -1112,50 +989,27 @@
                         <div><strong>Sử dụng 'COMMIT' để hoàn thành câu</strong></div>
                     </div>
                     
-                    <!-- 4 Ô CẢM BIẾN UỐN - HIỂN THỊ THỨ 2 -->
-                    <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 10px;">
-                        <div class="sensor-label">CẢM BIẾN UỐN (A3, A0, A1, A2)</div>
-                        <div style="margin-top: 10px; display: flex; justify-content: center; gap: 10px;">
-                            <div>
-                                <div class="sensor-name">CẢM BIẾN A3</div>
-                                <div class="flex-box" id="flexA3-box">0</div>
-                            </div>
-                            <div>
-                                <div class="sensor-name">CẢM BIẾN A0</div>
-                                <div class="flex-box" id="flexA0-box">0</div>
-                            </div>
-                            <div>
-                                <div class="ensor-name">CẢM BIẾN A1</div>
-                                <div class="flex-box" id="flexA1-box">0</div>
-                            </div>
-                            <div>
-                                <div class="sensor-name">CẢM BIẾN A2</div>
-                                <div class="flex-box" id="flexA2-box">0</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- CÂU ĐẦY ĐỦ (Tiếng Việt) - HIỂN THỊ ĐẦU TIÊN -->
+                    <div class="sensor-label">CÂU ĐẦY ĐỦ (Mã hóa)</div>
+                    <div class="sentence-display" id="sentenceDisplay">---</div>
                     <div class="sensor-label">CÂU ĐẦY ĐỦ (Tiếng Việt)</div>
-                    <div class="sentence-display" id="convertedSentenceDisplay">---</div>
+                    <div class="conversion-display" id="convertedSentenceDisplay">---</div>
                     
-                    <!-- CÁC CÂU SUGGESTION - HIỂN THỊ THỨ 4 -->
+                    <!-- Phần đề xuất cụm từ -->
                     <div class="phrase-suggestions">
                         <h4>📝 ĐỀ XUẤT CỤM TỪ THÔNG DỤNG</h4>
                         <div class="phrase-pills" id="phrasePills"></div>
+                    </div>
+                    
+                    <!-- Chuyển đổi TTS -->
+                    <div class="tts-toggle">
+                        <button class="tts-toggle-btn active" id="useGoogleTTS" onclick="toggleTTSMode(true)">🔊 Google TTS</button>
+                        <button class="tts-toggle-btn" id="useWebSpeech" onclick="toggleTTSMode(false)">🎤 Web Speech</button>
                     </div>
                     
                     <!-- Bảng đề xuất tự động -->
                     <div class="auto-suggestions-panel" id="autoSuggestionsPanel" style="display: none;">
                         <div class="auto-suggestions-title"><span>💡 ĐỀ XUẤT DỰA TRÊN CÂU CỦA BẠN</span></div>
                         <div class="auto-suggestions-grid" id="autoSuggestionsGrid"></div>
-                    </div>
-                    
-                    
-                    <!-- Chuyển đổi TTS -->
-                    <div class="tts-toggle">
-                        <button class="tts-toggle-btn active" id="useGoogleTTS" onclick="toggleTTSMode(true)">🔊 Google TTS</button>
-                        <button class="tts-toggle-btn" id="useWebSpeech" onclick="toggleTTSMode(false)">🎤 Web Speech</button>
                     </div>
                     
                     <!-- Tùy chọn giọng nói -->
@@ -1483,6 +1337,7 @@
     };
 
     // Danh sách cụm từ đề xuất
+        // Danh sách cụm từ đề xuất
         const commonPhrases = [
             "Xin chào, rất vui được gặp bạn",
             "Chào buổi sáng",
@@ -2151,31 +2006,6 @@
                     box.textContent = flexStates[i];
                     box.className = `flex-box active-${flexStates[i]}`;
                 }
-            }
-            
-            // Cập nhật 4 ô cảm biến mới theo thứ tự A3, A0, A1, A2
-            const a3Box = document.getElementById('flexA3-box');
-            if (a3Box && a3Box.textContent !== flexStates[3].toString()) {
-                a3Box.textContent = flexStates[3];
-                a3Box.className = `flex-box active-${flexStates[3]}`;
-            }
-            
-            const a0Box = document.getElementById('flexA0-box');
-            if (a0Box && a0Box.textContent !== flexStates[0].toString()) {
-                a0Box.textContent = flexStates[0];
-                a0Box.className = `flex-box active-${flexStates[0]}`;
-            }
-            
-            const a1Box = document.getElementById('flexA1-box');
-            if (a1Box && a1Box.textContent !== flexStates[1].toString()) {
-                a1Box.textContent = flexStates[1];
-                a1Box.className = `flex-box active-${flexStates[1]}`;
-            }
-            
-            const a2Box = document.getElementById('flexA2-box');
-            if (a2Box && a2Box.textContent !== flexStates[2].toString()) {
-                a2Box.textContent = flexStates[2];
-                a2Box.className = `flex-box active-${flexStates[2]}`;
             }
             
             if (firebaseData) {
@@ -3389,6 +3219,4 @@
             }
         }, 60000); // Mỗi phút
     });
-</script>
-</body>
-</html>
+</script>    
