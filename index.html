@@ -1395,7 +1395,569 @@
     let lastSyncTime = 0;
     let syncActions = [];
     let onlineDevices = [];
-    let isProcessingRemoteAction = false;
+    // === FIREBASE SYNC FUNCTIONS (FIXED) ===
+let isProcessingRemoteAction = false;
+let actionQueue = [];
+let isProcessingQueue = false;
+
+function initFirebaseSync() {
+    // Hiển thị device ID
+    document.getElementById('deviceIdDisplay').textContent = currentDeviceId.substring(0, 8) + '...';
+    
+    // Đăng ký device
+    registerDevice();
+    
+    // Lắng nghe các sự kiện từ thiết bị khác
+    listenToRemoteActions();
+    
+    // Lắng nghe danh sách thiết bị
+    listenToConnectedDevices();
+    
+    // Xử lý queue định kỳ
+    setInterval(processActionQueue, 100);
+    
+    updateSyncStatus(true);
+    log('FIREBASE SYNC', `Device ${currentDeviceId.substring(0, 8)} đã kết nối`);
+}
+
+function logUserAction(actionType, data = {}, isRemoteAction = false) {
+    if (!isSyncEnabled || isProcessingRemoteAction) {
+        return;
+    }
+    
+    // Bỏ qua nếu đây là action từ xa
+    if (isRemoteAction) {
+        return;
+    }
+    
+    const action = {
+        deviceId: currentDeviceId,
+        actionType: actionType,
+        data: data,
+        timestamp: Date.now(),
+        signature: generateActionSignature(actionType, data)
+    };
+    
+    database.ref('actions').push(action)
+        .then(() => {
+            log('SYNC', `Đã gửi action: ${actionType}`, false);
+        })
+        .catch((error) => {
+            console.error('Error logging action:', error);
+            log('SYNC ERROR', `Không thể gửi action: ${error.message}`, false);
+        });
+}
+
+function generateActionSignature(actionType, data) {
+    return `${actionType}_${JSON.stringify(data)}_${Date.now()}_${Math.random()}`;
+}
+
+function listenToRemoteActions() {
+    const actionsRef = database.ref('actions');
+    let lastProcessedSignature = null;
+    let processedSignatures = new Set();
+    
+    // Xóa các action cũ hơn 5 phút
+    const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+    actionsRef.orderByChild('timestamp').endAt(fiveMinutesAgo).once('value', (snapshot) => {
+        snapshot.forEach((child) => {
+            child.ref.remove();
+        });
+    });
+    
+    actionsRef.orderByChild('timestamp').limitToLast(20).on('child_added', (snapshot) => {
+        const action = snapshot.val();
+        
+        // Bỏ qua action của chính mình
+        if (action.deviceId === currentDeviceId) {
+            return;
+        }
+        
+        // Tạo signature cho action
+        const actionSignature = action.signature || `${action.actionType}_${JSON.stringify(action.data)}`;
+        
+        // Kiểm tra nếu đã xử lý action này rồi
+        if (processedSignatures.has(actionSignature)) {
+            return;
+        }
+        
+        // Đánh dấu đã xử lý
+        processedSignatures.add(actionSignature);
+        
+        // Giới hạn số lượng signatures lưu trữ
+        if (processedSignatures.size > 50) {
+            const first = processedSignatures.values().next().value;
+            processedSignatures.delete(first);
+        }
+        
+        // Thêm vào queue để xử lý
+        addToActionQueue(action);
+    });
+}
+
+function addToActionQueue(action) {
+    actionQueue.push(action);
+    
+    // Giới hạn queue size
+    if (actionQueue.length > 20) {
+        actionQueue.shift();
+    }
+    
+    if (!isProcessingQueue) {
+        processActionQueue();
+    }
+}
+
+function processActionQueue() {
+    if (isProcessingQueue || actionQueue.length === 0) {
+        return;
+    }
+    
+    isProcessingQueue = true;
+    
+    try {
+        // Lấy action đầu tiên
+        const action = actionQueue.shift();
+        
+        if (action) {
+            // Xử lý action
+            setTimeout(() => {
+                processRemoteAction(action);
+                isProcessingQueue = false;
+                
+                // Xử lý tiếp nếu còn
+                if (actionQueue.length > 0) {
+                    setTimeout(processActionQueue, 50);
+                }
+            }, 100);
+        } else {
+            isProcessingQueue = false;
+        }
+    } catch (error) {
+        console.error('Error processing action queue:', error);
+        isProcessingQueue = false;
+    }
+}
+
+function processRemoteAction(action) {
+    if (isProcessingRemoteAction) {
+        return;
+    }
+    
+    isProcessingRemoteAction = true;
+    
+    try {
+        log('REMOTE ACTION', `Nhận action từ ${action.deviceId.substring(0, 8)}: ${action.actionType}`, false);
+        
+        // Tạo bản sao của trạng thái hiện tại để tránh thay đổi giao diện không cần thiết
+        const originalSyncState = isSyncEnabled;
+        isSyncEnabled = false;
+        
+        switch(action.actionType) {
+            case 'add_word':
+                remoteAddWord(action.data.word);
+                break;
+            case 'clear_current_word':
+                remoteClearCurrentWord();
+                break;
+            case 'backspace':
+                remoteBackspace();
+                break;
+            case 'commit_sentence':
+                remoteCommitSentence();
+                break;
+            case 'reset_sentence':
+                remoteResetSentence();
+                break;
+            case 'speak_vietnamese':
+                remoteSpeakVietnamese(action.data.text);
+                break;
+            case 'speak_translation':
+                remoteSpeakTranslation(action.data.text, action.data.lang);
+                break;
+            case 'stop_speech':
+                remoteStopSpeech();
+                break;
+            case 'select_voice':
+                remoteSelectVoice(action.data.lang, action.data.gender);
+                break;
+            case 'toggle_tts_mode':
+                remoteToggleTTSMode(action.data.useGoogleTTS);
+                break;
+            case 'start_calibration':
+                remoteStartCalibration();
+                break;
+            case 'stop_calibration':
+                remoteStopCalibration();
+                break;
+            case 'reset_calibration':
+                remoteResetCalibration();
+                break;
+            case 'translate':
+                remoteTranslate(action.data.text, action.data.sourceLang, action.data.targetLang);
+                break;
+            case 'clear_translation':
+                remoteClearTranslation();
+                break;
+            case 'select_phrase':
+                remoteSelectPhrase(action.data.phrase);
+                break;
+            case 'use_suggestion':
+                remoteUseSuggestion(action.data.text);
+                break;
+            case 'translate_suggestion':
+                remoteTranslateSuggestion(action.data.text);
+                break;
+            case 'toggle_auto_refresh':
+                remoteToggleAutoRefresh(action.data.enabled);
+                break;
+            case 'toggle_turbo_mode':
+                remoteToggleTurboMode(action.data.enabled);
+                break;
+            case 'select_language':
+                remoteSelectLanguage(action.data.elementId, action.data.value);
+                break;
+        }
+        
+        // Khôi phục trạng thái sync
+        setTimeout(() => {
+            isSyncEnabled = originalSyncState;
+            isProcessingRemoteAction = false;
+        }, 200);
+        
+    } catch (error) {
+        console.error('Error processing remote action:', error);
+        log('REMOTE ERROR', `Lỗi xử lý action: ${error.message}`, false);
+        isProcessingRemoteAction = false;
+        isSyncEnabled = true;
+    }
+}
+
+// === MODIFIED FUNCTIONS WITH SYNC FIX ===
+function addWordToSentence() {
+    if (!displayBuffer || displayBuffer === "---" || displayBuffer.length === 0) {
+        log('SENTENCE', 'Không thể thêm từ trống vào câu');
+        return;
+    }
+    
+    if (sentenceWords.length < 10) {
+        sentenceWords.push(displayBuffer);
+        scheduleUIUpdate();
+        log('SENTENCE', `Đã thêm: '${displayBuffer}'`);
+        
+        // Đồng bộ lên Firebase (chỉ khi không phải remote action)
+        if (!isProcessingRemoteAction) {
+            logUserAction('add_word', { word: displayBuffer });
+        }
+        
+        slot1 = '';
+        slot2 = '';
+        displayBuffer = '';
+        convertedCurrentWord = '';
+        
+        scheduleUIUpdate();
+    } else {
+        log('SENTENCE', 'Câu đã đầy! Tối đa 10 từ.');
+    }
+}
+
+function toggleAutoRefresh() {
+    const wasAutoRefresh = autoRefresh;
+    autoRefresh = !autoRefresh;
+    const btn = document.getElementById('autoRefreshBtn');
+    
+    if (autoRefresh) {
+        btn.textContent = `Tự động: BẬT (${pollingInterval}ms)`;
+        btn.className = 'green';
+        
+        function scheduleNextRefresh() {
+            if (!autoRefresh) return;
+            
+            setTimeout(() => {
+                if (autoRefresh) {
+                    fetchFirebaseDataOptimized().then(() => {
+                        if (autoRefresh) {
+                            scheduleNextRefresh();
+                        }
+                    });
+                }
+            }, pollingInterval);
+        }
+        
+        scheduleNextRefresh();
+        log('SYSTEM', `Bật tự động làm mới ${pollingInterval}ms`);
+    } else {
+        btn.textContent = 'Tự động: TẮT';
+        btn.className = 'red';
+        log('SYSTEM', 'Tắt tự động làm mới');
+    }
+    
+    // Đồng bộ lên Firebase (chỉ khi thay đổi thực sự và không phải remote action)
+    if (wasAutoRefresh !== autoRefresh && !isProcessingRemoteAction) {
+        logUserAction('toggle_auto_refresh', { enabled: autoRefresh });
+    }
+}
+
+function toggleTurboMode() {
+    const wasTurboMode = turboMode;
+    turboMode = !turboMode;
+    const btn = document.getElementById('turboBtn');
+    
+    if (turboMode) {
+        pollingInterval = 150;
+        btn.textContent = '🚀 Turbo: BẬT';
+        btn.className = 'red';
+        document.getElementById('fastModeIndicator').style.display = 'block';
+        log('SYSTEM', 'Bật chế độ Turbo (150ms polling)');
+    } else {
+        pollingInterval = 300;
+        btn.textContent = '🚀 Chế độ Turbo';
+        btn.className = 'green';
+        document.getElementById('fastModeIndicator').style.display = 'none';
+        log('SYSTEM', 'Tắt chế độ Turbo');
+    }
+    
+    updatePollingDisplay();
+    
+    if (autoRefresh) {
+        // Không gọi toggleAutoRefresh vì nó sẽ gửi action
+        // Thay vào đó, cập nhật trực tiếp
+        if (wasTurboMode !== turboMode && !isProcessingRemoteAction) {
+            logUserAction('toggle_turbo_mode', { enabled: turboMode });
+        }
+        
+        // Restart auto-refresh với interval mới
+        if (autoRefresh) {
+            clearTimeout(window.autoRefreshTimeout);
+            function scheduleNextRefresh() {
+                if (!autoRefresh) return;
+                
+                window.autoRefreshTimeout = setTimeout(() => {
+                    if (autoRefresh) {
+                        fetchFirebaseDataOptimized().then(() => {
+                            if (autoRefresh) {
+                                scheduleNextRefresh();
+                            }
+                        });
+                    }
+                }, pollingInterval);
+            }
+            scheduleNextRefresh();
+        }
+    }
+}
+
+// === FIXED REMOTE ACTION HANDLERS ===
+function remoteToggleAutoRefresh(enabled) {
+    if (autoRefresh === enabled) {
+        return; // Không làm gì nếu trạng thái đã đúng
+    }
+    
+    autoRefresh = enabled;
+    const btn = document.getElementById('autoRefreshBtn');
+    
+    if (autoRefresh) {
+        btn.textContent = `Tự động: BẬT (${pollingInterval}ms)`;
+        btn.className = 'green';
+        
+        function scheduleNextRefresh() {
+            if (!autoRefresh) return;
+            
+            setTimeout(() => {
+                if (autoRefresh) {
+                    fetchFirebaseDataOptimized().then(() => {
+                        if (autoRefresh) {
+                            scheduleNextRefresh();
+                        }
+                    });
+                }
+            }, pollingInterval);
+        }
+        
+        scheduleNextRefresh();
+        log('REMOTE', `Bật tự động làm mới từ xa: ${pollingInterval}ms`, false);
+    } else {
+        btn.textContent = 'Tự động: TẮT';
+        btn.className = 'red';
+        log('REMOTE', 'Tắt tự động làm mới từ xa', false);
+    }
+}
+
+function remoteToggleTurboMode(enabled) {
+    if (turboMode === enabled) {
+        return; // Không làm gì nếu trạng thái đã đúng
+    }
+    
+    turboMode = enabled;
+    const btn = document.getElementById('turboBtn');
+    
+    if (turboMode) {
+        pollingInterval = 150;
+        btn.textContent = '🚀 Turbo: BẬT';
+        btn.className = 'red';
+        document.getElementById('fastModeIndicator').style.display = 'block';
+        log('REMOTE', 'Bật chế độ Turbo từ xa', false);
+    } else {
+        pollingInterval = 300;
+        btn.textContent = '🚀 Chế độ Turbo';
+        btn.className = 'green';
+        document.getElementById('fastModeIndicator').style.display = 'none';
+        log('REMOTE', 'Tắt chế độ Turbo từ xa', false);
+    }
+    
+    updatePollingDisplay();
+    
+    if (autoRefresh) {
+        // Restart auto-refresh với interval mới
+        if (autoRefresh) {
+            clearTimeout(window.autoRefreshTimeout);
+            function scheduleNextRefresh() {
+                if (!autoRefresh) return;
+                
+                window.autoRefreshTimeout = setTimeout(() => {
+                    if (autoRefresh) {
+                        fetchFirebaseDataOptimized().then(() => {
+                            if (autoRefresh) {
+                                scheduleNextRefresh();
+                            }
+                        });
+                    }
+                }, pollingInterval);
+            }
+            scheduleNextRefresh();
+        }
+    }
+}
+
+// === FIXED LOG FUNCTION ===
+function log(source, message, shouldSync = true) {
+    const timestamp = new Date().toLocaleTimeString();
+    const logEntry = { timestamp, source, message };
+    
+    logEntries.unshift(logEntry);
+    if (logEntries.length > MAX_LOG_ENTRIES) {
+        logEntries.pop();
+    }
+    
+    updateLogDisplay();
+    
+    // Không sync log messages để tránh loop
+    if (!shouldSync) {
+        return;
+    }
+}
+
+// === THÊM HÀM CLEAR OLD ACTIONS ===
+function clearOldFirebaseActions() {
+    const oneMinuteAgo = Date.now() - 60 * 1000;
+    database.ref('actions')
+        .orderByChild('timestamp')
+        .endAt(oneMinuteAgo)
+        .once('value')
+        .then((snapshot) => {
+            const updates = {};
+            snapshot.forEach((child) => {
+                updates[child.key] = null;
+            });
+            
+            if (Object.keys(updates).length > 0) {
+                database.ref('actions').update(updates);
+                log('FIREBASE', `Đã xóa ${Object.keys(updates).length} action cũ`, false);
+            }
+        });
+}
+
+// === CẬP NHẬT KHỞI TẠO ===
+document.addEventListener('DOMContentLoaded', function() {
+    log('SYSTEM', 'Ứng dụng đã khởi động với Firebase Sync (Fixed)');
+    log('DEVICE', `Device ID: ${currentDeviceId}`);
+    
+    // Khởi tạo FPS counter
+    function updateFPS() {
+        frameCount++;
+        const currentTime = performance.now();
+        if (currentTime - lastFrameTime >= 1000) {
+            currentFPS = frameCount;
+            frameCount = 0;
+            lastFrameTime = currentTime;
+            
+            document.getElementById('fps').textContent = currentFPS;
+            
+            // Điều chỉnh polling interval dựa trên FPS
+            if (currentFPS < 30 && pollingInterval > 150) {
+                pollingInterval = Math.min(pollingInterval * 1.5, 1000);
+                updatePollingDisplay();
+                log('PERF', `FPS thấp (${currentFPS}), tăng polling interval lên ${pollingInterval}ms`, false);
+            } else if (currentFPS > 50 && pollingInterval < 1000) {
+                pollingInterval = Math.max(pollingInterval * 0.8, 150);
+                updatePollingDisplay();
+            }
+        }
+        requestAnimationFrame(updateFPS);
+    }
+    
+    requestAnimationFrame(updateFPS);
+    
+    // Tải hiệu chuẩn từ localStorage nếu có
+    loadCalibration();
+    
+    // Tải đề xuất cụm từ
+    loadPhraseSuggestions();
+    
+    // Khởi tạo Web Speech API voices
+    if ('speechSynthesis' in window) {
+        speechSynthesis.getVoices();
+        
+        speechSynthesis.onvoiceschanged = function() {
+            const voices = speechSynthesis.getVoices();
+            log('SPEECH', `Đã tải ${voices.length} giọng tổng hợp`, false);
+        };
+    }
+    
+    // Khởi tạo Firebase Sync
+    initFirebaseSync();
+    
+    // Khởi tạo auto-refresh
+    setTimeout(() => {
+        fetchFirebaseDataOptimized();
+        
+        // Khởi động auto-refresh mà không gọi toggleAutoRefresh (để tránh sync loop)
+        if (autoRefresh) {
+            function scheduleNextRefresh() {
+                if (!autoRefresh) return;
+                
+                window.autoRefreshTimeout = setTimeout(() => {
+                    if (autoRefresh) {
+                        fetchFirebaseDataOptimized().then(() => {
+                            if (autoRefresh) {
+                                scheduleNextRefresh();
+                            }
+                        });
+                    }
+                }, pollingInterval);
+            }
+            scheduleNextRefresh();
+            
+            const btn = document.getElementById('autoRefreshBtn');
+            btn.textContent = `Tự động: BẬT (${pollingInterval}ms)`;
+            btn.className = 'green';
+        }
+    }, 100);
+    
+    // Clear audio cache periodically
+    setInterval(() => {
+        if (audioCache.size > 20) {
+            const keys = Array.from(audioCache.keys());
+            for (let i = 0; i < 5; i++) {
+                audioCache.delete(keys[i]);
+            }
+            log('CACHE', `Đã xóa 5 item từ audio cache, còn ${audioCache.size} item`, false);
+        }
+    }, 60000);
+    
+    // Clear old Firebase actions periodically
+    setInterval(clearOldFirebaseActions, 30000);
+});
     
     // === BẢNG DỮ LIỆU ===
     const tableA = [
