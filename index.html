@@ -6,174 +6,7 @@
     <title>Ứng dụng Dịch Thủ Ngữ với Google TTS Proxy</title>
     <!-- CSS giữ nguyên từ code gốc -->
     <style>
-        /* Thêm CSS cho mobile/iPhone */
-        @media only screen and (max-width: 768px) {
-            body {
-                padding: 10px;
-                font-size: 14px;
-            }
-            
-            .container {
-                border-radius: 10px;
-            }
-            
-            .dashboard {
-                grid-template-columns: 1fr;
-                gap: 15px;
-                padding: 15px;
-            }
-            
-            .card {
-                padding: 15px;
-                margin-bottom: 10px;
-            }
-            
-            h1 {
-                font-size: 1.5rem;
-            }
-            
-            h3 {
-                font-size: 1.2rem;
-            }
-            
-            .sentence-display, .conversion-display, .current-word-display {
-                font-size: 1.2rem !important;
-                min-height: 50px !important;
-                padding: 10px !important;
-            }
-            
-            .sensor-value {
-                font-size: 1.4rem !important;
-            }
-            
-            .calibration-display {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 10px;
-            }
-            
-            .sensor-calibration {
-                padding: 10px;
-            }
-            
-            .controls {
-                flex-direction: column;
-                gap: 8px;
-            }
-            
-            button {
-                width: 100%;
-                padding: 12px;
-                font-size: 0.9rem;
-            }
-            
-            .voice-options {
-                flex-direction: column;
-                align-items: center;
-            }
-            
-            .voice-btn {
-                width: 100%;
-                justify-content: center;
-            }
-            
-            .speech-controls {
-                flex-direction: column;
-            }
-            
-            .speech-btn {
-                width: 100%;
-            }
-            
-            .sensor-grid {
-                grid-template-columns: 1fr;
-                gap: 15px;
-            }
-            
-            .flex-sensor-legend {
-                flex-direction: column;
-                align-items: center;
-                gap: 8px;
-            }
-            
-            .tts-toggle {
-                flex-direction: column;
-                gap: 8px;
-            }
-            
-            .tts-toggle-btn {
-                width: 100%;
-            }
-            
-            .status-bar {
-                flex-direction: column;
-                gap: 10px;
-                padding: 10px;
-                text-align: center;
-            }
-            
-            textarea {
-                height: 100px;
-                font-size: 1.2rem;
-            }
-            
-            .auto-suggestions-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .phrase-pills {
-                flex-direction: column;
-            }
-            
-            .phrase-pill {
-                width: 100%;
-                text-align: center;
-            }
-            
-            .fast-mode {
-                top: 5px;
-                right: 5px;
-                font-size: 0.7rem;
-                padding: 3px 8px;
-            }
-            
-            .calibration-instructions {
-                font-size: 0.9rem;
-                padding: 10px;
-            }
-        }
-        
-        @media only screen and (max-width: 480px) {
-            body {
-                padding: 5px;
-            }
-            
-            .dashboard {
-                padding: 10px;
-                gap: 10px;
-            }
-            
-            .card {
-                padding: 10px;
-            }
-            
-            .calibration-display {
-                grid-template-columns: 1fr;
-            }
-        }
-        
-        /* Thêm CSS cho cảm ứng trên mobile */
-        button, .voice-btn, .phrase-pill, .suggestion-item {
-            -webkit-tap-highlight-color: transparent;
-            touch-action: manipulation;
-        }
-        
-        /* Cải thiện hiển thị trên iOS Safari */
-        @supports (-webkit-touch-callout: none) {
-            .container {
-                -webkit-overflow-scrolling: touch;
-            }
-        }
-        
+        /* Giữ nguyên toàn bộ CSS từ file gốc */
         * {
             margin: 0;
             padding: 0;
@@ -185,7 +18,7 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: #333;
             min-height: 100vh;
-            padding: 20px;
+            padding: 10px;
         }
 
         .container {
@@ -200,26 +33,26 @@
         header {
             background: linear-gradient(to right, #4A00E0, #8E2DE2);
             color: white;
-            padding: 20px;
+            padding: 15px;
             text-align: center;
         }
 
         h1 {
-            font-size: 2rem;
+            font-size: 1.5rem;
             margin-bottom: 5px;
         }
 
         .dashboard {
-            padding: 20px;
+            padding: 15px;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 15px;
         }
 
         .card {
             background: white;
             border-radius: 10px;
-            padding: 20px;
+            padding: 15px;
             box-shadow: 0 3px 10px rgba(0,0,0,0.1);
             border: 1px solid #eaeaea;
             will-change: transform, opacity;
@@ -231,6 +64,7 @@
             margin-bottom: 15px;
             padding-bottom: 10px;
             border-bottom: 2px solid #f0f0f0;
+            font-size: 1.1rem;
         }
 
         /* === CARD HIỆU CHUẨN === */
@@ -306,19 +140,19 @@
         }
 
         .sensor-value {
-            font-size: 1.8rem;
+            font-size: 1.5rem;
             font-weight: bold;
             margin: 5px 0;
         }
 
         .sensor-max {
-            font-size: 1.2rem;
+            font-size: 1rem;
             color: #4CAF50;
             font-weight: bold;
         }
 
         .sensor-threshold {
-            font-size: 1rem;
+            font-size: 0.9rem;
             color: #2196F3;
             margin-top: 5px;
         }
@@ -340,7 +174,7 @@
         }
 
         .calibration-countdown {
-            font-size: 2.5rem;
+            font-size: 2rem;
             font-weight: bold;
             color: #FF5722;
             margin: 10px 0;
@@ -396,17 +230,17 @@
         }
 
         .conversion-display {
-            font-size: 1.5rem;
+            font-size: 1.2rem;
             font-weight: bold;
             color: #2196F3;
             margin: 10px 0;
-            min-height: 60px;
+            min-height: 50px;
             display: flex;
             align-items: center;
             justify-content: center;
             background: #E3F2FD;
             border-radius: 10px;
-            padding: 15px;
+            padding: 12px;
             border: 2px solid #2196F3;
             line-height: 1.4;
             contain: strict;
@@ -414,17 +248,17 @@
         }
 
         .sentence-display {
-            font-size: 1.8rem;
+            font-size: 1.5rem;
             font-weight: bold;
             color: #4CAF50;
             margin: 10px 0;
-            min-height: 80px;
+            min-height: 70px;
             display: flex;
             align-items: center;
             justify-content: center;
             background: #E8F5E9;
             border-radius: 10px;
-            padding: 20px;
+            padding: 15px;
             border: 2px solid #4CAF50;
             line-height: 1.4;
             contain: strict;
@@ -432,17 +266,17 @@
         }
 
         .current-word-display {
-            font-size: 2rem;
+            font-size: 1.5rem;
             font-weight: bold;
             color: #FF5722;
             margin: 10px 0;
-            min-height: 60px;
+            min-height: 50px;
             display: flex;
             align-items: center;
             justify-content: center;
             background: #FFF8E1;
             border-radius: 10px;
-            padding: 15px;
+            padding: 12px;
             border: 2px dashed #FFC107;
             contain: strict;
             transform: translateZ(0);
@@ -463,6 +297,7 @@
             background: #e3f2fd;
             border-radius: 20px;
             border: 1px solid #bbdefb;
+            font-size: 0.9rem;
         }
 
         .word-count {
@@ -493,7 +328,7 @@
         }
 
         .sensor-value {
-            font-size: 1.8rem;
+            font-size: 1.5rem;
             font-weight: bold;
             color: #333;
             margin: 5px 0;
@@ -508,15 +343,16 @@
 
         .flex-box {
             display: inline-block;
-            width: 40px;
-            height: 40px;
-            line-height: 40px;
+            width: 35px;
+            height: 35px;
+            line-height: 35px;
             text-align: center;
             background: #f8f9fa;
             border-radius: 8px;
             margin: 2px;
             font-weight: bold;
             border: 2px solid transparent;
+            font-size: 0.9rem;
         }
 
         .flex-box.active-0 { background: #4CAF50; color: white; }
@@ -525,14 +361,14 @@
 
         .controls {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             margin-top: 20px;
             justify-content: center;
             flex-wrap: wrap;
         }
 
         button {
-            padding: 12px 24px;
+            padding: 10px 15px;
             border: none;
             border-radius: 8px;
             background: linear-gradient(to right, #4A00E0, #8E2DE2);
@@ -540,6 +376,8 @@
             font-weight: bold;
             cursor: pointer;
             transition: all 0.2s;
+            font-size: 0.9rem;
+            min-width: 120px;
         }
 
         button:hover {
@@ -569,11 +407,12 @@
 
         .status-bar {
             background: #f8f9fa;
-            padding: 15px;
+            padding: 12px;
             border-top: 1px solid #eaeaea;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         .indicator {
@@ -611,7 +450,7 @@
             border-radius: 8px;
             border: 1px solid #ccc;
             background: white;
-            font-size: 1rem;
+            font-size: 0.9rem;
         }
 
         .phrase-btn {
@@ -649,9 +488,9 @@
 
         textarea {
             width: 100%;
-            height: 120px;
-            font-size: 1.5rem;
-            padding: 15px;
+            height: 100px;
+            font-size: 1.2rem;
+            padding: 12px;
             border: 2px solid #4CAF50;
             border-radius: 10px;
             background: #E8F5E9;
@@ -663,11 +502,12 @@
             padding: 8px 15px;
             border-radius: 8px;
             border: 1px solid #ccc;
-            min-width: 150px;
+            min-width: 120px;
+            font-size: 0.9rem;
         }
 
         .firebase-status {
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             color: #444;
             margin-top: 5px;
         }
@@ -681,6 +521,7 @@
             margin-bottom: 5px;
             padding: 5px;
             border-bottom: 1px solid #eee;
+            font-size: 0.8rem;
         }
 
         .phrase-suggestions {
@@ -694,7 +535,7 @@
         .phrase-suggestions h4 {
             margin-bottom: 10px;
             color: #4A00E0;
-            font-size: 1rem;
+            font-size: 0.9rem;
         }
 
         .phrase-pills {
@@ -710,7 +551,7 @@
             color: white;
             border: none;
             border-radius: 20px;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             cursor: pointer;
             transition: all 0.2s;
         }
@@ -726,13 +567,13 @@
 
         .speech-controls {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             margin-top: 15px;
             justify-content: center;
         }
 
         .speech-btn {
-            padding: 10px 20px;
+            padding: 8px 15px;
             background: linear-gradient(to right, #9C27B0, #673AB7);
             color: white;
             border: none;
@@ -743,6 +584,7 @@
             align-items: center;
             gap: 8px;
             transition: all 0.2s;
+            font-size: 0.9rem;
         }
 
         .speech-btn:hover {
@@ -841,7 +683,7 @@
 
         .auto-suggestions-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 10px;
         }
 
@@ -862,7 +704,7 @@
         }
 
         .auto-suggestion-text {
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             margin-bottom: 8px;
         }
 
@@ -874,7 +716,7 @@
 
         .auto-suggestion-btn {
             padding: 4px 8px;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             border-radius: 4px;
             border: none;
             cursor: pointer;
@@ -899,7 +741,7 @@
 
         .voice-options {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             margin-top: 10px;
             justify-content: center;
             flex-wrap: wrap;
@@ -911,7 +753,7 @@
             color: white;
             border: none;
             border-radius: 20px;
-            font-size: 0.8rem;
+            font-size: 0.7rem;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -924,7 +766,7 @@
         }
 
         .language-voice-display {
-            font-size: 0.8rem;
+            font-size: 0.7rem;
             color: #444;
             text-align: center;
             margin-top: 5px;
@@ -932,7 +774,7 @@
 
         .ai-speech-status {
             margin-top: 5px;
-            font-size: 0.8rem;
+            font-size: 0.7rem;
             color: #4CAF50;
             text-align: center;
             display: flex;
@@ -949,7 +791,7 @@
             margin-top: 10px;
             display: flex;
             justify-content: center;
-            gap: 10px;
+            gap: 8px;
         }
 
         .tts-toggle-btn {
@@ -958,7 +800,7 @@
             border: 2px solid #ddd;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 0.8rem;
+            font-size: 0.7rem;
         }
 
         .tts-toggle-btn.active {
@@ -976,7 +818,7 @@
         }
 
         .performance-info {
-            font-size: 0.7rem;
+            font-size: 0.6rem;
             color: #666;
             text-align: center;
             margin-top: 5px;
@@ -990,7 +832,7 @@
             color: white;
             padding: 5px 10px;
             border-radius: 20px;
-            font-size: 0.8rem;
+            font-size: 0.7rem;
             z-index: 1000;
         }
 
@@ -1008,7 +850,7 @@
             border-bottom: 1px solid #f0f0f0;
             cursor: pointer;
             transition: all 0.2s;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
         }
 
         .phrase-list-item:hover {
@@ -1022,18 +864,18 @@
 
         .accent-selector {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             margin: 15px 0;
             justify-content: center;
             flex-wrap: wrap;
         }
 
         .accent-btn {
-            padding: 8px 15px;
+            padding: 6px 12px;
             background: #f8f9fa;
             border: 2px solid #ddd;
             border-radius: 20px;
-            font-size: 0.8rem;
+            font-size: 0.7rem;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -1064,17 +906,17 @@
 
         .voice-gender-selector {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             margin: 10px 0;
             justify-content: center;
         }
 
         .voice-gender-btn {
-            padding: 8px 20px;
+            padding: 6px 15px;
             background: #f8f9fa;
             border: 2px solid #ddd;
             border-radius: 20px;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -1122,33 +964,123 @@
         .suggestion-header {
             background: #f8f9fa;
             padding: 4px 8px;
-            font-size: 0.7rem;
+            font-size: 0.6rem;
             color: #666;
             border-radius: 4px;
             margin-top: 4px;
             display: inline-block;
         }
         
-        /* Cảm biến uốn - hiển thị theo thứ tự A3, A0, A1, A2 */
-        .flex-sensors-display {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin: 15px 0;
+        /* Responsive cho iPhone */
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 1.2rem;
+            }
+            
+            .card {
+                padding: 12px;
+            }
+            
+            .sentence-display {
+                font-size: 1.2rem;
+                min-height: 60px;
+                padding: 12px;
+            }
+            
+            .conversion-display {
+                font-size: 1rem;
+                min-height: 45px;
+                padding: 10px;
+            }
+            
+            .current-word-display {
+                font-size: 1.2rem;
+                min-height: 45px;
+                padding: 10px;
+            }
+            
+            button {
+                padding: 8px 12px;
+                min-width: 100px;
+                font-size: 0.8rem;
+            }
+            
+            .controls {
+                gap: 5px;
+            }
+            
+            .flex-box {
+                width: 30px;
+                height: 30px;
+                line-height: 30px;
+                font-size: 0.8rem;
+            }
+            
+            .sensor-value {
+                font-size: 1.2rem;
+            }
+            
+            .voice-options {
+                flex-wrap: wrap;
+            }
+            
+            .speech-controls {
+                flex-direction: column;
+            }
+            
+            .speech-btn {
+                width: 100%;
+                justify-content: center;
+            }
         }
         
-        .flex-sensor-item {
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            border: 1px solid #eaeaea;
-            text-align: center;
+        @media (max-width: 480px) {
+            body {
+                padding: 5px;
+            }
+            
+            .container {
+                border-radius: 10px;
+            }
+            
+            header {
+                padding: 10px;
+            }
+            
+            .dashboard {
+                padding: 10px;
+                gap: 10px;
+            }
+            
+            .card h3 {
+                font-size: 1rem;
+            }
+            
+            .sentence-display {
+                font-size: 1rem;
+            }
+            
+            .calibration-display {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .auto-suggestions-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .tts-toggle {
+                flex-direction: column;
+            }
+            
+            .tts-toggle-btn {
+                width: 100%;
+            }
         }
-        
-        .flex-sensor-item.a3 { border-left: 4px solid #9C27B0; }
-        .flex-sensor-item.a0 { border-left: 4px solid #2196F3; }
-        .flex-sensor-item.a1 { border-left: 4px solid #4CAF50; }
-        .flex-sensor-item.a2 { border-left: 4px solid #FF9800; }
     </style>
 </head>
 <body>
@@ -1164,45 +1096,42 @@
         </header>
 
         <div class="dashboard">
-            <!-- Card Xây dựng Câu - ĐÃ SẮP XẾP LẠI -->
+            <!-- Card Xây dựng Câu -->
             <div class="card">
                 <h3>Xây dựng Câu</h3>
-                <div style="text-align: center; padding: 20px; margin-bottom: 20px;">
-                    <!-- 1. Từ tiếng Việt đầy đủ, câu tiếng Việt -->
+                <div style="text-align: center; padding: 15px; margin-bottom: 15px;">
+                    <!-- CÂU ĐẦY ĐỦ (Tiếng Việt) - HIỂN THỊ ĐẦU TIÊN -->
                     <div class="sensor-label">CÂU ĐẦY ĐỦ (Tiếng Việt)</div>
                     <div class="sentence-display" id="convertedSentenceDisplay">---</div>
                     
-                    <!-- 2. 4 ô cảm biến uốn theo thứ tự A3, A0, A1, A2 -->
-                    <div class="sensor-label" style="margin-top: 20px;">CẢM BIẾN UỐN (A3, A0, A1, A2)</div>
-                    <div class="flex-sensors-display">
-                        <div class="flex-sensor-item a3">
-                            <div class="sensor-name">CẢM BIẾN A3</div>
-                            <div class="sensor-value" id="sensorA3">0</div>
-                            <div class="sensor-label">Trạng thái: <span id="stateA3">0</span></div>
-                        </div>
-                        <div class="flex-sensor-item a0">
-                            <div class="sensor-name">CẢM BIẾN A0</div>
-                            <div class="sensor-value" id="sensorA0">0</div>
-                            <div class="sensor-label">Trạng thái: <span id="stateA0">0</span></div>
-                        </div>
-                        <div class="flex-sensor-item a1">
-                            <div class="sensor-name">CẢM BIẾN A1</div>
-                            <div class="sensor-value" id="sensorA1">0</div>
-                            <div class="sensor-label">Trạng thái: <span id="stateA1">0</span></div>
-                        </div>
-                        <div class="flex-sensor-item a2">
-                            <div class="sensor-name">CẢM BIẾN A2</div>
-                            <div class="sensor-value" id="sensorA2">0</div>
-                            <div class="sensor-label">Trạng thái: <span id="stateA2">0</span></div>
+                    <!-- 4 Ô CẢM BIẾN UỐN - HIỂN THỊ THỨ 2 -->
+                    <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                        <div class="sensor-label">CẢM BIẾN UỐN (A3, A0, A1, A2)</div>
+                        <div style="margin-top: 10px; display: flex; justify-content: center; gap: 10px;">
+                            <div>
+                                <div class="sensor-name">CẢM BIẾN A3</div>
+                                <div class="flex-box" id="flexA3-box">0</div>
+                            </div>
+                            <div>
+                                <div class="sensor-name">CẢM BIẾN A0</div>
+                                <div class="flex-box" id="flexA0-box">0</div>
+                            </div>
+                            <div>
+                                <div class="ensor-name">CẢM BIẾN A1</div>
+                                <div class="flex-box" id="flexA1-box">0</div>
+                            </div>
+                            <div>
+                                <div class="sensor-name">CẢM BIẾN A2</div>
+                                <div class="flex-box" id="flexA2-box">0</div>
+                            </div>
                         </div>
                     </div>
                     
-                    <!-- 3. Câu đầy đủ tiếng Việt (mã hóa) -->
-                    <div class="sensor-label" style="margin-top: 20px;">CÂU ĐẦY ĐỦ (Mã hóa)</div>
+                    <!-- CÂU ĐẦY ĐỦ (Mã hóa) - HIỂN THỊ THỨ 3 -->
+                    <div class="sensor-label">CÂU ĐẦY ĐỦ (Mã hóa)</div>
                     <div class="conversion-display" id="sentenceDisplay">---</div>
                     
-                    <!-- 4. Các câu suggestion -->
-                    <!-- Phần đề xuất cụm từ -->
+                    <!-- CÁC CÂU SUGGESTION - HIỂN THỊ THỨ 4 -->
                     <div class="phrase-suggestions">
                         <h4>📝 ĐỀ XUẤT CỤM TỪ THÔNG DỤNG</h4>
                         <div class="phrase-pills" id="phrasePills"></div>
@@ -1214,7 +1143,7 @@
                         <div class="auto-suggestions-grid" id="autoSuggestionsGrid"></div>
                     </div>
                     
-                    <!-- Phần còn lại của card Xây dựng Câu -->
+                    <!-- PHẦN CÒN LẠI CỦA CARD XÂY DỰNG CÂU -->
                     <div class="sensor-label">TỪ HIỆN TẠI (Tiếng Việt)</div>
                     <div class="current-word-display" id="displayBuffer">---</div>
                     <div class="sensor-label">TỪ HIỆN TẠI (Mã hóa)</div>
@@ -1268,7 +1197,7 @@
                 </div>
             </div>
 
-            <!-- Card Hiệu chuẩn - ĐÃ SẮP XẾP LẠI CẢM BIẾN -->
+            <!-- Card Hiệu chuẩn -->
             <div class="card calibration-card">
                 <h3>🎯 Hiệu chuẩn Cảm biến Uốn</h3>
                 <div class="calibration-instructions">
@@ -1298,14 +1227,14 @@
                     </div>
                 </div>
                 
-                <!-- Hiển thị ngưỡng hiện tại - ĐÃ SẮP XẾP LẠI THEO A3, A0, A1, A2 -->
+                <!-- Hiển thị ngưỡng hiện tại -->
                 <div class="sensor-calibration" style="margin-top: 20px;">
-                    <div class="sensor-label">NGƯỠNG HIỆN TẠI (A3, A0, A1, A2)</div>
+                    <div class="sensor-label">NGƯỠNG HIỆN TẠI</div>
                     <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px;">
-                        <div><div class="sensor-name">Cảm biến A3</div><div class="sensor-threshold" id="currentThreshold3">300</div></div>
-                        <div><div class="sensor-name">Cảm biến A0</div><div class="sensor-threshold" id="currentThreshold0">300</div></div>
-                        <div><div class="sensor-name">Cảm biến A1</div><div class="sensor-threshold" id="currentThreshold1">450</div></div>
-                        <div><div class="sensor-name">Cảm biến A2</div><div class="sensor-threshold" id="currentThreshold2">350</div></div>
+                        <div><div class="sensor-name">Cảm biến 0</div><div class="sensor-threshold" id="currentThreshold0">300</div></div>
+                        <div><div class="sensor-name">Cảm biến 1</div><div class="sensor-threshold" id="currentThreshold1">450</div></div>
+                        <div><div class="sensor-name">Cảm biến 2</div><div class="sensor-threshold" id="currentThreshold2">350</div></div>
+                        <div><div class="sensor-name">Cảm biến 3</div><div class="sensor-threshold" id="currentThreshold3">300</div></div>
                     </div>
                 </div>
                 
@@ -1374,7 +1303,7 @@
                 </div>
             </div>
 
-            <!-- Card Hiển thị Cảm biến - ĐÃ SẮP XẾP LẠI CẢM BIẾN UỐN -->
+            <!-- Card Hiển thị Cảm biến -->
             <div class="card">
                 <h3>Dữ liệu Cảm biến từ Firebase</h3>
                 <div class="sensor-grid">
@@ -1387,19 +1316,19 @@
                         <div class="sensor-value" id="isShaking">KHÔNG</div>
                     </div>
                     <div class="sensor-item flex">
-                        <div class="sensor-label">CẢM BIẾN UỐN (A3, A0, A1, A2)</div>
+                        <div class="sensor-label">CẢM BIẾN UỐN</div>
                         <div>
                             <div>
-                                <span class="flex-box" id="flex3-box">0</span>
                                 <span class="flex-box" id="flex0-box">0</span>
                                 <span class="flex-box" id="flex1-box">0</span>
                                 <span class="flex-box" id="flex2-box">0</span>
+                                <span class="flex-box" id="flex3-box">0</span>
                             </div>
                             <div class="sensor-label" style="margin-top: 10px;">
                                 Giá trị thô: <span id="rawValues">0, 0, 0, 0</span>
                             </div>
                             <div class="sensor-label">
-                                Trạng thái: <span id="flexFormat">0000</span> (a3,a0,a1,a2)
+                                Trạng thái: <span id="flexFormat">0000</span> (a0,a1,a2,a3)
                             </div>
                         </div>
                     </div>
@@ -1458,7 +1387,7 @@
     const USE_CORS_PROXY = true;
     
     // === BIẾN HIỆU CHUẨN ===
-    let bentThresholds = [300, 450, 350, 300]; // A0, A1, A2, A3
+    let bentThresholds = [300, 450, 350, 300];
     const STRAIGHT_THRESHOLDS = [75, 75, 75, 75];
     
     let isCalibrating = false;
@@ -1496,7 +1425,7 @@
     let fullSentence = "";
     let convertedFullSentence = "";
     
-    // Trạng thái cảm biến uốn - theo thứ tự A0, A1, A2, A3
+    // Trạng thái cảm biến uốn
     let flexStates = [0, 0, 0, 0];
     let lastFlexStates = [-1, -1, -1, -1];
     let stableCount = 0;
@@ -1838,20 +1767,16 @@
             const display = document.getElementById('calibrationDisplay');
             display.innerHTML = '';
             
-            // Sắp xếp theo thứ tự A3, A0, A1, A2
-            const sensorOrder = [3, 0, 1, 2];
-            
             for (let i = 0; i < 4; i++) {
-                const sensorIndex = sensorOrder[i];
                 const sensorDiv = document.createElement('div');
                 sensorDiv.className = 'sensor-calibration';
-                sensorDiv.id = `calibrationSensor${sensorIndex}`;
+                sensorDiv.id = `calibrationSensor${i}`;
                 sensorDiv.innerHTML = `
-                    <div class="sensor-name">CẢM BIẾN A${sensorIndex}</div>
+                    <div class="sensor-name">CẢM BIẾN ${i}</div>
                     <div class="sensor-value">0</div>
                     <div class="sensor-max">Max: 0</div>
                     <div class="progress-container">
-                        <div class="progress-bar" id="progressBar${sensorIndex}" style="width: 0%"></div>
+                        <div class="progress-bar" id="progressBar${i}" style="width: 0%"></div>
                     </div>
                 `;
                 display.appendChild(sensorDiv);
@@ -1875,27 +1800,23 @@
             if (firebaseData) {
                 const flexValues = [firebaseData.f0 || 0, firebaseData.f1 || 0, firebaseData.f2 || 0, firebaseData.f3 || 0];
                 
-                // Cập nhật theo thứ tự A3, A0, A1, A2
-                const sensorOrder = [3, 0, 1, 2];
-                
                 for (let i = 0; i < 4; i++) {
-                    const sensorIndex = sensorOrder[i];
-                    const valueElement = document.querySelector(`#calibrationSensor${sensorIndex} .sensor-value`);
+                    const valueElement = document.querySelector(`#calibrationSensor${i} .sensor-value`);
                     if (valueElement) {
-                        valueElement.textContent = flexValues[sensorIndex];
+                        valueElement.textContent = flexValues[i];
                     }
                     
-                    if (flexValues[sensorIndex] > calibrationMaxValues[sensorIndex]) {
-                        calibrationMaxValues[sensorIndex] = flexValues[sensorIndex];
-                        const maxElement = document.querySelector(`#calibrationSensor${sensorIndex} .sensor-max`);
+                    if (flexValues[i] > calibrationMaxValues[i]) {
+                        calibrationMaxValues[i] = flexValues[i];
+                        const maxElement = document.querySelector(`#calibrationSensor${i} .sensor-max`);
                         if (maxElement) {
-                            maxElement.textContent = `Max: ${flexValues[sensorIndex]}`;
+                            maxElement.textContent = `Max: ${flexValues[i]}`;
                             maxElement.style.color = '#F44336';
                         }
                     }
                     
-                    const progressValue = Math.min((flexValues[sensorIndex] / 1024) * 100, 100);
-                    const progressBar = document.getElementById(`progressBar${sensorIndex}`);
+                    const progressValue = Math.min((flexValues[i] / 1024) * 100, 100);
+                    const progressBar = document.getElementById(`progressBar${i}`);
                     if (progressBar) {
                         progressBar.style.width = `${progressValue}%`;
                         
@@ -1996,11 +1917,9 @@
         }
 
         function updateThresholdDisplay() {
-            // Cập nhật theo thứ tự A3, A0, A1, A2
-            document.getElementById(`currentThreshold3`).textContent = bentThresholds[3];
-            document.getElementById(`currentThreshold0`).textContent = bentThresholds[0];
-            document.getElementById(`currentThreshold1`).textContent = bentThresholds[1];
-            document.getElementById(`currentThreshold2`).textContent = bentThresholds[2];
+            for (let i = 0; i < 4; i++) {
+                document.getElementById(`currentThreshold${i}`).textContent = bentThresholds[i];
+            }
         }
 
         function updateCalibrationStatus(status, message) {
@@ -2149,9 +2068,6 @@
                         flexStates[i] = newState;
                     }
                 }
-                
-                // Cập nhật hiển thị cảm biến uốn theo thứ tự A3, A0, A1, A2
-                updateFlexSensorsDisplay(flexValues[3], flexValues[0], flexValues[1], flexValues[2]);
             }
             
             setTimeout(() => {
@@ -2163,21 +2079,6 @@
                 
                 processWordConstructionFast(mpuState, a0, a1, a2, a3);
             }, 0);
-        }
-
-        // === HÀM CẬP NHẬT HIỂN THỊ CẢM BIẾN UỐN ===
-        function updateFlexSensorsDisplay(a3, a0, a1, a2) {
-            // Cập nhật giá trị thô
-            document.getElementById('sensorA3').textContent = a3 !== undefined ? a3 : 0;
-            document.getElementById('sensorA0').textContent = a0 !== undefined ? a0 : 0;
-            document.getElementById('sensorA1').textContent = a1 !== undefined ? a1 : 0;
-            document.getElementById('sensorA2').textContent = a2 !== undefined ? a2 : 0;
-            
-            // Cập nhật trạng thái
-            document.getElementById('stateA3').textContent = flexStates[3];
-            document.getElementById('stateA0').textContent = flexStates[0];
-            document.getElementById('stateA1').textContent = flexStates[1];
-            document.getElementById('stateA2').textContent = flexStates[2];
         }
 
         // === HÀM TÍNH TRẠNG THÁI UỐN VỚI HIỆU CHUẨN ===
@@ -2246,30 +2147,49 @@
         }
 
         function updateSensorDisplay() {
-            // Cập nhật các box cảm biến uốn theo thứ tự A3, A0, A1, A2
-            const boxIds = ['flex3-box', 'flex0-box', 'flex1-box', 'flex2-box'];
-            const stateOrder = [flexStates[3], flexStates[0], flexStates[1], flexStates[2]];
-            
             for (let i = 0; i < 4; i++) {
-                const box = document.getElementById(boxIds[i]);
-                if (box && box.textContent !== stateOrder[i].toString()) {
-                    box.textContent = stateOrder[i];
-                    box.className = `flex-box active-${stateOrder[i]}`;
+                const box = document.getElementById(`flex${i}-box`);
+                if (box && box.textContent !== flexStates[i].toString()) {
+                    box.textContent = flexStates[i];
+                    box.className = `flex-box active-${flexStates[i]}`;
                 }
+            }
+            
+            // Cập nhật 4 ô cảm biến mới theo thứ tự A3, A0, A1, A2
+            const a3Box = document.getElementById('flexA3-box');
+            if (a3Box && a3Box.textContent !== flexStates[3].toString()) {
+                a3Box.textContent = flexStates[3];
+                a3Box.className = `flex-box active-${flexStates[3]}`;
+            }
+            
+            const a0Box = document.getElementById('flexA0-box');
+            if (a0Box && a0Box.textContent !== flexStates[0].toString()) {
+                a0Box.textContent = flexStates[0];
+                a0Box.className = `flex-box active-${flexStates[0]}`;
+            }
+            
+            const a1Box = document.getElementById('flexA1-box');
+            if (a1Box && a1Box.textContent !== flexStates[1].toString()) {
+                a1Box.textContent = flexStates[1];
+                a1Box.className = `flex-box active-${flexStates[1]}`;
+            }
+            
+            const a2Box = document.getElementById('flexA2-box');
+            if (a2Box && a2Box.textContent !== flexStates[2].toString()) {
+                a2Box.textContent = flexStates[2];
+                a2Box.className = `flex-box active-${flexStates[2]}`;
             }
             
             if (firebaseData) {
                 const rawValues = [firebaseData.f0 || 0, firebaseData.f1 || 0, firebaseData.f2 || 0, firebaseData.f3 || 0];
                 const rawValuesElement = document.getElementById('rawValues');
-                // Hiển thị theo thứ tự A3, A0, A1, A2
-                const newRawText = `${rawValues[3]}, ${rawValues[0]}, ${rawValues[1]}, ${rawValues[2]}`;
+                const newRawText = rawValues.join(', ');
                 if (rawValuesElement.textContent !== newRawText) {
                     rawValuesElement.textContent = newRawText;
                 }
                 
                 const flexFormatElement = document.getElementById('flexFormat');
-                // Hiển thị theo thứ tự a3,a0,a1,a2
-                const newFlexText = `${flexStates[3]}${flexStates[0]}${flexStates[1]}${flexStates[2]}`;
+                const newFlexText = flexStates.join('');
                 if (flexFormatElement.textContent !== newFlexText) {
                     flexFormatElement.textContent = newFlexText;
                 }
