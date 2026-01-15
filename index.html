@@ -975,10 +975,57 @@
         </header>
 
         <div class="dashboard">
-            <!-- Card Xây dựng Câu -->
+            <!-- Card Xây dựng Câu (Đã sắp xếp lại theo yêu cầu) -->
             <div class="card">
                 <h3>Xây dựng Câu</h3>
                 <div style="text-align: center; padding: 20px; margin-bottom: 20px;">
+                    <!-- Câu đầy đủ Tiếng Việt - ĐƯỢC ĐƯA LÊN ĐẦU -->
+                    <div class="sensor-label">CÂU ĐẦY ĐỦ (Tiếng Việt)</div>
+                    <div class="conversion-display" id="convertedSentenceDisplay">---</div>
+                    
+                    <!-- 4 ô cảm biến uốn theo thứ tự A3, A0, A1, A2 -->
+                    <div class="sensor-grid" style="margin: 20px 0;">
+                        <div class="sensor-item flex">
+                            <div class="sensor-label">CẢM BIẾN UỐN A3</div>
+                            <div>
+                                <span class="flex-box" id="flex3-box">0</span>
+                                <div class="sensor-value" id="rawValue3">0</div>
+                            </div>
+                        </div>
+                        <div class="sensor-item flex">
+                            <div class="sensor-label">CẢM BIẾN UỐN A0</div>
+                            <div>
+                                <span class="flex-box" id="flex0-box">0</span>
+                                <div class="sensor-value" id="rawValue0">0</div>
+                            </div>
+                        </div>
+                        <div class="sensor-item flex">
+                            <div class="sensor-label">CẢM BIẾN UỐN A1</div>
+                            <div>
+                                <span class="flex-box" id="flex1-box">0</span>
+                                <div class="sensor-value" id="rawValue1">0</div>
+                            </div>
+                        </div>
+                        <div class="sensor-item flex">
+                            <div class="sensor-label">CẢM BIẾN UỐN A2</div>
+                            <div>
+                                <span class="flex-box" id="flex2-box">0</span>
+                                <div class="sensor-value" id="rawValue2">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Câu đầy đủ mã hóa -->
+                    <div class="sensor-label">CÂU ĐẦY ĐỦ (Mã hóa)</div>
+                    <div class="sentence-display" id="sentenceDisplay">---</div>
+                    
+                    <!-- Các câu suggestion -->
+                    <div class="phrase-suggestions">
+                        <h4>📝 ĐỀ XUẤT CỤM TỪ THÔNG DỤNG</h4>
+                        <div class="phrase-pills" id="phrasePills"></div>
+                    </div>
+                    
+                    <!-- Phần còn lại của card Xây dựng Câu -->
                     <div class="sensor-label">TỪ HIỆN TẠI (Tiếng Việt)</div>
                     <div class="current-word-display" id="displayBuffer">---</div>
                     <div class="sensor-label">TỪ HIỆN TẠI (Mã hóa)</div>
@@ -987,17 +1034,6 @@
                     <div style="margin: 15px 0; color: #444;">
                         <div><strong>Sử dụng '_' để thêm từ vào câu</strong></div>
                         <div><strong>Sử dụng 'COMMIT' để hoàn thành câu</strong></div>
-                    </div>
-                    
-                    <div class="sensor-label">CÂU ĐẦY ĐỦ (Mã hóa)</div>
-                    <div class="sentence-display" id="sentenceDisplay">---</div>
-                    <div class="sensor-label">CÂU ĐẦY ĐỦ (Tiếng Việt)</div>
-                    <div class="conversion-display" id="convertedSentenceDisplay">---</div>
-                    
-                    <!-- Phần đề xuất cụm từ -->
-                    <div class="phrase-suggestions">
-                        <h4>📝 ĐỀ XUẤT CỤM TỪ THÔNG DỤNG</h4>
-                        <div class="phrase-pills" id="phrasePills"></div>
                     </div>
                     
                     <!-- Chuyển đổi TTS -->
@@ -1049,7 +1085,7 @@
                 </div>
             </div>
 
-            <!-- Card Hiệu chuẩn -->
+            <!-- Card Hiệu chuẩn (Đã sắp xếp lại thứ tự cảm biến) -->
             <div class="card calibration-card">
                 <h3>🎯 Hiệu chuẩn Cảm biến Uốn</h3>
                 <div class="calibration-instructions">
@@ -1079,14 +1115,14 @@
                     </div>
                 </div>
                 
-                <!-- Hiển thị ngưỡng hiện tại -->
+                <!-- Hiển thị ngưỡng hiện tại (theo thứ tự A3, A0, A1, A2) -->
                 <div class="sensor-calibration" style="margin-top: 20px;">
-                    <div class="sensor-label">NGƯỠNG HIỆN TẠI</div>
+                    <div class="sensor-label">NGƯỠNG HIỆN TẠI (A3, A0, A1, A2)</div>
                     <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px;">
-                        <div><div class="sensor-name">Cảm biến 0</div><div class="sensor-threshold" id="currentThreshold0">300</div></div>
-                        <div><div class="sensor-name">Cảm biến 1</div><div class="sensor-threshold" id="currentThreshold1">450</div></div>
-                        <div><div class="sensor-name">Cảm biến 2</div><div class="sensor-threshold" id="currentThreshold2">350</div></div>
-                        <div><div class="sensor-name">Cảm biến 3</div><div class="sensor-threshold" id="currentThreshold3">300</div></div>
+                        <div><div class="sensor-name">Cảm biến A3</div><div class="sensor-threshold" id="currentThreshold3">300</div></div>
+                        <div><div class="sensor-name">Cảm biến A0</div><div class="sensor-threshold" id="currentThreshold0">300</div></div>
+                        <div><div class="sensor-name">Cảm biến A1</div><div class="sensor-threshold" id="currentThreshold1">450</div></div>
+                        <div><div class="sensor-name">Cảm biến A2</div><div class="sensor-threshold" id="currentThreshold2">350</div></div>
                     </div>
                 </div>
                 
@@ -1104,7 +1140,7 @@
                 </div>
                 
                 <div class="calibration-info" style="margin-top: 15px; font-size: 0.8rem; color: #444; text-align: center;">
-                    <div>Ngưỡng thẳng cố định: Cảm biến 0-2: 75, Cảm biến 3: 75</div>
+                    <div>Ngưỡng thẳng cố định: Cảm biến A0-A2: 75, Cảm biến A3: 75</div>
                     <div>Ngưỡng uốn sẽ được hiệu chuẩn tự động</div>
                 </div>
             </div>
@@ -1155,7 +1191,7 @@
                 </div>
             </div>
 
-            <!-- Card Hiển thị Cảm biến -->
+            <!-- Card Hiển thị Cảm biến (Đã sắp xếp lại thứ tự cảm biến) -->
             <div class="card">
                 <h3>Dữ liệu Cảm biến từ Firebase</h3>
                 <div class="sensor-grid">
@@ -1168,19 +1204,19 @@
                         <div class="sensor-value" id="isShaking">KHÔNG</div>
                     </div>
                     <div class="sensor-item flex">
-                        <div class="sensor-label">CẢM BIẾN UỐN</div>
+                        <div class="sensor-label">CẢM BIẾN UỐN (A3, A0, A1, A2)</div>
                         <div>
                             <div>
-                                <span class="flex-box" id="flex0-box">0</span>
-                                <span class="flex-box" id="flex1-box">0</span>
-                                <span class="flex-box" id="flex2-box">0</span>
-                                <span class="flex-box" id="flex3-box">0</span>
+                                <span class="flex-box" id="flex3-box-display">0</span>
+                                <span class="flex-box" id="flex0-box-display">0</span>
+                                <span class="flex-box" id="flex1-box-display">0</span>
+                                <span class="flex-box" id="flex2-box-display">0</span>
                             </div>
                             <div class="sensor-label" style="margin-top: 10px;">
-                                Giá trị thô: <span id="rawValues">0, 0, 0, 0</span>
+                                Giá trị thô (A3, A0, A1, A2): <span id="rawValues">0, 0, 0, 0</span>
                             </div>
                             <div class="sensor-label">
-                                Trạng thái: <span id="flexFormat">0000</span> (a0,a1,a2,a3)
+                                Trạng thái: <span id="flexFormat">0000</span> (a3,a0,a1,a2)
                             </div>
                         </div>
                     </div>
@@ -1239,7 +1275,7 @@
     const USE_CORS_PROXY = true;
     
     // === BIẾN HIỆU CHUẨN ===
-    let bentThresholds = [300, 450, 350, 300];
+    let bentThresholds = [300, 450, 350, 300]; // [A0, A1, A2, A3]
     const STRAIGHT_THRESHOLDS = [75, 75, 75, 75];
     
     let isCalibrating = false;
@@ -1277,7 +1313,7 @@
     let fullSentence = "";
     let convertedFullSentence = "";
     
-    // Trạng thái cảm biến uốn
+    // Trạng thái cảm biến uốn - thứ tự [A0, A1, A2, A3]
     let flexStates = [0, 0, 0, 0];
     let lastFlexStates = [-1, -1, -1, -1];
     let stableCount = 0;
@@ -1600,7 +1636,7 @@
         accent: 'vn-native'
     };
 
-        // === HÀM HIỆU CHUẨN (giữ nguyên) ===
+        // === HÀM HIỆU CHUẨN (đã sửa thứ tự cảm biến) ===
         function startCalibration() {
             if (isCalibrating) return;
             
@@ -1620,16 +1656,18 @@
             const display = document.getElementById('calibrationDisplay');
             display.innerHTML = '';
             
-            for (let i = 0; i < 4; i++) {
+            // Sắp xếp theo thứ tự A3, A0, A1, A2
+            const order = [3, 0, 1, 2];
+            for (let idx of order) {
                 const sensorDiv = document.createElement('div');
                 sensorDiv.className = 'sensor-calibration';
-                sensorDiv.id = `calibrationSensor${i}`;
+                sensorDiv.id = `calibrationSensor${idx}`;
                 sensorDiv.innerHTML = `
-                    <div class="sensor-name">CẢM BIẾN ${i}</div>
+                    <div class="sensor-name">CẢM BIẾN A${idx}</div>
                     <div class="sensor-value">0</div>
                     <div class="sensor-max">Max: 0</div>
                     <div class="progress-container">
-                        <div class="progress-bar" id="progressBar${i}" style="width: 0%"></div>
+                        <div class="progress-bar" id="progressBar${idx}" style="width: 0%"></div>
                     </div>
                 `;
                 display.appendChild(sensorDiv);
@@ -1638,7 +1676,7 @@
             calibrationInterval = setInterval(updateCalibration, 1000);
             document.getElementById('calibrationMessage').textContent = `Đang hiệu chuẩn... Vui lòng uốn TẤT CẢ ngón tay hết mức!`;
             
-            log('HIỆU CHUẨN', 'Bắt đầu hiệu chuẩn cảm biến uốn');
+            log('HIỆU CHUẨN', 'Bắt đầu hiệu chuẩn cảm biến uốn (A3, A0, A1, A2)');
         }
 
         function updateCalibration() {
@@ -1653,7 +1691,9 @@
             if (firebaseData) {
                 const flexValues = [firebaseData.f0 || 0, firebaseData.f1 || 0, firebaseData.f2 || 0, firebaseData.f3 || 0];
                 
-                for (let i = 0; i < 4; i++) {
+                // Cập nhật theo thứ tự A3, A0, A1, A2
+                const order = [3, 0, 1, 2];
+                for (let i of order) {
                     const valueElement = document.querySelector(`#calibrationSensor${i} .sensor-value`);
                     if (valueElement) {
                         valueElement.textContent = flexValues[i];
@@ -1700,7 +1740,7 @@
                     bentThresholds[i] = calibrationMaxValues[i];
                     hasValidCalibration = true;
                 } else {
-                    log('HIỆU CHUẨN', `Cảm biến ${i} không có dữ liệu hiệu chuẩn hợp lệ (Max: ${calibrationMaxValues[i]})`);
+                    log('HIỆU CHUẨN', `Cảm biến A${i} không có dữ liệu hiệu chuẩn hợp lệ (Max: ${calibrationMaxValues[i]})`);
                 }
             }
             
@@ -1770,9 +1810,11 @@
         }
 
         function updateThresholdDisplay() {
-            for (let i = 0; i < 4; i++) {
-                document.getElementById(`currentThreshold${i}`).textContent = bentThresholds[i];
-            }
+            // Cập nhật theo thứ tự A3, A0, A1, A2
+            document.getElementById('currentThreshold3').textContent = bentThresholds[3];
+            document.getElementById('currentThreshold0').textContent = bentThresholds[0];
+            document.getElementById('currentThreshold1').textContent = bentThresholds[1];
+            document.getElementById('currentThreshold2').textContent = bentThresholds[2];
         }
 
         function updateCalibrationStatus(status, message) {
@@ -2000,24 +2042,44 @@
         }
 
         function updateSensorDisplay() {
-            for (let i = 0; i < 4; i++) {
-                const box = document.getElementById(`flex${i}-box`);
-                if (box && box.textContent !== flexStates[i].toString()) {
-                    box.textContent = flexStates[i];
-                    box.className = `flex-box active-${flexStates[i]}`;
-                }
-            }
+            // Cập nhật các ô trạng thái uốn trong card Xây dựng Câu (theo thứ tự A3, A0, A1, A2)
+            document.getElementById('flex3-box').textContent = flexStates[3];
+            document.getElementById('flex3-box').className = `flex-box active-${flexStates[3]}`;
+            document.getElementById('flex0-box').textContent = flexStates[0];
+            document.getElementById('flex0-box').className = `flex-box active-${flexStates[0]}`;
+            document.getElementById('flex1-box').textContent = flexStates[1];
+            document.getElementById('flex1-box').className = `flex-box active-${flexStates[1]}`;
+            document.getElementById('flex2-box').textContent = flexStates[2];
+            document.getElementById('flex2-box').className = `flex-box active-${flexStates[2]}`;
             
+            // Cập nhật các ô trong card Hiển thị Cảm biến
+            document.getElementById('flex3-box-display').textContent = flexStates[3];
+            document.getElementById('flex3-box-display').className = `flex-box active-${flexStates[3]}`;
+            document.getElementById('flex0-box-display').textContent = flexStates[0];
+            document.getElementById('flex0-box-display').className = `flex-box active-${flexStates[0]}`;
+            document.getElementById('flex1-box-display').textContent = flexStates[1];
+            document.getElementById('flex1-box-display').className = `flex-box active-${flexStates[1]}`;
+            document.getElementById('flex2-box-display').textContent = flexStates[2];
+            document.getElementById('flex2-box-display').className = `flex-box active-${flexStates[2]}`;
+            
+            // Cập nhật giá trị thô
             if (firebaseData) {
-                const rawValues = [firebaseData.f0 || 0, firebaseData.f1 || 0, firebaseData.f2 || 0, firebaseData.f3 || 0];
+                // Hiển thị giá trị thô theo thứ tự A3, A0, A1, A2
+                document.getElementById('rawValue3').textContent = firebaseData.f3 || 0;
+                document.getElementById('rawValue0').textContent = firebaseData.f0 || 0;
+                document.getElementById('rawValue1').textContent = firebaseData.f1 || 0;
+                document.getElementById('rawValue2').textContent = firebaseData.f2 || 0;
+                
+                const rawValues = [firebaseData.f3 || 0, firebaseData.f0 || 0, firebaseData.f1 || 0, firebaseData.f2 || 0];
                 const rawValuesElement = document.getElementById('rawValues');
                 const newRawText = rawValues.join(', ');
                 if (rawValuesElement.textContent !== newRawText) {
                     rawValuesElement.textContent = newRawText;
                 }
                 
+                // Hiển thị trạng thái theo thứ tự A3, A0, A1, A2
                 const flexFormatElement = document.getElementById('flexFormat');
-                const newFlexText = flexStates.join('');
+                const newFlexText = flexStates[3] + '' + flexStates[0] + '' + flexStates[1] + '' + flexStates[2];
                 if (flexFormatElement.textContent !== newFlexText) {
                     flexFormatElement.textContent = newFlexText;
                 }
@@ -3219,4 +3281,6 @@
             }
         }, 60000); // Mỗi phút
     });
-</script>    
+</script>
+</body>
+</html>
