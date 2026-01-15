@@ -1395,569 +1395,12 @@
     let lastSyncTime = 0;
     let syncActions = [];
     let onlineDevices = [];
-    // === FIREBASE SYNC FUNCTIONS (FIXED) ===
-let isProcessingRemoteAction = false;
-let actionQueue = [];
-let isProcessingQueue = false;
-
-function initFirebaseSync() {
-    // Hiển thị device ID
-    document.getElementById('deviceIdDisplay').textContent = currentDeviceId.substring(0, 8) + '...';
+    let isProcessingRemoteAction = false;
     
-    // Đăng ký device
-    registerDevice();
-    
-    // Lắng nghe các sự kiện từ thiết bị khác
-    listenToRemoteActions();
-    
-    // Lắng nghe danh sách thiết bị
-    listenToConnectedDevices();
-    
-    // Xử lý queue định kỳ
-    setInterval(processActionQueue, 100);
-    
-    updateSyncStatus(true);
-    log('FIREBASE SYNC', `Device ${currentDeviceId.substring(0, 8)} đã kết nối`);
-}
-
-function logUserAction(actionType, data = {}, isRemoteAction = false) {
-    if (!isSyncEnabled || isProcessingRemoteAction) {
-        return;
-    }
-    
-    // Bỏ qua nếu đây là action từ xa
-    if (isRemoteAction) {
-        return;
-    }
-    
-    const action = {
-        deviceId: currentDeviceId,
-        actionType: actionType,
-        data: data,
-        timestamp: Date.now(),
-        signature: generateActionSignature(actionType, data)
-    };
-    
-    database.ref('actions').push(action)
-        .then(() => {
-            log('SYNC', `Đã gửi action: ${actionType}`, false);
-        })
-        .catch((error) => {
-            console.error('Error logging action:', error);
-            log('SYNC ERROR', `Không thể gửi action: ${error.message}`, false);
-        });
-}
-
-function generateActionSignature(actionType, data) {
-    return `${actionType}_${JSON.stringify(data)}_${Date.now()}_${Math.random()}`;
-}
-
-function listenToRemoteActions() {
-    const actionsRef = database.ref('actions');
-    let lastProcessedSignature = null;
-    let processedSignatures = new Set();
-    
-    // Xóa các action cũ hơn 5 phút
-    const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
-    actionsRef.orderByChild('timestamp').endAt(fiveMinutesAgo).once('value', (snapshot) => {
-        snapshot.forEach((child) => {
-            child.ref.remove();
-        });
-    });
-    
-    actionsRef.orderByChild('timestamp').limitToLast(20).on('child_added', (snapshot) => {
-        const action = snapshot.val();
-        
-        // Bỏ qua action của chính mình
-        if (action.deviceId === currentDeviceId) {
-            return;
-        }
-        
-        // Tạo signature cho action
-        const actionSignature = action.signature || `${action.actionType}_${JSON.stringify(action.data)}`;
-        
-        // Kiểm tra nếu đã xử lý action này rồi
-        if (processedSignatures.has(actionSignature)) {
-            return;
-        }
-        
-        // Đánh dấu đã xử lý
-        processedSignatures.add(actionSignature);
-        
-        // Giới hạn số lượng signatures lưu trữ
-        if (processedSignatures.size > 50) {
-            const first = processedSignatures.values().next().value;
-            processedSignatures.delete(first);
-        }
-        
-        // Thêm vào queue để xử lý
-        addToActionQueue(action);
-    });
-}
-
-function addToActionQueue(action) {
-    actionQueue.push(action);
-    
-    // Giới hạn queue size
-    if (actionQueue.length > 20) {
-        actionQueue.shift();
-    }
-    
-    if (!isProcessingQueue) {
-        processActionQueue();
-    }
-}
-
-function processActionQueue() {
-    if (isProcessingQueue || actionQueue.length === 0) {
-        return;
-    }
-    
-    isProcessingQueue = true;
-    
-    try {
-        // Lấy action đầu tiên
-        const action = actionQueue.shift();
-        
-        if (action) {
-            // Xử lý action
-            setTimeout(() => {
-                processRemoteAction(action);
-                isProcessingQueue = false;
-                
-                // Xử lý tiếp nếu còn
-                if (actionQueue.length > 0) {
-                    setTimeout(processActionQueue, 50);
-                }
-            }, 100);
-        } else {
-            isProcessingQueue = false;
-        }
-    } catch (error) {
-        console.error('Error processing action queue:', error);
-        isProcessingQueue = false;
-    }
-}
-
-function processRemoteAction(action) {
-    if (isProcessingRemoteAction) {
-        return;
-    }
-    
-    isProcessingRemoteAction = true;
-    
-    try {
-        log('REMOTE ACTION', `Nhận action từ ${action.deviceId.substring(0, 8)}: ${action.actionType}`, false);
-        
-        // Tạo bản sao của trạng thái hiện tại để tránh thay đổi giao diện không cần thiết
-        const originalSyncState = isSyncEnabled;
-        isSyncEnabled = false;
-        
-        switch(action.actionType) {
-            case 'add_word':
-                remoteAddWord(action.data.word);
-                break;
-            case 'clear_current_word':
-                remoteClearCurrentWord();
-                break;
-            case 'backspace':
-                remoteBackspace();
-                break;
-            case 'commit_sentence':
-                remoteCommitSentence();
-                break;
-            case 'reset_sentence':
-                remoteResetSentence();
-                break;
-            case 'speak_vietnamese':
-                remoteSpeakVietnamese(action.data.text);
-                break;
-            case 'speak_translation':
-                remoteSpeakTranslation(action.data.text, action.data.lang);
-                break;
-            case 'stop_speech':
-                remoteStopSpeech();
-                break;
-            case 'select_voice':
-                remoteSelectVoice(action.data.lang, action.data.gender);
-                break;
-            case 'toggle_tts_mode':
-                remoteToggleTTSMode(action.data.useGoogleTTS);
-                break;
-            case 'start_calibration':
-                remoteStartCalibration();
-                break;
-            case 'stop_calibration':
-                remoteStopCalibration();
-                break;
-            case 'reset_calibration':
-                remoteResetCalibration();
-                break;
-            case 'translate':
-                remoteTranslate(action.data.text, action.data.sourceLang, action.data.targetLang);
-                break;
-            case 'clear_translation':
-                remoteClearTranslation();
-                break;
-            case 'select_phrase':
-                remoteSelectPhrase(action.data.phrase);
-                break;
-            case 'use_suggestion':
-                remoteUseSuggestion(action.data.text);
-                break;
-            case 'translate_suggestion':
-                remoteTranslateSuggestion(action.data.text);
-                break;
-            case 'toggle_auto_refresh':
-                remoteToggleAutoRefresh(action.data.enabled);
-                break;
-            case 'toggle_turbo_mode':
-                remoteToggleTurboMode(action.data.enabled);
-                break;
-            case 'select_language':
-                remoteSelectLanguage(action.data.elementId, action.data.value);
-                break;
-        }
-        
-        // Khôi phục trạng thái sync
-        setTimeout(() => {
-            isSyncEnabled = originalSyncState;
-            isProcessingRemoteAction = false;
-        }, 200);
-        
-    } catch (error) {
-        console.error('Error processing remote action:', error);
-        log('REMOTE ERROR', `Lỗi xử lý action: ${error.message}`, false);
-        isProcessingRemoteAction = false;
-        isSyncEnabled = true;
-    }
-}
-
-// === MODIFIED FUNCTIONS WITH SYNC FIX ===
-function addWordToSentence() {
-    if (!displayBuffer || displayBuffer === "---" || displayBuffer.length === 0) {
-        log('SENTENCE', 'Không thể thêm từ trống vào câu');
-        return;
-    }
-    
-    if (sentenceWords.length < 10) {
-        sentenceWords.push(displayBuffer);
-        scheduleUIUpdate();
-        log('SENTENCE', `Đã thêm: '${displayBuffer}'`);
-        
-        // Đồng bộ lên Firebase (chỉ khi không phải remote action)
-        if (!isProcessingRemoteAction) {
-            logUserAction('add_word', { word: displayBuffer });
-        }
-        
-        slot1 = '';
-        slot2 = '';
-        displayBuffer = '';
-        convertedCurrentWord = '';
-        
-        scheduleUIUpdate();
-    } else {
-        log('SENTENCE', 'Câu đã đầy! Tối đa 10 từ.');
-    }
-}
-
-function toggleAutoRefresh() {
-    const wasAutoRefresh = autoRefresh;
-    autoRefresh = !autoRefresh;
-    const btn = document.getElementById('autoRefreshBtn');
-    
-    if (autoRefresh) {
-        btn.textContent = `Tự động: BẬT (${pollingInterval}ms)`;
-        btn.className = 'green';
-        
-        function scheduleNextRefresh() {
-            if (!autoRefresh) return;
-            
-            setTimeout(() => {
-                if (autoRefresh) {
-                    fetchFirebaseDataOptimized().then(() => {
-                        if (autoRefresh) {
-                            scheduleNextRefresh();
-                        }
-                    });
-                }
-            }, pollingInterval);
-        }
-        
-        scheduleNextRefresh();
-        log('SYSTEM', `Bật tự động làm mới ${pollingInterval}ms`);
-    } else {
-        btn.textContent = 'Tự động: TẮT';
-        btn.className = 'red';
-        log('SYSTEM', 'Tắt tự động làm mới');
-    }
-    
-    // Đồng bộ lên Firebase (chỉ khi thay đổi thực sự và không phải remote action)
-    if (wasAutoRefresh !== autoRefresh && !isProcessingRemoteAction) {
-        logUserAction('toggle_auto_refresh', { enabled: autoRefresh });
-    }
-}
-
-function toggleTurboMode() {
-    const wasTurboMode = turboMode;
-    turboMode = !turboMode;
-    const btn = document.getElementById('turboBtn');
-    
-    if (turboMode) {
-        pollingInterval = 150;
-        btn.textContent = '🚀 Turbo: BẬT';
-        btn.className = 'red';
-        document.getElementById('fastModeIndicator').style.display = 'block';
-        log('SYSTEM', 'Bật chế độ Turbo (150ms polling)');
-    } else {
-        pollingInterval = 300;
-        btn.textContent = '🚀 Chế độ Turbo';
-        btn.className = 'green';
-        document.getElementById('fastModeIndicator').style.display = 'none';
-        log('SYSTEM', 'Tắt chế độ Turbo');
-    }
-    
-    updatePollingDisplay();
-    
-    if (autoRefresh) {
-        // Không gọi toggleAutoRefresh vì nó sẽ gửi action
-        // Thay vào đó, cập nhật trực tiếp
-        if (wasTurboMode !== turboMode && !isProcessingRemoteAction) {
-            logUserAction('toggle_turbo_mode', { enabled: turboMode });
-        }
-        
-        // Restart auto-refresh với interval mới
-        if (autoRefresh) {
-            clearTimeout(window.autoRefreshTimeout);
-            function scheduleNextRefresh() {
-                if (!autoRefresh) return;
-                
-                window.autoRefreshTimeout = setTimeout(() => {
-                    if (autoRefresh) {
-                        fetchFirebaseDataOptimized().then(() => {
-                            if (autoRefresh) {
-                                scheduleNextRefresh();
-                            }
-                        });
-                    }
-                }, pollingInterval);
-            }
-            scheduleNextRefresh();
-        }
-    }
-}
-
-// === FIXED REMOTE ACTION HANDLERS ===
-function remoteToggleAutoRefresh(enabled) {
-    if (autoRefresh === enabled) {
-        return; // Không làm gì nếu trạng thái đã đúng
-    }
-    
-    autoRefresh = enabled;
-    const btn = document.getElementById('autoRefreshBtn');
-    
-    if (autoRefresh) {
-        btn.textContent = `Tự động: BẬT (${pollingInterval}ms)`;
-        btn.className = 'green';
-        
-        function scheduleNextRefresh() {
-            if (!autoRefresh) return;
-            
-            setTimeout(() => {
-                if (autoRefresh) {
-                    fetchFirebaseDataOptimized().then(() => {
-                        if (autoRefresh) {
-                            scheduleNextRefresh();
-                        }
-                    });
-                }
-            }, pollingInterval);
-        }
-        
-        scheduleNextRefresh();
-        log('REMOTE', `Bật tự động làm mới từ xa: ${pollingInterval}ms`, false);
-    } else {
-        btn.textContent = 'Tự động: TẮT';
-        btn.className = 'red';
-        log('REMOTE', 'Tắt tự động làm mới từ xa', false);
-    }
-}
-
-function remoteToggleTurboMode(enabled) {
-    if (turboMode === enabled) {
-        return; // Không làm gì nếu trạng thái đã đúng
-    }
-    
-    turboMode = enabled;
-    const btn = document.getElementById('turboBtn');
-    
-    if (turboMode) {
-        pollingInterval = 150;
-        btn.textContent = '🚀 Turbo: BẬT';
-        btn.className = 'red';
-        document.getElementById('fastModeIndicator').style.display = 'block';
-        log('REMOTE', 'Bật chế độ Turbo từ xa', false);
-    } else {
-        pollingInterval = 300;
-        btn.textContent = '🚀 Chế độ Turbo';
-        btn.className = 'green';
-        document.getElementById('fastModeIndicator').style.display = 'none';
-        log('REMOTE', 'Tắt chế độ Turbo từ xa', false);
-    }
-    
-    updatePollingDisplay();
-    
-    if (autoRefresh) {
-        // Restart auto-refresh với interval mới
-        if (autoRefresh) {
-            clearTimeout(window.autoRefreshTimeout);
-            function scheduleNextRefresh() {
-                if (!autoRefresh) return;
-                
-                window.autoRefreshTimeout = setTimeout(() => {
-                    if (autoRefresh) {
-                        fetchFirebaseDataOptimized().then(() => {
-                            if (autoRefresh) {
-                                scheduleNextRefresh();
-                            }
-                        });
-                    }
-                }, pollingInterval);
-            }
-            scheduleNextRefresh();
-        }
-    }
-}
-
-// === FIXED LOG FUNCTION ===
-function log(source, message, shouldSync = true) {
-    const timestamp = new Date().toLocaleTimeString();
-    const logEntry = { timestamp, source, message };
-    
-    logEntries.unshift(logEntry);
-    if (logEntries.length > MAX_LOG_ENTRIES) {
-        logEntries.pop();
-    }
-    
-    updateLogDisplay();
-    
-    // Không sync log messages để tránh loop
-    if (!shouldSync) {
-        return;
-    }
-}
-
-// === THÊM HÀM CLEAR OLD ACTIONS ===
-function clearOldFirebaseActions() {
-    const oneMinuteAgo = Date.now() - 60 * 1000;
-    database.ref('actions')
-        .orderByChild('timestamp')
-        .endAt(oneMinuteAgo)
-        .once('value')
-        .then((snapshot) => {
-            const updates = {};
-            snapshot.forEach((child) => {
-                updates[child.key] = null;
-            });
-            
-            if (Object.keys(updates).length > 0) {
-                database.ref('actions').update(updates);
-                log('FIREBASE', `Đã xóa ${Object.keys(updates).length} action cũ`, false);
-            }
-        });
-}
-
-// === CẬP NHẬT KHỞI TẠO ===
-document.addEventListener('DOMContentLoaded', function() {
-    log('SYSTEM', 'Ứng dụng đã khởi động với Firebase Sync (Fixed)');
-    log('DEVICE', `Device ID: ${currentDeviceId}`);
-    
-    // Khởi tạo FPS counter
-    function updateFPS() {
-        frameCount++;
-        const currentTime = performance.now();
-        if (currentTime - lastFrameTime >= 1000) {
-            currentFPS = frameCount;
-            frameCount = 0;
-            lastFrameTime = currentTime;
-            
-            document.getElementById('fps').textContent = currentFPS;
-            
-            // Điều chỉnh polling interval dựa trên FPS
-            if (currentFPS < 30 && pollingInterval > 150) {
-                pollingInterval = Math.min(pollingInterval * 1.5, 1000);
-                updatePollingDisplay();
-                log('PERF', `FPS thấp (${currentFPS}), tăng polling interval lên ${pollingInterval}ms`, false);
-            } else if (currentFPS > 50 && pollingInterval < 1000) {
-                pollingInterval = Math.max(pollingInterval * 0.8, 150);
-                updatePollingDisplay();
-            }
-        }
-        requestAnimationFrame(updateFPS);
-    }
-    
-    requestAnimationFrame(updateFPS);
-    
-    // Tải hiệu chuẩn từ localStorage nếu có
-    loadCalibration();
-    
-    // Tải đề xuất cụm từ
-    loadPhraseSuggestions();
-    
-    // Khởi tạo Web Speech API voices
-    if ('speechSynthesis' in window) {
-        speechSynthesis.getVoices();
-        
-        speechSynthesis.onvoiceschanged = function() {
-            const voices = speechSynthesis.getVoices();
-            log('SPEECH', `Đã tải ${voices.length} giọng tổng hợp`, false);
-        };
-    }
-    
-    // Khởi tạo Firebase Sync
-    initFirebaseSync();
-    
-    // Khởi tạo auto-refresh
-    setTimeout(() => {
-        fetchFirebaseDataOptimized();
-        
-        // Khởi động auto-refresh mà không gọi toggleAutoRefresh (để tránh sync loop)
-        if (autoRefresh) {
-            function scheduleNextRefresh() {
-                if (!autoRefresh) return;
-                
-                window.autoRefreshTimeout = setTimeout(() => {
-                    if (autoRefresh) {
-                        fetchFirebaseDataOptimized().then(() => {
-                            if (autoRefresh) {
-                                scheduleNextRefresh();
-                            }
-                        });
-                    }
-                }, pollingInterval);
-            }
-            scheduleNextRefresh();
-            
-            const btn = document.getElementById('autoRefreshBtn');
-            btn.textContent = `Tự động: BẬT (${pollingInterval}ms)`;
-            btn.className = 'green';
-        }
-    }, 100);
-    
-    // Clear audio cache periodically
-    setInterval(() => {
-        if (audioCache.size > 20) {
-            const keys = Array.from(audioCache.keys());
-            for (let i = 0; i < 5; i++) {
-                audioCache.delete(keys[i]);
-            }
-            log('CACHE', `Đã xóa 5 item từ audio cache, còn ${audioCache.size} item`, false);
-        }
-    }, 60000);
-    
-    // Clear old Firebase actions periodically
-    setInterval(clearOldFirebaseActions, 30000);
-});
+    // === FIX: Biến để ngăn chặn lặp hành động ===
+    let processedActionIds = new Set();
+    const MAX_PROCESSED_IDS = 1000;
+    let lastActionFromDevice = new Map();
     
     // === BẢNG DỮ LIỆU ===
     const tableA = [
@@ -2027,152 +1470,7 @@ document.addEventListener('DOMContentLoaded', function() {
         "Bạn có thể lặp lại không?"
     ];
 
-    // Bảng chuyển đổi Tiếng Việt
-    const vietnameseTable = [
-        
-            {key: "IAY", forms: ["iáy", "iày", "iảy", "iãy", "iạy", "iay", "iấy", "iầy", "iẩy", "iẫy", "iậy", "iây", "iắy", "iằy", "iẳy", "iẵy", "iặy", "iăy"]},
-            {key: "IC", forms: ["íc", "ìc", "ỉc", "ĩc", "ịc", "ic", "íc", "ìc", "ỉc", "ĩc", "ịc", "ic", "íc", "ìc", "ỉc", "ĩc", "ịc", "ic"]},
-            {key: "ICH", forms: ["ích", "ìch", "ỉch", "ĩch", "ịch", "ich", "ích", "ìch", "ỉch", "ĩch", "ịch", "ich", "ích", "ìch", "ỉch", "ĩch", "ịch", "ich"]},
-            {key: "IE", forms: ["ié", "iè", "iẻ", "iẽ", "iẹ", "ie", "iế", "iề", "iể", "iễ", "iệ", "iê", "ié", "iè", "iẻ", "iẽ", "iẹ", "ie"]},
-            {key: "IEC", forms: ["iéc", "ièc", "iẻc", "iẽc", "iẹc", "iec", "iếc", "iềc", "iểc", "iễc", "iệc", "iêc", "iéc", "ièc", "iẻc", "iẽc", "iẹc", "iec"]},
-            {key: "IEM", forms: ["iém", "ièm", "iểm", "iẽm", "ịem", "iem", "iếm", "iềm", "iểm", "iễm", "iệm", "iêm", "iém", "ièm", "iểm", "iẽm", "ịem", "iem"]},
-            {key: "IEN", forms: ["ien", "ièn", "iẻn", "iẽn", "iẹn", "ien", "iên", "iền", "iển", "iễn", "iện", "iên", "ien", "ièn", "iẻn", "iẽn", "iẹn", "ien"]},
-            {key: "IENG", forms: ["ieng", "ièng", "iẻng", "iẽng", "iẹng", "ieng", "iêng", "iềng", "iểng", "iễng", "iệng", "iêng", "ieng", "ièng", "iẻng", "iẽng", "iẹng", "ieng"]},
-            {key: "IEO", forms: ["iéo", "ièo", "iẻo", "iẽo", "iẹo", "ieo", "iếo", "iềo", "iểo", "iễo", "iệo", "iêo", "iéo", "ièo", "iẻo", "iẽo", "iẹo", "ieo"]},
-            {key: "IEP", forms: ["iép", "ièp", "iẻp", "iẽp", "iẹp", "iep", "iếp", "iềp", "iểp", "iễp", "iệp", "iêp", "iép", "ièp", "iẻp", "iẽp", "iẹp", "iep"]},
-            {key: "IET", forms: ["iét", "ièt", "iẻt", "iẽt", "iẹt", "iet", "iết", "iềt", "iểt", "iễt", "iệt", "iêt", "iét", "ièt", "iẻt", "iẽt", "iẹt", "iet"]},
-            {key: "IEU", forms: ["iéu", "ièu", "iẻu", "iẽu", "iẹu", "ieu", "iếu", "iều", "iểu", "iễu", "iệu", "iêu", "iéu", "ièu", "iẻu", "iẽu", "iẹu", "ieu"]},
-            {key: "IM", forms: ["ím", "ìm", "ỉm", "ĩm", "ịm", "im", "ím", "ìm", "ỉm", "ĩm", "ịm", "im", "ím", "ìm", "ỉm", "ĩm", "ịm", "im"]},
-            {key: "IN", forms: ["ín", "ìn", "ỉn", "ĩn", "ịn", "in", "ín", "ìn", "ỉn", "ĩn", "ịn", "in", "ín", "ìn", "ỉn", "ĩn", "ịn", "in"]},
-            {key: "ING", forms: ["íng", "ìng", "ỉng", "ĩng", "ịng", "ing", "íng", "ìng", "ỉng", "ĩng", "ịng", "ing", "íng", "ìng", "ỉng", "ĩng", "ịng", "ing"]},
-            {key: "INH", forms: ["ính", "ình", "ỉnh", "ĩnh", "ịnh", "inh", "ính", "ình", "ỉnh", "ĩnh", "ịnh", "inh", "ính", "ình", "ỉnh", "ĩnh", "ịnh", "inh"]},
-            {key: "IO", forms: ["ió", "iò", "iỏ", "iõ", "iọ", "io", "iố", "iồ", "iổ", "iỗ", "iộ", "iô", "iớ", "iờ", "iở", "iỡ", "iợ", "iơ"]},
-            {key: "IOI", forms: ["iói", "iòi", "iỏi", "iõi", "iọi", "ioi", "iối", "iồi", "iổi", "iỗi", "iội", "iôi", "iới", "iời", "iởi", "iỡi", "iợi", "iơi"]},
-            {key: "I", forms: ["í", "ì", "ỉ", "ĩ", "ị", "i", "í", "ì", "ỉ", "ĩ", "ị", "i", "í", "ì", "ỉ", "ĩ", "ị", "i"]},
-            {key: "IA", forms: ["ía", "ìa", "ỉa", "ĩa", "ịa", "ia", "ía", "ìa", "ỉa", "ĩa", "ịa", "ia", "ía", "ìa", "ỉa", "ĩa", "ịa", "ia"]},
-            {key: "IAI", forms: ["iái", "iài", "iải", "iãi", "iại", "iai", "iấi", "iầi", "iẩi", "iẫi", "iậi", "iâi", "iắi", "iằi", "iẳi", "iẵi", "iặi", "iăi"]},
-            {key: "IAM", forms: ["iám", "iàm", "iảm", "iãm", "iạm", "iam", "iấm", "iầm", "iẩm", "iẫm", "iậm", "iâm", "iắm", "iằm", "iẳm", "iẵm", "iặm", "iăm"]},
-            {key: "IAN", forms: ["ián", "iàn", "iản", "iãn", "iạn", "ian", "iấn", "iần", "iẩn", "iẫn", "iận", "iân", "iắn", "iằn", "iẳn", "iẵn", "iặn", "iăn"]},
-            {key: "IANG", forms: ["iáng", "iàng", "iảng", "iãng", "iạng", "iang", "iấng", "iầng", "iẩng", "iẫng", "iậng", "iâng", "iắng", "iằng", "iẳng", "iẵng", "iặng", "iăng"]},
-            {key: "IANH", forms: ["iánh", "iành", "iảnh", "iãnh", "iạnh", "ianh", "iấnh", "iầnh", "iẩnh", "iẫnh", "iậnh", "iânh", "iắnh", "iằnh", "iẳnh", "iẵnh", "iặnh", "iănh"]},
-            {key: "IAO", forms: ["iáo", "iào", "iảo", "ião", "iạo", "iao", "iáo", "iào", "iảo", "ião", "iạo", "iao", "iáo", "iào", "iảo", "ião", "iạo", "iao"]},
-            {key: "IAP", forms: ["iáp", "iàp", "iảp", "iãp", "iạp", "iap", "iấp", "iầp", "iẩp", "iẫp", "iập", "iâp", "iắp", "iằp", "iẳp", "iẵp", "iặp", "iăp"]},
-            {key: "IAT", forms: ["iát", "iàt", "iảt", "iãt", "iạt", "iat", "iất", "iầt", "iẩt", "iẫt", "iật", "iât", "iắt", "iằt", "iẳt", "iẵt", "iặt", "iăt"]},
-            {key: "IAU", forms: ["iáu", "iàu", "iảu", "iãu", "iạu", "iau", "iấu", "iầu", "iẩu", "iẫu", "iậu", "iâu", "iáu", "iàu", "iảu", "iãu", "iạu", "iau"]},
-            {key: "AP", forms: ["áp", "àp", "ảp", "ãp", "ạp", "ap", "ấp", "ầp", "ẩp", "ẫp", "ập", "âp", "ắp", "ằp", "ẳp", "ẵp", "ặp", "ăp"]},
-            {key: "AT", forms: ["át", "àt", "ảt", "ãt", "ạt", "at", "ất", "ầt", "ẩt", "ẫt", "ật", "ât", "ắt", "ằt", "ẳt", "ẵt", "ặt", "ăt"]},
-            {key: "AU", forms: ["áu", "àu", "ảu", "ãu", "ạu", "au", "ấu", "ầu", "ẩu", "ẫu", "ậu", "âu", "ắu", "ằu", "ẳu", "ẵu", "ặu", "ău"]},
-            {key: "AY", forms: ["áy", "ày", "ảy", "ãy", "ạy", "ay", "ấy", "ầy", "ẩy", "ẫy", "ậy", "ây", "ắy", "ằy", "ẳy", "ẵy", "ặy", "ăy"]},
-            {key: "E", forms: ["é", "è", "ẻ", "ẽ", "ẹ", "e", "ế", "ề", "ể", "ễ", "ệ", "ê", "é", "è", "ẻ", "ẽ", "ẹ", "e"]},
-            {key: "EM", forms: ["ém", "èm", "ểm", "ẽm", "ẹm", "em", "ếm", "ềm", "ểm", "ễm", "ệm", "êm", "ém", "èm", "ểm", "ẽm", "ẹm", "em"]},
-            {key: "EN", forms: ["én", "èn", "ển", "ễn", "ện", "en", "ến", "ền", "ển", "ễn", "ện", "ên", "én", "èn", "ển", "ễn", "ện", "en"]},
-            {key: "A", forms: ["á", "à", "ả", "ã", "ạ", "a", "ấ", "ầ", "ẩ", "ẫ", "ậ", "â", "ắ", "ằ", "ẳ", "ẵ", "ặ", "ă"]},
-            {key: "AI", forms: ["ái", "ài", "ải", "ãi", "ại", "ai", "ấi", "ầi", "ẩi", "ẫi", "ậi", "âi", "ắi", "ằi", "ẳi", "ẵi", "ặi", "ăi"]},
-            {key: "AM", forms: ["ám", "àm", "ảm", "ãm", "ạm", "am", "ấm", "ầm", "ẩm", "ẫm", "ậm", "âm", "ắm", "ằm", "ẳm", "ẵm", "ặm", "ăm"]},
-            {key: "AN", forms: ["án", "àn", "ản", "ãn", "ạn", "an", "ấn", "ần", "ẩn", "ẫn", "ận", "ân", "ắn", "ằn", "ẳn", "ẵn", "ặn", "ăn"]},
-            {key: "ANG", forms: ["áng", "àng", "ảng", "ãng", "ạng", "ang", "ấng", "ầng", "ẩng", "ẫng", "ậng", "âng", "ắng", "ằng", "ẳng", "ẵng", "ặng", "ăng"]},
-            {key: "ANH", forms: ["ánh", "ành", "ảnh", "ãnh", "ạnh", "anh", "ấnh", "ầnh", "ẩnh", "ẫnh", "ậnh", "ânh", "ắnh", "ằnh", "ẳnh", "ẵnh", "ặnh", "ănh"]},
-            {key: "AO", forms: ["áo", "ào", "ảo", "ão", "ạo", "ao", "ấo", "ầo", "ẩo", "ẫo", "ậo", "âo", "ắo", "ằo", "ẳo", "ẵo", "ặo", "ăo"]},
-            {key: "UE", forms: ["ué", "uè", "uẻ", "uẽ", "uẹ", "ue", "uế", "uề", "uể", "uễ", "uệ", "uê", "ưé", "ưè", "ưẻ", "ưẽ", "ưẹ", "ưe"]},
-            {key: "UEN", forms: ["uên", "uền", "uển", "uễn", "uện", "uen", "uên", "uền", "uển", "uễn", "uện", "uên", "ưên", "ưền", "ưển", "ưễn", "ưện", "ưen"]},
-            {key: "UI", forms: ["úi", "ùi", "ủi", "ũi", "ụi", "ui", "úi", "ùi", "ủi", "ũi", "ụi", "ui", "ứi", "ừi", "ửi", "ữi", "ựi", "ưi"]},
-            {key: "UM", forms: ["úm", "ùm", "ủm", "ũm", "ụm", "um", "úm", "ùm", "ủm", "ũm", "ụm", "um", "ứm", "ừm", "ửm", "ữm", "ựm", "ưm"]},
-            {key: "UN", forms: ["ún", "ùn", "ủn", "ũn", "ụn", "un", "ún", "ùn", "ủn", "ũn", "ụn", "un", "ứn", "ừn", "ửn", "ữn", "ựn", "ưn"]},
-            {key: "UNG", forms: ["úng", "ùng", "ủng", "ũng", "ụng", "ung", "úng", "ùng", "ủng", "ũng", "ụng", "ung", "ứng", "ừng", "ửng", "ững", "ựng", "ưng"]},
-            {key: "UO", forms: ["uó", "uò", "uỏ", "uõ", "uọ", "uo", "uố", "uồ", "uổ", "uỗ", "uộ", "uô", "ướ", "ườ", "ưở", "ưỡ", "ượ", "ươ"]},
-            {key: "UOC", forms: ["uốc", "uộc", "uổc", "uỗc", "uộc", "uoc", "uốc", "uộc", "uổc", "uỗc", "uộc", "uôc", "ưốc", "ưộc", "ưổc", "ưỗc", "ưộc", "ươc"]},
-            {key: "UOI", forms: ["uối", "uồi", "uổi", "uỗi", "uội", "uoi", "uối", "uồi", "uổi", "uỗi", "uội", "uôi", "ưối", "ưồi", "ưổi", "ưỗi", "ưội", "ươi"]},
-            {key: "UON", forms: ["uón", "uòn", "uỏn", "uõn", "uọn", "uon", "uốn", "uồn", "uổn", "uỗn", "uộn", "uôn", "ướn", "ườn", "ưởn", "ưỡn", "ượn", "ươn"]},
-            {key: "UONG", forms: ["uóng", "uòng", "uỏng", "uõng", "uọng", "uong", "uống", "uồng", "uổng", "uỗng", "uộng", "uông", "ướng", "ường", "ưởng", "ưỡng", "ượng", "ương"]},
-            {key: "ONG", forms: ["óng", "òng", "ỏng", "õng", "ọng", "ong", "ống", "ồng", "ổng", "ỗng", "ộng", "ông", "ớng", "ờng", "ởng", "ỡng", "ợng", "ơng"]},
-            {key: "OP", forms: ["óp", "òp", "ỏp", "õp", "ọp", "op", "ốp", "ồp", "ổp", "ỗp", "ộp", "ôp", "ớp", "ờp", "ởp", "ỡp", "ợp", "ơp"]},
-            {key: "OT", forms: ["ót", "òt", "ỏt", "õt", "ọt", "ot", "ốt", "ồt", "ổt", "ỗt", "ột", "ôt", "ớt", "ờt", "ởt", "ỡt", "ợt", "ơt"]},
-            {key: "U", forms: ["ú", "ù", "ủ", "ũ", "ụ", "u", "ú", "ù", "ủ", "ũ", "ụ", "u", "ứ", "ừ", "ử", "ữ", "ự", "ư"]},
-            {key: "UA", forms: ["úa", "ùa", "ủa", "ũa", "ụa", "ua", "úa", "ùa", "ủa", "ũa", "ụa", "ua", "úa", "ùa", "ủa", "ũa", "ụa", "ua"]},
-            {key: "UAI", forms: ["uái", "uài", "uải", "uãi", "uại", "uai", "uấi", "uầi", "uẩi", "uẫi", "uậi", "uâi", "uái", "uài", "uải", "uãi", "uại", "uai"]},
-            {key: "UAN", forms: ["uán", "uàn", "uản", "uãn", "uạn", "uan", "uấn", "uần", "uẩn", "uẫn", "uận", "uân", "uắn", "uằn", "uẳn", "uẵn", "uặn", "uăn"]},
-            {key: "UANG", forms: ["uáng", "uàng", "uảng", "uãng", "uạng", "uang", "uấng", "uầng", "uẩng", "uẫng", "uậng", "uâng", "uắng", "uằng", "uẳng", "uẵng", "uặng", "uăng"]},
-            {key: "UANH", forms: ["uánh", "uành", "uảnh", "uãnh", "uạnh", "uanh", "uấnh", "uầnh", "uẩnh", "uẫnh", "uậnh", "uânh", "uắnh", "uằnh", "uẳnh", "uẵnh", "uặnh", "uănh"]},
-            {key: "UAY", forms: ["uáy", "uày", "uảy", "uãy", "uạy", "uay", "uấy", "uầy", "uẩy", "uẫy", "uậy", "uây", "uắy", "uằy", "uẳy", "uẵy", "uặy", "uăy"]},
-            {key: "UC", forms: ["úc", "ùc", "ủc", "ũc", "ục", "uc", "úc", "ùc", "ủc", "ũc", "ục", "uc", "ức", "ừc", "ửc", "ữc", "ực", "ưc"]},
-            {key: "OAY", forms: ["oáy", "oày", "oảy", "oãy", "oạy", "oay", "oáy", "oày", "oảy", "oãy", "oạy", "oay", "oáy", "oày", "oảy", "oãy", "oạy", "oay"]},
-            {key: "OC", forms: ["óc", "òc", "ỏc", "õc", "ọc", "oc", "ốc", "ồc", "ổc", "ỗc", "ộc", "ôc", "ớc", "ờc", "ởc", "ỡc", "ợc", "ơc"]},
-            {key: "OE", forms: ["óe", "òe", "ỏe", "õe", "ọe", "oe", "óe", "òe", "ỏe", "õe", "ọe", "oe", "óe", "òe", "ỏe", "õe", "ọe", "oe"]},
-            {key: "OI", forms: ["ói", "òi", "ỏi", "õi", "ọi", "oi", "ối", "ồi", "ổi", "ỗi", "ội", "ôi", "ới", "ời", "ởi", "ỡi", "ợi", "ơi"]},
-            {key: "OM", forms: ["óm", "òm", "ỏm", "õm", "ọm", "om", "ốm", "ồm", "ổm", "ỗm", "ộm", "ôm", "ớm", "ờm", "ởm", "ỡm", "ợm", "ơm"]},
-            {key: "ON", forms: ["ón", "òn", "ỏn", "õn", "ọn", "on", "ốn", "ồn", "ổn", "ỗn", "ộn", "ôn", "ớn", "ờn", "ởn", "ỡn", "ợn", "ơn"]},
-            {key: "OAN", forms: ["oán", "oàn", "oản", "oãn", "oạn", "oan", "oán", "oàn", "oản", "oãn", "oạn", "oan", "oán", "oàn", "oản", "oãn", "oạn", "oan"]},
-            {key: "OANG", forms: ["oáng", "oàng", "oảng", "oãng", "oạng", "oang", "oáng", "oàng", "oảng", "oãng", "oạng", "oang", "oáng", "oàng", "oảng", "oãng", "oạng", "oang"]},
-            {key: "OANH", forms: ["oánh", "oành", "oảnh", "oãnh", "oạnh", "oanh", "oánh", "oành", "oảnh", "oãnh", "oạnh", "oanh", "oánh", "oành", "oảnh", "oãnh", "oạnh", "oanh"]},
-            {key: "OAT", forms: ["oát", "òat", "oảt", "oãt", "oạt", "oat", "oát", "òat", "oảt", "oãt", "oạt", "oat", "oát", "òat", "oảt", "oãt", "oạt", "oat"]},
-            {key: "Y", forms: ["ý", "ỳ", "ỷ", "ỹ", "ỵ", "y", "ý", "ỳ", "ỷ", "ỹ", "ỵ", "y", "ý", "ỳ", "ỷ", "ỹ", "ỵ", "y"]},
-            {key: "YEN", forms: ["yen", "yèn", "yẻn", "yẽn", "yẹn", "yen", "yên", "yền", "yển", "yễn", "yện", "yên", "yen", "yèn", "yẻn", "yẽn", "yẹn", "yen"]},
-            {key: "YET", forms: ["yét", "yèt", "yẻt", "yẽt", "yẹt", "yet", "yết", "yềt", "yểt", "yễt", "yệt", "yêt", "yét", "yèt", "yẻt", "yẽt", "yẹt", "yet"]},
-            {key: "YEU", forms: ["yêu", "yều", "yểu", "yễu", "yệu", "yeu", "yêu", "yều", "yểu", "yễu", "yệu", "yêu", "yêu", "yều", "yểu", "yễu", "yệu", "yeu"]},
-            {key: "UY", forms: ["úy", "ùy", "ủy", "ũy", "ụy", "uy", "úy", "ùy", "ủy", "ũy", "ụy", "uy", "ứy", "ừy", "ửy", "ữy", "ựy", "ưy"]},
-            {key: "UYET", forms: ["uyét", "uyèt", "uyẻt", "uyẽt", "uyẹt", "uyet", "uyết", "uyềt", "uyểt", "uyễt", "uyệt", "uyêt", "uyét", "uyèt", "uyẻt", "uyẽt", "uyẹt", "uyet"]},
-            {key: "AC", forms: ["ác", "àc", "ảc", "ãc", "ạc", "ac", "ấc", "ầc", "ẩc", "ẫc", "ậc", "âc", "ắc", "ằc", "ẳc", "ẵc", "ặc", "ăc"]},
-            {key: "ACH", forms: ["ách", "àch", "ảch", "ãch", "ạch", "ach", "ấch", "ầch", "ẩch", "ẫch", "ậch", "âch", "ắch", "ằch", "ẳch", "ẵch", "ặch", "ăch"]},
-            {key: "EC", forms: ["éc", "èc", "ẻc", "ẽc", "ẹc", "ec", "ếc", "ềc", "ểc", "ễc", "ệc", "êc", "éc", "èc", "ẻc", "ẽc", "ẹc", "ec"]},
-            {key: "ECH", forms: ["éch", "èch", "ẻch", "ẽch", "ẹch", "ech", "ếch", "ềch", "ểch", "ễch", "ệch", "êch", "éch", "èch", "ẻch", "ẽch", "ẹch", "ech"]},
-            {key: "ENG", forms: ["éng", "èng", "ẻng", "ẽng", "ẹng", "eng", "ếng", "ềng", "ểng", "ễng", "ệng", "êng", "éng", "èng", "ẻng", "ẽng", "ẹng", "eng"]},
-            {key: "ENH", forms: ["enh", "ènh", "ẻnh", "ẽnh", "ẹnh", "enh", "ếnh", "ềnh", "ểnh", "ễnh", "ệnh", "ênh", "enh", "ènh", "ẻnh", "ẽnh", "ẹnh", "enh"]},
-            {key: "EO", forms: ["éo", "èo", "ẻo", "ẽo", "ẹo", "eo", "éo", "èo", "ẻo", "ẽo", "ẹo", "eo", "éo", "èo", "ẻo", "ẽo", "ẹo", "eo"]},
-            {key: "EP", forms: ["ép", "èp", "ẻp", "ẽp", "ẹp", "ep", "ếp", "ềp", "ểp", "ễp", "ệp", "êp", "ép", "èp", "ẻp", "ẽp", "ẹp", "ep"]},
-            {key: "ET", forms: ["ét", "èt", "ẻt", "ẽt", "ẹt", "et", "ết", "ềt", "ểt", "ễt", "ệt", "êt", "ét", "èt", "ẻt", "ẽt", "ẹt", "et"]},
-            {key: "EU", forms: ["éu", "èu", "ẻu", "ẽu", "ẹu", "eu", "ếu", "ều", "ểu", "ễu", "ệu", "êu", "éu", "èu", "ẻu", "ẽu", "ẹu", "eu"]},
-            {key: "IAC", forms: ["iác", "iàc", "iảc", "iãc", "iạc", "iac", "iấc", "iầc", "iẩc", "iẫc", "iậc", "iâc", "iắc", "iằc", "iẳc", "iẵc", "iặc", "iăc"]},
-            {key: "ION", forms: ["ión", "ìon", "ỉon", "ĩon", "ịon", "ion", "ión", "ìon", "ỉon", "ĩon", "ịon", "ion", "ión", "ìon", "ỉon", "ĩon", "ịon", "ion"]},
-            {key: "IONG", forms: ["ióng", "ìong", "ỉong", "ĩong", "ịong", "iong", "ióng", "ìong", "ỉong", "ĩong", "ịong", "iong", "ióng", "ìong", "ỉong", "ĩong", "ịong", "iong"]},
-            {key: "IOT", forms: ["iót", "ìot", "ỉot", "ĩot", "ịot", "iot", "iót", "ìot", "ỉot", "ĩot", "ịot", "iot", "iót", "ìot", "ỉot", "ĩot", "ịot", "iot"]},
-            {key: "IP", forms: ["íp", "ìp", "ỉp", "ĩp", "ịp", "ip", "íp", "ìp", "ỉp", "ĩp", "ịp", "ip", "íp", "ìp", "ỉp", "ĩp", "ịp", "ip"]},
-            {key: "IT", forms: ["ít", "ìt", "ỉt", "ĩt", "ịt", "it", "ít", "ìt", "ỉt", "ĩt", "ịt", "it", "ít", "ìt", "ỉt", "ĩt", "ịt", "it"]},
-            {key: "IU", forms: ["iú", "ìu", "ỉu", "ĩu", "ịu", "iu", "iú", "ìu", "ỉu", "ĩu", "ịu", "iu", "iú", "ìu", "ỉu", "ĩu", "ịu", "iu"]},
-            {key: "IUA", forms: ["iúa", "iùa", "iủa", "iũa", "iụa", "iua", "iúa", "iùa", "iủa", "iũa", "iụa", "iua", "iúa", "iùa", "iủa", "iũa", "iụa", "iua"]},
-            {key: "IUC", forms: ["iúc", "iùc", "iủc", "iũc", "iục", "iuc", "iúc", "iùc", "iủc", "iũc", "iục", "iuc", "iúc", "iùc", "iủc", "iũc", "iục", "iuc"]},
-            {key: "IUI", forms: ["íui", "ìui", "ỉui", "ĩui", "ịui", "iui", "íui", "ìui", "ỉui", "ĩui", "ịui", "iui", "íui", "ìui", "ỉui", "ĩui", "ịui", "iui"]},
-            {key: "IUN", forms: ["iún", "iùn", "iủn", "iũn", "iụn", "iun", "iún", "iùn", "iủn", "iũn", "iụn", "iun", "iún", "iùn", "iủn", "iũn", "iụn", "iun"]},
-            {key: "IUONG", forms: ["íuong", "ìuong", "ỉuong", "ĩuong", "ịuong", "iuong", "íuong", "ìuong", "ỉuong", "ĩuong", "ịuong", "iuong", "iướng", "iường", "iưởng", "iưỡng", "iượng", "iương"]},
-            {key: "IUP", forms: ["iúp", "iùp", "iủp", "iũp", "iụp", "iup", "iúp", "iùp", "iủp", "iũp", "iụp", "iup", "íup", "ìup", "ỉup", "iũp", "iụp", "iup"]},
-            {key: "O", forms: ["ó", "ò", "ỏ", "õ", "ọ", "o", "ố", "ồ", "ổ", "ỗ", "ộ", "ô", "ớ", "ờ", "ở", "ỡ", "ợ", "ơ"]},
-            {key: "OA", forms: ["óa", "òa", "ỏa", "õa", "ọa", "oa", "óa", "òa", "ỏa", "õa", "ọa", "oa", "óa", "òa", "ỏa", "õa", "ọa", "oa"]},
-            {key: "OAC", forms: ["oác", "oàc", "oảc", "oãc", "oạc", "oac", "oác", "oàc", "oảc", "oãc", "oạc", "oac", "oắc", "oằc", "oẳc", "oẵc", "oặc", "oăc"]},
-            {key: "OACH", forms: ["oách", "oàch", "oảch", "oãch", "oạch", "oach", "oách", "oàch", "oảch", "oãch", "oạch", "oach", "oách", "oàch", "oảch", "oãch", "oạch", "oach"]},
-            {key: "OAI", forms: ["oái", "oài", "oải", "oãi", "oại", "oai", "oái", "oài", "oải", "oãi", "oại", "oai", "oái", "oài", "oải", "oãi", "oại", "oai"]},
-            {key: "OAM", forms: ["oám", "oàm", "oảm", "oãm", "oạm", "oam", "oám", "oàm", "oảm", "oãm", "oạm", "oam", "oám", "oàm", "oảm", "oãm", "oạm", "oam"]},
-            {key: "OEN", forms: ["oén", "oèn", "oẻn", "oẽn", "oẹn", "oen", "oến", "oền", "oển", "oễn", "oện", "oên", "oén", "oèn", "oẻn", "oẽn", "oẹn", "oen"]},
-            {key: "OEO", forms: ["oéo", "oèo", "oẻo", "oẽo", "oẹo", "oeo", "oếo", "oềo", "oểo", "oễo", "oệo", "oêo", "oéo", "oèo", "oẻo", "oẽo", "oẹo", "oeo"]},
-            {key: "OET", forms: ["oét", "oèt", "oẻt", "oẽt", "oẹt", "oet", "oết", "oềt", "oểt", "oễt", "oệt", "oêt", "oét", "oèt", "oẻt", "oẽt", "oẹt", "oet"]},
-            {key: "OOC", forms: ["oóc", "oòc", "oỏc", "oõc", "oọc", "ooc", "oóc", "oòc", "oỏc", "oõc", "oọc", "ooc", "oóc", "oòc", "oỏc", "oõc", "oọc", "ooc"]},
-            {key: "OONG", forms: ["oóng", "oòng", "oỏng", "oõng", "oọng", "oong", "oóng", "oòng", "oỏng", "oõng", "oọng", "oong", "oóng", "oòng", "oỏng", "oõng", "oọng", "oong"]},
-            {key: "UAC", forms: ["uác", "uàc", "uảc", "uãc", "uạc", "uac", "uấc", "uầc", "uẩc", "uẫc", "uậc", "uâc", "uắc", "uằc", "uẳc", "uẵc", "uặc", "uăc"]},
-            {key: "UACH", forms: ["uách", "uàch", "uảch", "uãch", "uạch", "uach", "uấch", "uầch", "uẩch", "uẫch", "uậch", "uâch", "uắch", "uằch", "uẳch", "uẵch", "uặch", "uăch"]},
-            {key: "UAI", forms: ["uái", "uài", "uải", "uãi", "uại", "uai", "uấi", "uầi", "uẩi", "uẫi", "uậi", "uâi", "uái", "uài", "uải", "uãi", "uại", "uai"]},
-            {key: "UAM", forms: ["uám", "uàm", "uảm", "uãm", "uạm", "uam", "uấm", "uầm", "uẩm", "uẫm", "uậm", "uâm", "uám", "uàm", "uảm", "uãm", "uạm", "uam"]},
-            {key: "UAO", forms: ["uáo", "uào", "uảo", "uão", "uạo", "uao", "uáo", "uào", "uảo", "uão", "uạo", "uao", "uáo", "uào", "uảo", "uão", "uạo", "uao"]},
-            {key: "UAT", forms: ["uát", "uàt", "uảt", "uãt", "uạt", "uat", "uất", "uầt", "uẩt", "uẫt", "uật", "uât", "uắt", "uằt", "uẳt", "uẵt", "uặt", "uăt"]},
-            {key: "UECH", forms: ["uéch", "uèch", "uẻch", "uẽch", "uẹch", "uech", "uếch", "uềch", "uểch", "uễch", "uệch", "uêch", "uéch", "uèch", "uẻch", "uẽch", "uẹch", "uech"]},
-            {key: "UENH", forms: ["uénh", "uènh", "uẻnh", "uẽnh", "uẹnh", "uenh", "uếnh", "uềnh", "uểnh", "uễnh", "uệnh", "uênh", "uénh", "uènh", "uẻnh", "uẽnh", "uẹnh", "uenh"]},
-            {key: "UEO", forms: ["uéo", "uèo", "uẻo", "uẽo", "uẹo", "ueo", "uếo", "uềo", "uểo", "uễo", "uệo", "uêo", "uéo", "uèo", "uẻo", "uẽo", "uẹo", "ueo"]},
-            {key: "UET", forms: ["uét", "uèt", "uẻt", "uẽt", "uẹt", "uet", "uết", "uềt", "uểt", "uễt", "uệt", "uêt", "uét", "uèt", "uẻt", "uẽt", "uẹt", "uet"]},
-            {key: "UOM", forms: ["uóm", "uòm", "uỏm", "uõm", "uọm", "uom", "uốm", "uồm", "uổm", "uỗm", "uộm", "uôm", "ướm", "ườm", "ưởm", "ưỡm", "ượm", "ươm"]},
-            {key: "UOP", forms: ["uóp", "uòp", "uỏp", "uõp", "uọp", "uop", "uốp", "uồp", "uổp", "uỗp", "uộp", "uôp", "ướp", "ườp", "ưởp", "ưỡp", "ượp", "ươp"]},
-            {key: "OUT", forms: ["óut", "òut", "ỏut", "õut", "ọut", "out", "óut", "òut", "ỏut", "õut", "ọut", "out", "óut", "òut", "ỏut", "õut", "ọut", "out"]},
-            {key: "UOU", forms: ["uóu", "uòu", "uỏu", "uõu", "uọu", "uou", "uốu", "uồu", "uổu", "uỗu", "uộu", "uôu", "ướu", "ườu", "ưởu", "ưỡu", "ượu", "ươu"]},
-            {key: "UP", forms: ["úp", "ùp", "ủp", "ũp", "ụp", "up", "úp", "ùp", "ủp", "ũp", "ụp", "up", "ứp", "ừp", "ửp", "ữp", "ựp", "ưp"]},
-            {key: "UT", forms: ["út", "ùt", "ủt", "ũt", "ụt", "ut", "út", "ùt", "ủt", "ũt", "ụt", "ut", "ứt", "ừt", "ửt", "ữt", "ựt", "ưt"]},
-            {key: "UU", forms: ["úu", "ùu", "ủu", "ũu", "ụu", "uu", "úu", "ùu", "ủu", "ũu", "ụu", "uu", "ứu", "ừu", "ửu", "ữu", "ựu", "ưu"]},
-            {key: "UYA", forms: ["uýa", "uỳa", "uỷa", "uỹa", "uỵa", "uya", "uýa", "uỳa", "uỷa", "uỹa", "uỵa", "uya", "uýa", "uỳa", "uỷa", "uỹa", "uỵa", "uya"]},
-            {key: "UYCH", forms: ["uých", "uỳch", "uỷch", "uỹch", "uỵch", "uych", "uých", "uỳch", "uỷch", "uỹch", "uỵch", "uych", "uých", "uỳch", "uỷch", "uỹch", "uỵch", "uych"]},
-            {key: "UYEN", forms: ["uyén", "uyèn", "uyẻn", "uyẽn", "uyẹn", "uyen", "uyến", "uyền", "uyển", "uyễn", "uyện", "uyên", "uyén", "uyèn", "uyẻn", "uyẽn", "uyẹn", "uyen"]},
-            {key: "UYET", forms: ["uyét", "uyèt", "uyẻt", "uyẽt", "uyẹt", "uyet", "uyết", "uyềt", "uyểt", "uyễt", "uyệt", "uyêt", "uyét", "uyèt", "uyẻt", "uyẽt", "uyẹt", "uyet"]},
-            {key: "UYNH", forms: ["uýnh", "uỳnh", "uỷnh", "uỹnh", "uỵnh", "uynh", "uýnh", "uỳnh", "uỷnh", "uỹnh", "uỵnh", "uynh", "uýnh", "uỳnh", "uỷnh", "uỹnh", "uỵnh", "uynh"]},
-            {key: "UYP", forms: ["uýp", "uỳp", "uỷp", "uỹp", "uỵp", "uyp", "uýp", "uỳp", "uỷp", "uỹp", "uỵp", "uyp", "uýp", "uỳp", "uỷp", "uỹp", "uỵp", "uyp"]},
-            {key: "UYT", forms: ["uýt", "uỳt", "uỷt", "uỹt", "uỵt", "uyt", "uýt", "uỳt", "uỷt", "uỹt", "uỵt", "uyt", "uýt", "uỳt", "uỷt", "uỹt", "uỵt", "uyt"]},
-            {key: "UYU", forms: ["uýu", "uỳu", "uỷu", "uỹu", "uỵu", "uyu", "uýu", "uỳu", "uỷu", "uỹu", "uỵu", "uyu", "uýu", "uỳu", "uỷu", "uỹu", "uỵu", "uyu"]},
-            {key: "YEM", forms: ["yém", "yèm", "yẻm", "yẽm", "yẹm", "yem", "yếm", "yềm", "yểm", "yễm", "yệm", "yêm", "yém", "yèm", "yẻm", "yẽm", "yẹm", "yem"]},
-            {key: "OAP", forms: ["oáp", "oàp", "oảp", "oãp", "oạp", "oap", "oáp", "oàp", "oảp", "oãp", "oạp", "oap", "oáp", "oàp", "oảp", "oãp", "oạp", "oap"]}
-    ];
+    // Bảng chuyển đổi Tiếng Việt (giữ nguyên)
 
     // === GOOGLE TTS CONFIGURATION ===
     const TTS_CONFIG = {
@@ -2307,15 +1605,43 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function startListeningToActions() {
-        // Lắng nghe các hành động mới
-        database.ref('actions').orderByChild('timestamp').startAt(Date.now()).on('child_added', (snapshot) => {
+        // Lắng nghe các hành động mới - FIXED: Sử dụng timestamp để tránh lặp
+        const now = Date.now();
+        database.ref('actions').orderByChild('timestamp').startAt(now).on('child_added', (snapshot) => {
+            const actionId = snapshot.key;
             const action = snapshot.val();
             
+            // FIX: Bỏ qua nếu đã xử lý action này
+            if (processedActionIds.has(actionId)) {
+                return;
+            }
+            
             // Bỏ qua hành động của chính thiết bị này
-            if (action.deviceId === deviceId) return;
+            if (action.deviceId === deviceId) {
+                processedActionIds.add(actionId);
+                return;
+            }
+            
+            // FIX: Kiểm tra xem hành động này từ thiết bị này đã được xử lý gần đây chưa
+            const lastActionTime = lastActionFromDevice.get(action.deviceId) || 0;
+            if (action.timestamp <= lastActionTime) {
+                return; // Hành động cũ, bỏ qua
+            }
+            
+            // Đánh dấu đã xử lý
+            processedActionIds.add(actionId);
+            lastActionFromDevice.set(action.deviceId, action.timestamp);
+            
+            // Giới hạn kích thước Set
+            if (processedActionIds.size > MAX_PROCESSED_IDS) {
+                // Chuyển Set thành mảng và xóa 100 phần tử cũ nhất
+                const array = Array.from(processedActionIds);
+                const toRemove = array.slice(0, Math.min(100, array.length));
+                toRemove.forEach(id => processedActionIds.delete(id));
+            }
             
             // Xử lý hành động từ thiết bị khác
-            processRemoteAction(action);
+            processRemoteAction(action, actionId);
         });
         
         // Load lịch sử hành động gần đây
@@ -2355,8 +1681,16 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
     
-    function processRemoteAction(action) {
-        if (isProcessingRemoteAction) return;
+    function processRemoteAction(action, actionId = null) {
+        if (isProcessingRemoteAction) {
+            // FIX: Nếu đang xử lý, đợi một chút rồi thử lại
+            setTimeout(() => {
+                if (!processedActionIds.has(actionId)) {
+                    processRemoteAction(action, actionId);
+                }
+            }, 100);
+            return;
+        }
         
         isProcessingRemoteAction = true;
         
@@ -2369,7 +1703,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Xử lý hành động dựa trên loại
             switch (action.type) {
                 case 'addWord':
-                    if (action.data && action.data.word) {
+                    if (action.data && action.data.word && action.data.word !== displayBuffer) {
                         displayBuffer = action.data.word;
                         addWordToSentence();
                     }
@@ -2392,11 +1726,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     break;
                     
                 case 'startCalibration':
-                    startCalibration();
+                    if (!isCalibrating) startCalibration();
                     break;
                     
                 case 'stopCalibration':
-                    stopCalibration();
+                    if (isCalibrating) stopCalibration();
                     break;
                     
                 case 'resetCalibration':
@@ -2409,14 +1743,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                 case 'translate':
                     if (action.data) {
-                        document.getElementById('translationInput').value = action.data.text || '';
-                        if (action.data.sourceLang) {
-                            document.getElementById('sourceLanguage').value = action.data.sourceLang;
+                        const currentInput = document.getElementById('translationInput').value;
+                        if (currentInput !== action.data.text) {
+                            document.getElementById('translationInput').value = action.data.text || '';
+                            if (action.data.sourceLang) {
+                                document.getElementById('sourceLanguage').value = action.data.sourceLang;
+                            }
+                            if (action.data.targetLang) {
+                                document.getElementById('targetLanguage').value = action.data.targetLang;
+                            }
+                            setTimeout(() => translateWithGoogle(), 100);
                         }
-                        if (action.data.targetLang) {
-                            document.getElementById('targetLanguage').value = action.data.targetLang;
-                        }
-                        setTimeout(() => translateWithGoogle(), 100);
                     }
                     break;
                     
@@ -2512,9 +1849,10 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             log('SYNC', `Lỗi xử lý hành động từ xa: ${error.message}`);
         } finally {
+            // FIX: Đặt lại trạng thái xử lý sau 50ms để tránh lặp
             setTimeout(() => {
                 isProcessingRemoteAction = false;
-            }, 100);
+            }, 50);
         }
     }
     
@@ -2643,6 +1981,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     log('SYNC', 'Đã xóa tất cả dữ liệu đồng bộ');
                     document.getElementById('actionHistory').innerHTML = '<div class="log-entry">Đã xóa lịch sử đồng bộ</div>';
                     syncActions = [];
+                    processedActionIds.clear();
+                    lastActionFromDevice.clear();
                     document.getElementById('syncActionsCount').textContent = '0';
                     document.getElementById('syncCount').textContent = '0';
                 })
@@ -2668,7 +2008,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // === HÀM HIỆU CHUẨN (có thêm logAction) ===
+    // === HÀM HIỆU CHUẨN ===
     function startCalibration() {
         if (isCalibrating) return;
         
@@ -3147,10 +2487,7 @@ document.addEventListener('DOMContentLoaded', function() {
         logAction('translateSuggestion', { suggestion: text });
     }
 
-    // === CÁC HÀM HỖ TRỢ KHÁC (giữ nguyên) ===
-    
-    // Các hàm tối ưu hóa, xử lý dữ liệu cảm biến, hiển thị UI...
-    // (Giữ nguyên tất cả các hàm từ code gốc)
+    // === CÁC HÀM HỖ TRỢ KHÁC ===
     
     async function fetchFirebaseDataOptimized() {
         if (isFetching) return null;
