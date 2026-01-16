@@ -1143,23 +1143,23 @@
         <div class="flex-sensor-values">
             <div class="flex-value-item">
                 <div class="flex-value-label">CB0</div>
+                <div class="flex-value-number" id="flexHeader3">0</div>
+                <div class="flex-value-label" id="flexHeaderState3">Thẳng</div>
+            </div>
+            <div class="flex-value-item">
+                <div class="flex-value-label">CB1</div>
                 <div class="flex-value-number" id="flexHeader0">0</div>
                 <div class="flex-value-label" id="flexHeaderState0">Thẳng</div>
             </div>
             <div class="flex-value-item">
-                <div class="flex-value-label">CB1</div>
+                <div class="flex-value-label">CB2</div>
                 <div class="flex-value-number" id="flexHeader1">0</div>
                 <div class="flex-value-label" id="flexHeaderState1">Thẳng</div>
             </div>
             <div class="flex-value-item">
-                <div class="flex-value-label">CB2</div>
+                <div class="flex-value-label">CB3</div>
                 <div class="flex-value-number" id="flexHeader2">0</div>
                 <div class="flex-value-label" id="flexHeaderState2">Thẳng</div>
-            </div>
-            <div class="flex-value-item">
-                <div class="flex-value-label">CB3</div>
-                <div class="flex-value-number" id="flexHeader3">0</div>
-                <div class="flex-value-label" id="flexHeaderState3">Thẳng</div>
             </div>
         </div>
     </div>
@@ -1479,7 +1479,7 @@
     let holdStartMs = 0;
     let holdFired = false;
     const DEBOUNCE_COUNT = 3;
-    const HOLD_MS_DEFAULT = 1000;
+    const HOLD_MS_DEFAULT = 300;
     const POST_HOLD_COOLDOWN = 800;
     let lastActionMs = 0;
     let lastStateString = '';
