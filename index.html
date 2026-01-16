@@ -2,57 +2,103 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Ứng dụng Dịch Thủ Ngữ với Google TTS Proxy</title>
-    <!-- CSS giữ nguyên từ code gốc -->
+    <!-- CSS với tối ưu iPhone -->
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-text-size-adjust: 100%;
+            -webkit-font-smoothing: antialiased;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: #333;
             min-height: 100vh;
-            padding: 20px;
+            padding: 10px;
+            -webkit-overflow-scrolling: touch;
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 100%;
             margin: 0 auto;
             background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
             overflow: hidden;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Header CẢM BIẾN UỐN */
+        .flex-sensor-header {
+            background: linear-gradient(to right, #4CAF50, #45a049);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            border-bottom: 3px solid #388E3C;
+        }
+
+        .flex-sensor-header h2 {
+            font-size: 1.4rem;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .flex-sensor-values {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .flex-value-item {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 8px 5px;
+            text-align: center;
+        }
+
+        .flex-value-number {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin: 3px 0;
+        }
+
+        .flex-value-label {
+            font-size: 0.7rem;
+            opacity: 0.9;
         }
 
         header {
             background: linear-gradient(to right, #4A00E0, #8E2DE2);
             color: white;
-            padding: 20px;
+            padding: 15px;
             text-align: center;
         }
 
         h1 {
-            font-size: 2rem;
+            font-size: 1.3rem;
             margin-bottom: 5px;
+            line-height: 1.3;
         }
 
         .dashboard {
-            padding: 20px;
+            padding: 15px;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
         }
 
         .card {
             background: white;
             border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            padding: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             border: 1px solid #eaeaea;
             will-change: transform, opacity;
             contain: content;
@@ -60,9 +106,10 @@
 
         .card h3 {
             color: #4A00E0;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
             border-bottom: 2px solid #f0f0f0;
+            font-size: 1.1rem;
         }
 
         /* === CARD HIỆU CHUẨN === */
@@ -72,11 +119,12 @@
         }
 
         .calibration-status {
-            margin: 15px 0;
-            padding: 15px;
-            border-radius: 10px;
+            margin: 12px 0;
+            padding: 12px;
+            border-radius: 8px;
             text-align: center;
             font-weight: bold;
+            font-size: 0.9rem;
         }
 
         .calibrating {
@@ -112,84 +160,85 @@
 
         @keyframes countdown {
             0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
+            50% { transform: scale(1.05); }
             100% { transform: scale(1); }
         }
 
         .calibration-display {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin: 15px 0;
+            gap: 12px;
+            margin: 12px 0;
         }
 
         .sensor-calibration {
-            padding: 15px;
+            padding: 12px;
             background: white;
-            border-radius: 10px;
+            border-radius: 8px;
             border: 1px solid #eaeaea;
             text-align: center;
         }
 
         .sensor-name {
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             color: #666;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .sensor-value {
-            font-size: 1.8rem;
+            font-size: 1.4rem;
             font-weight: bold;
             margin: 5px 0;
         }
 
         .sensor-max {
-            font-size: 1.2rem;
+            font-size: 1rem;
             color: #4CAF50;
             font-weight: bold;
         }
 
         .sensor-threshold {
-            font-size: 1rem;
+            font-size: 0.9rem;
             color: #2196F3;
             margin-top: 5px;
         }
 
         .progress-container {
             width: 100%;
-            height: 20px;
+            height: 16px;
             background: #f0f0f0;
-            border-radius: 10px;
+            border-radius: 8px;
             overflow: hidden;
-            margin: 10px 0;
+            margin: 8px 0;
         }
 
         .progress-bar {
             height: 100%;
             background: linear-gradient(to right, #4CAF50, #45a049);
-            border-radius: 10px;
+            border-radius: 8px;
             transition: width 0.3s ease;
         }
 
         .calibration-countdown {
-            font-size: 2.5rem;
+            font-size: 2rem;
             font-weight: bold;
             color: #FF5722;
-            margin: 10px 0;
+            margin: 8px 0;
             animation: countdown 1s infinite;
         }
 
         .calibration-instructions {
-            padding: 15px;
+            padding: 12px;
             background: #f8f9fa;
-            border-radius: 10px;
-            margin: 15px 0;
+            border-radius: 8px;
+            margin: 12px 0;
             border-left: 4px solid #2196F3;
+            font-size: 0.9rem;
         }
 
         .calibration-step {
-            margin: 8px 0;
-            padding-left: 20px;
+            margin: 6px 0;
+            padding-left: 16px;
             position: relative;
         }
 
@@ -204,113 +253,115 @@
         .flex-sensor-legend {
             display: flex;
             justify-content: space-around;
-            margin: 15px 0;
-            padding: 10px;
+            margin: 12px 0;
+            padding: 8px;
             background: #f8f9fa;
-            border-radius: 10px;
+            border-radius: 8px;
         }
 
         .legend-item {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .legend-color {
-            width: 20px;
-            height: 20px;
+            width: 16px;
+            height: 16px;
             border-radius: 4px;
         }
 
         .legend-text {
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             color: #666;
         }
 
         .conversion-display {
-            font-size: 1.5rem;
+            font-size: 1.2rem;
             font-weight: bold;
             color: #2196F3;
-            margin: 10px 0;
-            min-height: 60px;
+            margin: 8px 0;
+            min-height: 50px;
             display: flex;
             align-items: center;
             justify-content: center;
             background: #E3F2FD;
-            border-radius: 10px;
-            padding: 15px;
+            border-radius: 8px;
+            padding: 12px;
             border: 2px solid #2196F3;
-            line-height: 1.4;
+            line-height: 1.3;
             contain: strict;
             transform: translateZ(0);
         }
 
         .sentence-display {
-            font-size: 1.8rem;
+            font-size: 1.4rem;
             font-weight: bold;
             color: #4CAF50;
-            margin: 10px 0;
-            min-height: 80px;
+            margin: 8px 0;
+            min-height: 60px;
             display: flex;
             align-items: center;
             justify-content: center;
             background: #E8F5E9;
-            border-radius: 10px;
-            padding: 20px;
+            border-radius: 8px;
+            padding: 15px;
             border: 2px solid #4CAF50;
-            line-height: 1.4;
+            line-height: 1.3;
             contain: strict;
             transform: translateZ(0);
         }
 
         .current-word-display {
-            font-size: 2rem;
+            font-size: 1.5rem;
             font-weight: bold;
             color: #FF5722;
-            margin: 10px 0;
-            min-height: 60px;
+            margin: 8px 0;
+            min-height: 50px;
             display: flex;
             align-items: center;
             justify-content: center;
             background: #FFF8E1;
-            border-radius: 10px;
-            padding: 15px;
+            border-radius: 8px;
+            padding: 12px;
             border: 2px dashed #FFC107;
             contain: strict;
             transform: translateZ(0);
         }
 
         .word-list {
-            margin: 15px 0;
-            padding: 15px;
+            margin: 12px 0;
+            padding: 12px;
             background: #f8f9fa;
-            border-radius: 10px;
+            border-radius: 8px;
             border: 1px solid #eaeaea;
+            font-size: 0.9rem;
         }
 
         .word-item {
             display: inline-block;
-            padding: 8px 15px;
-            margin: 5px;
+            padding: 6px 12px;
+            margin: 4px;
             background: #e3f2fd;
-            border-radius: 20px;
+            border-radius: 15px;
             border: 1px solid #bbdefb;
+            font-size: 0.85rem;
         }
 
         .word-count {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: #666;
-            margin-top: 10px;
+            margin-top: 8px;
         }
 
         .sensor-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
+            gap: 8px;
         }
 
         .sensor-item {
-            padding: 12px;
+            padding: 10px;
             background: #f8f9fa;
             border-radius: 8px;
             border-left: 4px solid;
@@ -325,30 +376,31 @@
         }
 
         .sensor-value {
-            font-size: 1.8rem;
+            font-size: 1.4rem;
             font-weight: bold;
             color: #333;
-            margin: 5px 0;
+            margin: 4px 0;
         }
 
         .sensor-label {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: #444;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
         }
 
         .flex-box {
             display: inline-block;
-            width: 40px;
-            height: 40px;
-            line-height: 40px;
+            width: 35px;
+            height: 35px;
+            line-height: 35px;
             text-align: center;
             background: #f8f9fa;
-            border-radius: 8px;
+            border-radius: 6px;
             margin: 2px;
             font-weight: bold;
             border: 2px solid transparent;
+            font-size: 0.9rem;
         }
 
         .flex-box.active-0 { background: #4CAF50; color: white; }
@@ -357,14 +409,14 @@
 
         .controls {
             display: flex;
-            gap: 10px;
-            margin-top: 20px;
+            gap: 8px;
+            margin-top: 15px;
             justify-content: center;
             flex-wrap: wrap;
         }
 
         button {
-            padding: 12px 24px;
+            padding: 10px 18px;
             border: none;
             border-radius: 8px;
             background: linear-gradient(to right, #4A00E0, #8E2DE2);
@@ -372,11 +424,14 @@
             font-weight: bold;
             cursor: pointer;
             transition: all 0.2s;
+            font-size: 0.9rem;
+            min-height: 44px;
+            -webkit-appearance: none;
+            touch-action: manipulation;
         }
 
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        button:active {
+            transform: scale(0.98);
         }
 
         button.red {
@@ -401,19 +456,21 @@
 
         .status-bar {
             background: #f8f9fa;
-            padding: 15px;
+            padding: 12px;
             border-top: 1px solid #eaeaea;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            font-size: 0.85rem;
         }
 
         .indicator {
-            width: 12px;
-            height: 12px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
             display: inline-block;
-            margin-right: 8px;
+            margin-right: 6px;
         }
 
         .indicator.online {
@@ -439,27 +496,28 @@
         }
 
         .language-select {
-            padding: 8px 15px;
-            border-radius: 8px;
+            padding: 8px 12px;
+            border-radius: 6px;
             border: 1px solid #ccc;
             background: white;
-            font-size: 1rem;
+            font-size: 0.9rem;
+            min-height: 44px;
+            -webkit-appearance: none;
         }
 
         .phrase-btn {
-            padding: 8px 15px;
+            padding: 8px 12px;
             background: linear-gradient(to right, #FF9800, #FF5722);
             color: white;
             border: none;
-            border-radius: 20px;
-            font-size: 0.9rem;
+            border-radius: 15px;
+            font-size: 0.85rem;
             cursor: pointer;
             transition: all 0.2s;
         }
 
-        .phrase-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 3px 10px rgba(255,87,34,0.3);
+        .phrase-btn:active {
+            transform: scale(0.98);
         }
 
         .loading {
@@ -481,75 +539,79 @@
 
         textarea {
             width: 100%;
-            height: 120px;
-            font-size: 1.5rem;
-            padding: 15px;
+            height: 100px;
+            font-size: 1.2rem;
+            padding: 12px;
             border: 2px solid #4CAF50;
-            border-radius: 10px;
+            border-radius: 8px;
             background: #E8F5E9;
             color: #333;
             resize: vertical;
+            font-family: inherit;
+            -webkit-appearance: none;
         }
 
         select {
-            padding: 8px 15px;
-            border-radius: 8px;
+            padding: 8px 12px;
+            border-radius: 6px;
             border: 1px solid #ccc;
-            min-width: 150px;
+            min-width: 120px;
+            font-size: 0.9rem;
         }
 
         .firebase-status {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: #444;
             margin-top: 5px;
         }
 
         .last-update {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: #777;
         }
 
         .log-entry {
-            margin-bottom: 5px;
+            margin-bottom: 4px;
             padding: 5px;
             border-bottom: 1px solid #eee;
+            font-size: 0.85rem;
         }
 
         .phrase-suggestions {
-            margin-top: 15px;
-            padding: 15px;
+            margin-top: 12px;
+            padding: 12px;
             background: #f8f9fa;
-            border-radius: 10px;
+            border-radius: 8px;
             border: 1px solid #eaeaea;
         }
 
         .phrase-suggestions h4 {
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             color: #4A00E0;
-            font-size: 1rem;
+            font-size: 0.9rem;
         }
 
         .phrase-pills {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 10px;
+            gap: 6px;
+            margin-top: 8px;
         }
 
         .phrase-pill {
-            padding: 6px 12px;
+            padding: 5px 10px;
             background: linear-gradient(to right, #4CAF50, #45a049);
             color: white;
             border: none;
-            border-radius: 20px;
-            font-size: 0.85rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
             cursor: pointer;
             transition: all 0.2s;
+            touch-action: manipulation;
         }
 
-        .phrase-pill:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 3px 8px rgba(76,175,80,0.3);
+        .phrase-pill:active {
+            transform: scale(0.95);
         }
 
         .phrase-pill.blue {
@@ -558,28 +620,30 @@
 
         .speech-controls {
             display: flex;
-            gap: 10px;
-            margin-top: 15px;
+            gap: 8px;
+            margin-top: 12px;
             justify-content: center;
+            flex-wrap: wrap;
         }
 
         .speech-btn {
-            padding: 10px 20px;
+            padding: 8px 15px;
             background: linear-gradient(to right, #9C27B0, #673AB7);
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 6px;
             font-weight: bold;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             transition: all 0.2s;
+            min-height: 44px;
+            font-size: 0.9rem;
         }
 
-        .speech-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(156,39,176,0.3);
+        .speech-btn:active {
+            transform: scale(0.98);
         }
 
         .speech-btn:disabled {
@@ -594,16 +658,16 @@
         }
 
         .audio-visualizer {
-            margin-top: 10px;
-            height: 40px;
+            margin-top: 8px;
+            height: 30px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 3px;
+            gap: 2px;
         }
 
         .audio-bar {
-            width: 4px;
+            width: 3px;
             background: #4CAF50;
             border-radius: 2px;
             transition: height 0.1s ease;
@@ -616,10 +680,10 @@
             width: 100%;
             background: white;
             border: 1px solid #ddd;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-radius: 6px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             z-index: 100;
-            max-height: 200px;
+            max-height: 150px;
             overflow-y: auto;
             display: none;
         }
@@ -629,13 +693,14 @@
         }
 
         .suggestion-item {
-            padding: 10px 15px;
+            padding: 8px 12px;
             cursor: pointer;
             border-bottom: 1px solid #eee;
             transition: background 0.2s;
+            font-size: 0.9rem;
         }
 
-        .suggestion-item:hover {
+        .suggestion-item:active {
             background: #f0f7ff;
         }
 
@@ -648,10 +713,10 @@
         }
 
         .auto-suggestions-panel {
-            margin-top: 15px;
-            padding: 15px;
+            margin-top: 12px;
+            padding: 12px;
             background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
-            border-radius: 10px;
+            border-radius: 8px;
             border: 2px solid #e0e6ff;
             animation: slideIn 0.3s ease;
         }
@@ -662,56 +727,60 @@
         }
 
         .auto-suggestions-title {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: bold;
             color: #4A00E0;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .auto-suggestions-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 10px;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 8px;
         }
 
         .auto-suggestion-item {
-            padding: 12px;
+            padding: 10px;
             background: white;
-            border-radius: 8px;
+            border-radius: 6px;
             border: 1px solid #e0e0e0;
             cursor: pointer;
             transition: all 0.2s;
             position: relative;
         }
 
-        .auto-suggestion-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        .auto-suggestion-item:active {
+            transform: translateY(-1px);
             border-color: #4A00E0;
         }
 
         .auto-suggestion-text {
-            font-size: 0.9rem;
-            margin-bottom: 8px;
+            font-size: 0.85rem;
+            margin-bottom: 6px;
         }
 
         .auto-suggestion-actions {
             display: flex;
-            gap: 8px;
-            margin-top: 8px;
+            gap: 6px;
+            margin-top: 6px;
         }
 
         .auto-suggestion-btn {
-            padding: 4px 8px;
-            font-size: 0.75rem;
+            padding: 3px 6px;
+            font-size: 0.7rem;
             border-radius: 4px;
             border: none;
             cursor: pointer;
             flex: 1;
             text-align: center;
+            touch-action: manipulation;
+        }
+
+        .auto-suggestion-btn:active {
+            transform: scale(0.95);
         }
 
         .auto-suggestion-btn.speak {
@@ -731,46 +800,50 @@
 
         .voice-options {
             display: flex;
-            gap: 10px;
-            margin-top: 10px;
+            gap: 8px;
+            margin-top: 8px;
             justify-content: center;
             flex-wrap: wrap;
         }
 
         .voice-btn {
-            padding: 6px 12px;
+            padding: 5px 10px;
             background: linear-gradient(to right, #FF9800, #FF5722);
             color: white;
             border: none;
-            border-radius: 20px;
-            font-size: 0.8rem;
+            border-radius: 15px;
+            font-size: 0.75rem;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 4px;
+            touch-action: manipulation;
+        }
+
+        .voice-btn:active {
+            transform: scale(0.95);
         }
 
         .voice-btn.active {
             background: linear-gradient(to right, #4A00E0, #8E2DE2);
-            box-shadow: 0 2px 8px rgba(74,0,224,0.3);
         }
 
         .language-voice-display {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: #444;
             text-align: center;
-            margin-top: 5px;
+            margin-top: 4px;
         }
 
         .ai-speech-status {
-            margin-top: 5px;
-            font-size: 0.8rem;
+            margin-top: 4px;
+            font-size: 0.75rem;
             color: #4CAF50;
             text-align: center;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 5px;
+            gap: 4px;
         }
 
         .ai-loading {
@@ -778,19 +851,24 @@
         }
 
         .tts-toggle {
-            margin-top: 10px;
+            margin-top: 8px;
             display: flex;
             justify-content: center;
-            gap: 10px;
+            gap: 8px;
         }
 
         .tts-toggle-btn {
-            padding: 6px 12px;
+            padding: 5px 10px;
             background: #f0f0f0;
             border: 2px solid #ddd;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
+            touch-action: manipulation;
+        }
+
+        .tts-toggle-btn:active {
+            transform: scale(0.95);
         }
 
         .tts-toggle-btn.active {
@@ -808,10 +886,10 @@
         }
 
         .performance-info {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             color: #666;
             text-align: center;
-            margin-top: 5px;
+            margin-top: 4px;
         }
 
         .fast-mode {
@@ -820,32 +898,31 @@
             right: 10px;
             background: #4CAF50;
             color: white;
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 0.8rem;
+            padding: 5px 8px;
+            border-radius: 15px;
+            font-size: 0.75rem;
             z-index: 1000;
         }
 
         .phrase-list-container {
-            margin-top: 15px;
-            max-height: 200px;
+            margin-top: 12px;
+            max-height: 150px;
             overflow-y: auto;
             border: 1px solid #eaeaea;
-            border-radius: 10px;
+            border-radius: 8px;
             background: white;
         }
 
         .phrase-list-item {
-            padding: 12px 15px;
+            padding: 10px 12px;
             border-bottom: 1px solid #f0f0f0;
             cursor: pointer;
             transition: all 0.2s;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
 
-        .phrase-list-item:hover {
+        .phrase-list-item:active {
             background: #f0f7ff;
-            border-left: 3px solid #4A00E0;
         }
 
         .phrase-list-item:last-child {
@@ -854,23 +931,28 @@
 
         .accent-selector {
             display: flex;
-            gap: 10px;
-            margin: 15px 0;
+            gap: 8px;
+            margin: 12px 0;
             justify-content: center;
             flex-wrap: wrap;
         }
 
         .accent-btn {
-            padding: 8px 15px;
+            padding: 6px 12px;
             background: #f8f9fa;
             border: 2px solid #ddd;
-            border-radius: 20px;
-            font-size: 0.8rem;
+            border-radius: 15px;
+            font-size: 0.75rem;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 4px;
             transition: all 0.2s;
+            touch-action: manipulation;
+        }
+
+        .accent-btn:active {
+            transform: scale(0.95);
         }
 
         .accent-btn.active {
@@ -879,38 +961,28 @@
             border-color: #4A00E0;
         }
 
-        .accent-btn.north {
-            background: #E3F2FD;
-            border-color: #2196F3;
-        }
-
-        .accent-btn.central {
-            background: #E8F5E9;
-            border-color: #4CAF50;
-        }
-
-        .accent-btn.south {
-            background: #FFF3E0;
-            border-color: #FF9800;
-        }
-
         .voice-gender-selector {
             display: flex;
-            gap: 10px;
-            margin: 10px 0;
+            gap: 8px;
+            margin: 8px 0;
             justify-content: center;
         }
 
         .voice-gender-btn {
-            padding: 8px 20px;
+            padding: 6px 15px;
             background: #f8f9fa;
             border: 2px solid #ddd;
-            border-radius: 20px;
-            font-size: 0.9rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
             cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+            touch-action: manipulation;
+        }
+
+        .voice-gender-btn:active {
+            transform: scale(0.95);
         }
 
         .voice-gender-btn.active {
@@ -923,16 +995,12 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            margin: 10px 0;
-            padding: 10px;
+            gap: 8px;
+            margin: 8px 0;
+            padding: 8px;
             background: #FFF3CD;
-            border-radius: 8px;
+            border-radius: 6px;
             border: 1px solid #FFC107;
-        }
-
-        .tts-loading span {
-            animation: spin 1s linear infinite;
         }
 
         @keyframes spin {
@@ -943,27 +1011,159 @@
         .error-message {
             background: #FFEBEE;
             border: 1px solid #F44336;
-            border-radius: 8px;
-            padding: 10px;
-            margin: 10px 0;
+            border-radius: 6px;
+            padding: 8px;
+            margin: 8px 0;
             color: #b71c1c;
             text-align: center;
             animation: pulse 1s infinite;
+            font-size: 0.85rem;
         }
 
         .suggestion-header {
             background: #f8f9fa;
-            padding: 4px 8px;
-            font-size: 0.7rem;
+            padding: 3px 6px;
+            font-size: 0.65rem;
             color: #666;
             border-radius: 4px;
-            margin-top: 4px;
+            margin-top: 3px;
             display: inline-block;
+        }
+
+        /* Tối ưu cho iPhone */
+        @supports (-webkit-touch-callout: none) {
+            .container {
+                border-radius: 0;
+            }
+            
+            button, .phrase-pill, .voice-btn, .tts-toggle-btn, .accent-btn, .voice-gender-btn {
+                min-height: 44px;
+                min-width: 44px;
+            }
+            
+            input, select, textarea {
+                font-size: 16px; /* Ngăn zoom trên iPhone */
+            }
+            
+            .dashboard {
+                padding: 10px;
+                gap: 10px;
+            }
+            
+            .card {
+                padding: 12px;
+            }
+        }
+
+        /* Media queries cho màn hình nhỏ */
+        @media (max-width: 768px) {
+            body {
+                padding: 5px;
+            }
+            
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .sensor-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .calibration-display {
+                grid-template-columns: 1fr;
+            }
+            
+            .flex-sensor-values {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .status-bar {
+                flex-direction: column;
+                gap: 8px;
+                text-align: center;
+            }
+            
+            .controls {
+                gap: 6px;
+            }
+            
+            button {
+                padding: 8px 12px;
+                font-size: 0.85rem;
+                flex: 1;
+                min-width: 0;
+            }
+            
+            .speech-btn {
+                flex: 1;
+                min-width: 0;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .flex-sensor-header h2 {
+                font-size: 1.2rem;
+            }
+            
+            h1 {
+                font-size: 1.1rem;
+            }
+            
+            .card h3 {
+                font-size: 1rem;
+            }
+            
+            .sentence-display {
+                font-size: 1.2rem;
+                padding: 10px;
+            }
+            
+            .current-word-display {
+                font-size: 1.3rem;
+                padding: 10px;
+            }
+            
+            .voice-options {
+                gap: 4px;
+            }
+            
+            .voice-btn {
+                padding: 4px 8px;
+                font-size: 0.7rem;
+            }
         }
     </style>
 </head>
 <body>
     <div class="fast-mode" id="fastModeIndicator" style="display: none;">🚀 Chế độ tốc độ cao: BẬT</div>
+    
+    <!-- CẢM BIẾN UỐN HEADER -->
+    <div class="flex-sensor-header">
+        <h2>CẢM BIẾN UỐN</h2>
+        <div class="flex-sensor-values">
+            <div class="flex-value-item">
+                <div class="flex-value-label">CB0</div>
+                <div class="flex-value-number" id="flexHeader0">0</div>
+                <div class="flex-value-label" id="flexHeaderState0">Thẳng</div>
+            </div>
+            <div class="flex-value-item">
+                <div class="flex-value-label">CB1</div>
+                <div class="flex-value-number" id="flexHeader1">0</div>
+                <div class="flex-value-label" id="flexHeaderState1">Thẳng</div>
+            </div>
+            <div class="flex-value-item">
+                <div class="flex-value-label">CB2</div>
+                <div class="flex-value-number" id="flexHeader2">0</div>
+                <div class="flex-value-label" id="flexHeaderState2">Thẳng</div>
+            </div>
+            <div class="flex-value-item">
+                <div class="flex-value-label">CB3</div>
+                <div class="flex-value-number" id="flexHeader3">0</div>
+                <div class="flex-value-label" id="flexHeaderState3">Thẳng</div>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <header>
             <h1>Ứng dụng Dịch Thủ Ngữ với Google TTS Proxy</h1>
@@ -978,13 +1178,13 @@
             <!-- Card Xây dựng Câu -->
             <div class="card">
                 <h3>Xây dựng Câu</h3>
-                <div style="text-align: center; padding: 20px; margin-bottom: 20px;">
+                <div style="text-align: center; padding: 15px; margin-bottom: 15px;">
                     <div class="sensor-label">TỪ HIỆN TẠI (Tiếng Việt)</div>
                     <div class="current-word-display" id="displayBuffer">---</div>
                     <div class="sensor-label">TỪ HIỆN TẠI (Mã hóa)</div>
                     <div class="conversion-display" id="convertedCurrentWord">---</div>
                     
-                    <div style="margin: 15px 0; color: #444;">
+                    <div style="margin: 12px 0; color: #444; font-size: 0.9rem;">
                         <div><strong>Sử dụng '_' để thêm từ vào câu</strong></div>
                         <div><strong>Sử dụng 'COMMIT' để hoàn thành câu</strong></div>
                     </div>
@@ -1004,12 +1204,6 @@
                     <div class="tts-toggle">
                         <button class="tts-toggle-btn active" id="useGoogleTTS" onclick="toggleTTSMode(true)">🔊 Google TTS</button>
                         <button class="tts-toggle-btn" id="useWebSpeech" onclick="toggleTTSMode(false)">🎤 Web Speech</button>
-                    </div>
-                    
-                    <!-- Bảng đề xuất tự động -->
-                    <div class="auto-suggestions-panel" id="autoSuggestionsPanel" style="display: none;">
-                        <div class="auto-suggestions-title"><span>💡 ĐỀ XUẤT DỰA TRÊN CÂU CỦA BẠN</span></div>
-                        <div class="auto-suggestions-grid" id="autoSuggestionsGrid"></div>
                     </div>
                     
                     <!-- Tùy chọn giọng nói -->
@@ -1034,9 +1228,9 @@
                     <div class="word-list" id="wordList">Chưa có từ nào</div>
                     <div class="word-count">Số từ trong câu: <span id="wordCount">0</span>/10</div>
                     
-                    <div style="display: flex; justify-content: space-around; margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 10px;">
-                        <div><div class="sensor-label">KHE 1</div><div class="sensor-value" id="slot1" style="font-size: 1.2rem;">---</div></div>
-                        <div><div class="sensor-label">KHE 2</div><div class="sensor-value" id="slot2" style="font-size: 1.2rem;">---</div></div>
+                    <div style="display: flex; justify-content: space-around; margin: 12px 0; padding: 12px; background: #f8f9fa; border-radius: 8px;">
+                        <div><div class="sensor-label">KHE 1</div><div class="sensor-value" id="slot1" style="font-size: 1rem;">---</div></div>
+                        <div><div class="sensor-label">KHE 2</div><div class="sensor-value" id="slot2" style="font-size: 1rem;">---</div></div>
                     </div>
                     
                     <div class="controls">
@@ -1068,7 +1262,7 @@
                 <!-- Hiển thị quá trình hiệu chuẩn -->
                 <div id="calibrationProgress" style="display: none;">
                     <div class="calibration-countdown" id="calibrationCountdown">10</div>
-                    <div style="text-align: center; margin: 10px 0; font-weight: bold; color: #4A00E0;">
+                    <div style="text-align: center; margin: 8px 0; font-weight: bold; color: #4A00E0; font-size: 0.9rem;">
                         <span id="calibrationMessage">Đang hiệu chuẩn... Vui lòng uốn ngón tay hết mức!</span>
                     </div>
                     
@@ -1080,9 +1274,9 @@
                 </div>
                 
                 <!-- Hiển thị ngưỡng hiện tại -->
-                <div class="sensor-calibration" style="margin-top: 20px;">
+                <div class="sensor-calibration" style="margin-top: 15px;">
                     <div class="sensor-label">NGƯỠNG HIỆN TẠI</div>
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px;">
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 8px;">
                         <div><div class="sensor-name">Cảm biến 0</div><div class="sensor-threshold" id="currentThreshold0">300</div></div>
                         <div><div class="sensor-name">Cảm biến 1</div><div class="sensor-threshold" id="currentThreshold1">450</div></div>
                         <div><div class="sensor-name">Cảm biến 2</div><div class="sensor-threshold" id="currentThreshold2">350</div></div>
@@ -1103,7 +1297,7 @@
                     <button onclick="loadCalibration()" class="blue">💾 Tải Hiệu chuẩn</button>
                 </div>
                 
-                <div class="calibration-info" style="margin-top: 15px; font-size: 0.8rem; color: #444; text-align: center;">
+                <div class="calibration-info" style="margin-top: 12px; font-size: 0.75rem; color: #444; text-align: center;">
                     <div>Ngưỡng thẳng cố định: Cảm biến 0-2: 75, Cảm biến 3: 75</div>
                     <div>Ngưỡng uốn sẽ được hiệu chuẩn tự động</div>
                 </div>
@@ -1112,16 +1306,16 @@
             <!-- Card Dịch thuật với Google Translate API -->
             <div class="card">
                 <h3>Dịch thuật với Google Translate</h3>
-                <div style="margin-bottom: 20px;">
+                <div style="margin-bottom: 15px;">
                     <div class="sensor-label">CÂU ĐẦY ĐỦ (Tiếng Việt - Để dịch)</div>
                     <div class="text-input-container">
                         <textarea id="translationInput" placeholder="Nhập văn bản tiếng Việt ở đây..." oninput="handleTranslationInput()"></textarea>
                         <div class="dynamic-suggestions" id="translationSuggestions"></div>
                     </div>
                     
-                    <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                    <div style="margin: 12px 0; padding: 12px; background: #f8f9fa; border-radius: 8px;">
                         <div><strong>Tùy chọn dịch thuật:</strong></div>
-                        <div style="display: flex; gap: 15px; margin-top: 10px; flex-wrap: wrap;">
+                        <div style="display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap;">
                             <div>
                                 <div class="sensor-label">Ngôn ngữ nguồn</div>
                                 <select id="sourceLanguage" class="language-select">
@@ -1147,7 +1341,7 @@
                 </div>
 
                 <div class="sensor-label">KẾT QUẢ DỊCH</div>
-                <div id="translationOutput" class="conversion-display" style="min-height: 80px; margin-bottom: 15px;">Đang chờ dịch...</div>
+                <div id="translationOutput" class="conversion-display" style="min-height: 60px; margin-bottom: 12px;">Đang chờ dịch...</div>
 
                 <div class="controls">
                     <button onclick="translateWithGoogle()" class="blue">Dịch câu</button>
@@ -1176,7 +1370,7 @@
                                 <span class="flex-box" id="flex2-box">0</span>
                                 <span class="flex-box" id="flex3-box">0</span>
                             </div>
-                            <div class="sensor-label" style="margin-top: 10px;">
+                            <div class="sensor-label" style="margin-top: 8px;">
                                 Giá trị thô: <span id="rawValues">0, 0, 0, 0</span>
                             </div>
                             <div class="sensor-label">
@@ -1186,13 +1380,13 @@
                     </div>
                 </div>
                 
-                <div class="sensor-item" style="margin-top: 15px;">
+                <div class="sensor-item" style="margin-top: 12px;">
                     <div class="sensor-label">TRẠNG THÁI HỆ THỐNG</div>
                     <div>Cập nhật lần cuối: <span id="lastUpdateTime" class="last-update">Chưa bao giờ</span></div>
                     <div>Thời gian xử lý: <span id="processingTime" class="last-update">0ms</span></div>
                 </div>
                 
-                <div class="controls" style="margin-top: 15px;">
+                <div class="controls" style="margin-top: 12px;">
                     <button onclick="refreshData()" class="blue">Làm mới ngay</button>
                     <button onclick="toggleAutoRefresh()" id="autoRefreshBtn" class="green">Tự động: BẬT (300ms)</button>
                     <button onclick="toggleTurboMode()" id="turboBtn" class="green">🚀 Chế độ Turbo</button>
@@ -1202,12 +1396,12 @@
             <!-- Card Hiển thị Nhật ký -->
             <div class="card">
                 <h3>Nhật ký Hệ thống</h3>
-                <div style="max-height: 300px; overflow-y: auto; background: #f8f9fa; border-radius: 8px; padding: 10px;">
+                <div style="max-height: 200px; overflow-y: auto; background: #f8f9fa; border-radius: 6px; padding: 8px;">
                     <div id="logContainer">
                         <div class="log-entry">Hệ thống đã khởi động. Đang chờ dữ liệu Firebase...</div>
                     </div>
                 </div>
-                <div class="controls" style="margin-top: 15px;">
+                <div class="controls" style="margin-top: 12px;">
                     <button onclick="clearLog()" class="red">Xóa nhật ký</button>
                     <button onclick="exportLog()" class="blue">Xuất nhật ký</button>
                 </div>
@@ -1296,79 +1490,76 @@
     let translationCache = {};
     let audioCache = new Map();
     
-        // === BẢNG DỮ LIỆU ===
-        const tableA = [
-            ["IAY","IC","ICH","IE","IEC","IEM","IEN","IENG","IEO"],
-            ["IEP","IET","IEU","IM","IN","ING","INH","IO","IOI"],
-            ["AP","AT","AU","AY","E","EC","ECH","EM","EN"],
-            ["A","AC","ACH","AI","AM","AN","ANG","ANH","AO"],
-            ["IAI","IAM","IAN","IANG","IANH","IAO","IAP","IAT","IAU"],
-            ["ENG","ENH","EO","EP","ET","EU","I","IA","IAC"],
-            ["IUN","IUONG","IUP","O","OA","OAC","OACH","OAI","OAM"],
-            ["ION","IONG","IOT","IP","IT","IU","IUA","IUC","IUI"]
-        ];
+    // === BẢNG DỮ LIỆU ===
+    const tableA = [
+        ["IAY","IC","ICH","IE","IEC","IEM","IEN","IENG","IEO"],
+        ["IEP","IET","IEU","IM","IN","ING","INH","IO","IOI"],
+        ["AP","AT","AU","AY","E","EC","ECH","EM","EN"],
+        ["A","AC","ACH","AI","AM","AN","ANG","ANH","AO"],
+        ["IAI","IAM","IAN","IANG","IANH","IAO","IAP","IAT","IAU"],
+        ["ENG","ENH","EO","EP","ET","EU","I","IA","IAC"],
+        ["IUN","IUONG","IUP","O","OA","OAC","OACH","OAI","OAM"],
+        ["ION","IONG","IOT","IP","IT","IU","IUA","IUC","IUI"]
+    ];
 
-        const tableB = [
-            ["UE","UECH","UEN","UENH","UEO","UET","UI","UM","UN"],
-            ["UNG","UO","UOC","UOI","UOM","UON","UONG","UOP","OUT"],
-            ["OAY","OC","OE","OEN","OEO","OET","OI","OM","ON"],
-            ["UYNH","UYP","UYT","UYU","Y","YEM","YEN","YET","YEU"],
-            ["UAI","UAM","UAN","UANG","UANH","UAO","UAT","UAY","UC"],
-            ["ONG","OOC","OONG","OP","OT","U","UA","UAC","UACH"],
-            ["COMMIT","_","nullptr","nullptr","OAN","OANG","OANH","OAP","OAT"],
-            ["UOU","UP","UT","UU","UY","UYA","UYCH","UYEN","UYET"]
-        ];
+    const tableB = [
+        ["UE","UECH","UEN","UENH","UEO","UET","UI","UM","UN"],
+        ["UNG","UO","UOC","UOI","UOM","UON","UONG","UOP","OUT"],
+        ["OAY","OC","OE","OEN","OEO","OET","OI","OM","ON"],
+        ["UYNH","UYP","UYT","UYU","Y","YEM","YEN","YET","YEU"],
+        ["UAI","UAM","UAN","UANG","UANH","UAO","UAT","UAY","UC"],
+        ["ONG","OOC","OONG","OP","OT","U","UA","UAC","UACH"],
+        ["COMMIT","_","nullptr","nullptr","OAN","OANG","OANH","OAP","OAT"],
+        ["UOU","UP","UT","UU","UY","UYA","UYCH","UYEN","UYET"]
+    ];
 
-        const tableC = [
-            [ ["B","C","D"],["Đ","G","H"],["K","L","M"] ],
-            [ ["N","P","Q"],["R","S","T"],["V","X","CH"] ],
-            [ ["GH","KH","NG"],["NGH","NH","PH"],["TH","TR","_"] ]
-        ];
+    const tableC = [
+        [ ["B","C","D"],["Đ","G","H"],["K","L","M"] ],
+        [ ["N","P","Q"],["R","S","T"],["V","X","CH"] ],
+        [ ["GH","KH","NG"],["NGH","NH","PH"],["TH","TR","_"] ]
+    ];
 
-    
-    // Ánh xạ trạng thái MPU
+    // === ÁNH XẠ TRẠNG THÁI MPU6050 MỚI ===
     const mpuStateMap = {
-        "Up": 0,
-        "Down": 1,
-        "Left": 2,
-        "Right": 3,
-        "Forward": 4,
-        "Backward": 5
+        "Right": 0,
+        "Left": 1,
+        "Up": 2,
+        "Down": 3,
+        "Backward": 4,
+        "Forward": 5
     };
 
     // Danh sách cụm từ đề xuất
-        // Danh sách cụm từ đề xuất
-        const commonPhrases = [
-            "Xin chào, rất vui được gặp bạn",
-            "Chào buổi sáng",
-            "Chào buổi chiều",
-            "Chào buổi tối",
-            "Làm ơn cho tôi xin hóa đơn",
-            "Bạn khỏe không?",
-            "Cảm ơn bạn rất nhiều",
-            "Làm ơn cho tôi hỏi đường",
-            "Chúc một ngày tốt lành",
-            "Tôi yêu ngôn ngữ này",
-            "Hẹn gặp lại sau",
-            "Tôi đói bụng",
-            "Bao nhiêu tiền?",
-            "Tôi không hiểu",
-            "Bạn có thể nói chậm hơn được không?",
-            "Bạn tên là gì?",
-            "Tôi tên là...",
-            "Rất vui được làm quen",
-            "Tôi cần giúp đỡ",
-            "Làm ơn chỉ đường đến nhà ga",
-            "Nhà vệ sinh ở đâu?",
-            "Tôi bị lạc đường",
-            "Bạn nói tiếng Anh được không?",
-            "Xin lỗi, tôi không nghe rõ",
-            "Bạn có thể lặp lại không?"
-        ];
-
+    const commonPhrases = [
+        "Xin chào, rất vui được gặp bạn",
+        "Chào buổi sáng",
+        "Chào buổi chiều",
+        "Chào buổi tối",
+        "Làm ơn cho tôi xin hóa đơn",
+        "Bạn khỏe không?",
+        "Cảm ơn bạn rất nhiều",
+        "Làm ơn cho tôi hỏi đường",
+        "Chúc một ngày tốt lành",
+        "Tôi yêu ngôn ngữ này",
+        "Hẹn gặp lại sau",
+        "Tôi đói bụng",
+        "Bao nhiêu tiền?",
+        "Tôi không hiểu",
+        "Bạn có thể nói chậm hơn được không?",
+        "Bạn tên là gì?",
+        "Tôi tên là...",
+        "Rất vui được làm quen",
+        "Tôi cần giúp đỡ",
+        "Làm ơn chỉ đường đến nhà ga",
+        "Nhà vệ sinh ở đâu?",
+        "Tôi bị lạc đường",
+        "Bạn nói tiếng Anh được không?",
+        "Xin lỗi, tôi không nghe rõ",
+        "Bạn có thể lặp lại không?"
+    ];
 
     // Bảng chuyển đổi Tiếng Việt (giữ nguyên)
-        const vietnameseTable = [
+    const vietnameseTable = [
             {key: "IAY", forms: ["iáy", "iày", "iảy", "iãy", "iạy", "iay", "iấy", "iầy", "iẩy", "iẫy", "iậy", "iây", "iắy", "iằy", "iẳy", "iẵy", "iặy", "iăy"]},
             {key: "IC", forms: ["íc", "ìc", "ỉc", "ĩc", "ịc", "ic", "íc", "ìc", "ỉc", "ĩc", "ịc", "ic", "íc", "ìc", "ỉc", "ĩc", "ịc", "ic"]},
             {key: "ICH", forms: ["ích", "ìch", "ỉch", "ĩch", "ịch", "ich", "ích", "ìch", "ỉch", "ĩch", "ịch", "ich", "ích", "ìch", "ỉch", "ĩch", "ịch", "ich"]},
@@ -1512,7 +1703,7 @@
             {key: "YEM", forms: ["yém", "yèm", "yẻm", "yẽm", "yẹm", "yem", "yếm", "yềm", "yểm", "yễm", "yệm", "yêm", "yém", "yèm", "yẻm", "yẽm", "yẹm", "yem"]},
             {key: "OAP", forms: ["oáp", "oàp", "oảp", "oãp", "oạp", "oap", "oáp", "oàp", "oảp", "oãp", "oạp", "oap", "oáp", "oàp", "oảp", "oãp", "oạp", "oap"]}
        
-        ];
+    ];
 
     // === GOOGLE TTS CONFIGURATION ===
     const TTS_CONFIG = {
@@ -1600,1061 +1791,934 @@
         accent: 'vn-native'
     };
 
-        // === HÀM HIỆU CHUẨN (giữ nguyên) ===
-        function startCalibration() {
-            if (isCalibrating) return;
-            
-            isCalibrating = true;
-            calibrationCountdown = 10;
-            calibrationStartTime = Date.now();
-            calibrationMaxValues = [0, 0, 0, 0];
-            calibrationCurrentSensor = 0;
-            calibrationStep = "calibrating";
-            
-            document.getElementById('calibrationProgress').style.display = 'block';
-            document.getElementById('calibrateBtn').style.display = 'none';
-            document.getElementById('stopCalibrateBtn').style.display = 'inline-block';
-            
-            updateCalibrationStatus("calibrating", "Đang hiệu chuẩn... Vui lòng uốn tất cả ngón tay hết mức có thể!");
-            
-            const display = document.getElementById('calibrationDisplay');
-            display.innerHTML = '';
+    // === HÀM HIỆU CHUẨN ===
+    function startCalibration() {
+        if (isCalibrating) return;
+        
+        isCalibrating = true;
+        calibrationCountdown = 10;
+        calibrationStartTime = Date.now();
+        calibrationMaxValues = [0, 0, 0, 0];
+        calibrationCurrentSensor = 0;
+        calibrationStep = "calibrating";
+        
+        document.getElementById('calibrationProgress').style.display = 'block';
+        document.getElementById('calibrateBtn').style.display = 'none';
+        document.getElementById('stopCalibrateBtn').style.display = 'inline-block';
+        
+        updateCalibrationStatus("calibrating", "Đang hiệu chuẩn... Vui lòng uốn tất cả ngón tay hết mức có thể!");
+        
+        const display = document.getElementById('calibrationDisplay');
+        display.innerHTML = '';
+        
+        for (let i = 0; i < 4; i++) {
+            const sensorDiv = document.createElement('div');
+            sensorDiv.className = 'sensor-calibration';
+            sensorDiv.id = `calibrationSensor${i}`;
+            sensorDiv.innerHTML = `
+                <div class="sensor-name">CẢM BIẾN ${i}</div>
+                <div class="sensor-value">0</div>
+                <div class="sensor-max">Max: 0</div>
+                <div class="progress-container">
+                    <div class="progress-bar" id="progressBar${i}" style="width: 0%"></div>
+                </div>
+            `;
+            display.appendChild(sensorDiv);
+        }
+        
+        calibrationInterval = setInterval(updateCalibration, 1000);
+        document.getElementById('calibrationMessage').textContent = `Đang hiệu chuẩn... Vui lòng uốn TẤT CẢ ngón tay hết mức!`;
+        
+        log('HIỆU CHUẨN', 'Bắt đầu hiệu chuẩn cảm biến uốn');
+    }
+
+    function updateCalibration() {
+        if (!isCalibrating) return;
+        
+        calibrationCountdown--;
+        document.getElementById('calibrationCountdown').textContent = calibrationCountdown;
+        
+        const progress = ((10 - calibrationCountdown) / 10) * 100;
+        document.getElementById('calibrationProgressBar').style.width = `${progress}%`;
+        
+        if (firebaseData) {
+            const flexValues = [firebaseData.f0 || 0, firebaseData.f1 || 0, firebaseData.f2 || 0, firebaseData.f3 || 0];
             
             for (let i = 0; i < 4; i++) {
-                const sensorDiv = document.createElement('div');
-                sensorDiv.className = 'sensor-calibration';
-                sensorDiv.id = `calibrationSensor${i}`;
-                sensorDiv.innerHTML = `
-                    <div class="sensor-name">CẢM BIẾN ${i}</div>
-                    <div class="sensor-value">0</div>
-                    <div class="sensor-max">Max: 0</div>
-                    <div class="progress-container">
-                        <div class="progress-bar" id="progressBar${i}" style="width: 0%"></div>
-                    </div>
-                `;
-                display.appendChild(sensorDiv);
-            }
-            
-            calibrationInterval = setInterval(updateCalibration, 1000);
-            document.getElementById('calibrationMessage').textContent = `Đang hiệu chuẩn... Vui lòng uốn TẤT CẢ ngón tay hết mức!`;
-            
-            log('HIỆU CHUẨN', 'Bắt đầu hiệu chuẩn cảm biến uốn');
-        }
-
-        function updateCalibration() {
-            if (!isCalibrating) return;
-            
-            calibrationCountdown--;
-            document.getElementById('calibrationCountdown').textContent = calibrationCountdown;
-            
-            const progress = ((10 - calibrationCountdown) / 10) * 100;
-            document.getElementById('calibrationProgressBar').style.width = `${progress}%`;
-            
-            if (firebaseData) {
-                const flexValues = [firebaseData.f0 || 0, firebaseData.f1 || 0, firebaseData.f2 || 0, firebaseData.f3 || 0];
+                const valueElement = document.querySelector(`#calibrationSensor${i} .sensor-value`);
+                if (valueElement) {
+                    valueElement.textContent = flexValues[i];
+                }
                 
-                for (let i = 0; i < 4; i++) {
-                    const valueElement = document.querySelector(`#calibrationSensor${i} .sensor-value`);
-                    if (valueElement) {
-                        valueElement.textContent = flexValues[i];
+                if (flexValues[i] > calibrationMaxValues[i]) {
+                    calibrationMaxValues[i] = flexValues[i];
+                    const maxElement = document.querySelector(`#calibrationSensor${i} .sensor-max`);
+                    if (maxElement) {
+                        maxElement.textContent = `Max: ${flexValues[i]}`;
+                        maxElement.style.color = '#F44336';
                     }
+                }
+                
+                const progressValue = Math.min((flexValues[i] / 1024) * 100, 100);
+                const progressBar = document.getElementById(`progressBar${i}`);
+                if (progressBar) {
+                    progressBar.style.width = `${progressValue}%`;
                     
-                    if (flexValues[i] > calibrationMaxValues[i]) {
-                        calibrationMaxValues[i] = flexValues[i];
-                        const maxElement = document.querySelector(`#calibrationSensor${i} .sensor-max`);
-                        if (maxElement) {
-                            maxElement.textContent = `Max: ${flexValues[i]}`;
-                            maxElement.style.color = '#F44336';
-                        }
-                    }
-                    
-                    const progressValue = Math.min((flexValues[i] / 1024) * 100, 100);
-                    const progressBar = document.getElementById(`progressBar${i}`);
-                    if (progressBar) {
-                        progressBar.style.width = `${progressValue}%`;
-                        
-                        if (progressValue < 30) {
-                            progressBar.style.background = '#4CAF50';
-                        } else if (progressValue < 70) {
-                            progressBar.style.background = '#FF9800';
-                        } else {
-                            progressBar.style.background = '#F44336';
-                        }
+                    if (progressValue < 30) {
+                        progressBar.style.background = '#4CAF50';
+                    } else if (progressValue < 70) {
+                        progressBar.style.background = '#FF9800';
+                    } else {
+                        progressBar.style.background = '#F44336';
                     }
                 }
             }
-            
-            if (calibrationCountdown <= 0) {
-                finishCalibration();
-            }
         }
+        
+        if (calibrationCountdown <= 0) {
+            finishCalibration();
+        }
+    }
 
-        function finishCalibration() {
-            isCalibrating = false;
-            clearInterval(calibrationInterval);
-            calibrationStep = "done";
-            
-            let hasValidCalibration = false;
-            for (let i = 0; i < 4; i++) {
-                if (calibrationMaxValues[i] > STRAIGHT_THRESHOLDS[i] + 50) {
-                    bentThresholds[i] = calibrationMaxValues[i];
-                    hasValidCalibration = true;
-                } else {
-                    log('HIỆU CHUẨN', `Cảm biến ${i} không có dữ liệu hiệu chuẩn hợp lệ (Max: ${calibrationMaxValues[i]})`);
-                }
-            }
-            
-            if (hasValidCalibration) {
-                localStorage.setItem('bentThresholds', JSON.stringify(bentThresholds));
-                updateThresholdDisplay();
-                updateCalibrationStatus("calibrated", `Hiệu chuẩn hoàn thành! Ngưỡng đã được cập nhật.`);
-                log('HIỆU CHUẨN', `Hiệu chuẩn hoàn thành: ${bentThresholds}`);
-                
-                setTimeout(() => {
-                    document.getElementById('calibrationProgress').style.display = 'none';
-                    document.getElementById('calibrateBtn').style.display = 'inline-block';
-                    document.getElementById('stopCalibrateBtn').style.display = 'none';
-                }, 3000);
+    function finishCalibration() {
+        isCalibrating = false;
+        clearInterval(calibrationInterval);
+        calibrationStep = "done";
+        
+        let hasValidCalibration = false;
+        for (let i = 0; i < 4; i++) {
+            if (calibrationMaxValues[i] > STRAIGHT_THRESHOLDS[i] + 50) {
+                bentThresholds[i] = calibrationMaxValues[i];
+                hasValidCalibration = true;
             } else {
-                updateCalibrationStatus("error", "Hiệu chuẩn thất bại! Không có dữ liệu hợp lệ. Vui lòng thử lại.");
-                log('HIỆU CHUẨN', 'Hiệu chuẩn thất bại: Không có dữ liệu hợp lệ');
-                
-                setTimeout(() => {
-                    document.getElementById('calibrationProgress').style.display = 'none';
-                    document.getElementById('calibrateBtn').style.display = 'inline-block';
-                    document.getElementById('stopCalibrateBtn').style.display = 'none';
-                }, 3000);
+                log('HIỆU CHUẨN', `Cảm biến ${i} không có dữ liệu hiệu chuẩn hợp lệ (Max: ${calibrationMaxValues[i]})`);
             }
         }
-
-        function stopCalibration() {
-            if (isCalibrating) {
-                isCalibrating = false;
-                clearInterval(calibrationInterval);
-                
-                updateCalibrationStatus("ready", "Hiệu chuẩn đã dừng");
-                
+        
+        if (hasValidCalibration) {
+            localStorage.setItem('bentThresholds', JSON.stringify(bentThresholds));
+            updateThresholdDisplay();
+            updateCalibrationStatus("calibrated", `Hiệu chuẩn hoàn thành! Ngưỡng đã được cập nhật.`);
+            log('HIỆU CHUẨN', `Hiệu chuẩn hoàn thành: ${bentThresholds}`);
+            
+            setTimeout(() => {
                 document.getElementById('calibrationProgress').style.display = 'none';
                 document.getElementById('calibrateBtn').style.display = 'inline-block';
                 document.getElementById('stopCalibrateBtn').style.display = 'none';
-                
-                log('HIỆU CHUẨN', 'Hiệu chuẩn đã dừng bởi người dùng');
-            }
-        }
-
-        function resetCalibration() {
-            bentThresholds = [300, 450, 350, 300];
-            localStorage.removeItem('bentThresholds');
-            
-            updateThresholdDisplay();
-            updateCalibrationStatus("ready", "Đã reset về giá trị mặc định");
-            
-            log('HIỆU CHUẨN', 'Reset hiệu chuẩn về giá trị mặc định');
-        }
-
-        function loadCalibration() {
-            const savedThresholds = localStorage.getItem('bentThresholds');
-            if (savedThresholds) {
-                try {
-                    bentThresholds = JSON.parse(savedThresholds);
-                    updateThresholdDisplay();
-                    updateCalibrationStatus("calibrated", "Đã tải hiệu chuẩn từ bộ nhớ");
-                    log('HIỆU CHUẨN', `Đã tải hiệu chuẩn: ${bentThresholds}`);
-                } catch (e) {
-                    log('HIỆU CHUẨN', `Lỗi khi tải hiệu chuẩn: ${e.message}`);
-                }
-            } else {
-                updateCalibrationStatus("ready", "Không tìm thấy hiệu chuẩn đã lưu");
-                log('HIỆU CHUẨN', 'Không tìm thấy hiệu chuẩn đã lưu');
-            }
-        }
-
-        function updateThresholdDisplay() {
-            for (let i = 0; i < 4; i++) {
-                document.getElementById(`currentThreshold${i}`).textContent = bentThresholds[i];
-            }
-        }
-
-        function updateCalibrationStatus(status, message) {
-            const statusDiv = document.getElementById('calibrationStatus');
-            statusDiv.innerHTML = '';
-            
-            let statusClass = "";
-            let statusText = "";
-            
-            switch(status) {
-                case "calibrating":
-                    statusClass = "calibrating";
-                    statusText = "ĐANG HIỆU CHUẨN";
-                    break;
-                case "calibrated":
-                    statusClass = "calibrated";
-                    statusText = "ĐÃ HIỆU CHUẨN";
-                    break;
-                case "error":
-                    statusClass = "calibration-error";
-                    statusText = "LỖI HIỆU CHUẨN";
-                    break;
-                default:
-                    statusClass = "calibration-ready";
-                    statusText = "SẴN SÀNG";
-            }
-            
-            const div = document.createElement('div');
-            div.className = statusClass;
-            div.innerHTML = `
-                <div>${statusText}</div>
-                <div style="font-size: 0.9rem; margin-top: 5px;">${message}</div>
-            `;
-            statusDiv.appendChild(div);
-        }
-
-        // === HÀM TỐI ƯU HÓA FIREBASE (giữ nguyên) ===
-        async function fetchFirebaseDataOptimized() {
-            if (isFetching) return null;
-            
-            if (currentFetchController) {
-                currentFetchController.abort();
-            }
-            
-            isFetching = true;
-            const startTime = performance.now();
-            currentFetchController = new AbortController();
-            const signal = currentFetchController.signal;
-            
-            try {
-                const timestamp = Date.now();
-                const url = `${FIREBASE_URL}?t=${timestamp}`;
-                
-                const response = await fetch(url, {
-                    signal,
-                    method: 'GET',
-                    headers: {
-                        'Cache-Control': 'no-cache, no-store, must-revalidate',
-                        'Pragma': 'no-cache',
-                        'Expires': '0'
-                    },
-                    priority: 'high'
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-                
-                const data = await response.json();
-                const fetchTime = performance.now() - startTime;
-                
-                document.getElementById('latency').textContent = Math.round(fetchTime);
-                
-                if (JSON.stringify(data) !== JSON.stringify(lastFirebaseData)) {
-                    lastFirebaseData = data;
-                    firebaseData = data;
-                    lastUpdateTime = Date.now();
-                    
-                    updateConnectionStatus(true);
-                    processDataImmediately(data);
-                    scheduleUIUpdate();
-                    
-                    log('Firebase', `Data updated (${Math.round(fetchTime)}ms)`);
-                    
-                    if (fetchTime < 100) {
-                        pollingInterval = turboMode ? 150 : 250;
-                    } else if (fetchTime > 500) {
-                        pollingInterval = 1000;
-                    }
-                    
-                    updatePollingDisplay();
-                } else {
-                    lastUpdateTime = Date.now();
-                    document.getElementById('lastUpdate').textContent = 
-                        `Cập nhật: ${formatTime(Date.now())}`;
-                }
-                
-                return data;
-                
-            } catch (error) {
-                if (error.name !== 'AbortError') {
-                    console.warn('Fetch error:', error);
-                    updateConnectionStatus(false);
-                    log('Firebase', `Error: ${error.message}`);
-                    
-                    pollingInterval = Math.min(pollingInterval * 2, 5000);
-                    updatePollingDisplay();
-                }
-                return null;
-            } finally {
-                isFetching = false;
-                const totalTime = performance.now() - startTime;
-                document.getElementById('processingTime').textContent = `${Math.round(totalTime)}ms`;
-            }
-        }
-
-        function processDataImmediately(data) {
-            const startTime = performance.now();
-            
-            if (data.o !== undefined) {
-                const mpuElement = document.getElementById('mpuOrientation');
-                if (mpuElement.textContent !== data.o) {
-                    mpuElement.textContent = data.o || 'N/A';
-                }
-            }
-            
-            if (data.d !== undefined) {
-                const shakeElement = document.getElementById('mpuShakeState');
-                if (shakeElement.textContent !== data.d) {
-                    shakeElement.textContent = data.d || 'No';
-                }
-            }
-            
-            if (data.sf !== undefined) {
-                const isShakingElement = document.getElementById('isShaking');
-                if (isShakingElement.textContent !== data.sf) {
-                    isShakingElement.textContent = data.sf || 'NO';
-                }
-            }
-            
-            if (data.f0 !== undefined) {
-                const flexValues = [data.f0, data.f1 || 0, data.f2 || 0, data.f3 || 0];
-                for (let i = 0; i < 4; i++) {
-                    const newState = calculateFlexState(flexValues[i], i);
-                    if (flexStates[i] !== newState) {
-                        flexStates[i] = newState;
-                    }
-                }
-            }
+            }, 3000);
+        } else {
+            updateCalibrationStatus("error", "Hiệu chuẩn thất bại! Không có dữ liệu hợp lệ. Vui lòng thử lại.");
+            log('HIỆU CHUẨN', 'Hiệu chuẩn thất bại: Không có dữ liệu hợp lệ');
             
             setTimeout(() => {
-                const mpuState = getMPUState(data.o || "", data.d || "");
-                const a0 = flexStates[0];
-                const a1 = flexStates[1];
-                const a2 = flexStates[2];
-                const a3 = flexStates[3];
+                document.getElementById('calibrationProgress').style.display = 'none';
+                document.getElementById('calibrateBtn').style.display = 'inline-block';
+                document.getElementById('stopCalibrateBtn').style.display = 'none';
+            }, 3000);
+        }
+    }
+
+    function stopCalibration() {
+        if (isCalibrating) {
+            isCalibrating = false;
+            clearInterval(calibrationInterval);
+            
+            updateCalibrationStatus("ready", "Hiệu chuẩn đã dừng");
+            
+            document.getElementById('calibrationProgress').style.display = 'none';
+            document.getElementById('calibrateBtn').style.display = 'inline-block';
+            document.getElementById('stopCalibrateBtn').style.display = 'none';
+            
+            log('HIỆU CHUẨN', 'Hiệu chuẩn đã dừng bởi người dùng');
+        }
+    }
+
+    function resetCalibration() {
+        bentThresholds = [300, 450, 350, 300];
+        localStorage.removeItem('bentThresholds');
+        
+        updateThresholdDisplay();
+        updateCalibrationStatus("ready", "Đã reset về giá trị mặc định");
+        
+        log('HIỆU CHUẨN', 'Reset hiệu chuẩn về giá trị mặc định');
+    }
+
+    function loadCalibration() {
+        const savedThresholds = localStorage.getItem('bentThresholds');
+        if (savedThresholds) {
+            try {
+                bentThresholds = JSON.parse(savedThresholds);
+                updateThresholdDisplay();
+                updateCalibrationStatus("calibrated", "Đã tải hiệu chuẩn từ bộ nhớ");
+                log('HIỆU CHUẨN', `Đã tải hiệu chuẩn: ${bentThresholds}`);
+            } catch (e) {
+                log('HIỆU CHUẨN', `Lỗi khi tải hiệu chuẩn: ${e.message}`);
+            }
+        } else {
+            updateCalibrationStatus("ready", "Không tìm thấy hiệu chuẩn đã lưu");
+            log('HIỆU CHUẨN', 'Không tìm thấy hiệu chuẩn đã lưu');
+        }
+    }
+
+    function updateThresholdDisplay() {
+        for (let i = 0; i < 4; i++) {
+            document.getElementById(`currentThreshold${i}`).textContent = bentThresholds[i];
+        }
+    }
+
+    function updateCalibrationStatus(status, message) {
+        const statusDiv = document.getElementById('calibrationStatus');
+        statusDiv.innerHTML = '';
+        
+        let statusClass = "";
+        let statusText = "";
+        
+        switch(status) {
+            case "calibrating":
+                statusClass = "calibrating";
+                statusText = "ĐANG HIỆU CHUẨN";
+                break;
+            case "calibrated":
+                statusClass = "calibrated";
+                statusText = "ĐÃ HIỆU CHUẨN";
+                break;
+            case "error":
+                statusClass = "calibration-error";
+                statusText = "LỖI HIỆU CHUẨN";
+                break;
+            default:
+                statusClass = "calibration-ready";
+                statusText = "SẴN SÀNG";
+        }
+        
+        const div = document.createElement('div');
+        div.className = statusClass;
+        div.innerHTML = `
+            <div>${statusText}</div>
+            <div style="font-size: 0.8rem; margin-top: 3px;">${message}</div>
+        `;
+        statusDiv.appendChild(div);
+    }
+
+    // === HÀM TỐI ƯU HÓA FIREBASE ===
+    async function fetchFirebaseDataOptimized() {
+        if (isFetching) return null;
+        
+        if (currentFetchController) {
+            currentFetchController.abort();
+        }
+        
+        isFetching = true;
+        const startTime = performance.now();
+        currentFetchController = new AbortController();
+        const signal = currentFetchController.signal;
+        
+        try {
+            const timestamp = Date.now();
+            const url = `${FIREBASE_URL}?t=${timestamp}`;
+            
+            const response = await fetch(url, {
+                signal,
+                method: 'GET',
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
+                },
+                priority: 'high'
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
+            const data = await response.json();
+            const fetchTime = performance.now() - startTime;
+            
+            document.getElementById('latency').textContent = Math.round(fetchTime);
+            
+            if (JSON.stringify(data) !== JSON.stringify(lastFirebaseData)) {
+                lastFirebaseData = data;
+                firebaseData = data;
+                lastUpdateTime = Date.now();
                 
-                processWordConstructionFast(mpuState, a0, a1, a2, a3);
-            }, 0);
-        }
-
-        // === HÀM TÍNH TRẠNG THÁI UỐN VỚI HIỆU CHUẨN ===
-        function calculateFlexState(rawValue, sensorIndex) {
-            const STRAIGHT_THRESHOLD = STRAIGHT_THRESHOLDS[sensorIndex];
-            
-            if (rawValue <= STRAIGHT_THRESHOLD) return 0;
-            if (rawValue <= bentThresholds[sensorIndex]) return 1;
-            return 2;
-        }
-
-        function processWordConstructionFast(mpu, a0, a1, a2, a3) {
-            const currentState = `${mpu}_${a0}_${a1}_${a2}_${a3}`;
-            
-            if (currentState !== lastStateString) {
-                lastStateString = currentState;
-                stableCount = 0;
-                holdStartMs = Date.now();
-                holdFired = false;
-            } else {
-                stableCount++;
-            }
-            
-            lastFlexStates = [a0, a1, a2, a3];
-            
-            if (stableCount >= DEBOUNCE_COUNT) {
-                const held = Date.now() - holdStartMs;
-                if (!holdFired && held >= HOLD_MS_DEFAULT) {
-                    if (Date.now() - lastActionMs > POST_HOLD_COOLDOWN) {
-                        performActionSlotLogic(mpu, a0, a1, a2, a3);
-                        holdFired = true;
-                        lastActionMs = Date.now();
-                    }
+                updateConnectionStatus(true);
+                processDataImmediately(data);
+                scheduleUIUpdate();
+                
+                log('Firebase', `Data updated (${Math.round(fetchTime)}ms)`);
+                
+                if (fetchTime < 100) {
+                    pollingInterval = turboMode ? 150 : 250;
+                } else if (fetchTime > 500) {
+                    pollingInterval = 1000;
                 }
-            }
-        }
-
-        function scheduleUIUpdate() {
-            if (!uiUpdateScheduled) {
-                uiUpdateScheduled = true;
-                requestAnimationFrame(() => {
-                    updateCriticalUI();
-                    uiUpdateScheduled = false;
-                });
-            }
-        }
-
-        function updateCriticalUI() {
-            const startTime = performance.now();
-            
-            updateSensorDisplay();
-            updateWordDisplays();
-            updateSentenceDisplay();
-            
-            const updateTime = document.getElementById('lastUpdate');
-            const currentTime = formatTime(Date.now());
-            if (updateTime.textContent !== `Cập nhật: ${currentTime}`) {
-                updateTime.textContent = `Cập nhật: ${currentTime}`;
-                document.getElementById('lastUpdateTime').textContent = currentTime;
+                
+                updatePollingDisplay();
+            } else {
+                lastUpdateTime = Date.now();
+                document.getElementById('lastUpdate').textContent = 
+                    `Cập nhật: ${formatTime(Date.now())}`;
             }
             
-            const uiTime = performance.now() - startTime;
-            if (uiTime > 16) {
-                console.warn(`UI update slow: ${Math.round(uiTime)}ms`);
+            return data;
+            
+        } catch (error) {
+            if (error.name !== 'AbortError') {
+                console.warn('Fetch error:', error);
+                updateConnectionStatus(false);
+                log('Firebase', `Error: ${error.message}`);
+                
+                pollingInterval = Math.min(pollingInterval * 2, 5000);
+                updatePollingDisplay();
             }
+            return null;
+        } finally {
+            isFetching = false;
+            const totalTime = performance.now() - startTime;
+            document.getElementById('processingTime').textContent = `${Math.round(totalTime)}ms`;
         }
+    }
 
-        function updateSensorDisplay() {
+    function processDataImmediately(data) {
+        const startTime = performance.now();
+        
+        // Cập nhật header cảm biến uốn
+        if (data.f0 !== undefined) {
+            const flexValues = [data.f0, data.f1 || 0, data.f2 || 0, data.f3 || 0];
+            
             for (let i = 0; i < 4; i++) {
-                const box = document.getElementById(`flex${i}-box`);
-                if (box && box.textContent !== flexStates[i].toString()) {
-                    box.textContent = flexStates[i];
-                    box.className = `flex-box active-${flexStates[i]}`;
-                }
-            }
-            
-            if (firebaseData) {
-                const rawValues = [firebaseData.f0 || 0, firebaseData.f1 || 0, firebaseData.f2 || 0, firebaseData.f3 || 0];
-                const rawValuesElement = document.getElementById('rawValues');
-                const newRawText = rawValues.join(', ');
-                if (rawValuesElement.textContent !== newRawText) {
-                    rawValuesElement.textContent = newRawText;
-                }
+                // Cập nhật header
+                document.getElementById(`flexHeader${i}`).textContent = flexValues[i];
                 
-                const flexFormatElement = document.getElementById('flexFormat');
-                const newFlexText = flexStates.join('');
-                if (flexFormatElement.textContent !== newFlexText) {
-                    flexFormatElement.textContent = newFlexText;
+                const state = calculateFlexState(flexValues[i], i);
+                const stateText = state === 0 ? "Thẳng" : (state === 1 ? "Hơi uốn" : "Uốn hết");
+                document.getElementById(`flexHeaderState${i}`).textContent = stateText;
+                
+                // Cập nhật trạng thái
+                if (flexStates[i] !== state) {
+                    flexStates[i] = state;
                 }
             }
         }
-
-        function updateWordDisplays() {
-            if (displayBuffer.length > 0) {
-                convertedCurrentWord = convertVietnameseWordCached(displayBuffer);
-            } else {
-                convertedCurrentWord = "";
-            }
-
-            const displayBufferElement = document.getElementById('displayBuffer');
-            if (displayBufferElement.textContent !== convertedCurrentWord) {
-                displayBufferElement.textContent = convertedCurrentWord || '---';
-            }
-            
-            const slot1Element = document.getElementById('slot1');
-            if (slot1Element.textContent !== slot1) {
-                slot1Element.textContent = slot1 || '---';
-            }
-            
-            const slot2Element = document.getElementById('slot2');
-            if (slot2Element.textContent !== slot2) {
-                slot2Element.textContent = slot2 || '---';
-            }
-            
-            const convertedWordElement = document.getElementById('convertedCurrentWord');
-            if (convertedWordElement.textContent !== displayBuffer) {
-                convertedWordElement.textContent = displayBuffer || '---';
+        
+        if (data.o !== undefined) {
+            const mpuElement = document.getElementById('mpuOrientation');
+            if (mpuElement.textContent !== data.o) {
+                mpuElement.textContent = data.o || 'N/A';
             }
         }
-
-        function updateSentenceDisplay() {
-            const sentenceElement = document.getElementById('sentenceDisplay');
-            const newSentence = sentenceWords.join(' ');
-            
-            if (fullSentence !== newSentence) {
-                fullSentence = newSentence;
-                sentenceElement.textContent = fullSentence || '---';
-                
-                convertedFullSentence = convertVietnameseTextFast(fullSentence);
-                const convertedElement = document.getElementById('convertedSentenceDisplay');
-                convertedElement.textContent = convertedFullSentence || '---';
-                
-                updateWordList();
-                
-                const wordCountElement = document.getElementById('wordCount');
-                wordCountElement.textContent = sentenceWords.length;
-                
-                showAutoSuggestions();
+        
+        if (data.d !== undefined) {
+            const shakeElement = document.getElementById('mpuShakeState');
+            if (shakeElement.textContent !== data.d) {
+                shakeElement.textContent = data.d || 'No';
             }
         }
-
-        function updateWordList() {
-            const wordListDiv = document.getElementById('wordList');
-            if (sentenceWords.length > 0) {
-                wordListDiv.innerHTML = sentenceWords.map(word => 
-                    `<div class="word-item">${word}</div>`
-                ).join('');
-            } else {
-                wordListDiv.innerHTML = 'Chưa có từ nào';
+        
+        if (data.sf !== undefined) {
+            const isShakingElement = document.getElementById('isShaking');
+            if (isShakingElement.textContent !== data.sf) {
+                isShakingElement.textContent = data.sf || 'NO';
             }
         }
+        
+        setTimeout(() => {
+            const mpuState = getMPUState(data.o || "", data.d || "");
+            const a0 = flexStates[0];
+            const a1 = flexStates[1];
+            const a2 = flexStates[2];
+            const a3 = flexStates[3];
+            
+            processWordConstructionFast(mpuState, a0, a1, a2, a3);
+        }, 0);
+    }
 
-        // === HÀM CACHE VÀ TỐI ƯU ===
-        function convertVietnameseWordCached(encodedWord) {
-            if (!encodedWord || encodedWord.length === 0) return "";
-            
-            if (vietnameseCache.has(encodedWord)) {
-                return vietnameseCache.get(encodedWord);
-            }
-            
-            const result = convertVietnameseWordOriginal(encodedWord);
-            vietnameseCache.set(encodedWord, result);
-            return result;
+    // === HÀM TÍNH TRẠNG THÁI UỐN VỚI HIỆU CHUẨN ===
+    function calculateFlexState(rawValue, sensorIndex) {
+        const STRAIGHT_THRESHOLD = STRAIGHT_THRESHOLDS[sensorIndex];
+        
+        if (rawValue <= STRAIGHT_THRESHOLD) return 0;
+        if (rawValue <= bentThresholds[sensorIndex]) return 1;
+        return 2;
+    }
+
+    function processWordConstructionFast(mpu, a0, a1, a2, a3) {
+        const currentState = `${mpu}_${a0}_${a1}_${a2}_${a3}`;
+        
+        if (currentState !== lastStateString) {
+            lastStateString = currentState;
+            stableCount = 0;
+            holdStartMs = Date.now();
+            holdFired = false;
+        } else {
+            stableCount++;
         }
-
-        function convertVietnameseWordOriginal(encodedWord) {
-            if (!encodedWord || encodedWord.length === 0) return "";
-            
-            const parts = encodedWord.split('_');
-            if (parts.length !== 3) return encodedWord;
-            
-            const consonant = parts[0];
-            const middle = parts[1];
-            const vowelTypeStr = parts[2];
-            
-            if (middle.length < 2) return encodedWord;
-            
-            const toneChar = middle[0];
-            const vowelKey = middle.substring(1);
-            
-            let tone = parseInt(toneChar);
-            if (isNaN(tone) || tone < 0 || tone > 5) {
-                return encodedWord;
-            }
-            
-            tone = tone + 1;
-            
-            let vowelType = 0;
-            if (vowelTypeStr === "b") {
-                vowelType = 1;
-            } else if (vowelTypeStr === "p") {
-                vowelType = 2;
-            } else if (vowelTypeStr !== "s") {
-                return encodedWord;
-            }
-            
-            const tableIndex = (tone - 1) + (vowelType * 6);
-            
-            if (tableIndex < 0 || tableIndex >= 18) {
-                return encodedWord;
-            }
-            
-            const vowelKeyUpper = vowelKey.toUpperCase();
-            
-            for (let i = 0; i < vietnameseTable.length; i++) {
-                if (vowelKeyUpper === vietnameseTable[i].key) {
-                    const convertedVowel = vietnameseTable[i].forms[tableIndex];
-                    return consonant + convertedVowel;
+        
+        lastFlexStates = [a0, a1, a2, a3];
+        
+        if (stableCount >= DEBOUNCE_COUNT) {
+            const held = Date.now() - holdStartMs;
+            if (!holdFired && held >= HOLD_MS_DEFAULT) {
+                if (Date.now() - lastActionMs > POST_HOLD_COOLDOWN) {
+                    performActionSlotLogic(mpu, a0, a1, a2, a3);
+                    holdFired = true;
+                    lastActionMs = Date.now();
                 }
             }
+        }
+    }
+
+    function scheduleUIUpdate() {
+        if (!uiUpdateScheduled) {
+            uiUpdateScheduled = true;
+            requestAnimationFrame(() => {
+                updateCriticalUI();
+                uiUpdateScheduled = false;
+            });
+        }
+    }
+
+    function updateCriticalUI() {
+        const startTime = performance.now();
+        
+        updateSensorDisplay();
+        updateWordDisplays();
+        updateSentenceDisplay();
+        
+        const updateTime = document.getElementById('lastUpdate');
+        const currentTime = formatTime(Date.now());
+        if (updateTime.textContent !== `Cập nhật: ${currentTime}`) {
+            updateTime.textContent = `Cập nhật: ${currentTime}`;
+            document.getElementById('lastUpdateTime').textContent = currentTime;
+        }
+        
+        const uiTime = performance.now() - startTime;
+        if (uiTime > 16) {
+            console.warn(`UI update slow: ${Math.round(uiTime)}ms`);
+        }
+    }
+
+    function updateSensorDisplay() {
+        for (let i = 0; i < 4; i++) {
+            const box = document.getElementById(`flex${i}-box`);
+            if (box && box.textContent !== flexStates[i].toString()) {
+                box.textContent = flexStates[i];
+                box.className = `flex-box active-${flexStates[i]}`;
+            }
+        }
+        
+        if (firebaseData) {
+            const rawValues = [firebaseData.f0 || 0, firebaseData.f1 || 0, firebaseData.f2 || 0, firebaseData.f3 || 0];
+            const rawValuesElement = document.getElementById('rawValues');
+            const newRawText = rawValues.join(', ');
+            if (rawValuesElement.textContent !== newRawText) {
+                rawValuesElement.textContent = newRawText;
+            }
             
+            const flexFormatElement = document.getElementById('flexFormat');
+            const newFlexText = flexStates.join('');
+            if (flexFormatElement.textContent !== newFlexText) {
+                flexFormatElement.textContent = newFlexText;
+            }
+        }
+    }
+
+    function updateWordDisplays() {
+        if (displayBuffer.length > 0) {
+            convertedCurrentWord = convertVietnameseWordCached(displayBuffer);
+        } else {
+            convertedCurrentWord = "";
+        }
+
+        const displayBufferElement = document.getElementById('displayBuffer');
+        if (displayBufferElement.textContent !== convertedCurrentWord) {
+            displayBufferElement.textContent = convertedCurrentWord || '---';
+        }
+        
+        const slot1Element = document.getElementById('slot1');
+        if (slot1Element.textContent !== slot1) {
+            slot1Element.textContent = slot1 || '---';
+        }
+        
+        const slot2Element = document.getElementById('slot2');
+        if (slot2Element.textContent !== slot2) {
+            slot2Element.textContent = slot2 || '---';
+        }
+        
+        const convertedWordElement = document.getElementById('convertedCurrentWord');
+        if (convertedWordElement.textContent !== displayBuffer) {
+            convertedWordElement.textContent = displayBuffer || '---';
+        }
+    }
+
+    function updateSentenceDisplay() {
+        const sentenceElement = document.getElementById('sentenceDisplay');
+        const newSentence = sentenceWords.join(' ');
+        
+        if (fullSentence !== newSentence) {
+            fullSentence = newSentence;
+            sentenceElement.textContent = fullSentence || '---';
+            
+            convertedFullSentence = convertVietnameseTextFast(fullSentence);
+            const convertedElement = document.getElementById('convertedSentenceDisplay');
+            convertedElement.textContent = convertedFullSentence || '---';
+            
+            updateWordList();
+            
+            const wordCountElement = document.getElementById('wordCount');
+            wordCountElement.textContent = sentenceWords.length;
+        }
+    }
+
+    function updateWordList() {
+        const wordListDiv = document.getElementById('wordList');
+        if (sentenceWords.length > 0) {
+            wordListDiv.innerHTML = sentenceWords.map(word => 
+                `<div class="word-item">${word}</div>`
+            ).join('');
+        } else {
+            wordListDiv.innerHTML = 'Chưa có từ nào';
+        }
+    }
+
+    // === HÀM CACHE VÀ TỐI ƯU ===
+    function convertVietnameseWordCached(encodedWord) {
+        if (!encodedWord || encodedWord.length === 0) return "";
+        
+        if (vietnameseCache.has(encodedWord)) {
+            return vietnameseCache.get(encodedWord);
+        }
+        
+        const result = convertVietnameseWordOriginal(encodedWord);
+        vietnameseCache.set(encodedWord, result);
+        return result;
+    }
+
+    function convertVietnameseWordOriginal(encodedWord) {
+        if (!encodedWord || encodedWord.length === 0) return "";
+        
+        const parts = encodedWord.split('_');
+        if (parts.length !== 3) return encodedWord;
+        
+        const consonant = parts[0];
+        const middle = parts[1];
+        const vowelTypeStr = parts[2];
+        
+        if (middle.length < 2) return encodedWord;
+        
+        const toneChar = middle[0];
+        const vowelKey = middle.substring(1);
+        
+        let tone = parseInt(toneChar);
+        if (isNaN(tone) || tone < 0 || tone > 5) {
             return encodedWord;
         }
-
-        function convertVietnameseTextFast(encodedText) {
-            if (!encodedText || encodedText.length === 0) return "";
-            
-            const words = encodedText.split(' ');
-            const convertedWords = words.map(word => convertVietnameseWordCached(word));
-            return convertedWords.join(' ');
+        
+        tone = tone + 1;
+        
+        let vowelType = 0;
+        if (vowelTypeStr === "b") {
+            vowelType = 1;
+        } else if (vowelTypeStr === "p") {
+            vowelType = 2;
+        } else if (vowelTypeStr !== "s") {
+            return encodedWord;
         }
-
-        function getMappingForIndicesCached(mpuState, a0, a1, a2, a3) {
-            const cacheKey = `${mpuState}_${a0}_${a1}_${a2}_${a3}`;
-            
-            if (mappingCache.has(cacheKey)) {
-                return mappingCache.get(cacheKey);
-            }
-            
-            const result = getMappingForIndicesOriginal(mpuState, a0, a1, a2, a3);
-            mappingCache.set(cacheKey, result);
-            return result;
+        
+        const tableIndex = (tone - 1) + (vowelType * 6);
+        
+        if (tableIndex < 0 || tableIndex >= 18) {
+            return encodedWord;
         }
+        
+        const vowelKeyUpper = vowelKey.toUpperCase();
+        
+        for (let i = 0; i < vietnameseTable.length; i++) {
+            if (vowelKeyUpper === vietnameseTable[i].key) {
+                const convertedVowel = vietnameseTable[i].forms[tableIndex];
+                return consonant + convertedVowel;
+            }
+        }
+        
+        return encodedWord;
+    }
 
-        function getMappingForIndicesOriginal(mpuState, a0, a1, a2, a3) {
-            if (mpuState < 0 || mpuState > 7) return null;
-            
-            if (a3 === 2) {
-                if (a0 < 3 && a1 < 3 && a2 < 3) {
-                    return tableC[a0][a1][a2];
-                }
-                return null;
+    function convertVietnameseTextFast(encodedText) {
+        if (!encodedText || encodedText.length === 0) return "";
+        
+        const words = encodedText.split(' ');
+        const convertedWords = words.map(word => convertVietnameseWordCached(word));
+        return convertedWords.join(' ');
+    }
+
+    function getMappingForIndicesCached(mpuState, a0, a1, a2, a3) {
+        const cacheKey = `${mpuState}_${a0}_${a1}_${a2}_${a3}`;
+        
+        if (mappingCache.has(cacheKey)) {
+            return mappingCache.get(cacheKey);
+        }
+        
+        const result = getMappingForIndicesOriginal(mpuState, a0, a1, a2, a3);
+        mappingCache.set(cacheKey, result);
+        return result;
+    }
+
+    function getMappingForIndicesOriginal(mpuState, a0, a1, a2, a3) {
+        if (mpuState < 0 || mpuState > 7) return null;
+        
+        if (a3 === 2) {
+            if (a0 < 3 && a1 < 3 && a2 < 3) {
+                return tableC[a0][a1][a2];
             }
-            
-            const a3bin = a3 === 1 ? 1 : 0;
-            if (a1 < 0 || a1 >= 3 || a2 < 0 || a2 >= 3) return null;
-            
-            const flatIndex = a1 * 3 + a2;
-            
-            if (flatIndex >= 0 && flatIndex < 9) {
-                return a3bin === 0 ? tableA[mpuState][flatIndex] : tableB[mpuState][flatIndex];
-            }
-            
             return null;
         }
-
-        // === HÀM HỖ TRỢ ===
-        function log(source, message) {
-            const timestamp = new Date().toLocaleTimeString();
-            const logEntry = { timestamp, source, message };
-            
-            logEntries.unshift(logEntry);
-            if (logEntries.length > MAX_LOG_ENTRIES) {
-                logEntries.pop();
-            }
-            
-            updateLogDisplay();
+        
+        const a3bin = a3 === 1 ? 1 : 0;
+        if (a1 < 0 || a1 >= 3 || a2 < 0 || a2 >= 3) return null;
+        
+        const flatIndex = a1 * 3 + a2;
+        
+        if (flatIndex >= 0 && flatIndex < 9) {
+            return a3bin === 0 ? tableA[mpuState][flatIndex] : tableB[mpuState][flatIndex];
         }
+        
+        return null;
+    }
 
-        function updateLogDisplay() {
-            const logContainer = document.getElementById('logContainer');
-            const visibleEntries = logEntries.slice(0, 5);
-            
-            logContainer.innerHTML = visibleEntries.map(entry => 
-                `<div class="log-entry">
-                    <span style="color: #666; font-size: 0.8rem;">[${entry.timestamp}] ${entry.source}:</span>
-                    <span style="color: #333;"> ${entry.message}</span>
-                </div>`
-            ).join('');
+    // === HÀM HỖ TRỢ ===
+    function log(source, message) {
+        const timestamp = new Date().toLocaleTimeString();
+        const logEntry = { timestamp, source, message };
+        
+        logEntries.unshift(logEntry);
+        if (logEntries.length > MAX_LOG_ENTRIES) {
+            logEntries.pop();
         }
+        
+        updateLogDisplay();
+    }
 
-        function clearLog() {
-            logEntries = [];
-            updateLogDisplay();
+    function updateLogDisplay() {
+        const logContainer = document.getElementById('logContainer');
+        const visibleEntries = logEntries.slice(0, 5);
+        
+        logContainer.innerHTML = visibleEntries.map(entry => 
+            `<div class="log-entry">
+                <span style="color: #666; font-size: 0.75rem;">[${entry.timestamp}] ${entry.source}:</span>
+                <span style="color: #333;"> ${entry.message}</span>
+            </div>`
+        ).join('');
+    }
+
+    function clearLog() {
+        logEntries = [];
+        updateLogDisplay();
+    }
+
+    function exportLog() {
+        const logText = logEntries.map(entry => 
+            `[${entry.timestamp}] ${entry.source}: ${entry.message}`
+        ).join('\n');
+        
+        const blob = new Blob([logText], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `log_${new Date().toISOString().slice(0, 10)}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    function updateConnectionStatus(connected) {
+        const indicator = document.getElementById('connectionStatus');
+        const statusText = document.getElementById('statusText');
+        const firebaseStatus = document.getElementById('firebaseStatus');
+        
+        if (connected) {
+            indicator.className = 'indicator online';
+            statusText.textContent = 'Đã kết nối với Firebase';
+            firebaseStatus.textContent = 'Đã kết nối với Firebase';
+            firebaseStatus.style.color = '#4CAF50';
+        } else {
+            indicator.className = 'indicator';
+            indicator.style.background = '#F44336';
+            statusText.textContent = 'Mất kết nối với Firebase';
+            firebaseStatus.textContent = 'Mất kết nối với Firebase';
+            firebaseStatus.style.color = '#F44336';
         }
+    }
 
-        function exportLog() {
-            const logText = logEntries.map(entry => 
-                `[${entry.timestamp}] ${entry.source}: ${entry.message}`
-            ).join('\n');
-            
-            const blob = new Blob([logText], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `log_${new Date().toISOString().slice(0, 10)}.txt`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+    function formatTime(timestamp) {
+        const date = new Date(timestamp);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+
+    // === HÀM GET MPU STATE MỚI ===
+    function getMPUState(orientation, shakeState) {
+        if (shakeState === "Shake Left") return 6;
+        if (shakeState === "Shake Right") return 7;
+        
+        // Sử dụng ánh xạ mới: right=0, left=1, up=2, down=3, backward=4, forward=5
+        switch(orientation) {
+            case "Right": return 0;
+            case "Left": return 1;
+            case "Up": return 2;
+            case "Down": return 3;
+            case "Backward": return 4;
+            case "Forward": return 5;
+            default: return -1;
         }
+    }
 
-        function updateConnectionStatus(connected) {
-            const indicator = document.getElementById('connectionStatus');
-            const statusText = document.getElementById('statusText');
-            const firebaseStatus = document.getElementById('firebaseStatus');
-            
-            if (connected) {
-                indicator.className = 'indicator online';
-                statusText.textContent = 'Đã kết nối với Firebase';
-                firebaseStatus.textContent = 'Đã kết nối với Firebase';
-                firebaseStatus.style.color = '#4CAF50';
-            } else {
-                indicator.className = 'indicator';
-                indicator.style.background = '#F44336';
-                statusText.textContent = 'Mất kết nối với Firebase';
-                firebaseStatus.textContent = 'Mất kết nối với Firebase';
-                firebaseStatus.style.color = '#F44336';
-            }
-        }
-
-        function formatTime(timestamp) {
-            const date = new Date(timestamp);
-            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        }
-
-        function getMPUState(orientation, shakeState) {
-            if (shakeState === "Shake Left") return 6;
-            if (shakeState === "Shake Right") return 7;
-            
-            switch(orientation) {
-                case "Up": return 0;
-                case "Down": return 1;
-                case "Left": return 2;
-                case "Right": return 3;
-                case "Forward": return 4;
-                case "Backward": return 5;
-                default: return -1;
-            }
-        }
-
-        // === HÀM XÂY DỰNG CÂU ===
-        function performActionSlotLogic(mpu, a0, a1, a2, a3) {
-            const mapping = getMappingForIndicesCached(mpu, a0, a1, a2, a3);
-            if (!mapping || mapping === "nullptr") return false;
-            
-            if (mapping === "_") {
-                if (displayBuffer && displayBuffer.length > 0 && displayBuffer !== "---") {
-                    addWordToSentence();
-                } else {
-                    log('WORD', 'Dấu cách được phát hiện, nhưng không có từ trong bộ đệm');
-                }
-                return true;
-            }
-            
-            if (mapping === "COMMIT") {
-                commitSentence();
-                return true;
-            }
-            
-            if (mapping === "<") {
-                backspaceBuffer();
-                scheduleUIUpdate();
-                return true;
-            }
-            
-            const isSlot1 = (a3 === 2);
-            const held = Date.now() - holdStartMs;
-            
-            if (isSlot1 && stableCount >= DEBOUNCE_COUNT && held < HOLD_MS_DEFAULT) {
-                const mode = flexModeCharFromA0(a0);
-                slot2 = `${mapping}_${mode}`;
-            } else if (isSlot1) {
-                slot1 = `${mapping}_${mpu}`;
-            } else {
-                const mode = flexModeCharFromA0(a0);
-                slot2 = `${mapping}_${mode}`;
-            }
-            
-            updateDisplayBufferFromSlots();
-            log('WORD', `Hành động: ${displayBuffer}`);
-            return true;
-        }
-
-        function flexModeCharFromA0(a0) {
-            switch(a0) {
-                case 0: return 's';
-                case 1: return 'b';
-                case 2: return 'p';
-                default: return 'x';
-            }
-        }
-
-        function updateDisplayBufferFromSlots() {
-            const oldBuffer = displayBuffer;
-            displayBuffer = '';
-            
-            if (slot1) displayBuffer += slot1.toLowerCase();
-            if (slot2) displayBuffer += slot2.toLowerCase();
-            
-            if (oldBuffer !== displayBuffer) {
-                scheduleUIUpdate();
-                log('WORD', `Đã cập nhật: ${displayBuffer}`);
-            }
-        }
-
-        function addWordToSentence() {
-            if (!displayBuffer || displayBuffer === "---" || displayBuffer.length === 0) {
-                log('SENTENCE', 'Không thể thêm từ trống vào câu');
-                return;
-            }
-            
-            if (sentenceWords.length < 10) {
-                sentenceWords.push(displayBuffer);
-                scheduleUIUpdate();
-                log('SENTENCE', `Đã thêm: '${displayBuffer}'`);
-                
-                slot1 = '';
-                slot2 = '';
-                displayBuffer = '';
-                convertedCurrentWord = '';
-                
-                scheduleUIUpdate();
-            } else {
-                log('SENTENCE', 'Câu đã đầy! Tối đa 10 từ.');
-            }
-        }
-
-        function commitSentence() {
-            if (sentenceWords.length === 0) {
-                log('SENTENCE', 'Không có từ nào để hoàn thành!');
-                return;
-            }
-            
+    // === HÀM XÂY DỰNG CÂU ===
+    function performActionSlotLogic(mpu, a0, a1, a2, a3) {
+        const mapping = getMappingForIndicesCached(mpu, a0, a1, a2, a3);
+        if (!mapping || mapping === "nullptr") return false;
+        
+        if (mapping === "_") {
             if (displayBuffer && displayBuffer.length > 0 && displayBuffer !== "---") {
                 addWordToSentence();
+            } else {
+                log('WORD', 'Dấu cách được phát hiện, nhưng không có từ trong bộ đệm');
             }
-            
-            log('SENTENCE', '=== CÂU ĐÃ HOÀN THÀNH ===');
-            log('SENTENCE', `Đầy đủ: ${fullSentence}`);
-            log('CONVERSION', `Đã chuyển đổi: ${convertedFullSentence}`);
-            
-            if (convertedFullSentence && convertedFullSentence !== "---") {
-                document.getElementById('translationInput').value = convertedFullSentence;
-                setTimeout(() => {
-                    translateWithGoogle();
-                }, 500);
-            }
-            
-            resetSentence();
+            return true;
         }
-
-        function resetSentence() {
-            sentenceWords = [];
-            fullSentence = '';
-            convertedFullSentence = '';
-            slot1 = '';
-            slot2 = '';
-            displayBuffer = '';
-            convertedCurrentWord = '';
-            
-            document.getElementById('autoSuggestionsPanel').style.display = 'none';
-            document.getElementById('dynamicSuggestions').innerHTML = '';
-            document.getElementById('dynamicSuggestions').classList.remove('show');
-            
-            log('SENTENCE', 'Đã đặt lại câu');
-            scheduleUIUpdate();
+        
+        if (mapping === "COMMIT") {
+            commitSentence();
+            return true;
         }
-
-        function clearCurrentWord() {
-            slot1 = '';
-            slot2 = '';
-            displayBuffer = '';
-            convertedCurrentWord = '';
-            
-            document.getElementById('dynamicSuggestions').innerHTML = '';
-            document.getElementById('dynamicSuggestions').classList.remove('show');
-            
-            scheduleUIUpdate();
-            log('WORD', 'Đã xóa từ hiện tại');
-        }
-
-        function backspaceBuffer() {
-            if (displayBuffer.length > 0) {
-                displayBuffer = displayBuffer.slice(0, -1);
-                log('WORD', `Xóa ký tự - Bộ đệm: ${displayBuffer}`);
-            }
-        }
-
-        function backspace() {
+        
+        if (mapping === "<") {
             backspaceBuffer();
             scheduleUIUpdate();
+            return true;
         }
-
-        // === HÀM ĐIỀU KHIỂN ===
-        function refreshData() {
-            fetchFirebaseDataOptimized();
+        
+        const isSlot1 = (a3 === 2);
+        const held = Date.now() - holdStartMs;
+        
+        if (isSlot1 && stableCount >= DEBOUNCE_COUNT && held < HOLD_MS_DEFAULT) {
+            const mode = flexModeCharFromA0(a0);
+            slot2 = `${mapping}_${mode}`;
+        } else if (isSlot1) {
+            slot1 = `${mapping}_${mpu}`;
+        } else {
+            const mode = flexModeCharFromA0(a0);
+            slot2 = `${mapping}_${mode}`;
         }
+        
+        updateDisplayBufferFromSlots();
+        log('WORD', `Hành động: ${displayBuffer}`);
+        return true;
+    }
 
-        function toggleAutoRefresh() {
-            autoRefresh = !autoRefresh;
-            const btn = document.getElementById('autoRefreshBtn');
+    function flexModeCharFromA0(a0) {
+        switch(a0) {
+            case 0: return 's';
+            case 1: return 'b';
+            case 2: return 'p';
+            default: return 'x';
+        }
+    }
+
+    function updateDisplayBufferFromSlots() {
+        const oldBuffer = displayBuffer;
+        displayBuffer = '';
+        
+        if (slot1) displayBuffer += slot1.toLowerCase();
+        if (slot2) displayBuffer += slot2.toLowerCase();
+        
+        if (oldBuffer !== displayBuffer) {
+            scheduleUIUpdate();
+            log('WORD', `Đã cập nhật: ${displayBuffer}`);
+        }
+    }
+
+    function addWordToSentence() {
+        if (!displayBuffer || displayBuffer === "---" || displayBuffer.length === 0) {
+            log('SENTENCE', 'Không thể thêm từ trống vào câu');
+            return;
+        }
+        
+        if (sentenceWords.length < 10) {
+            sentenceWords.push(displayBuffer);
+            scheduleUIUpdate();
+            log('SENTENCE', `Đã thêm: '${displayBuffer}'`);
             
-            if (autoRefresh) {
-                btn.textContent = `Tự động: BẬT (${pollingInterval}ms)`;
-                btn.className = 'green';
+            slot1 = '';
+            slot2 = '';
+            displayBuffer = '';
+            convertedCurrentWord = '';
+            
+            scheduleUIUpdate();
+        } else {
+            log('SENTENCE', 'Câu đã đầy! Tối đa 10 từ.');
+        }
+    }
+
+    function commitSentence() {
+        if (sentenceWords.length === 0) {
+            log('SENTENCE', 'Không có từ nào để hoàn thành!');
+            return;
+        }
+        
+        if (displayBuffer && displayBuffer.length > 0 && displayBuffer !== "---") {
+            addWordToSentence();
+        }
+        
+        log('SENTENCE', '=== CÂU ĐÃ HOÀN THÀNH ===');
+        log('SENTENCE', `Đầy đủ: ${fullSentence}`);
+        log('CONVERSION', `Đã chuyển đổi: ${convertedFullSentence}`);
+        
+        if (convertedFullSentence && convertedFullSentence !== "---") {
+            document.getElementById('translationInput').value = convertedFullSentence;
+            setTimeout(() => {
+                translateWithGoogle();
+            }, 500);
+        }
+        
+        resetSentence();
+    }
+
+    function resetSentence() {
+        sentenceWords = [];
+        fullSentence = '';
+        convertedFullSentence = '';
+        slot1 = '';
+        slot2 = '';
+        displayBuffer = '';
+        convertedCurrentWord = '';
+        
+        document.getElementById('autoSuggestionsPanel').style.display = 'none';
+        document.getElementById('dynamicSuggestions').innerHTML = '';
+        document.getElementById('dynamicSuggestions').classList.remove('show');
+        
+        log('SENTENCE', 'Đã đặt lại câu');
+        scheduleUIUpdate();
+    }
+
+    function clearCurrentWord() {
+        slot1 = '';
+        slot2 = '';
+        displayBuffer = '';
+        convertedCurrentWord = '';
+        
+        document.getElementById('dynamicSuggestions').innerHTML = '';
+        document.getElementById('dynamicSuggestions').classList.remove('show');
+        
+        scheduleUIUpdate();
+        log('WORD', 'Đã xóa từ hiện tại');
+    }
+
+    function backspaceBuffer() {
+        if (displayBuffer.length > 0) {
+            displayBuffer = displayBuffer.slice(0, -1);
+            log('WORD', `Xóa ký tự - Bộ đệm: ${displayBuffer}`);
+        }
+    }
+
+    function backspace() {
+        backspaceBuffer();
+        scheduleUIUpdate();
+    }
+
+    // === HÀM ĐIỀU KHIỂN ===
+    function refreshData() {
+        fetchFirebaseDataOptimized();
+    }
+
+    function toggleAutoRefresh() {
+        autoRefresh = !autoRefresh;
+        const btn = document.getElementById('autoRefreshBtn');
+        
+        if (autoRefresh) {
+            btn.textContent = `Tự động: BẬT (${pollingInterval}ms)`;
+            btn.className = 'green';
+            
+            function scheduleNextRefresh() {
+                if (!autoRefresh) return;
                 
-                function scheduleNextRefresh() {
-                    if (!autoRefresh) return;
-                    
-                    setTimeout(() => {
-                        if (autoRefresh) {
-                            fetchFirebaseDataOptimized().then(() => {
-                                if (autoRefresh) {
-                                    scheduleNextRefresh();
-                                }
-                            });
-                        }
-                    }, pollingInterval);
-                }
-                
-                scheduleNextRefresh();
-                log('SYSTEM', `Bật tự động làm mới ${pollingInterval}ms`);
-            } else {
-                btn.textContent = 'Tự động: TẮT';
-                btn.className = 'red';
-                log('SYSTEM', 'Tắt tự động làm mới');
-            }
-        }
-
-        function toggleTurboMode() {
-            turboMode = !turboMode;
-            const btn = document.getElementById('turboBtn');
-            
-            if (turboMode) {
-                pollingInterval = 150;
-                btn.textContent = '🚀 Turbo: BẬT';
-                btn.className = 'red';
-                document.getElementById('fastModeIndicator').style.display = 'block';
-                log('SYSTEM', 'Bật chế độ Turbo (150ms polling)');
-            } else {
-                pollingInterval = 300;
-                btn.textContent = '🚀 Chế độ Turbo';
-                btn.className = 'green';
-                document.getElementById('fastModeIndicator').style.display = 'none';
-                log('SYSTEM', 'Tắt chế độ Turbo');
-            }
-            
-            updatePollingDisplay();
-            
-            if (autoRefresh) {
-                toggleAutoRefresh();
-                toggleAutoRefresh();
-            }
-        }
-
-        function updatePollingDisplay() {
-            document.getElementById('pollingRate').textContent = pollingInterval;
-            const btn = document.getElementById('autoRefreshBtn');
-            if (autoRefresh) {
-                btn.textContent = `Tự động: BẬT (${pollingInterval}ms)`;
-            }
-        }
-
-        // === HÀM ĐỀ XUẤT ===
-        function loadPhraseSuggestions() {
-            const phrasePills = document.getElementById('phrasePills');
-            phrasePills.innerHTML = '';
-            
-            commonPhrases.forEach(phrase => {
-                const pill = document.createElement('button');
-                pill.className = 'phrase-pill';
-                pill.textContent = phrase.length > 30 ? phrase.substring(0, 27) + '...' : phrase;
-                pill.onclick = () => {
-                    document.getElementById('translationInput').value = phrase;
-                    translatePhrase(phrase);
-                    log('PHRASE', `Đã chọn cụm từ: "${phrase}"`);
-                };
-                pill.title = phrase;
-                phrasePills.appendChild(pill);
-            });
-        }
-
-        function translatePhrase(phrase) {
-            document.getElementById('translationInput').value = phrase;
-            translateWithGoogle();
-        }
-
-        function normalizeVietnamese(str) {
-            if (!str) return '';
-            return str.normalize('NFD')
-                      .replace(/[\u0300-\u036f]/g, '')
-                      .toLowerCase()
-                      .trim();
-        }
-
-        function showAutoSuggestions() {
-            if (sentenceWords.length === 0) {
-                document.getElementById('autoSuggestionsPanel').style.display = 'none';
-                return;
-            }
-            
-            const panel = document.getElementById('autoSuggestionsPanel');
-            const grid = document.getElementById('autoSuggestionsGrid');
-            
-            const currentSentence = convertedFullSentence || '';
-            
-            if (!currentSentence || currentSentence === '---') {
-                panel.style.display = 'none';
-                return;
-            }
-            
-            const normalizedSentence = normalizeVietnamese(currentSentence);
-            
-            const words = normalizedSentence.split(/[\s,.!?;:]+/)
-                .filter(word => word.length > 1);
-            
-            if (words.length === 0) {
-                panel.style.display = 'none';
-                return;
-            }
-            
-            const suggestions = [];
-            const usedPhrases = new Set();
-            
-            commonPhrases.forEach(phrase => {
-                const normalizedPhrase = normalizeVietnamese(phrase);
-                let matchedWords = 0;
-                
-                words.forEach(word => {
-                    if (normalizedPhrase.includes(word)) {
-                        matchedWords++;
+                setTimeout(() => {
+                    if (autoRefresh) {
+                        fetchFirebaseDataOptimized().then(() => {
+                            if (autoRefresh) {
+                                scheduleNextRefresh();
+                            }
+                        });
                     }
-                });
-                
-                if (matchedWords > 0 && !usedPhrases.has(phrase)) {
-                    suggestions.push({
-                        text: phrase,
-                        score: matchedWords,
-                        wordsMatched: matchedWords
-                    });
-                    usedPhrases.add(phrase);
-                }
-            });
-            
-            suggestions.sort((a, b) => b.score - a.score);
-            
-            const topSuggestions = suggestions.slice(0, 6);
-            
-            if (topSuggestions.length === 0) {
-                const defaultSuggestions = getDefaultSuggestions(words);
-                topSuggestions.push(...defaultSuggestions);
+                }, pollingInterval);
             }
             
-            grid.innerHTML = topSuggestions.map(suggestion => `
-                <div class="auto-suggestion-item">
-                    <div class="auto-suggestion-text">${suggestion.text}</div>
-                    <div class="suggestion-header">
-                        <small>📌 Khớp ${suggestion.wordsMatched || 0} từ trong câu của bạn</small>
-                    </div>
-                    <div class="auto-suggestion-actions">
-                        <button class="auto-suggestion-btn speak" onclick="speakText('${suggestion.text.replace(/'/g, "\\'")}', 'vi-VN')">🔊 Đọc</button>
-                        <button class="auto-suggestion-btn use" onclick="useSuggestion('${suggestion.text.replace(/'/g, "\\'")}')">📝 Dùng</button>
-                        <button class="auto-suggestion-btn translate" onclick="translateSuggestion('${suggestion.text.replace(/'/g, "\\'")}')">🌐 Dịch</button>
-                    </div>
-                </div>
-            `).join('');
-            
-            panel.style.display = 'block';
-            log('SUGGESTION', `Tìm thấy ${topSuggestions.length} đề xuất cho câu: "${currentSentence.substring(0, 30)}..."`);
+            scheduleNextRefresh();
+            log('SYSTEM', `Bật tự động làm mới ${pollingInterval}ms`);
+        } else {
+            btn.textContent = 'Tự động: TẮT';
+            btn.className = 'red';
+            log('SYSTEM', 'Tắt tự động làm mới');
         }
+    }
 
-        function getDefaultSuggestions(words) {
-            const defaultSuggestions = [];
-            
-            const keywordMap = {
-                'chao': ['Xin chào, rất vui được gặp bạn', 'Chào buổi sáng'],
-                'xin': ['Làm ơn cho tôi xin hóa đơn', 'Xin chào, rất vui được gặp bạn'],
-                'cam': ['Cảm ơn bạn rất nhiều'],
-                'hoi': ['Làm ơn cho tôi hỏi đường', 'Bạn có thể nói chậm hơn được không?'],
-                'duong': ['Làm ơn cho tôi hỏi đường'],
-                'noi': ['Bạn có thể nói chậm hơn được không?'],
-                'cham': ['Bạn có thể nói chậm hơn được không?'],
-                'hieu': ['Tôi không hiểu'],
-                'ten': ['Bạn tên là gì?'],
-                'giup': ['Tôi có thể giúp gì không?']
+    function toggleTurboMode() {
+        turboMode = !turboMode;
+        const btn = document.getElementById('turboBtn');
+        
+        if (turboMode) {
+            pollingInterval = 150;
+            btn.textContent = '🚀 Turbo: BẬT';
+            btn.className = 'red';
+            document.getElementById('fastModeIndicator').style.display = 'block';
+            log('SYSTEM', 'Bật chế độ Turbo (150ms polling)');
+        } else {
+            pollingInterval = 300;
+            btn.textContent = '🚀 Chế độ Turbo';
+            btn.className = 'green';
+            document.getElementById('fastModeIndicator').style.display = 'none';
+            log('SYSTEM', 'Tắt chế độ Turbo');
+        }
+        
+        updatePollingDisplay();
+        
+        if (autoRefresh) {
+            toggleAutoRefresh();
+            toggleAutoRefresh();
+        }
+    }
+
+    function updatePollingDisplay() {
+        document.getElementById('pollingRate').textContent = pollingInterval;
+        const btn = document.getElementById('autoRefreshBtn');
+        if (autoRefresh) {
+            btn.textContent = `Tự động: BẬT (${pollingInterval}ms)`;
+        }
+    }
+
+    // === HÀM ĐỀ XUẤT ===
+    function loadPhraseSuggestions() {
+        const phrasePills = document.getElementById('phrasePills');
+        phrasePills.innerHTML = '';
+        
+        commonPhrases.forEach(phrase => {
+            const pill = document.createElement('button');
+            pill.className = 'phrase-pill';
+            pill.textContent = phrase.length > 25 ? phrase.substring(0, 22) + '...' : phrase;
+            pill.onclick = () => {
+                document.getElementById('translationInput').value = phrase;
+                translatePhrase(phrase);
+                log('PHRASE', `Đã chọn cụm từ: "${phrase}"`);
             };
-            
-            words.forEach(word => {
-                if (keywordMap[word]) {
-                    keywordMap[word].forEach(phrase => {
-                        if (!defaultSuggestions.some(s => s.text === phrase)) {
-                            defaultSuggestions.push({
-                                text: phrase,
-                                wordsMatched: 1
-                            });
-                        }
-                    });
-                }
-            });
-            
-            if (defaultSuggestions.length === 0) {
-                defaultSuggestions.push(
-                    { text: 'Bạn có thể nói chậm hơn được không?', wordsMatched: 0 },
-                    { text: 'Tôi không hiểu, bạn có thể giải thích không?', wordsMatched: 0 },
-                    { text: 'Rất vui được trò chuyện với bạn', wordsMatched: 0 }
-                );
-            }
-            
-            return defaultSuggestions.slice(0, 3);
-        }
+            pill.title = phrase;
+            phrasePills.appendChild(pill);
+        });
+    }
 
-        function useSuggestion(text) {
-            document.getElementById('translationInput').value = text;
-            translateWithGoogle();
-            log('SUGGESTION', `Sử dụng đề xuất: "${text}"`);
-        }
-
-        function translateSuggestion(text) {
-            document.getElementById('translationInput').value = text;
-            translateWithGoogle();
-            log('SUGGESTION', `Dịch đề xuất: "${text}"`);
-        }
+    function translatePhrase(phrase) {
+        document.getElementById('translationInput').value = phrase;
+        translateWithGoogle();
+    }
 
     // === GOOGLE TTS PROXY FUNCTIONS ===
     async function speakWithGoogleTTSProxy(text, langCode, gender = 'male') {
@@ -2663,10 +2727,8 @@
             await new Promise(resolve => setTimeout(resolve, 100));
         }
         
-        // Tạo cache key
         const cacheKey = `${text}_${langCode}_${gender}`;
         
-        // Kiểm tra cache
         if (audioCache.has(cacheKey)) {
             const audio = audioCache.get(cacheKey);
             currentSpeech = audio.cloneNode();
@@ -2697,28 +2759,22 @@
         }
         
         try {
-            // Chuẩn bị tham số cho Google TTS
             const googleLang = TTS_CONFIG.googleLangCodes[langCode] || langCode.split('-')[0];
             const encodedText = encodeURIComponent(text);
             
-            // Thêm tham số tốc độ dựa trên giới tính
             const speed = TTS_CONFIG.languages[langCode]?.voices[gender]?.speed || 
                          (gender === 'male' ? 0.9 : 1.0);
             
-            // Xây dựng URL Google TTS
             let ttsUrl = `${TTS_PROXY_SERVERS[0]}?ie=UTF-8&client=tw-ob&q=${encodedText}&tl=${googleLang}`;
             
-            // Thêm CORS proxy nếu cần
             if (USE_CORS_PROXY) {
                 ttsUrl = CORS_PROXY + encodeURIComponent(ttsUrl);
             }
             
-            // Tạo audio element
             const audio = new Audio();
             audio.crossOrigin = "anonymous";
             
             return new Promise((resolve, reject) => {
-                // Set timeout để tránh treo
                 const timeout = setTimeout(() => {
                     if (isSpeaking) {
                         audio.pause();
@@ -2732,7 +2788,6 @@
                 audio.onloadeddata = () => {
                     clearTimeout(timeout);
                     
-                    // Lưu vào cache trước khi phát
                     audioCache.set(cacheKey, audio.cloneNode());
                     
                     currentSpeech = audio;
@@ -2763,7 +2818,6 @@
                     reject(err);
                 };
                 
-                // Bắt đầu tải
                 audio.src = ttsUrl;
                 audio.load();
             });
@@ -2772,7 +2826,6 @@
             console.error('Google TTS Proxy error:', error);
             log('TTS', `Google TTS thất bại: ${error.message}`);
             
-            // Fallback to Web Speech
             if (window.speechSynthesis) {
                 speakWithWebSpeech(text, langCode, gender);
             }
@@ -2800,7 +2853,6 @@
         utterance.pitch = gender === 'male' ? 0.8 : 1.2;
         utterance.volume = 1;
         
-        // Tìm giọng phù hợp nếu có
         const voices = window.speechSynthesis.getVoices();
         const preferredVoice = voices.find(voice => 
             voice.lang.startsWith(langCode.split('-')[0]) &&
@@ -2872,7 +2924,6 @@
         
         const langCode = langMap[targetLang] || targetLang;
         
-        // Sử dụng giới tính hiện tại hoặc mặc định là nam
         await speakText(text, langCode, currentVoice.gender || 'male');
     }
 
@@ -2889,7 +2940,6 @@
                 console.error('Google TTS Proxy failed:', error);
                 log('TTS', `Google TTS thất bại, chuyển sang Web Speech: ${error.message}`);
                 
-                // Fallback to Web Speech
                 if (window.speechSynthesis) {
                     speakWithWebSpeech(text, langCode, gender);
                 }
@@ -2905,12 +2955,10 @@
     }
 
     function stopAllSpeech() {
-        // Dừng Web Speech
         if (window.speechSynthesis) {
             window.speechSynthesis.cancel();
         }
         
-        // Dừng audio element
         if (currentSpeech) {
             if (currentSpeech.pause) {
                 currentSpeech.pause();
@@ -2932,8 +2980,7 @@
         const visualizer = document.getElementById('audioVisualizer');
         visualizer.innerHTML = '';
         
-        // Tạo thanh visualizer
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < 15; i++) {
             const bar = document.createElement('div');
             bar.className = 'audio-bar';
             bar.style.height = '5px';
@@ -2943,10 +2990,9 @@
         const bars = visualizer.querySelectorAll('.audio-bar');
         audioVisualizerInterval = setInterval(() => {
             bars.forEach(bar => {
-                const height = 5 + Math.random() * 35;
+                const height = 5 + Math.random() * 25;
                 bar.style.height = `${height}px`;
                 
-                // Màu sắc thay đổi ngẫu nhiên
                 const hue = 200 + Math.random() * 160;
                 bar.style.backgroundColor = `hsl(${hue}, 70%, 50%)`;
             });
@@ -2963,8 +3009,7 @@
         if (visualizer) {
             visualizer.innerHTML = '';
             
-            // Tạo thanh tĩnh
-            for (let i = 0; i < 20; i++) {
+            for (let i = 0; i < 15; i++) {
                 const bar = document.createElement('div');
                 bar.className = 'audio-bar';
                 bar.style.height = '5px';
@@ -2985,7 +3030,6 @@
             accent: 'native'
         };
         
-        // Cập nhật giao diện
         document.querySelectorAll('.voice-btn').forEach(btn => {
             btn.classList.remove('active');
         });
@@ -3031,7 +3075,6 @@
         outputDiv.className = 'conversion-display loading';
         
         try {
-            // Sử dụng Google Translate API
             const encodedText = encodeURIComponent(text);
             const apiUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodedText}`;
             
@@ -3051,10 +3094,8 @@
                 });
             }
             
-            // Lưu vào cache
             translationCache[cacheKey] = translated;
             
-            // Giới hạn cache size
             const cacheKeys = Object.keys(translationCache);
             if (cacheKeys.length > 50) {
                 delete translationCache[cacheKeys[0]];
@@ -3118,7 +3159,6 @@
         updateWordDisplays();
         updateSentenceDisplay();
         
-        // Cập nhật trạng thái nút giọng nói
         const speakVnBtn = document.getElementById('speakVnBtn');
         const speakTransBtn = document.getElementById('speakTransBtn');
         const stopSpeechBtn = document.getElementById('stopSpeechBtn');
@@ -3137,7 +3177,6 @@
             speakVnBtn.innerHTML = '🔊 Đọc Tiếng Việt';
         }
         
-        // Cập nhật hiển thị giọng hiện tại
         const langName = TTS_CONFIG.langDisplayNames[currentVoice.lang] || currentVoice.lang;
         const genderName = currentVoice.gender === 'male' ? 'Nam' : 'Nữ';
         const ttsMode = useGoogleTTS ? 'Google TTS' : 'Web Speech';
@@ -3145,7 +3184,6 @@
         document.getElementById('currentVoiceDisplay').textContent = 
             `Hiện tại: ${langName} - ${genderName} (${ttsMode})`;
         
-        // Cập nhật nút chọn TTS mode
         document.getElementById('useGoogleTTS').classList.toggle('active', useGoogleTTS);
         document.getElementById('useWebSpeech').classList.toggle('active', !useGoogleTTS);
     }
@@ -3166,7 +3204,6 @@
                 
                 document.getElementById('fps').textContent = currentFPS;
                 
-                // Điều chỉnh polling interval dựa trên FPS
                 if (currentFPS < 30 && pollingInterval > 150) {
                     pollingInterval = Math.min(pollingInterval * 1.5, 1000);
                     updatePollingDisplay();
@@ -3181,34 +3218,23 @@
         
         requestAnimationFrame(updateFPS);
         
-        // Tải hiệu chuẩn từ localStorage nếu có
         loadCalibration();
-        
-        // Tải đề xuất cụm từ
         loadPhraseSuggestions();
         
-        // Khởi tạo Web Speech API voices
         if ('speechSynthesis' in window) {
             speechSynthesis.getVoices();
             
             speechSynthesis.onvoiceschanged = function() {
                 const voices = speechSynthesis.getVoices();
                 log('SPEECH', `Đã tải ${voices.length} giọng tổng hợp`);
-                
-                // Log available voices for debugging
-                voices.forEach(voice => {
-                    console.log(`Voice: ${voice.name} - ${voice.lang} - ${voice.localService ? 'Local' : 'Remote'}`);
-                });
             };
         }
         
-        // Khởi tạo auto-refresh
         setTimeout(() => {
             fetchFirebaseDataOptimized();
             toggleAutoRefresh();
         }, 100);
         
-        // Clear audio cache periodically
         setInterval(() => {
             if (audioCache.size > 20) {
                 const keys = Array.from(audioCache.keys());
@@ -3217,6 +3243,8 @@
                 }
                 log('CACHE', `Đã xóa 5 item từ audio cache, còn ${audioCache.size} item`);
             }
-        }, 60000); // Mỗi phút
+        }, 60000);
     });
-</script>    
+</script>
+</body>
+</html>
